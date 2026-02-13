@@ -1,0 +1,153 @@
+import PicoFV.RVSail.RV64IM.Auxiliaries
+import PicoFV.RVSail.RV64IM.RV64Operations
+import PicoFV.RVSail.RV64IM.Execution
+
+namespace PureSpec.RV64
+
+  open RV64IM
+
+  structure BgeuInput where
+    imm : BitVec 13
+    r1_val : BitVec 64
+    r2_val : BitVec 64
+    PC : BitVec 64
+
+  structure BgeuOutput where
+    nextPC : BitVec 64
+    success : Bool
+    throws : Bool
+
+  def execute_BGEU_pure (input : BgeuInput) : BgeuOutput :=
+    let skip := !(input.r1_val.toNat ≥b input.r2_val.toNat)
+    let throws := !skip && BitVec.ofBool (input.PC + BitVec.signExtend 64 input.imm)[0] == 1#1
+    let fails := throws || (!skip && BitVec.ofBool (input.PC + BitVec.signExtend 64 input.imm)[1] == 1#1)
+    {
+      nextPC := if skip || fails
+        then (input.PC + 4)
+        else (input.PC + BitVec.signExtend 64 input.imm)
+      success := !fails
+      throws := throws
+      : BgeuOutput
+    }
+
+  lemma execute_BGEU_pure_succ_throws
+    (input : BgeuInput)
+  :
+    let output := execute_BGEU_pure input
+    output.success = true → output.throws = false
+  := by
+    simp [execute_BGEU_pure]
+    grind
+
+  lemma execute_BGEU_pure_equiv
+    (bgeu_input : BgeuInput)
+    (r1 r2 : regidx)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state = EStateM.Result.ok (bgeu_input.r1_val) state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state = EStateM.Result.ok (bgeu_input.r2_val) state)
+    (h_input_pc : Sail.readReg Register.PC state = EStateM.Result.ok bgeu_input.PC state)
+    (h_input_misa : Sail.readReg Register.misa state = EStateM.Result.ok misa state)
+  :
+    execute_instruction (instruction.BTYPE (bgeu_input.imm, r2, r1, bop.BGEU)) state =
+    let bgeu_output := execute_BGEU_pure bgeu_input
+    (do
+      Sail.writeReg Register.nextPC bgeu_output.nextPC
+      if bgeu_output.throws then
+        throw (Sail.Error.Assertion "extensions/I/base_insts.sail:59.25-59.26")
+      else if !bgeu_output.success then
+        pure (
+          ExecutionResult.Memory_Exception (
+            (virtaddr.Virtaddr (bgeu_input.PC + BitVec.signExtend 64 bgeu_input.imm)),
+            (ExceptionType.E_Fetch_Addr_Align ())
+          )
+        )
+      else
+        (pure (ExecutionResult.Retire_Success ()))) state
+  := by
+    simp [
+      h_input_pc,
+      writeReg_state_success,
+      LeanRV64D.Functions.execute,
+      LeanRV64D.Functions.execute_BTYPE
+    ]
+    rewrite [rX_read_xreg_equiv _ r1 (regidx_to_fin r1) (by simp [regidx_to_fin])]
+    rewrite [read_xreg_write_other_reg_state _ h_input_r1 reg_of_fin_neq_nextPC]
+    simp
+    rewrite [rX_read_xreg_equiv _ r2 (regidx_to_fin r2) (by simp [regidx_to_fin])]
+    rewrite [read_xreg_write_other_reg_state _ h_input_r2 reg_of_fin_neq_nextPC]
+    simp [execute_BGEU_pure]
+
+    by_cases h_eq: bgeu_input.r1_val.toNat >= bgeu_input.r2_val.toNat <;> simp [h_eq]
+    · have : ¬(bgeu_input.r1_val.toNat < bgeu_input.r2_val.toNat) := by omega
+      simp [this]
+      rw [readReg_of_write_other_reg_state h_input_pc (by simp)]
+      simp
+      rewrite [writeReg_read_diff h_input_misa (by trivial)]
+      simp
+
+      by_cases h_throws : (execute_BGEU_pure bgeu_input).throws <;> simp_all [execute_BGEU_pure]
+      by_cases h_success : (execute_BGEU_pure bgeu_input).success <;> simp_all [execute_BGEU_pure]
+    · have : bgeu_input.r1_val.toNat < bgeu_input.r2_val.toNat := by omega
+      simp [this]
+
+end PureSpec.RV64
+
+namespace OpcodeSpec.RV64
+
+  open RV64IM
+
+  def spec_BGEU
+    (r1 r2 : regidx)
+    (imm : BitVec 13)
+    (pc_val r1_val r2_val : BitVec 64)
+  : List RV64Operation :=
+    let nextPC := if !(r1_val.toNat >= r2_val.toNat) then pc_val + 4#64 else pc_val + BitVec.signExtend 64 imm
+    [
+      .ReadPC pc_val,
+      .ReadReg r1 r1_val,
+      .ReadReg r2 r2_val,
+      .WritePC nextPC,
+    ]
+
+  lemma spec_BGEU_hypotheses
+  :
+    (RV64_operation_effect (spec_BGEU r1 r2 imm pc_val r1_val r2_val) state).hypotheses
+      =
+    (Sail.readReg Register.PC state = EStateM.Result.ok pc_val state ∧
+     read_xreg (regidx_to_fin r1) state = EStateM.Result.ok r1_val state ∧
+     read_xreg (regidx_to_fin r2) state = EStateM.Result.ok r2_val state)
+  := by
+    simp [RV64_operation_effect, spec_BGEU, List.foldl, operation_effect, and_assoc]
+
+  lemma execute_BGEU_equiv
+    (h : (RV64_operation_effect (spec_BGEU r1 r2 imm pc_val r1_val r2_val) state).hypotheses)
+    (h_misa : Sail.readReg Register.misa state = EStateM.Result.ok misa state)
+    (h_success :
+      (BitVec.ofBool (pc_val + BitVec.signExtend 64 imm)[0] = 0#1) ∧
+      (BitVec.ofBool (pc_val + BitVec.signExtend 64 imm)[1] = 0#1)
+    )
+  :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BGEU)) state =
+    (RV64_operation_effect (spec_BGEU r1 r2 imm pc_val r1_val r2_val) state).state
+  := by
+    let input : PureSpec.RV64.BgeuInput := {
+      imm := imm,
+      r1_val := r1_val,
+      r2_val := r2_val,
+      PC := pc_val
+    }
+
+    rw [spec_BGEU_hypotheses] at h
+    obtain ⟨h_pc, h_r1, h_r2⟩ := h
+    rw [PureSpec.RV64.execute_BGEU_pure_equiv input r1 r2 h_r1 h_r2 h_pc h_misa]
+
+    simp [
+      input,
+      PureSpec.RV64.execute_BGEU_pure,
+      writeReg_state_success,
+      RV64_operation_effect,
+      operation_effect,
+      spec_BGEU,
+      h_success
+    ]
+
+end OpcodeSpec.RV64

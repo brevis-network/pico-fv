@@ -534,7 +534,7 @@ namespace RV64IM
   section Memory
 
     -- Pico address space size
-    notation "Pico_address_space_size_64" => 2 ^ 64
+    notation "Pico_address_space_size_64" => 2 ^ 63
 
     @[simp]
     lemma bare_is_bare : (SATPMode.Bare == SATPMode.Bare) = true := rfl
