@@ -14,7 +14,7 @@ This repository is structured as follows:
   - [`Interaction.lean`](PicoFV/Fundamentals/Interaction.lean), for formalising general bus interactions;
   - [`KoalaBear.lean`](PicoFV/Fundamentals/KoalaBear.lean), for reasoning about the `KoalaBear` finite field, which is used by Pico;
   - [`U32.lean`](PicoFV/Fundamentals/U32.lean), for reasoning about 32-bit words.
-- the [`PicoFV/RV32D`](PicoFV/RV32D) folder contains a number of auxiliary functions that ease the reasoning about the Lean RISC-V specification, as well as the pure and effectful specifications for all of the RV32IM opcodes.
+- the [`PicoFV/RVSail`](PicoFV/RVSail) folder contains a number of auxiliary functions that ease the reasoning about the Lean RISC-V specification, as well as the pure and effectful specifications for all of the RV32IM and RV64IM opcodes.
 
 ## Building the repository
 
