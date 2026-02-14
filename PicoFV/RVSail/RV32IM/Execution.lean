@@ -378,7 +378,7 @@ namespace RV32IM
         aesop
       . rw [if_neg (c := r2.toInt = 0) (by rw [← BitVec.toInt_inj] at r2z; simp_all) ]
         by_cases of : 2147483648 ≤ r1.toInt.tdiv r2.toInt <;>
-        have of' := div_overflow range_int_r1 range_int_r2 <;>
+        have of' := div_overflow_32 range_int_r1 range_int_r2 <;>
         simp_all [to_bits_truncate, Sail.get_slice_int]
         . rw [if_pos (by omega)]
           decide
