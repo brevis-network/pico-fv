@@ -534,7 +534,7 @@ namespace RV32IM
   section Memory
 
     -- Pico address space size - 32-bit
-    notation "Pico_address_space_size_32" => 2 ^ 32
+    notation "Pico_address_space_size_32" => 2013265920
 
     @[simp]
     lemma bare_is_bare : (SATPMode.Bare == SATPMode.Bare) = true := rfl
