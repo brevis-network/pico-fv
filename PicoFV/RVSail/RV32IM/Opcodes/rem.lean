@@ -86,16 +86,16 @@ namespace OpcodeSpec.RV32
     split <;> simp [and_assoc]
 
   lemma execute_REM_equiv
-    (h : (operation_list_effect (spec_REM r1 r2 rd pc r1_val r2_val) state).hypotheses)
+    (h : (operation_list_effect (spec_REM r1 r2 rd pc_val r1_val r2_val) state).hypotheses)
   :
     execute_instruction (instruction.REM (r2, r1, rd, false)) state =
-    (operation_list_effect (spec_REM r1 r2 rd pc r1_val r2_val) state).state
+    (operation_list_effect (spec_REM r1 r2 rd pc_val r1_val r2_val) state).state
   := by
     let input : PureSpec.RV32.RemInput := {
       r1_val := r1_val,
       r2_val := r2_val,
       rd := regidx_to_fin rd,
-      PC := pc
+      PC := pc_val
     }
 
     rw [spec_REM_hypotheses] at h
@@ -111,5 +111,6 @@ namespace OpcodeSpec.RV32
     by_cases h_zero : (regidx_to_fin rd).val = 0
     . simp [write_xreg, h_zero]
     . simp [write_xreg, Sail.writeReg, PreSail.writeReg]
+
 
 end OpcodeSpec.RV32

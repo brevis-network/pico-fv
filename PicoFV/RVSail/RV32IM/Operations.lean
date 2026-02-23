@@ -1,5 +1,5 @@
 import PicoFV.RVSail.RV32IM.Auxiliaries
-import PicoFV.Fundamentals.Buses
+import PicoFV.RVSail.RV32IM.Buses
 
 namespace RV32IM
 
@@ -276,7 +276,7 @@ namespace RV32IM
 
   section BusOperations
 
-    open Interaction
+    open RV32IM_Interactions
 
     def bus_operations (row : BusRow) : List Operation :=
       let program : List Operation := List.map (fun program_row => .ReadPC (BitVec.ofNatLT (w := 32) program_row.pc (by omega))) row.Program

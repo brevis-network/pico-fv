@@ -1337,15 +1337,17 @@ end CpuAir.constraints
 
 namespace CPUAir.Buses
 
+  open RV32IM_Interactions
+
   def program_bus_entry (air : Valid_CpuAir FKB ExtF) (row : ℕ) :=
     (-air.cols.is_real row 0, #v[air.cols.pc row 0, air.cols.instruction.opcode row 0, air.cols.instruction.opcode row 0, air.cols.instruction.a_0 row 0, air.cols.instruction.a_1 row 0, air.cols.instruction.a_2 row 0, air.cols.instruction.a_3 row 0, air.cols.instruction.b_0 row 0, air.cols.instruction.b_1 row 0, air.cols.instruction.b_2 row 0, air.cols.instruction.b_3 row 0, air.cols.instruction.c_0 row 0, air.cols.instruction.c_1 row 0, air.cols.instruction.c_2 row 0, air.cols.instruction.c_3 row 0, air.cols.instruction.a_is_0 row 0, air.cols.opcode_selector.imm_b row 0, air.cols.opcode_selector.imm_c row 0, air.cols.opcode_selector.is_alu row 0, air.cols.opcode_selector.is_ecall row 0, air.cols.opcode_selector.is_lb row 0, air.cols.opcode_selector.is_lbu row 0, air.cols.opcode_selector.is_lh row 0, air.cols.opcode_selector.is_lhu row 0, air.cols.opcode_selector.is_lw row 0, air.cols.opcode_selector.is_sb row 0, air.cols.opcode_selector.is_sh row 0, air.cols.opcode_selector.is_sw row 0, air.cols.opcode_selector.is_beq row 0, air.cols.opcode_selector.is_bne row 0, air.cols.opcode_selector.is_blt row 0, air.cols.opcode_selector.is_bge row 0, air.cols.opcode_selector.is_bltu row 0, air.cols.opcode_selector.is_bgeu row 0, air.cols.opcode_selector.is_jalr row 0, air.cols.opcode_selector.is_jal row 0, air.cols.opcode_selector.is_auipc row 0, air.cols.opcode_selector.is_unimpl row 0])
 
-  def bus_row (air : Valid_CpuAir FKB ExtF) (row : ℕ) : Interaction.BusRow :=
+  def bus_row (air : Valid_CpuAir FKB ExtF) (row : ℕ) : BusRow :=
     {
-      Program := List.map Interaction.ProgramBusEntry.deserialise [
+      Program := List.map ProgramBusEntry.deserialise [
         program_bus_entry air row
       ],
-      ALU := List.map Interaction.ALUBusEntry.deserialise [
+      ALU := List.map ALUBusEntry.deserialise [
         (-air.cols.opcode_selector.is_alu row 0, #v[air.cols.instruction.opcode row 0, air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
         (-air.cols.branching row 0, #v[0, air.cols.opcode_specific.specific_14 row 0, air.cols.opcode_specific.specific_15 row 0, air.cols.opcode_specific.specific_16 row 0, air.cols.opcode_specific.specific_17 row 0, air.cols.opcode_specific.specific_0 row 0, air.cols.opcode_specific.specific_1 row 0, air.cols.opcode_specific.specific_2 row 0, air.cols.opcode_specific.specific_3 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
         (-air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 + air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 + air.cols.opcode_selector.is_bltu row 0 + air.cols.opcode_selector.is_bgeu row 0, #v[9 - air.cols.opcode_selector.is_blt row 0 - air.cols.opcode_selector.is_bge row 0, air.cols.opcode_specific.specific_30 row 0, 0, 0, 0, air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0]),
@@ -1354,7 +1356,7 @@ namespace CPUAir.Buses
         (-air.cols.opcode_selector.is_jalr row 0, #v[0, air.cols.opcode_specific.specific_14 row 0, air.cols.opcode_specific.specific_15 row 0, air.cols.opcode_specific.specific_16 row 0, air.cols.opcode_specific.specific_17 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
         (-air.cols.opcode_selector.is_auipc row 0, #v[0, air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0, air.cols.opcode_specific.specific_0 row 0, air.cols.opcode_specific.specific_1 row 0, air.cols.opcode_specific.specific_2 row 0, air.cols.opcode_specific.specific_3 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0])
       ],
-      Byte := List.map Interaction.ByteBusEntry.deserialise [
+      Byte := List.map ByteBusEntry.deserialise [
         (-(1 - air.cols.opcode_selector.imm_b row 0), #v[8, air.cols.op_b_access.diff_16bit_limb row 0, 0, 0, 0]),
         (-(1 - air.cols.opcode_selector.imm_b row 0), #v[7, 0, 0, air.cols.op_b_access.diff_8bit_limb row 0, 0]),
         (-(1 - air.cols.opcode_selector.imm_c row 0), #v[8, air.cols.op_c_access.diff_16bit_limb row 0, 0, 0, 0]),
@@ -1367,7 +1369,7 @@ namespace CPUAir.Buses
         (-air.cols.is_real row 0, #v[8, air.cols.clk_16bit_limb row 0, 0, 0, 0]),
         (-air.cols.is_real row 0, #v[7, 0, 0, air.cols.clk_8bit_limb row 0, 0])
       ],
-      Register := List.map Interaction.RegisterBusEntry.deserialise [
+      Register := List.map RegisterBusEntry.deserialise [
         (-(1 - air.cols.opcode_selector.imm_c row 0), #v[air.cols.op_c_access.prev_chunk row 0, air.cols.op_c_access.prev_clk row 0, air.cols.instruction.c_0 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
         (  1 - air.cols.opcode_selector.imm_c row 0,  #v[air.cols.chunk row 0, 1 + air.cols.clk row 0, air.cols.instruction.c_0 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
         (-(1 - air.cols.opcode_selector.imm_b row 0), #v[air.cols.op_b_access.prev_chunk row 0, air.cols.op_b_access.prev_clk row 0, air.cols.instruction.b_0 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0]),

@@ -86,16 +86,16 @@ namespace OpcodeSpec.RV32
     split <;> simp [and_assoc]
 
   lemma execute_REMU_equiv
-    (h : (operation_list_effect (spec_REMU r1 r2 rd pc r1_val r2_val) state).hypotheses)
+    (h : (operation_list_effect (spec_REMU r1 r2 rd pc_val r1_val r2_val) state).hypotheses)
   :
     execute_instruction (instruction.REM (r2, r1, rd, true)) state =
-    (operation_list_effect (spec_REMU r1 r2 rd pc r1_val r2_val) state).state
+    (operation_list_effect (spec_REMU r1 r2 rd pc_val r1_val r2_val) state).state
   := by
     let input : PureSpec.RV32.RemuInput := {
       r1_val := r1_val,
       r2_val := r2_val,
       rd := regidx_to_fin rd,
-      PC := pc
+      PC := pc_val
     }
 
     rw [spec_REMU_hypotheses] at h
