@@ -74,6 +74,69 @@ namespace Transpiler
   := by
     simp [← imm_to_KB_BV_usgn]
 
+  lemma imm_mod_2_to_KB {w : ℕ} (imm : BitVec w) (sgn : Bool)
+    (h_imm : imm % 2 = 0)
+  :
+    let imm_KB := imm_to_KB imm sgn
+    imm_KB[0] % 2 = 0
+  := by
+    simp_all [← BitVec.toNat_inj]
+    by_cases h_w : 1 < w
+    . rw [Nat.mod_eq_of_lt (a := 2)] at h_imm
+      . simp_all [imm_to_KB, U32.fromNat, BitVec.extend]
+        split_ifs <;> simp [Fin.ext_iff] <;> [ skip; omega ]
+        simp [BitVec.toNat_signExtend]
+        repeat rw [Nat.add_mod_eq_sub]
+        split_ifs <;> simp_all <;> try omega
+        by_cases h_w' : 32 < w
+        . have h_pow_w : 4294967296 < 2 ^ w
+          := by
+            apply lt_of_le_of_lt (b := 2 ^ 32) <;> [ simp; skip ]
+            exact Nat.pow_lt_pow_right (by simp) h_w'
+          omega
+        . simp at h_w'
+          interval_cases w <;> simp_all
+      . apply lt_of_le_of_lt (b := 2 ^ 1) <;> [ simp; skip ]
+        exact Nat.pow_lt_pow_right (by simp) h_w
+    . have h_eq : 2 % 2 ^ w = 0
+        := by simp at h_w; interval_cases w <;> simp
+      rw [h_eq] at h_imm; clear h_eq; simp at h_imm
+      have h_eq : imm = 0 := by grind
+      simp_all [imm_to_KB, U32.fromNat, BitVec.extend]
+      split_ifs <;> simp [BitVec.signExtend]
+
+  lemma imm_mod_4096_to_KB {w : ℕ} (imm : BitVec w) (sgn : Bool)
+    (h_imm : imm % 4096 = 0)
+  :
+    let imm_KB := imm_to_KB imm sgn
+    imm_KB[0] = 0 ∧ imm_KB[1] % 4 = 0
+  := by
+    simp_all [← BitVec.toNat_inj]
+    by_cases h_w : 12 < w
+    . rw [Nat.mod_eq_of_lt (a := 4096)] at h_imm
+      . have h_mod : imm.toNat % 256 = 0 := by omega
+        simp_all [imm_to_KB, U32.fromNat, BitVec.extend]
+        split_ifs <;> simp [Fin.ext_iff] <;> [ skip; omega ]
+        simp [BitVec.toNat_signExtend]
+        repeat rw [Nat.add_mod_eq_sub]
+        split_ifs <;> simp_all <;> try omega
+        by_cases h_w' : 32 < w
+        . have h_pow_w : 4294967296 < 2 ^ w
+          := by
+            apply lt_of_le_of_lt (b := 2 ^ 32) <;> [ simp; skip ]
+            exact Nat.pow_lt_pow_right (by simp) h_w'
+          omega
+        . simp at h_w'
+          interval_cases w <;> simp_all <;> omega
+      . apply lt_of_le_of_lt (b := 2 ^ 12) <;> [ simp; skip ]
+        exact Nat.pow_lt_pow_right (by simp) h_w
+    . have h_eq : 4096 % 2 ^ w = 0
+        := by simp at h_w; interval_cases w <;> simp
+      rw [h_eq] at h_imm; clear h_eq; simp at h_imm
+      have h_eq : imm = 0 := by grind
+      simp_all [imm_to_KB, U32.fromNat, BitVec.extend]
+      split_ifs <;> simp [BitVec.signExtend]
+
   def opcode_of_rop (op : rop) : FKB :=
     match op with
     | .ADD => 0
@@ -125,7 +188,7 @@ namespace Transpiler
     -- RTYPE : 10 opcodes
     | .RTYPE (rs2, rs1, rd, op) =>
       let opcode := opcode_of_rop op
-      let a_is_0 := if (rd == regidx.Regidx 0) then 0 else 1
+      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         (
           multiplicity,
@@ -146,7 +209,7 @@ namespace Transpiler
     -- ITYPE : 6 opcodes
     | .ITYPE (imm, rs1, rd, op) =>
       let opcode := opcode_of_iop op
-      let a_is_0 := if (rd == regidx.Regidx 0) then 0 else 1
+      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       let imm_12_KB := imm_to_KB imm true
       .some (
         (
@@ -167,7 +230,7 @@ namespace Transpiler
     -- SHIFTIOP : 3 opcodes
     | .SHIFTIOP (imm, rs1, rd, op) =>
       let opcode := opcode_of_sop op
-      let a_is_0 := if (rd == regidx.Regidx 0) then 0 else 1
+      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       let imm_KB := imm_to_KB imm false
       .some (
         (
@@ -198,7 +261,7 @@ namespace Transpiler
       match opcode with
       | 0 => .none
       | opcode =>
-        let a_is_0 := if (rd == regidx.Regidx 0) then 0 else 1
+        let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
         let imm_KB := imm_to_KB imm true
         .some (
           (
@@ -258,7 +321,7 @@ namespace Transpiler
     -- BTYPE : 6 opcodes
     | .BTYPE (imm, rs1, rd, op) =>
       let opcode := opcode_of_bop op
-      let a_is_0 := if (rd == regidx.Regidx 0) then 0 else 1
+      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       let imm_KB := imm_to_KB imm true
       .some (
         (
@@ -281,12 +344,13 @@ namespace Transpiler
           ]
         ),
         is_register (reg_to_KB rd) ∧
-        is_register (reg_to_KB rs1)
+        is_register (reg_to_KB rs1) ∧
+        imm % 2 = 0
       )
     -- JALR
     | .JALR (imm, rd, rs1) =>
       let opcode := 25
-      let a_is_0 := if (rd == regidx.Regidx 0) then 0 else 1
+      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       let imm_KB := imm_to_KB imm true
       .some (
         (
@@ -302,12 +366,13 @@ namespace Transpiler
           ]
         ),
         is_register (reg_to_KB rd) ∧
-        is_register (reg_to_KB rs1)
+        is_register (reg_to_KB rs1) ∧
+        imm % 2 = 0
       )
     -- JAL
     | .JAL (imm, rd) =>
       let opcode := 24
-      let a_is_0 := if (rd == regidx.Regidx 0) then 0 else 1
+      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       let imm_KB := imm_to_KB imm true
       .some (
         (
@@ -322,12 +387,13 @@ namespace Transpiler
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0
           ]
         ),
-        is_register (reg_to_KB rd)
+        is_register (reg_to_KB rd) ∧
+        imm % 2 = 0
       )
     -- UTYPE : 2 opcodes (LUI encoded as SLL)
     | .UTYPE (imm, rd, op) =>
       let opcode := opcode_of_uop op
-      let a_is_0 := if (rd == regidx.Regidx 0) then 0 else 1
+      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       let imm_KB := imm_to_KB imm true
       .some (
         (
@@ -344,7 +410,8 @@ namespace Transpiler
             (if op == .AUIPC then 1 else 0), 0
           ]
         ),
-        is_register (reg_to_KB rd)
+        is_register (reg_to_KB rd) ∧
+        imm % 4096 = 0
       )
     -- MUL : 4 opcodes
     | .MUL (rs2, rs1, rd, op) =>
@@ -358,7 +425,7 @@ namespace Transpiler
       match opcode with
       | 0 => .none
       | opcode =>
-        let a_is_0 := if (rd == regidx.Regidx 0) then 0 else 1
+        let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
         .some (
           (
             multiplicity,
@@ -382,7 +449,7 @@ namespace Transpiler
         match sgn with
         | true => 35
         | false => 34
-      let a_is_0 := if (rd == regidx.Regidx 0) then 0 else 1
+      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         (
           multiplicity,
@@ -406,7 +473,7 @@ namespace Transpiler
         match sgn with
         | true => 37
         | false => 36
-      let a_is_0 := if (rd == regidx.Regidx 0) then 0 else 1
+      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         (
           multiplicity,

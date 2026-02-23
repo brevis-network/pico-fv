@@ -28,7 +28,7 @@ namespace KoalaBear
       coe b := ⟨ b.toNat, by omega ⟩
 
     instance : Coe FKB (BitVec 8) where
-      coe bb := { toFin := ⟨ bb.val % 256, by omega ⟩ }
+      coe bb := BitVec.ofNat 8 bb.val
 
   end coercions
 
