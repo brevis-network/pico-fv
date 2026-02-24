@@ -319,17 +319,17 @@ namespace Transpiler
           is_register (reg_to_KB rs2)
       )
     -- BTYPE : 6 opcodes
-    | .BTYPE (imm, rs1, rd, op) =>
+    | .BTYPE (imm, rs2, rs1, op) =>
       let opcode := opcode_of_bop op
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 := 0
       let imm_KB := imm_to_KB imm true
       .some (
         (
           multiplicity,
           #v[
             pc, opcode, opcode,
-            reg_to_KB rd, 0, 0, 0,
             reg_to_KB rs1, 0, 0, 0,
+            reg_to_KB rs2, 0, 0, 0,
             imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3],
             a_is_0,
             0, 1,
@@ -343,8 +343,8 @@ namespace Transpiler
             0, 0, 0, 0
           ]
         ),
-        is_register (reg_to_KB rd) ∧
         is_register (reg_to_KB rs1) ∧
+        is_register (reg_to_KB rs2) ∧
         imm % 2 = 0
       )
     -- JALR

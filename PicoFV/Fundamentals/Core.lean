@@ -188,7 +188,7 @@ namespace BitVec
     rw [this] at bv_xor_as_or
     exact bv_xor_as_or
 
-  lemma toInt_mod_eq_zero_of_bitvec_mod_eq_zero (bv: BitVec 13) (h: bv % 4 = 0):
+  lemma toInt_mod_eq_zero_of_bitvec_mod_eq_zero (bv : BitVec 13) (h : bv % 4 = 0):
     bv.toInt % 4 = 0
   := by
     simp at h ⊢
@@ -196,6 +196,9 @@ namespace BitVec
     rewrite [this]
     apply BitVec.toInt_dvd_toInt_iff.mpr
     bv_decide
+
+  lemma mod_4_zero_equiv {x : BitVec 32} : x % 4 = 0 ↔ x[0] = false ∧ x[1] = false
+    := by bv_decide
 
 end BitVec
 

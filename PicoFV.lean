@@ -18,6 +18,7 @@ import PicoFV.Airs.CPUAir
 import PicoFV.Constraints.CPUAir
 
 import PicoFV.Equivalence.ALU
+import PicoFV.Equivalence.ControlFlow
 
 -- import PicoFV.RVSail.RV64IM.Auxiliaries
 -- import PicoFV.RVSail.RV64IM.RV64Operations

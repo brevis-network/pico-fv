@@ -131,8 +131,8 @@ namespace OpcodeSpec.RV32
     (h : (operation_list_effect (spec_BLT r1 r2 imm pc_val r1_val r2_val) state).hypotheses)
     (h_misa : Sail.readReg Register.misa state = EStateM.Result.ok misa state)
     (h_success :
-      (BitVec.ofBool (pc_val + BitVec.signExtend 32 imm)[0] = 0#1) ∧
-      (BitVec.ofBool (pc_val + BitVec.signExtend 32 imm)[1] = 0#1)
+      r1_val.toInt < r2_val.toInt →
+        (pc_val + BitVec.signExtend 32 imm) % 4 = 0
     )
   :
     execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLT)) state =
@@ -156,7 +156,11 @@ namespace OpcodeSpec.RV32
       operation_list_effect,
       operation_effect,
       spec_BLT,
-      h_success
     ]
+
+    rw [BitVec.mod_4_zero_equiv] at h_success
+    by_cases h_eq : r1_val.toInt < r2_val.toInt <;> simp_all
+    repeat rw [if_neg (by omega)]
+    rfl
 
 end OpcodeSpec.RV32
