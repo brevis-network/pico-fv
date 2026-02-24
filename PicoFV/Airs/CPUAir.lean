@@ -1,10 +1,12 @@
 import Mathlib
 
-import LeanZKCircuit.OpenVM.Circuit
-import LeanZKCircuit.Command.Air.define_air
+import LeanZKCircuit_Plonky3.Plonky3.Circuit
+import LeanZKCircuit_Plonky3.Plonky3.Command.Air.define_air
 
 import PicoFV.Extraction.Attributes
 import PicoFV.Airs.Attributes
+
+open Plonky3
 
 set_option linter.unusedVariables false
 

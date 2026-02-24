@@ -1,4 +1,4 @@
-import LeanZKCircuit.Interactions
+import LeanZKCircuit_Plonky3.Interactions
 
 import PicoFV.Fundamentals.KoalaBear
 import PicoFV.Fundamentals.Transpiler

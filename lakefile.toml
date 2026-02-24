@@ -13,9 +13,9 @@ scope = "leanprover-community"
 rev = "v4.28.0-rc1"
 
 [[require]]
-name = "LeanZKCircuit"
-git = "https://github.com/NethermindEth/leanzkcircuit.git"
-rev = "v4.28.0-rc1"
+name = "LeanZKCircuit_Plonky3"
+git = "https://github.com/NethermindEth/LeanZKCircuit-Plonky3.git"
+rev = "Dom/v4.28.0-rc1"
 
 [[require]]
 name = "LeanRV"

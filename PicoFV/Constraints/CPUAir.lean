@@ -3,6 +3,8 @@ import PicoFV.RVSail.RV32IM.Operations
 import PicoFV.Extraction.CPUAir
 import PicoFV.Airs.CPUAir
 
+open Plonky3
+
 set_option maxHeartbeats 1_000_000_000
 
 namespace CpuAir.constraints
