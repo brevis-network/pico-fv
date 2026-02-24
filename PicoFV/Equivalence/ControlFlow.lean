@@ -1,15 +1,6 @@
 import PicoFV.Constraints.CPUAir
 
-import PicoFV.RVSail.RV32IM.Opcodes.auipc
-import PicoFV.RVSail.RV32IM.Opcodes.beq
-import PicoFV.RVSail.RV32IM.Opcodes.bge
-import PicoFV.RVSail.RV32IM.Opcodes.bgeu
-import PicoFV.RVSail.RV32IM.Opcodes.blt
-import PicoFV.RVSail.RV32IM.Opcodes.bltu
-import PicoFV.RVSail.RV32IM.Opcodes.bne
-import PicoFV.RVSail.RV32IM.Opcodes.jal
-import PicoFV.RVSail.RV32IM.Opcodes.jalr
-import PicoFV.RVSail.RV32IM.Opcodes.lui
+import PicoFV.RVSail.RV32IM.Opcodes.Opcodes
 
 set_option maxHeartbeats 1_000_000_000
 set_option maxRecDepth 1_000_000
@@ -51,7 +42,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 18)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -103,7 +94,8 @@ namespace Equivalence
       -- Constraint processing
       simp [
         pico_encapsulation,
-        cpu_branch_cols,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
         h_is_real,
         h_selectors,
         sub_eq_zero
@@ -130,7 +122,8 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
-        cpu_branch_cols,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
       ] at h_asm_alu
       obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
       -- Hypotheses
@@ -310,6 +303,8 @@ namespace Equivalence
         simp [← BitVec.toNat_inj]
         exact Axiom.next_pc_mod_four_eq_zero air row h_row h_is_real
 
+#exit
+
     lemma equivalence_BNE
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
@@ -318,7 +313,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 19)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -370,7 +365,8 @@ namespace Equivalence
       -- Constraint processing
       simp [
         pico_encapsulation,
-        cpu_branch_cols,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
         h_is_real,
         h_selectors,
         sub_eq_zero
@@ -397,7 +393,8 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
-        cpu_branch_cols,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
       ] at h_asm_alu
       obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
       -- Hypotheses
@@ -585,7 +582,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 20)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -637,7 +634,8 @@ namespace Equivalence
       -- Constraint processing
       simp [
         pico_encapsulation,
-        cpu_branch_cols,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
         h_is_real,
         h_selectors,
         sub_eq_zero
@@ -664,7 +662,8 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
-        cpu_branch_cols,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
       ] at h_asm_alu
       obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
       -- Hypotheses
@@ -861,7 +860,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 21)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -913,7 +912,8 @@ namespace Equivalence
       -- Constraint processing
       simp [
         pico_encapsulation,
-        cpu_branch_cols,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
         h_is_real,
         h_selectors,
         sub_eq_zero
@@ -940,7 +940,8 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
-        cpu_branch_cols,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
       ] at h_asm_alu
       obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
       -- Hypotheses
@@ -1137,7 +1138,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 22)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -1189,7 +1190,8 @@ namespace Equivalence
       -- Constraint processing
       simp [
         pico_encapsulation,
-        cpu_branch_cols,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
         h_is_real,
         h_selectors,
         sub_eq_zero
@@ -1216,7 +1218,8 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
-        cpu_branch_cols,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
       ] at h_asm_alu
       obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
       -- Hypotheses
@@ -1413,7 +1416,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 23)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -1465,7 +1468,8 @@ namespace Equivalence
       -- Constraint processing
       simp [
         pico_encapsulation,
-        cpu_branch_cols,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
         h_is_real,
         h_selectors,
         sub_eq_zero
@@ -1492,7 +1496,8 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
-        cpu_branch_cols,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
       ] at h_asm_alu
       obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
       -- Hypotheses

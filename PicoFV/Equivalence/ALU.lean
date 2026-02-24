@@ -1,32 +1,6 @@
 import PicoFV.Constraints.CPUAir
 
-import PicoFV.RVSail.RV32IM.Opcodes.add
-import PicoFV.RVSail.RV32IM.Opcodes.addi
-import PicoFV.RVSail.RV32IM.Opcodes.and
-import PicoFV.RVSail.RV32IM.Opcodes.andi
-import PicoFV.RVSail.RV32IM.Opcodes.div
-import PicoFV.RVSail.RV32IM.Opcodes.divu
-import PicoFV.RVSail.RV32IM.Opcodes.mul
-import PicoFV.RVSail.RV32IM.Opcodes.mulh
-import PicoFV.RVSail.RV32IM.Opcodes.mulhsu
-import PicoFV.RVSail.RV32IM.Opcodes.mulhu
-import PicoFV.RVSail.RV32IM.Opcodes.or
-import PicoFV.RVSail.RV32IM.Opcodes.ori
-import PicoFV.RVSail.RV32IM.Opcodes.rem
-import PicoFV.RVSail.RV32IM.Opcodes.remu
-import PicoFV.RVSail.RV32IM.Opcodes.sll
-import PicoFV.RVSail.RV32IM.Opcodes.slli
-import PicoFV.RVSail.RV32IM.Opcodes.slt
-import PicoFV.RVSail.RV32IM.Opcodes.slti
-import PicoFV.RVSail.RV32IM.Opcodes.sltiu
-import PicoFV.RVSail.RV32IM.Opcodes.sltu
-import PicoFV.RVSail.RV32IM.Opcodes.sra
-import PicoFV.RVSail.RV32IM.Opcodes.srai
-import PicoFV.RVSail.RV32IM.Opcodes.srl
-import PicoFV.RVSail.RV32IM.Opcodes.srli
-import PicoFV.RVSail.RV32IM.Opcodes.sub
-import PicoFV.RVSail.RV32IM.Opcodes.xor
-import PicoFV.RVSail.RV32IM.Opcodes.xori
+import PicoFV.RVSail.RV32IM.Opcodes.Opcodes
 
 set_option maxHeartbeats 1_000_000_000
 set_option maxRecDepth 1_000_000
@@ -51,7 +25,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 0 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -102,7 +76,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -178,7 +152,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 1 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -229,7 +203,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -305,7 +279,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 2 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -356,7 +330,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -432,7 +406,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 3 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -483,7 +457,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -559,7 +533,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 4 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -610,7 +584,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -686,7 +660,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 5 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -737,7 +711,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -813,7 +787,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 6 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -864,7 +838,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -940,7 +914,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 7 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -991,7 +965,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -1067,7 +1041,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 8 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -1118,7 +1092,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -1195,7 +1169,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 9 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -1246,7 +1220,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -1327,7 +1301,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 0 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -1385,7 +1359,7 @@ namespace Equivalence
         air.cols.op_c_access.value_3 row 0 = air.cols.instruction.c_3 row 0
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -1460,7 +1434,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 2 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -1518,7 +1492,7 @@ namespace Equivalence
         air.cols.op_c_access.value_3 row 0 = air.cols.instruction.c_3 row 0
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -1593,7 +1567,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 3 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -1651,7 +1625,7 @@ namespace Equivalence
         air.cols.op_c_access.value_3 row 0 = air.cols.instruction.c_3 row 0
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -1726,7 +1700,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 4 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -1784,7 +1758,7 @@ namespace Equivalence
         air.cols.op_c_access.value_3 row 0 = air.cols.instruction.c_3 row 0
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -1859,7 +1833,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 8 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -1917,7 +1891,7 @@ namespace Equivalence
         air.cols.op_c_access.value_3 row 0 = air.cols.instruction.c_3 row 0
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -1993,7 +1967,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 9 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -2051,7 +2025,7 @@ namespace Equivalence
         air.cols.op_c_access.value_3 row 0 = air.cols.instruction.c_3 row 0
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -2131,7 +2105,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 5 ∧ air.cols.opcode_selector.imm_b row 0 = 0 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -2189,7 +2163,7 @@ namespace Equivalence
         air.cols.op_c_access.value_3 row 0 = air.cols.instruction.c_3 row 0
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -2261,7 +2235,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 6 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -2319,7 +2293,7 @@ namespace Equivalence
         air.cols.op_c_access.value_3 row 0 = air.cols.instruction.c_3 row 0
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -2391,7 +2365,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 7 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -2449,7 +2423,7 @@ namespace Equivalence
         air.cols.op_c_access.value_3 row 0 = air.cols.instruction.c_3 row 0
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -2525,7 +2499,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 30)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -2576,7 +2550,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -2652,7 +2626,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 31)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -2703,7 +2677,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -2779,7 +2753,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 32)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -2830,7 +2804,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -2906,7 +2880,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 33)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -2957,7 +2931,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -3037,7 +3011,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 34)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -3088,7 +3062,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -3164,7 +3138,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 35)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -3215,7 +3189,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -3295,7 +3269,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 36)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -3346,7 +3320,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints
@@ -3422,7 +3396,7 @@ namespace Equivalence
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
       (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : allHold_simplified air row h_row)
+      (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 37)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
@@ -3473,7 +3447,7 @@ namespace Equivalence
         air.cols.next_pc row 0 = air.cols.pc row 0 + 4
       := by
         simp [
-          pico_encapsulation,
+          constraint_and_interaction_simplification,
           h_is_real,
           h_selectors
         ] at h_constraints

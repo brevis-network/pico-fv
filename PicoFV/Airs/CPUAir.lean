@@ -3,6 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import LeanZKCircuit.Command.Air.define_air
 
+import PicoFV.Extraction.Attributes
 import PicoFV.Airs.Attributes
 
 set_option linter.unusedVariables false
@@ -240,7 +241,7 @@ each constraint helper file interprets the relevant subset.
 
 -- ============================================================================
 -- Instruction classification flags
--- Rust: CpuChip::is_alu_instruction, is_memory_instruction, is_store_instruction
+-- Rust: CpuAir::is_alu_instruction, is_memory_instruction, is_store_instruction
 -- ============================================================================
 
 def Valid_CpuCols.is_memory_instruction
@@ -316,7 +317,7 @@ lemma CpuCols.is_store_instruction_def
   c.is_store_instruction row rotation
 := rfl
 
--- Rust: CpuChip::is_alu_instruction (simply opcode_selector.is_alu)
+-- Rust: CpuAir::is_alu_instruction (simply opcode_selector.is_alu)
 def Valid_CpuCols.is_alu_instruction
   [Field F]
   (c : Valid_CpuCols F) (row rotation : ℕ)
@@ -403,47 +404,47 @@ def Valid_CpuCols.branch_a_lt_b
   [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) : F :=
   c.opcode_specific.specific_30 row rotation
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuCols.branch_pc_0_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_0 row rotation = c.branch_pc 0 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuCols.branch_pc_1_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_1 row rotation = c.branch_pc 1 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuCols.branch_pc_2_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_2 row rotation = c.branch_pc 2 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuCols.branch_pc_3_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_3 row rotation = c.branch_pc 3 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuCols.branch_next_pc_0_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_14 row rotation = c.branch_next_pc 0 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuCols.branch_next_pc_1_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_15 row rotation = c.branch_next_pc 1 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuCols.branch_next_pc_2_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_16 row rotation = c.branch_next_pc 2 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuCols.branch_next_pc_3_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_17 row rotation = c.branch_next_pc 3 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuCols.branch_a_eq_b_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_28 row rotation = c.branch_a_eq_b row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuCols.branch_a_gt_b_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_29 row rotation = c.branch_a_gt_b row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuCols.branch_a_lt_b_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_30 row rotation = c.branch_a_lt_b row rotation := rfl
 
@@ -459,35 +460,35 @@ lemma CpuCols.branch_a_lt_b_def [Field F] (c : Valid_CpuCols F) (row rotation : 
 abbrev Valid_CpuCols.jump_pc := @Valid_CpuCols.branch_pc
 abbrev Valid_CpuCols.jump_next_pc := @Valid_CpuCols.branch_next_pc
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuCols.jump_pc_0_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_0 row rotation = c.jump_pc 0 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuCols.jump_pc_1_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_1 row rotation = c.jump_pc 1 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuCols.jump_pc_2_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_2 row rotation = c.jump_pc 2 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuCols.jump_pc_3_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_3 row rotation = c.jump_pc 3 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuCols.jump_next_pc_0_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_14 row rotation = c.jump_next_pc 0 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuCols.jump_next_pc_1_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_15 row rotation = c.jump_next_pc 1 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuCols.jump_next_pc_2_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_16 row rotation = c.jump_next_pc 2 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuCols.jump_next_pc_3_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_17 row rotation = c.jump_next_pc 3 row rotation := rfl
 
@@ -501,19 +502,19 @@ lemma CpuCols.jump_next_pc_3_def [Field F] (c : Valid_CpuCols F) (row rotation :
 -- auipc_pc aliases branch_pc (same offsets 0..3)
 abbrev Valid_CpuCols.auipc_pc := @Valid_CpuCols.branch_pc
 
-@[cpu_auipc_cols]
+@[cpu_auipc_cols_simplification]
 lemma CpuCols.auipc_pc_0_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_0 row rotation = c.auipc_pc 0 row rotation := rfl
 
-@[cpu_auipc_cols]
+@[cpu_auipc_cols_simplification]
 lemma CpuCols.auipc_pc_1_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_1 row rotation = c.auipc_pc 1 row rotation := rfl
 
-@[cpu_auipc_cols]
+@[cpu_auipc_cols_simplification]
 lemma CpuCols.auipc_pc_2_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_2 row rotation = c.auipc_pc 2 row rotation := rfl
 
-@[cpu_auipc_cols]
+@[cpu_auipc_cols_simplification]
 lemma CpuCols.auipc_pc_3_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_3 row rotation = c.auipc_pc 3 row rotation := rfl
 
@@ -591,93 +592,93 @@ def Valid_CpuCols.ecall_operand_to_check (i : Fin 4)
   | 3 => c.opcode_specific.specific_31 row rotation
 
 -- IsZeroGadget inverse folding lemmas
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_is_enter_unconstrained_inv_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_0 row rotation = c.ecall_is_enter_unconstrained_inv row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_is_enter_unconstrained_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_1 row rotation = c.ecall_is_enter_unconstrained row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_is_hint_len_inv_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_2 row rotation = c.ecall_is_hint_len_inv row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_is_hint_len_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_3 row rotation = c.ecall_is_hint_len row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_is_halt_inv_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_4 row rotation = c.ecall_is_halt_inv row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_is_halt_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_5 row rotation = c.ecall_is_halt row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_is_commit_inv_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_6 row rotation = c.ecall_is_commit_inv row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_is_commit_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_7 row rotation = c.ecall_is_commit row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_is_commit_deferred_proofs_inv_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_8 row rotation = c.ecall_is_commit_deferred_proofs_inv row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_is_commit_deferred_proofs_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_9 row rotation = c.ecall_is_commit_deferred_proofs row rotation := rfl
 
 -- index_bitmap folding lemmas
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_index_bitmap_0_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_10 row rotation = c.ecall_index_bitmap 0 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_index_bitmap_1_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_11 row rotation = c.ecall_index_bitmap 1 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_index_bitmap_2_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_12 row rotation = c.ecall_index_bitmap 2 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_index_bitmap_3_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_13 row rotation = c.ecall_index_bitmap 3 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_index_bitmap_4_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_14 row rotation = c.ecall_index_bitmap 4 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_index_bitmap_5_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_15 row rotation = c.ecall_index_bitmap 5 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_index_bitmap_6_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_16 row rotation = c.ecall_index_bitmap 6 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_index_bitmap_7_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_17 row rotation = c.ecall_index_bitmap 7 row rotation := rfl
 
 -- operand_to_check folding lemmas
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_operand_to_check_0_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_28 row rotation = c.ecall_operand_to_check 0 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_operand_to_check_1_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_29 row rotation = c.ecall_operand_to_check 1 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_operand_to_check_2_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_30 row rotation = c.ecall_operand_to_check 2 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_operand_to_check_3_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_31 row rotation = c.ecall_operand_to_check 3 row rotation := rfl
 
@@ -693,7 +694,7 @@ def Valid_CpuCols.syscall_id
   [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) : F :=
   c.op_a_access.prev_value_0 row rotation
 
-@[cpu_syscall_derived]
+@[cpu_syscall_derived_simplification]
 lemma CpuCols.syscall_id_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.op_a_access.prev_value_0 row rotation = c.syscall_id row rotation := rfl
 
@@ -702,7 +703,7 @@ def Valid_CpuCols.send_to_table
   [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) : F :=
   c.op_a_access.prev_value_1 row rotation
 
-@[cpu_syscall_derived]
+@[cpu_syscall_derived_simplification]
 lemma CpuCols.send_to_table_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.op_a_access.prev_value_1 row rotation = c.send_to_table row rotation := rfl
 
@@ -713,7 +714,7 @@ def Valid_CpuCols.num_extra_cycles
   c.op_a_access.prev_value_2 row rotation *
   c.opcode_selector.is_ecall row rotation
 
-@[cpu_syscall_derived]
+@[cpu_syscall_derived_simplification]
 lemma CpuCols.num_extra_cycles_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.op_a_access.prev_value_2 row rotation *
   c.opcode_selector.is_ecall row rotation =
@@ -725,7 +726,7 @@ def Valid_CpuCols.is_halt
   c.ecall_is_halt row rotation *
   c.opcode_selector.is_ecall row rotation
 
-@[cpu_syscall_derived]
+@[cpu_syscall_derived_simplification]
 lemma CpuCols.is_halt_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.ecall_is_halt row rotation *
   c.opcode_selector.is_ecall row rotation =
@@ -741,7 +742,7 @@ def Valid_CpuCols.expected_next_clk
   [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) : F :=
   c.clk row rotation + 4 + c.num_extra_cycles row rotation
 
-@[cpu_syscall_derived]
+@[cpu_syscall_derived_simplification]
 lemma CpuCols.expected_next_clk_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.clk row rotation + 4 + c.num_extra_cycles row rotation =
   c.expected_next_clk row rotation := rfl
@@ -763,7 +764,7 @@ def Valid_CpuCols.ecall_bitmap_sum
   c.opcode_specific.specific_16 row rotation +
   c.opcode_specific.specific_17 row rotation
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuCols.ecall_bitmap_sum_def [Field F] (c : Valid_CpuCols F) (row rotation : ℕ) :
   c.opcode_specific.specific_10 row rotation +
   c.opcode_specific.specific_11 row rotation +
@@ -937,47 +938,47 @@ lemma CpuAir.use_signed_comparison_def
 -- BranchCols interpretation
 -- ============================================================================
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuAir.branch_pc_0_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_0 row rotation = air.cols.branch_pc 0 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuAir.branch_pc_1_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_1 row rotation = air.cols.branch_pc 1 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuAir.branch_pc_2_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_2 row rotation = air.cols.branch_pc 2 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuAir.branch_pc_3_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_3 row rotation = air.cols.branch_pc 3 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuAir.branch_next_pc_0_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_14 row rotation = air.cols.branch_next_pc 0 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuAir.branch_next_pc_1_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_15 row rotation = air.cols.branch_next_pc 1 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuAir.branch_next_pc_2_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_16 row rotation = air.cols.branch_next_pc 2 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuAir.branch_next_pc_3_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_17 row rotation = air.cols.branch_next_pc 3 row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuAir.branch_a_eq_b_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_28 row rotation = air.cols.branch_a_eq_b row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuAir.branch_a_gt_b_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_29 row rotation = air.cols.branch_a_gt_b row rotation := rfl
 
-@[cpu_branch_cols]
+@[cpu_branch_cols_simplification]
 lemma CpuAir.branch_a_lt_b_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_30 row rotation = air.cols.branch_a_lt_b row rotation := rfl
 
@@ -985,35 +986,35 @@ lemma CpuAir.branch_a_lt_b_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF
 -- JumpCols interpretation
 -- ============================================================================
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuAir.jump_pc_0_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_0 row rotation = air.cols.jump_pc 0 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuAir.jump_pc_1_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_1 row rotation = air.cols.jump_pc 1 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuAir.jump_pc_2_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_2 row rotation = air.cols.jump_pc 2 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuAir.jump_pc_3_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_3 row rotation = air.cols.jump_pc 3 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuAir.jump_next_pc_0_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_14 row rotation = air.cols.jump_next_pc 0 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuAir.jump_next_pc_1_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_15 row rotation = air.cols.jump_next_pc 1 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuAir.jump_next_pc_2_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_16 row rotation = air.cols.jump_next_pc 2 row rotation := rfl
 
-@[cpu_jump_cols]
+@[cpu_jump_cols_simplification]
 lemma CpuAir.jump_next_pc_3_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_17 row rotation = air.cols.jump_next_pc 3 row rotation := rfl
 
@@ -1021,19 +1022,19 @@ lemma CpuAir.jump_next_pc_3_def [Field F] [Field ExtF] (air : Valid_CpuAir F Ext
 -- AuipcCols interpretation
 -- ============================================================================
 
-@[cpu_auipc_cols]
+@[cpu_auipc_cols_simplification]
 lemma CpuAir.auipc_pc_0_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_0 row rotation = air.cols.auipc_pc 0 row rotation := rfl
 
-@[cpu_auipc_cols]
+@[cpu_auipc_cols_simplification]
 lemma CpuAir.auipc_pc_1_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_1 row rotation = air.cols.auipc_pc 1 row rotation := rfl
 
-@[cpu_auipc_cols]
+@[cpu_auipc_cols_simplification]
 lemma CpuAir.auipc_pc_2_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_2 row rotation = air.cols.auipc_pc 2 row rotation := rfl
 
-@[cpu_auipc_cols]
+@[cpu_auipc_cols_simplification]
 lemma CpuAir.auipc_pc_3_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_3 row rotation = air.cols.auipc_pc 3 row rotation := rfl
 
@@ -1042,98 +1043,98 @@ lemma CpuAir.auipc_pc_3_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (
 -- ============================================================================
 
 -- IsZeroGadget inverse folding lemmas
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_is_enter_unconstrained_inv_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_0 row rotation = air.cols.ecall_is_enter_unconstrained_inv row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_is_enter_unconstrained_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_1 row rotation = air.cols.ecall_is_enter_unconstrained row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_is_hint_len_inv_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_2 row rotation = air.cols.ecall_is_hint_len_inv row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_is_hint_len_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_3 row rotation = air.cols.ecall_is_hint_len row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_is_halt_inv_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_4 row rotation = air.cols.ecall_is_halt_inv row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_is_halt_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_5 row rotation = air.cols.ecall_is_halt row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_is_commit_inv_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_6 row rotation = air.cols.ecall_is_commit_inv row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_is_commit_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_7 row rotation = air.cols.ecall_is_commit row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_is_commit_deferred_proofs_inv_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_8 row rotation = air.cols.ecall_is_commit_deferred_proofs_inv row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_is_commit_deferred_proofs_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_9 row rotation = air.cols.ecall_is_commit_deferred_proofs row rotation := rfl
 
 -- index_bitmap folding lemmas
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_index_bitmap_0_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_10 row rotation = air.cols.ecall_index_bitmap 0 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_index_bitmap_1_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_11 row rotation = air.cols.ecall_index_bitmap 1 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_index_bitmap_2_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_12 row rotation = air.cols.ecall_index_bitmap 2 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_index_bitmap_3_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_13 row rotation = air.cols.ecall_index_bitmap 3 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_index_bitmap_4_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_14 row rotation = air.cols.ecall_index_bitmap 4 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_index_bitmap_5_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_15 row rotation = air.cols.ecall_index_bitmap 5 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_index_bitmap_6_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_16 row rotation = air.cols.ecall_index_bitmap 6 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_index_bitmap_7_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_17 row rotation = air.cols.ecall_index_bitmap 7 row rotation := rfl
 
 -- operand_to_check folding lemmas
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_operand_to_check_0_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_28 row rotation = air.cols.ecall_operand_to_check 0 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_operand_to_check_1_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_29 row rotation = air.cols.ecall_operand_to_check 1 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_operand_to_check_2_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_30 row rotation = air.cols.ecall_operand_to_check 2 row rotation := rfl
 
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_operand_to_check_3_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_31 row rotation = air.cols.ecall_operand_to_check 3 row rotation := rfl
 
 -- bitmap_sum folding lemma
-@[cpu_ecall_cols]
+@[cpu_ecall_cols_simplification]
 lemma CpuAir.ecall_bitmap_sum_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.opcode_specific.specific_10 row rotation +
   air.cols.opcode_specific.specific_11 row rotation +
@@ -1149,27 +1150,27 @@ lemma CpuAir.ecall_bitmap_sum_def [Field F] [Field ExtF] (air : Valid_CpuAir F E
 -- Syscall-derived computed values
 -- ============================================================================
 
-@[cpu_syscall_derived]
+@[cpu_syscall_derived_simplification]
 lemma CpuAir.syscall_id_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.op_a_access.prev_value_0 row rotation = air.cols.syscall_id row rotation := rfl
 
-@[cpu_syscall_derived]
+@[cpu_syscall_derived_simplification]
 lemma CpuAir.send_to_table_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.op_a_access.prev_value_1 row rotation = air.cols.send_to_table row rotation := rfl
 
-@[cpu_syscall_derived]
+@[cpu_syscall_derived_simplification]
 lemma CpuAir.num_extra_cycles_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.op_a_access.prev_value_2 row rotation *
   air.cols.opcode_selector.is_ecall row rotation =
   air.cols.num_extra_cycles row rotation := rfl
 
-@[cpu_syscall_derived]
+@[cpu_syscall_derived_simplification]
 lemma CpuAir.is_halt_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.ecall_is_halt row rotation *
   air.cols.opcode_selector.is_ecall row rotation =
   air.cols.is_halt row rotation := rfl
 
-@[cpu_syscall_derived]
+@[cpu_syscall_derived_simplification]
 lemma CpuAir.expected_next_clk_def [Field F] [Field ExtF] (air : Valid_CpuAir F ExtF) (row rotation : ℕ) :
   air.cols.clk row rotation + 4 + air.cols.num_extra_cycles row rotation =
   air.cols.expected_next_clk row rotation := rfl
