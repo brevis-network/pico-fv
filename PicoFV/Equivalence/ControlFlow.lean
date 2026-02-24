@@ -123,7 +123,6 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         cpu_branch_cols_simplification,
-        constraint_and_interaction_simplification,
       ] at h_asm_alu
       obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
       -- Hypotheses
@@ -303,8 +302,6 @@ namespace Equivalence
         simp [← BitVec.toNat_inj]
         exact Axiom.next_pc_mod_four_eq_zero air row h_row h_is_real
 
-#exit
-
     lemma equivalence_BNE
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
@@ -394,7 +391,6 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         cpu_branch_cols_simplification,
-        constraint_and_interaction_simplification,
       ] at h_asm_alu
       obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
       -- Hypotheses
@@ -663,7 +659,6 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         cpu_branch_cols_simplification,
-        constraint_and_interaction_simplification,
       ] at h_asm_alu
       obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
       -- Hypotheses
@@ -941,7 +936,6 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         cpu_branch_cols_simplification,
-        constraint_and_interaction_simplification,
       ] at h_asm_alu
       obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
       -- Hypotheses
@@ -1219,7 +1213,6 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         cpu_branch_cols_simplification,
-        constraint_and_interaction_simplification,
       ] at h_asm_alu
       obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
       -- Hypotheses
@@ -1497,7 +1490,6 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         cpu_branch_cols_simplification,
-        constraint_and_interaction_simplification,
       ] at h_asm_alu
       obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
       -- Hypotheses
