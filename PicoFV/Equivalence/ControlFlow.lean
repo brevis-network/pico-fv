@@ -17,17 +17,18 @@ namespace Equivalence
 
   section Auxiliaries
 
-    -- Public value 41 (`next_pc`) holds the starting program
-    -- counter for the next chunk. It is either zero (if the last
-    -- execution was HALT), or is the first pc of the first row
-    -- of the next chunk. In the former case, zero is divisible
-    -- by four. In the latter case, `is_real` must hold on the
-    -- first row on the next chunk (by constraint 237), and so
-    -- that program counter must be on the program bus, meaning
-    -- it is divisible by four by the program bus properties.
-    axiom Axiom.next_pc_public_value_mod_four_eq_zero
+
+    def pico_CpuAir_control_flow_assumptions
       (air : Valid_CpuAir FKB ExtF)
-    :
+    :=
+      -- Public value 41 (`next_pc`) holds the starting program
+      -- counter for the next chunk. It is either zero (if the last
+      -- execution was HALT), or is the first pc of the first row
+      -- of the next chunk. In the former case, zero is divisible
+      -- by four. In the latter case, `is_real` must hold on the
+      -- first row on the next chunk (by constraint 237), and so
+      -- that program counter must be on the program bus, meaning
+      -- it is divisible by four by the program bus properties.
       (air.public_values 41).val % 4 = 0
 
     lemma is_real_rotation
@@ -117,6 +118,7 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
+      (pico_assumptions : pico_CpuAir_control_flow_assumptions air)
     :
       (air.cols.next_pc row 0).val % 4 = 0
     := by
@@ -137,7 +139,7 @@ namespace Equivalence
           sub_eq_zero
         ] at relevant_constraints
         rw [← relevant_constraints]
-        exact Axiom.next_pc_public_value_mod_four_eq_zero air
+        exact pico_assumptions
       -- Transition row
       . simp_all
         by_cases h_is_real_next : air.cols.is_real row 1 = 0
@@ -154,7 +156,7 @@ namespace Equivalence
             *
           ] at relevant_constraints
           rw [← relevant_constraints]
-          exact Axiom.next_pc_public_value_mod_four_eq_zero air
+          exact pico_assumptions
         . specialize h_constraints row (by omega)
           have h_breakdown
           :
@@ -240,6 +242,7 @@ namespace Equivalence
       (h_opcode : air.cols.instruction.opcode = 18)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+      (pico_assumptions : pico_CpuAir_control_flow_assumptions air)
     :
       let reg1 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg2 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
@@ -498,7 +501,7 @@ namespace Equivalence
         ]
         rw [← h_npc.2.2.2.2.2.2.2.2.2.2.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
 
     lemma equivalence_BNE
       [Field ExtF]
@@ -512,6 +515,7 @@ namespace Equivalence
       (h_opcode : air.cols.instruction.opcode = 19)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+      (pico_assumptions : pico_CpuAir_control_flow_assumptions air)
     :
       let reg1 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg2 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
@@ -770,7 +774,7 @@ namespace Equivalence
         ]
         rw [← h_npc.2.2.2.2.2.2.2.2.2.2.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
 
     lemma equivalence_BLT
       [Field ExtF]
@@ -784,6 +788,7 @@ namespace Equivalence
       (h_opcode : air.cols.instruction.opcode = 20)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+      (pico_assumptions : pico_CpuAir_control_flow_assumptions air)
     :
       let reg1 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg2 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
@@ -1051,7 +1056,7 @@ namespace Equivalence
         ]
         simp_all
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
     lemma equivalence_BGE
       [Field ExtF]
@@ -1065,6 +1070,7 @@ namespace Equivalence
       (h_opcode : air.cols.instruction.opcode = 21)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+      (pico_assumptions : pico_CpuAir_control_flow_assumptions air)
     :
       let reg1 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg2 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
@@ -1332,7 +1338,7 @@ namespace Equivalence
         ]
         simp_all
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
     lemma equivalence_BLTU
       [Field ExtF]
@@ -1346,6 +1352,7 @@ namespace Equivalence
       (h_opcode : air.cols.instruction.opcode = 22)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+      (pico_assumptions : pico_CpuAir_control_flow_assumptions air)
     :
       let reg1 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg2 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
@@ -1613,7 +1620,7 @@ namespace Equivalence
         ]
         simp_all
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
     lemma equivalence_BGEU
       [Field ExtF]
@@ -1627,6 +1634,7 @@ namespace Equivalence
       (h_opcode : air.cols.instruction.opcode = 23)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+      (pico_assumptions : pico_CpuAir_control_flow_assumptions air)
     :
       let reg1 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg2 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
@@ -1894,7 +1902,7 @@ namespace Equivalence
         ]
         simp_all
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
   end BTYPE
 

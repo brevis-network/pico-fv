@@ -17,11 +17,9 @@ import PicoFV.Extraction.Attributes
 import PicoFV.Extraction.BitwiseAir
 import PicoFV.Extraction.CpuAir
 import PicoFV.Extraction.DivRemAir
--- import PicoFV.Extraction.GlobalAir
 import PicoFV.Extraction.LtAir
 import PicoFV.Extraction.MemoryReadWriteAir
 import PicoFV.Extraction.MulAir
-import PicoFV.Extraction.ProgramAir
 import PicoFV.Extraction.ShiftRightAir
 import PicoFV.Extraction.SllAir
 
