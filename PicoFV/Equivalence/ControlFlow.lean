@@ -9,13 +9,26 @@ namespace Equivalence
 
   open RV32IM
   open RV32IM_Interactions
-  open CpuAir.constraints
-  open CpuAir.Buses
+  open CpuAir.ConstraintsAndBuses
+  open CpuAir.Interactions
 
   attribute [local simp]
     program_bus_entry
 
   section Auxiliaries
+
+    -- Public value 41 (`next_pc`) holds the starting program
+    -- counter for the next chunk. It is either zero (if the last
+    -- execution was HALT), or is the first pc of the first row
+    -- of the next chunk. In the former case, zero is divisible
+    -- by four. In the latter case, `is_real` must hold on the
+    -- first row on the next chunk (by constraint 237), and so
+    -- that program counter must be on the program bus, meaning
+    -- it is divisible by four by the program bus properties.
+    axiom Axiom.next_pc_public_value_mod_four_eq_zero
+      (air : Valid_CpuAir FKB ExtF)
+    :
+      (air.public_values 41).val % 4 = 0
 
     lemma is_real_rotation
       (air : Valid_CpuAir FKB ExtF)
@@ -109,12 +122,39 @@ namespace Equivalence
     := by
       by_cases h_transition : Circuit.isTransitionRow air row = 0
       -- Last row
-      . sorry
+      . obtain relevant_constraints
+        : constraint_235 air row
+        := by
+          specialize h_constraints row h_row
+          simp [allHold_simplified] at h_constraints
+          grind
+        simp [Circuit.isTransitionRow] at h_transition
+        simp [
+          constraint_and_interaction_simplification,
+          Circuit.isLastRow,
+          ← h_transition,
+          h_is_real,
+          sub_eq_zero
+        ] at relevant_constraints
+        rw [← relevant_constraints]
+        exact Axiom.next_pc_public_value_mod_four_eq_zero air
       -- Transition row
       . simp_all
         by_cases h_is_real_next : air.cols.is_real row 1 = 0
         -- Final real row
-        . sorry
+        . obtain relevant_constraints
+          : constraint_234 air row
+          := by
+            specialize h_constraints row h_row
+            simp [allHold_simplified] at h_constraints
+            grind
+          simp [
+            constraint_and_interaction_simplification,
+            sub_eq_zero,
+            *
+          ] at relevant_constraints
+          rw [← relevant_constraints]
+          exact Axiom.next_pc_public_value_mod_four_eq_zero air
         . specialize h_constraints row (by omega)
           have h_breakdown
           :
@@ -263,6 +303,7 @@ namespace Equivalence
         air.cols.is_sequential_instr row 0 = 0
       := by aesop
       simp [h_eqs] at h_constraints
+      replace h_constraints := h_constraints.2
 
       obtain ⟨ h_eq_c0, h_eq_c1, h_eq_c2, h_eq_c3, h0, h1, h2, h_eq_a0, h_eq_a1, h_eq_a2,
                h_eq_a3, h3, h4, h5, h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_constraints ⟩ := h_constraints
@@ -361,7 +402,7 @@ namespace Equivalence
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]) =
         (air.cols.branching row 0 = 1)
       := by
-        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec]
+        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec, ← CpuAir.is_branch_instruction_def]
         split_ifs at h_gt with h_if
         . rw [if_neg (by omega)] at h_lt
           have h_eq_lt : air.cols.branch_a_lt_b row 0 = 0
@@ -534,6 +575,7 @@ namespace Equivalence
         air.cols.is_sequential_instr row 0 = 0
       := by aesop
       simp [h_eqs] at h_constraints
+      replace h_constraints := h_constraints.2
 
       obtain ⟨ h_eq_c0, h_eq_c1, h_eq_c2, h_eq_c3, h0, h1, h2, h_eq_a0, h_eq_a1, h_eq_a2,
                h_eq_a3, h3, h4, h5, h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_constraints ⟩ := h_constraints
@@ -632,7 +674,7 @@ namespace Equivalence
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])) =
         (air.cols.branching row 0 = 1)
       := by
-        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec]
+        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec, ← CpuAir.is_branch_instruction_def]
         split_ifs at h_gt with h_if
         . rw [if_neg (by omega)] at h_lt
           have h_eq_lt : air.cols.branch_a_lt_b row 0 = 0
@@ -805,6 +847,7 @@ namespace Equivalence
         air.cols.is_sequential_instr row 0 = 0
       := by aesop
       simp [h_eqs] at h_constraints
+      replace h_constraints := h_constraints.2
 
       obtain ⟨ h_eq_c0, h_eq_c1, h_eq_c2, h_eq_c3, h0, h1, h2, h_eq_a0, h_eq_a1, h_eq_a2,
                h_eq_a3, h3, h4, h5, h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_constraints ⟩ := h_constraints
@@ -903,7 +946,7 @@ namespace Equivalence
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]).toInt) =
         (air.cols.branching row 0 = 1)
       := by
-        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec]
+        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec, ← CpuAir.is_branch_instruction_def]
         . simp_all
           split_ifs at h_gt with h_if
           . rw [if_neg (by clear *- h_if; omega)] at h_lt
@@ -1085,6 +1128,7 @@ namespace Equivalence
         air.cols.is_sequential_instr row 0 = 0
       := by aesop
       simp [h_eqs] at h_constraints
+      replace h_constraints := h_constraints.2
 
       obtain ⟨ h_eq_c0, h_eq_c1, h_eq_c2, h_eq_c3, h0, h1, h2, h_eq_a0, h_eq_a1, h_eq_a2,
                h_eq_a3, h3, h4, h5, h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_constraints ⟩ := h_constraints
@@ -1183,7 +1227,7 @@ namespace Equivalence
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]).toInt) =
         (air.cols.branching row 0 = 1)
       := by
-        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec]
+        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec, ← CpuAir.is_branch_instruction_def]
         . simp_all
           split_ifs at h_lt with h_if
           . assumption
@@ -1365,6 +1409,7 @@ namespace Equivalence
         air.cols.is_sequential_instr row 0 = 0
       := by aesop
       simp [h_eqs] at h_constraints
+      replace h_constraints := h_constraints.2
 
       obtain ⟨ h_eq_c0, h_eq_c1, h_eq_c2, h_eq_c3, h0, h1, h2, h_eq_a0, h_eq_a1, h_eq_a2,
                h_eq_a3, h3, h4, h5, h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_constraints ⟩ := h_constraints
@@ -1463,7 +1508,7 @@ namespace Equivalence
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]).toNat) =
         (air.cols.branching row 0 = 1)
       := by
-        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec]
+        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec, ← CpuAir.is_branch_instruction_def]
         . simp_all
           split_ifs at h_gt with h_if
           . rw [if_neg (by omega)] at h_lt
@@ -1645,6 +1690,7 @@ namespace Equivalence
         air.cols.is_sequential_instr row 0 = 0
       := by aesop
       simp [h_eqs] at h_constraints
+      replace h_constraints := h_constraints.2
 
       obtain ⟨ h_eq_c0, h_eq_c1, h_eq_c2, h_eq_c3, h0, h1, h2, h_eq_a0, h_eq_a1, h_eq_a2,
                h_eq_a3, h3, h4, h5, h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_constraints ⟩ := h_constraints
@@ -1743,7 +1789,7 @@ namespace Equivalence
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]).toNat) =
         (air.cols.branching row 0 = 1)
       := by
-        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec]
+        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec, ← CpuAir.is_branch_instruction_def]
         . simp_all
           split_ifs at h_lt with h_if
           . assumption

@@ -7,7 +7,7 @@ open Plonky3
 
 set_option maxHeartbeats 1_000_000_000
 
-namespace CpuAir.constraints
+namespace CpuAir.ConstraintsAndBuses
 
   section constraint_simplification
 
@@ -2632,11 +2632,153 @@ namespace CpuAir.constraints
 
     end row_constraints
 
+    section row_buses
+
+      @[constraint_and_interaction_simplification]
+      def raw_bus_row (air : Valid_CpuAir FKB ExtF) (row : ℕ) : List (FKB × List FKB) := [
+        (-air.cols.is_real row 0,
+          [1, air.cols.pc row 0, air.cols.instruction.opcode row 0, air.cols.instruction.opcode row 0,
+            air.cols.instruction.a_0 row 0, air.cols.instruction.a_1 row 0, air.cols.instruction.a_2 row 0,
+            air.cols.instruction.a_3 row 0, air.cols.instruction.b_0 row 0, air.cols.instruction.b_1 row 0,
+            air.cols.instruction.b_2 row 0, air.cols.instruction.b_3 row 0, air.cols.instruction.c_0 row 0,
+            air.cols.instruction.c_1 row 0, air.cols.instruction.c_2 row 0, air.cols.instruction.c_3 row 0,
+            air.cols.instruction.a_is_0 row 0, air.cols.opcode_selector.imm_b row 0,
+            air.cols.opcode_selector.imm_c row 0, air.cols.is_alu_instruction row 0,
+            air.cols.opcode_selector.is_ecall row 0, air.cols.opcode_selector.is_lb row 0,
+            air.cols.opcode_selector.is_lbu row 0, air.cols.opcode_selector.is_lh row 0,
+            air.cols.opcode_selector.is_lhu row 0, air.cols.opcode_selector.is_lw row 0,
+            air.cols.opcode_selector.is_sb row 0, air.cols.opcode_selector.is_sh row 0,
+            air.cols.opcode_selector.is_sw row 0, air.cols.opcode_selector.is_beq row 0,
+            air.cols.opcode_selector.is_bne row 0, air.cols.opcode_selector.is_blt row 0,
+            air.cols.opcode_selector.is_bge row 0, air.cols.opcode_selector.is_bltu row 0,
+            air.cols.opcode_selector.is_bgeu row 0, air.cols.opcode_selector.is_jalr row 0,
+            air.cols.opcode_selector.is_jal row 0, air.cols.opcode_selector.is_auipc row 0,
+            air.cols.opcode_selector.is_unimpl row 0]),
+        (air.cols.opcode_selector.imm_b row 0 - 1, [4, 8, air.cols.op_b_access.diff_16bit_limb row 0, 0, 0, 0]),
+        (air.cols.opcode_selector.imm_b row 0 - 1, [4, 7, 0, 0, air.cols.op_b_access.diff_8bit_limb row 0, 0]),
+        (air.cols.opcode_selector.imm_b row 0 - 1,
+          [0, air.cols.op_b_access.prev_chunk row 0, air.cols.op_b_access.prev_clk row 0,
+            air.cols.instruction.b_0 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0,
+            air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0]),
+        (1 - air.cols.opcode_selector.imm_b row 0,
+          [0, air.cols.chunk row 0, air.cols.clk row 0 + 2, air.cols.instruction.b_0 row 0,
+            air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0,
+            air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0]),
+        (air.cols.opcode_selector.imm_c row 0 - 1, [4, 8, air.cols.op_c_access.diff_16bit_limb row 0, 0, 0, 0]),
+        (air.cols.opcode_selector.imm_c row 0 - 1, [4, 7, 0, 0, air.cols.op_c_access.diff_8bit_limb row 0, 0]),
+        (air.cols.opcode_selector.imm_c row 0 - 1,
+          [0, air.cols.op_c_access.prev_chunk row 0, air.cols.op_c_access.prev_clk row 0,
+            air.cols.instruction.c_0 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0,
+            air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
+        (1 - air.cols.opcode_selector.imm_c row 0,
+          [0, air.cols.chunk row 0, air.cols.clk row 0 + 1, air.cols.instruction.c_0 row 0,
+            air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0,
+            air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
+        (-air.cols.is_real row 0, [4, 8, air.cols.op_a_access.access.diff_16bit_limb row 0, 0, 0, 0]),
+        (-air.cols.is_real row 0, [4, 7, 0, 0, air.cols.op_a_access.access.diff_8bit_limb row 0, 0]),
+        (-air.cols.is_real row 0,
+          [0, air.cols.op_a_access.access.prev_chunk row 0, air.cols.op_a_access.access.prev_clk row 0,
+            air.cols.instruction.a_0 row 0, air.cols.op_a_access.prev_value_0 row 0,
+            air.cols.op_a_access.prev_value_1 row 0, air.cols.op_a_access.prev_value_2 row 0,
+            air.cols.op_a_access.prev_value_3 row 0]),
+        (air.cols.is_real row 0,
+          [0, air.cols.chunk row 0, air.cols.clk row 0 + 3, air.cols.instruction.a_0 row 0,
+            air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0,
+            air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0]),
+        (-air.cols.is_real row 0,
+          [4, 7, 0, 0, air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0]),
+        (-air.cols.is_real row 0,
+          [4, 7, 0, 0, air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0]),
+        (-air.cols.is_memory_instruction row 0,
+          [0, air.cols.instruction.opcode row 0, air.cols.op_a_access.access.value_0 row 0,
+            air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0,
+            air.cols.op_a_access.access.value_3 row 0, air.cols.op_b_access.value_0 row 0,
+            air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0,
+            air.cols.op_b_access.value_3 row 0, air.cols.op_c_access.value_0 row 0,
+            air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0,
+            air.cols.op_c_access.value_3 row 0, air.cols.instruction.a_is_0 row 0,
+            air.cols.opcode_selector.is_lb row 0, air.cols.opcode_selector.is_lbu row 0,
+            air.cols.opcode_selector.is_lh row 0, air.cols.opcode_selector.is_lhu row 0,
+            air.cols.opcode_selector.is_lw row 0, air.cols.opcode_selector.is_sb row 0,
+            air.cols.opcode_selector.is_sh row 0, air.cols.opcode_selector.is_sw row 0]),
+        (-air.cols.is_alu_instruction row 0,
+          [3, air.cols.instruction.opcode row 0, air.cols.op_a_access.access.value_0 row 0,
+            air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0,
+            air.cols.op_a_access.access.value_3 row 0, air.cols.op_b_access.value_0 row 0,
+            air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0,
+            air.cols.op_b_access.value_3 row 0, air.cols.op_c_access.value_0 row 0,
+            air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0,
+            air.cols.op_c_access.value_3 row 0]),
+        (-air.cols.branching row 0,
+          [3, 0, air.cols.opcode_specific.specific_14 row 0, air.cols.opcode_specific.specific_15 row 0,
+            air.cols.opcode_specific.specific_16 row 0, air.cols.opcode_specific.specific_17 row 0,
+            air.cols.opcode_specific.specific_0 row 0, air.cols.opcode_specific.specific_1 row 0,
+            air.cols.opcode_specific.specific_2 row 0, air.cols.opcode_specific.specific_3 row 0,
+            air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0,
+            air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
+        (-air.cols.is_branch_instruction row 0,
+          [3, air.cols.use_signed_comparison row 0 * 8 + (1 - air.cols.use_signed_comparison row 0) * 9,
+            air.cols.opcode_specific.specific_30 row 0, 0, 0, 0, air.cols.op_a_access.access.value_0 row 0,
+            air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0,
+            air.cols.op_a_access.access.value_3 row 0, air.cols.op_b_access.value_0 row 0,
+            air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0,
+            air.cols.op_b_access.value_3 row 0]),
+        (-air.cols.is_branch_instruction row 0,
+          [3, air.cols.use_signed_comparison row 0 * 8 + (1 - air.cols.use_signed_comparison row 0) * 9,
+            air.cols.opcode_specific.specific_29 row 0, 0, 0, 0, air.cols.op_b_access.value_0 row 0,
+            air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0,
+            air.cols.op_b_access.value_3 row 0, air.cols.op_a_access.access.value_0 row 0,
+            air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0,
+            air.cols.op_a_access.access.value_3 row 0]),
+        (-air.cols.opcode_selector.is_jal row 0,
+          [3, 0, air.cols.opcode_specific.specific_14 row 0, air.cols.opcode_specific.specific_15 row 0,
+            air.cols.opcode_specific.specific_16 row 0, air.cols.opcode_specific.specific_17 row 0,
+            air.cols.opcode_specific.specific_0 row 0, air.cols.opcode_specific.specific_1 row 0,
+            air.cols.opcode_specific.specific_2 row 0, air.cols.opcode_specific.specific_3 row 0,
+            air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0,
+            air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0]),
+        (-air.cols.opcode_selector.is_jalr row 0,
+          [3, 0, air.cols.opcode_specific.specific_14 row 0, air.cols.opcode_specific.specific_15 row 0,
+            air.cols.opcode_specific.specific_16 row 0, air.cols.opcode_specific.specific_17 row 0,
+            air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0,
+            air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0,
+            air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0,
+            air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
+        (-air.cols.opcode_selector.is_auipc row 0,
+          [3, 0, air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0,
+            air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0,
+            air.cols.opcode_specific.specific_0 row 0, air.cols.opcode_specific.specific_1 row 0,
+            air.cols.opcode_specific.specific_2 row 0, air.cols.opcode_specific.specific_3 row 0,
+            air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0,
+            air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0]),
+        (-air.cols.ecall_mul_send_to_table row 0,
+          [7, air.cols.clk row 0, air.cols.op_a_access.prev_value_0 row 0,
+            air.cols.op_b_access.value_0 row 0 + 256 * air.cols.op_b_access.value_1 row 0 +
+                65536 * air.cols.op_b_access.value_2 row 0 +
+              16777216 * air.cols.op_b_access.value_3 row 0,
+            air.cols.op_c_access.value_0 row 0 + 256 * air.cols.op_c_access.value_1 row 0 +
+                65536 * air.cols.op_c_access.value_2 row 0 +
+              16777216 * air.cols.op_c_access.value_3 row 0]),
+        (-air.cols.is_real row 0, [4, 8, air.cols.chunk row 0, 0, 0, 0]),
+        (-air.cols.is_real row 0, [4, 8, air.cols.clk_16bit_limb row 0, 0, 0, 0]),
+        (-air.cols.is_real row 0, [4, 7, 0, 0, air.cols.clk_8bit_limb row 0, 0])
+      ]
+
+      @[constraint_and_interaction_simplification]
+      def constrain_interactions (air : Valid_CpuAir FKB ExtF) : Prop :=
+        air.bus =
+          List.flatMap
+            (fun row ↦ raw_bus_row air row)
+            (List.range (air.last_row + 1))
+
+    end row_buses
+
     @[constraint_and_interaction_simplification]
     def allHold_simplified
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
     : Prop :=
+      constrain_interactions air ∧
       List.Forall (·) (row_constraint_list air row)
 
     set_option maxRecDepth 2_000_000 in
@@ -2647,13 +2789,24 @@ namespace CpuAir.constraints
     :
       CpuAir.Extraction.allHold air row ↔ allHold_simplified air row
     := by
-      simp [constraint_and_interaction_simplification]
+      have equiv_constraints
+      :
+        List.Forall (fun x ↦ x) (Extraction.constraint_list air row) ↔ List.Forall (·) (row_constraint_list air row)
+      := by
+        simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+      have equiv_interactions
+      :
+        CpuAir.Extraction.constrain_interactions air ↔ constrain_interactions air
+      := by
+        simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+      unfold CpuAir.Extraction.allHold allHold_simplified
+      simp only [*]
 
   end constraint_simplification
 
-end CpuAir.constraints
+end CpuAir.ConstraintsAndBuses
 
-namespace CpuAir.Buses
+namespace CpuAir.Interactions
 
   open RV32IM_Interactions
 
@@ -2668,8 +2821,8 @@ namespace CpuAir.Buses
       ALU := List.map ALUBusEntry.deserialise [
         (-air.cols.opcode_selector.is_alu row 0, #v[air.cols.instruction.opcode row 0, air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
         (-air.cols.branching row 0, #v[0, air.cols.opcode_specific.specific_14 row 0, air.cols.opcode_specific.specific_15 row 0, air.cols.opcode_specific.specific_16 row 0, air.cols.opcode_specific.specific_17 row 0, air.cols.opcode_specific.specific_0 row 0, air.cols.opcode_specific.specific_1 row 0, air.cols.opcode_specific.specific_2 row 0, air.cols.opcode_specific.specific_3 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
-        (-(air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 + air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 + air.cols.opcode_selector.is_bltu row 0 + air.cols.opcode_selector.is_bgeu row 0), #v[9 - air.cols.opcode_selector.is_blt row 0 - air.cols.opcode_selector.is_bge row 0, air.cols.opcode_specific.specific_30 row 0, 0, 0, 0, air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0]),
-        (-(air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 + air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 + air.cols.opcode_selector.is_bltu row 0 + air.cols.opcode_selector.is_bgeu row 0), #v[9 - air.cols.opcode_selector.is_blt row 0 - air.cols.opcode_selector.is_bge row 0, air.cols.opcode_specific.specific_29 row 0, 0, 0, 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0, air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0]),
+        (-(air.cols.is_branch_instruction row 0), #v[9 - air.cols.opcode_selector.is_blt row 0 - air.cols.opcode_selector.is_bge row 0, air.cols.opcode_specific.specific_30 row 0, 0, 0, 0, air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0]),
+        (-(air.cols.is_branch_instruction row 0), #v[9 - air.cols.opcode_selector.is_blt row 0 - air.cols.opcode_selector.is_bge row 0, air.cols.opcode_specific.specific_29 row 0, 0, 0, 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0, air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0]),
         (-air.cols.opcode_selector.is_jal row 0, #v[0, air.cols.opcode_specific.specific_14 row 0, air.cols.opcode_specific.specific_15 row 0, air.cols.opcode_specific.specific_16 row 0, air.cols.opcode_specific.specific_17 row 0, air.cols.opcode_specific.specific_0 row 0, air.cols.opcode_specific.specific_1 row 0, air.cols.opcode_specific.specific_2 row 0, air.cols.opcode_specific.specific_3 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0]),
         (-air.cols.opcode_selector.is_jalr row 0, #v[0, air.cols.opcode_specific.specific_14 row 0, air.cols.opcode_specific.specific_15 row 0, air.cols.opcode_specific.specific_16 row 0, air.cols.opcode_specific.specific_17 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
         (-air.cols.opcode_selector.is_auipc row 0, #v[0, air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0, air.cols.opcode_specific.specific_0 row 0, air.cols.opcode_specific.specific_1 row 0, air.cols.opcode_specific.specific_2 row 0, air.cols.opcode_specific.specific_3 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0])
@@ -2688,17 +2841,33 @@ namespace CpuAir.Buses
         (-air.cols.is_real row 0, #v[7, 0, 0, air.cols.clk_8bit_limb row 0, 0])
       ],
       Register := List.map RegisterBusEntry.deserialise [
-        (-(1 - air.cols.opcode_selector.imm_c row 0), #v[air.cols.op_c_access.prev_chunk row 0, air.cols.op_c_access.prev_clk row 0, air.cols.instruction.c_0 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
-        (  1 - air.cols.opcode_selector.imm_c row 0,  #v[air.cols.chunk row 0, 1 + air.cols.clk row 0, air.cols.instruction.c_0 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
         (-(1 - air.cols.opcode_selector.imm_b row 0), #v[air.cols.op_b_access.prev_chunk row 0, air.cols.op_b_access.prev_clk row 0, air.cols.instruction.b_0 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0]),
         (  1 - air.cols.opcode_selector.imm_b row 0,  #v[air.cols.chunk row 0, 2 + air.cols.clk row 0, air.cols.instruction.b_0 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0]),
+        (-(1 - air.cols.opcode_selector.imm_c row 0), #v[air.cols.op_c_access.prev_chunk row 0, air.cols.op_c_access.prev_clk row 0, air.cols.instruction.c_0 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
+        (  1 - air.cols.opcode_selector.imm_c row 0,  #v[air.cols.chunk row 0, 1 + air.cols.clk row 0, air.cols.instruction.c_0 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
         (-air.cols.is_real row 0, #v[air.cols.op_a_access.access.prev_chunk row 0, air.cols.op_a_access.access.prev_clk row 0, air.cols.instruction.a_0 row 0, air.cols.op_a_access.prev_value_0 row 0, air.cols.op_a_access.prev_value_1 row 0, air.cols.op_a_access.prev_value_2 row 0, air.cols.op_a_access.prev_value_3 row 0]),
         ( air.cols.is_real row 0, #v[air.cols.chunk row 0, 3 + air.cols.clk row 0, air.cols.instruction.a_0 row 0, air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0])
       ]
     }
 
   @[simp]
-  def CPU_bus_operations (air : Valid_CpuAir FKB ExtF) (row : ℕ) :=
-    RV32IM.bus_operations (bus_row air row) ++ [ .WritePC (BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)) ]
+  lemma bus_row_equiv (air : Valid_CpuAir FKB ExtF) (row : ℕ) :
+     RV32IM_Interactions.deserialise_bus_row (CpuAir.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
+  := by
+    simp [
+      deserialise_bus_row,
+      constraint_and_interaction_simplification,
+      bus_row,
+      program_bus_entry,
+      pico_encapsulation,
+      add_comm (a := air.cols.clk row 0)
+    ]
+    simp [Valid_CpuCols.use_signed_comparison]
+    omega
 
-end CpuAir.Buses
+  @[simp]
+  def CPU_bus_operations (air : Valid_CpuAir FKB ExtF) (row : ℕ) :=
+    RV32IM.bus_operations (RV32IM_Interactions.deserialise_bus_row (CpuAir.ConstraintsAndBuses.raw_bus_row air row)) ++
+    [ .WritePC (BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)) ]
+
+end CpuAir.Interactions
