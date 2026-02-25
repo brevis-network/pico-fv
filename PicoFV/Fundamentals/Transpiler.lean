@@ -413,6 +413,25 @@ namespace Transpiler
         is_register (reg_to_KB rd) ∧
         imm % 4096 = 0
       )
+    -- External call : 1 opcode
+    | .ECALL () =>
+      let opcode := 28
+      let a_is_0 := 0
+      .some (
+        (
+          multiplicity,
+          #v[
+            pc, opcode, opcode,
+            5, 0, 0, 0,
+            10, 0, 0, 0,
+            11, 0, 0, 0,
+            a_is_0,
+            0, 0,
+            0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+          ]
+        ),
+        True
+      )
     -- MUL : 4 opcodes
     | .MUL (rs2, rs1, rd, op) =>
       let opcode :=
@@ -491,6 +510,7 @@ namespace Transpiler
         is_register (reg_to_KB rs1) ∧
         is_register (reg_to_KB rs2)
       )
+    -- Unimplemented
     | _ => .none
 
 end Transpiler

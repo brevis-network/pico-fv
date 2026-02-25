@@ -1,11 +1,11 @@
-import PicoFV.Constraints.CPUAir
-
-import PicoFV.RVSail.RV32IM.Opcodes.Opcodes
+import PicoFV.Equivalence.ALU
 
 set_option maxHeartbeats 1_000_000_000
 set_option maxRecDepth 1_000_000
 
 namespace Equivalence
+
+  open Plonky3
 
   open RV32IM
   open RV32IM_Interactions
@@ -17,18 +17,172 @@ namespace Equivalence
 
   section Auxiliaries
 
-    instance : LawfulBEq bop where
-      rfl := by intro op; cases op <;> rfl
-      eq_of_beq := by intro op₁ op₂; cases op₁ <;> cases op₂ <;> simp <;> rfl
+    lemma is_real_rotation
+      (air : Valid_CpuAir FKB ExtF)
+      (row rotation : ℕ)
+    : air.cols.is_real row rotation = air.cols.is_real ((row + rotation) % (air.last_row + 1)) 0
+    := by
+      obtain ⟨ air, is_valid ⟩ := air
+      unfold Valid_CpuCols.is_real Valid_CpuAir.cols Valid_CpuAir.last_row; simp
 
-    axiom Axiom.next_pc_mod_four_eq_zero
+      obtain ⟨ valid_circuit, valid_cols, valid_per_col ⟩ := is_valid
+      replace valid_circuit : ∀ (column row rotation : ℕ), air.main column row rotation = air.main column ((row + rotation) % (air.last_row + 1)) 0 := by aesop
+      specialize valid_circuit 111 row rotation
+
+      have valid_col_111 : ∀ row rotation, air.col_111 row rotation := by aesop
+      unfold Raw_CpuAir.col_111 at valid_col_111
+      iterate 2 rw [valid_col_111] at valid_circuit
+      clear valid_col_111
+      obtain ⟨ bus, challenge, main, permutation, preprocessed, public_values, last_row, cols ⟩ := air
+      simp_all
+
+      unfold Raw_CpuCols.isValid at valid_cols
+      replace valid_cols : ∀ (row rotation : ℕ), cols.col_111 row rotation := by aesop
+      unfold Raw_CpuCols.col_111 at valid_cols
+
+      clear *- valid_circuit valid_cols
+      grind
+
+    lemma pc_rotation
+      (air : Valid_CpuAir FKB ExtF)
+      (row rotation : ℕ)
+    : air.cols.pc row rotation = air.cols.pc ((row + rotation) % (air.last_row + 1)) 0
+    := by
+      obtain ⟨ air, is_valid ⟩ := air
+      unfold Valid_CpuCols.pc Valid_CpuAir.cols Valid_CpuAir.last_row; simp
+
+      obtain ⟨ valid_circuit, valid_cols, valid_per_col ⟩ := is_valid
+      replace valid_circuit : ∀ (column row rotation : ℕ), air.main column row rotation = air.main column ((row + rotation) % (air.last_row + 1)) 0 := by aesop
+      specialize valid_circuit 4 row rotation
+
+      have valid_col_4 : ∀ row rotation, air.col_4 row rotation := by aesop
+      unfold Raw_CpuAir.col_4 at valid_col_4
+      iterate 2 rw [valid_col_4] at valid_circuit
+      clear valid_col_4
+      obtain ⟨ bus, challenge, main, permutation, preprocessed, public_values, last_row, cols ⟩ := air
+      simp_all
+
+      unfold Raw_CpuCols.isValid at valid_cols
+      replace valid_cols : ∀ (row rotation : ℕ), cols.col_4 row rotation := by aesop
+      unfold Raw_CpuCols.col_4 at valid_cols
+
+      clear *- valid_circuit valid_cols
+      grind
+
+    lemma pc_next_row_mod_four_eq_zero
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_transition_row : ¬ (Circuit.isTransitionRow air row = 0))
+      (h_is_real : air.cols.is_real row 1 = 1)
+      (h_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+    :
+      (air.cols.pc row 1).val % 4 = 0
+    := by
+      replace h_row : (row + 1) ≤ air.last_row
+      := by
+        simp [Circuit.isTransitionRow] at h_transition_row
+        simp [Circuit.last_row] at h_transition_row
+        omega
+      rw [is_real_rotation, Nat.mod_eq_of_lt (by omega)] at h_is_real
+      rw [pc_rotation, Nat.mod_eq_of_lt (b := air.last_row + 1) (by omega)]
+      specialize h_axioms (row + 1) (by omega)
+      simp [
+        bus_row_axioms,
+        bus_row,
+        h_is_real
+      ] at h_axioms
+      grind
+
+    lemma next_pc_mod_four_eq_zero
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (h_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
     :
       (air.cols.next_pc row 0).val % 4 = 0
+    := by
+      by_cases h_transition : Circuit.isTransitionRow air row = 0
+      -- Last row
+      . sorry
+      -- Transition row
+      . simp_all
+        by_cases h_is_real_next : air.cols.is_real row 1 = 0
+        -- Final real row
+        . sorry
+        . specialize h_constraints row (by omega)
+          have h_breakdown
+          :
+            air.cols.is_sequential_instr row 0 = 1 ∨
+            air.cols.is_branch_instruction row 0 = 1 ∨
+            air.cols.is_jump_instruction row 0 = 1
+          := by
+            simp [Valid_CpuCols.is_branch_instruction, Valid_CpuCols.is_jump_instruction]
+            obtain ⟨ h_halt, h_seq ⟩
+            : constraint_215 air row ∧ constraint_229 air row
+            := by
+              simp [allHold_simplified] at h_constraints
+              grind
+            simp [
+              constraint_and_interaction_simplification,
+              cpu_ecall_cols_simplification,
+              sub_eq_zero,
+              *
+            ] at h_halt h_seq
+            rw [h_seq]; clear h_seq
+            have h_row_axioms := h_assumptions row (by omega)
+            simp [bus_row_assumptions, bus_row, h_is_real] at h_row_axioms
+            replace h_row_axioms := h_row_axioms.1
+            obtain ⟨ instr, data, props, h_data, h_deser, h_props ⟩ := h_row_axioms
+            have ⟨ h_op_bounds, h_op_neq_26, h_op_neq_29 ⟩ := ProgramBusEntry.inversion_opcode_bounds h_data h_deser
+            have h_selectors := ProgramBusEntry.inversion_opcode_selectors h_data h_deser
+            simp at h_op_bounds h_op_neq_26 h_op_neq_29 h_selectors; clear h_data h_deser h_props
+            repeat rw [Fin.ext_iff (a := air.cols.instruction.opcode row 0)] at h_selectors
+            interval_cases (air.cols.instruction.opcode row 0).val <;>
+              simp at h_selectors <;>
+              simp [h_selectors] at h_halt ⊢ <;>
+              omega
+          suffices : air.cols.next_pc row 0 = air.cols.pc row 1
+          . replace h_row : (row + 1) ≤ air.last_row
+            := by
+              simp [Circuit.isTransitionRow] at h_transition
+              simp [Circuit.last_row] at h_transition
+              omega
+            rw [this, pc_rotation, Nat.mod_eq_of_lt (b := air.last_row + 1) (by omega)]
+            rw [is_real_rotation, Nat.mod_eq_of_lt (b := air.last_row + 1) (by omega)] at h_is_real_next
+            specialize h_axioms (row + 1) h_row
+            simp [bus_row_axioms, bus_row, *] at h_axioms
+            grind
+          . obtain h | h | h := h_breakdown
+            . obtain relevant_constraints
+              : constraint_230 air row ∧ constraint_231 air row
+              := by
+                simp [allHold_simplified] at h_constraints
+                grind
+              simp [constraint_and_interaction_simplification, *] at relevant_constraints
+              omega
+            . simp [Valid_CpuCols.is_branch_instruction] at h
+              obtain relevant_constraints
+              : constraint_29 air row ∧ constraint_30 air row ∧ constraint_61 air row ∧
+                constraint_63 air row ∧ constraint_64 air row ∧ constraint_65 air row ∧ constraint_66 air row
+              := by
+                simp [allHold_simplified] at h_constraints
+                grind
+              simp [constraint_and_interaction_simplification, sub_eq_zero, *] at relevant_constraints
+              grind
+            . simp [Valid_CpuCols.is_jump_instruction] at h
+              obtain relevant_constraints
+              : constraint_82 air row ∧ constraint_83 air row
+              := by
+                simp [allHold_simplified] at h_constraints
+                grind
+              simp [constraint_and_interaction_simplification, sub_eq_zero, *] at relevant_constraints
+              grind
 
   end Auxiliaries
 
@@ -40,9 +194,9 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 18)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -56,6 +210,9 @@ namespace Equivalence
       execute_instruction (instruction.BTYPE (imm, reg2, reg1, bop.BEQ)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
@@ -300,7 +457,7 @@ namespace Equivalence
         ]
         rw [← h_npc.2.2.2.2.2.2.2.2.2.2.2.2]
         simp [← BitVec.toNat_inj]
-        exact Axiom.next_pc_mod_four_eq_zero air row h_row h_is_real
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real
 
     lemma equivalence_BNE
       [Field ExtF]
@@ -308,9 +465,9 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 19)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -324,6 +481,9 @@ namespace Equivalence
       execute_instruction (instruction.BTYPE (imm, reg2, reg1, bop.BNE)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
@@ -568,7 +728,7 @@ namespace Equivalence
         ]
         rw [← h_npc.2.2.2.2.2.2.2.2.2.2.2.2]
         simp [← BitVec.toNat_inj]
-        exact Axiom.next_pc_mod_four_eq_zero air row h_row h_is_real
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real
 
     lemma equivalence_BLT
       [Field ExtF]
@@ -576,9 +736,9 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 20)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -592,6 +752,9 @@ namespace Equivalence
       execute_instruction (instruction.BTYPE (imm, reg2, reg1, bop.BLT)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
@@ -845,7 +1008,7 @@ namespace Equivalence
         ]
         simp_all
         simp [← BitVec.toNat_inj]
-        exact Axiom.next_pc_mod_four_eq_zero air row h_row h_is_real
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real
 
     lemma equivalence_BGE
       [Field ExtF]
@@ -853,9 +1016,9 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 21)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -869,6 +1032,9 @@ namespace Equivalence
       execute_instruction (instruction.BTYPE (imm, reg2, reg1, bop.BGE)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
@@ -1122,7 +1288,7 @@ namespace Equivalence
         ]
         simp_all
         simp [← BitVec.toNat_inj]
-        exact Axiom.next_pc_mod_four_eq_zero air row h_row h_is_real
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real
 
     lemma equivalence_BLTU
       [Field ExtF]
@@ -1130,9 +1296,9 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 22)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -1146,6 +1312,9 @@ namespace Equivalence
       execute_instruction (instruction.BTYPE (imm, reg2, reg1, bop.BLTU)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
@@ -1399,7 +1568,7 @@ namespace Equivalence
         ]
         simp_all
         simp [← BitVec.toNat_inj]
-        exact Axiom.next_pc_mod_four_eq_zero air row h_row h_is_real
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real
 
     lemma equivalence_BGEU
       [Field ExtF]
@@ -1407,9 +1576,9 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 23)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
       (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -1423,6 +1592,9 @@ namespace Equivalence
       execute_instruction (instruction.BTYPE (imm, reg2, reg1, bop.BGEU)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
@@ -1676,7 +1848,7 @@ namespace Equivalence
         ]
         simp_all
         simp [← BitVec.toNat_inj]
-        exact Axiom.next_pc_mod_four_eq_zero air row h_row h_is_real
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real
 
   end BTYPE
 

@@ -1,5 +1,4 @@
 import PicoFV.Constraints.CPUAir
-
 import PicoFV.RVSail.RV32IM.Opcodes.Opcodes
 
 set_option maxHeartbeats 1_000_000_000
