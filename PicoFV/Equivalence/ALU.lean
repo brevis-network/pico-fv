@@ -9,8 +9,8 @@ namespace Equivalence
 
   open RV32IM
   open RV32IM_Interactions
-  open CpuAir.constraints
-  open CpuAir.Buses
+  open CpuAir.ConstraintsAndBuses
+  open CpuAir.Interactions
 
   attribute [local simp]
     program_bus_entry
@@ -90,7 +90,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -140,8 +141,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_ADD, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_SUB
@@ -217,7 +218,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -267,8 +269,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_SUB, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_XOR
@@ -344,7 +346,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -394,8 +397,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_XOR, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_OR
@@ -471,7 +474,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -521,8 +525,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_OR, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_AND
@@ -598,7 +602,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -648,8 +653,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_AND, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_SLL
@@ -725,7 +730,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -775,8 +781,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_SLL, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_SRL
@@ -852,7 +858,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -902,8 +909,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_SRL, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_SRA
@@ -979,7 +986,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -1029,8 +1037,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_SRA, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_SLT
@@ -1106,7 +1114,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -1157,8 +1166,8 @@ namespace Equivalence
           omega
       . simp [OpcodeSpec.RV32.spec_SLT, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_SLTU
@@ -1234,7 +1243,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -1285,8 +1295,8 @@ namespace Equivalence
           omega
       . simp [OpcodeSpec.RV32.spec_SLTU, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
   end RTYPE
@@ -1373,7 +1383,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -1506,7 +1517,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -1639,7 +1651,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -1772,7 +1785,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -1905,7 +1919,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -2039,7 +2054,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -2177,7 +2193,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -2307,7 +2324,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -2437,7 +2455,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -2564,7 +2583,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -2614,8 +2634,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_MUL, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_MULH
@@ -2691,7 +2711,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -2741,8 +2762,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_MULH, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_MULHU
@@ -2818,7 +2839,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -2868,8 +2890,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_MULHU, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_MULHSU
@@ -2945,7 +2967,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -2995,8 +3018,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_MULHSU, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
   end MUL
@@ -3076,7 +3099,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -3126,8 +3150,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_DIV, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_DIVU
@@ -3203,7 +3227,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -3253,8 +3278,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_DIVU, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
   end DIV
@@ -3334,7 +3359,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -3384,8 +3410,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_REM, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
     lemma equivalence_REMU
@@ -3461,7 +3487,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
         h_branching,
-        ALUBus.Spec
+        ALUBus.Spec,
+        ← CpuAir.is_branch_instruction_def
       ] at h_asm_alu
       obtain ⟨ ub_a0, ub_a1, ub_a2, ub_a3, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, h_spec ⟩ := h_asm_alu
       -- Hypotheses
@@ -3511,8 +3538,8 @@ namespace Equivalence
         omega
       . simp [OpcodeSpec.RV32.spec_REMU, *]
         split_ands
-        . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
+        . rw [← h_reg1]; rfl
         . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
 
   end REM

@@ -657,6 +657,42 @@ namespace RV32IM_Interactions
          row.Byte.map (BusEntry.assert FKB) ++
          row.Register.map (BusEntry.assert FKB))
 
+    def deserialise_bus_row (row : List (FKB × List FKB)) : BusRow :=
+      let initial_bus_row : BusRow := { Program := [], ALU := [], Byte := [], Register := [] }
+      List.foldl
+        (fun result ⟨ multiplicity, entry ⟩ =>
+          let bus_id := entry.head!
+          let entry_data := entry.tail!
+          match bus_id with
+          | 0 =>
+              if _ : entry_data.length = 7 then
+                let entry_data_vector : Vector FKB 7 := ⟨ entry_data.toArray, by simp; omega ⟩
+                let bus_entry := RegisterBusEntry.deserialise (multiplicity, entry_data_vector)
+                { result with Register := result.Register ++ [ bus_entry ] }
+              else result
+          | 1 =>
+            if _ : entry_data.length = 38 then
+              let entry_data_vector : Vector FKB 38 := ⟨ entry_data.toArray, by simp; omega ⟩
+              let bus_entry := ProgramBusEntry.deserialise (multiplicity, entry_data_vector)
+              { result with Program := result.Program ++ [ bus_entry ] }
+            else result
+          | 3 =>
+              if _ : entry_data.length = 13 then
+                let entry_data_vector : Vector FKB 13 := ⟨ entry_data.toArray, by simp; omega ⟩
+                let bus_entry := ALUBusEntry.deserialise (multiplicity, entry_data_vector)
+                { result with ALU := result.ALU ++ [ bus_entry ] }
+              else result
+          | 4 =>
+            if _ : entry_data.length = 5 then
+              let entry_data_vector : Vector FKB 5 := ⟨ entry_data.toArray, by simp; omega ⟩
+              let bus_entry := ByteBusEntry.deserialise (multiplicity, entry_data_vector)
+              { result with Byte := result.Byte ++ [ bus_entry ] }
+            else result
+          | _ => result
+        )
+        initial_bus_row
+        row
+
   end ChipRows
 
 end RV32IM_Interactions
