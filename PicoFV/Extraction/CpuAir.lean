@@ -1,4 +1,4 @@
---Extracted on 2026-2-24 at 16:03:06.485720096 using git commit "3b074f0bce60835e650566b089c0295fd278a2dc"
+--Extracted on 2026-2-24 at 17:56:02.726856449 using git commit "3b074f0bce60835e650566b089c0295fd278a2dc"
 import Mathlib.Data.List.Defs
 
 import LeanZKCircuit_Plonky3.Plonky3.Circuit
