@@ -1,0 +1,225 @@
+--Extracted on 2026-2-25 at 12:15:33.591141966 using git commit "3b074f0bce60835e650566b089c0295fd278a2dc"
+import Mathlib.Data.List.Defs
+
+import LeanZKCircuit_Plonky3.Plonky3.Circuit
+
+import PicoFV.Extraction.Attributes
+
+open Plonky3
+
+set_option linter.all false
+
+namespace SllAir.Extraction
+--Num constraints: 64
+--Constraints---
+@[extracted_constraint_definition] def constraint_0 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  (((((((((0 + (1 * (Circuit.main c (column := 12) (row := row) (rotation := 0)))) + (2 * (Circuit.main c (column := 13) (row := row) (rotation := 0)))) + (4 * (Circuit.main c (column := 14) (row := row) (rotation := 0)))) + (8 * (Circuit.main c (column := 15) (row := row) (rotation := 0)))) + (16 * (Circuit.main c (column := 16) (row := row) (rotation := 0)))) + (32 * (Circuit.main c (column := 17) (row := row) (rotation := 0)))) + (64 * (Circuit.main c (column := 18) (row := row) (rotation := 0)))) + (128 * (Circuit.main c (column := 19) (row := row) (rotation := 0)))) - (Circuit.main c (column := 8) (row := row) (rotation := 0))) = 0
+@[extracted_constraint_definition] def constraint_1 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 20) (row := row) (rotation := 0)) * ((((0 + ((Circuit.main c (column := 12) (row := row) (rotation := 0)) * 1)) + ((Circuit.main c (column := 13) (row := row) (rotation := 0)) * 2)) + ((Circuit.main c (column := 14) (row := row) (rotation := 0)) * 4)) - 0)) = 0
+@[extracted_constraint_definition] def constraint_2 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 21) (row := row) (rotation := 0)) * ((((0 + ((Circuit.main c (column := 12) (row := row) (rotation := 0)) * 1)) + ((Circuit.main c (column := 13) (row := row) (rotation := 0)) * 2)) + ((Circuit.main c (column := 14) (row := row) (rotation := 0)) * 4)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_3 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 22) (row := row) (rotation := 0)) * ((((0 + ((Circuit.main c (column := 12) (row := row) (rotation := 0)) * 1)) + ((Circuit.main c (column := 13) (row := row) (rotation := 0)) * 2)) + ((Circuit.main c (column := 14) (row := row) (rotation := 0)) * 4)) - 2)) = 0
+@[extracted_constraint_definition] def constraint_4 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 23) (row := row) (rotation := 0)) * ((((0 + ((Circuit.main c (column := 12) (row := row) (rotation := 0)) * 1)) + ((Circuit.main c (column := 13) (row := row) (rotation := 0)) * 2)) + ((Circuit.main c (column := 14) (row := row) (rotation := 0)) * 4)) - 3)) = 0
+@[extracted_constraint_definition] def constraint_5 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 24) (row := row) (rotation := 0)) * ((((0 + ((Circuit.main c (column := 12) (row := row) (rotation := 0)) * 1)) + ((Circuit.main c (column := 13) (row := row) (rotation := 0)) * 2)) + ((Circuit.main c (column := 14) (row := row) (rotation := 0)) * 4)) - 4)) = 0
+@[extracted_constraint_definition] def constraint_6 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 25) (row := row) (rotation := 0)) * ((((0 + ((Circuit.main c (column := 12) (row := row) (rotation := 0)) * 1)) + ((Circuit.main c (column := 13) (row := row) (rotation := 0)) * 2)) + ((Circuit.main c (column := 14) (row := row) (rotation := 0)) * 4)) - 5)) = 0
+@[extracted_constraint_definition] def constraint_7 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 26) (row := row) (rotation := 0)) * ((((0 + ((Circuit.main c (column := 12) (row := row) (rotation := 0)) * 1)) + ((Circuit.main c (column := 13) (row := row) (rotation := 0)) * 2)) + ((Circuit.main c (column := 14) (row := row) (rotation := 0)) * 4)) - 6)) = 0
+@[extracted_constraint_definition] def constraint_8 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 27) (row := row) (rotation := 0)) * ((((0 + ((Circuit.main c (column := 12) (row := row) (rotation := 0)) * 1)) + ((Circuit.main c (column := 13) (row := row) (rotation := 0)) * 2)) + ((Circuit.main c (column := 14) (row := row) (rotation := 0)) * 4)) - 7)) = 0
+@[extracted_constraint_definition] def constraint_9 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 20) (row := row) (rotation := 0)) * ((Circuit.main c (column := 28) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_10 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 21) (row := row) (rotation := 0)) * ((Circuit.main c (column := 28) (row := row) (rotation := 0)) - 2)) = 0
+@[extracted_constraint_definition] def constraint_11 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 22) (row := row) (rotation := 0)) * ((Circuit.main c (column := 28) (row := row) (rotation := 0)) - 4)) = 0
+@[extracted_constraint_definition] def constraint_12 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 23) (row := row) (rotation := 0)) * ((Circuit.main c (column := 28) (row := row) (rotation := 0)) - 8)) = 0
+@[extracted_constraint_definition] def constraint_13 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 24) (row := row) (rotation := 0)) * ((Circuit.main c (column := 28) (row := row) (rotation := 0)) - 16)) = 0
+@[extracted_constraint_definition] def constraint_14 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 25) (row := row) (rotation := 0)) * ((Circuit.main c (column := 28) (row := row) (rotation := 0)) - 32)) = 0
+@[extracted_constraint_definition] def constraint_15 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 26) (row := row) (rotation := 0)) * ((Circuit.main c (column := 28) (row := row) (rotation := 0)) - 64)) = 0
+@[extracted_constraint_definition] def constraint_16 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 27) (row := row) (rotation := 0)) * ((Circuit.main c (column := 28) (row := row) (rotation := 0)) - 128)) = 0
+@[extracted_constraint_definition] def constraint_17 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 29) (row := row) (rotation := 0)) - (((Circuit.main c (column := 4) (row := row) (rotation := 0)) * (Circuit.main c (column := 28) (row := row) (rotation := 0))) - ((Circuit.main c (column := 33) (row := row) (rotation := 0)) * 256))) = 0
+@[extracted_constraint_definition] def constraint_18 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 30) (row := row) (rotation := 0)) - ((((Circuit.main c (column := 5) (row := row) (rotation := 0)) * (Circuit.main c (column := 28) (row := row) (rotation := 0))) - ((Circuit.main c (column := 34) (row := row) (rotation := 0)) * 256)) + (Circuit.main c (column := 33) (row := row) (rotation := 0)))) = 0
+@[extracted_constraint_definition] def constraint_19 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 31) (row := row) (rotation := 0)) - ((((Circuit.main c (column := 6) (row := row) (rotation := 0)) * (Circuit.main c (column := 28) (row := row) (rotation := 0))) - ((Circuit.main c (column := 35) (row := row) (rotation := 0)) * 256)) + (Circuit.main c (column := 34) (row := row) (rotation := 0)))) = 0
+@[extracted_constraint_definition] def constraint_20 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 32) (row := row) (rotation := 0)) - ((((Circuit.main c (column := 7) (row := row) (rotation := 0)) * (Circuit.main c (column := 28) (row := row) (rotation := 0))) - ((Circuit.main c (column := 36) (row := row) (rotation := 0)) * 256)) + (Circuit.main c (column := 35) (row := row) (rotation := 0)))) = 0
+@[extracted_constraint_definition] def constraint_21 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 37) (row := row) (rotation := 0)) * (((Circuit.main c (column := 15) (row := row) (rotation := 0)) + ((Circuit.main c (column := 16) (row := row) (rotation := 0)) * 2)) - 0)) = 0
+@[extracted_constraint_definition] def constraint_22 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 38) (row := row) (rotation := 0)) * (((Circuit.main c (column := 15) (row := row) (rotation := 0)) + ((Circuit.main c (column := 16) (row := row) (rotation := 0)) * 2)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_23 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 39) (row := row) (rotation := 0)) * (((Circuit.main c (column := 15) (row := row) (rotation := 0)) + ((Circuit.main c (column := 16) (row := row) (rotation := 0)) * 2)) - 2)) = 0
+@[extracted_constraint_definition] def constraint_24 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 40) (row := row) (rotation := 0)) * (((Circuit.main c (column := 15) (row := row) (rotation := 0)) + ((Circuit.main c (column := 16) (row := row) (rotation := 0)) * 2)) - 3)) = 0
+@[extracted_constraint_definition] def constraint_25 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 37) (row := row) (rotation := 0)) * ((Circuit.main c (column := 0) (row := row) (rotation := 0)) - (Circuit.main c (column := 29) (row := row) (rotation := 0)))) = 0
+@[extracted_constraint_definition] def constraint_26 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 37) (row := row) (rotation := 0)) * ((Circuit.main c (column := 1) (row := row) (rotation := 0)) - (Circuit.main c (column := 30) (row := row) (rotation := 0)))) = 0
+@[extracted_constraint_definition] def constraint_27 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 37) (row := row) (rotation := 0)) * ((Circuit.main c (column := 2) (row := row) (rotation := 0)) - (Circuit.main c (column := 31) (row := row) (rotation := 0)))) = 0
+@[extracted_constraint_definition] def constraint_28 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 37) (row := row) (rotation := 0)) * ((Circuit.main c (column := 3) (row := row) (rotation := 0)) - (Circuit.main c (column := 32) (row := row) (rotation := 0)))) = 0
+@[extracted_constraint_definition] def constraint_29 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 38) (row := row) (rotation := 0)) * ((Circuit.main c (column := 0) (row := row) (rotation := 0)) - 0)) = 0
+@[extracted_constraint_definition] def constraint_30 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 38) (row := row) (rotation := 0)) * ((Circuit.main c (column := 1) (row := row) (rotation := 0)) - (Circuit.main c (column := 29) (row := row) (rotation := 0)))) = 0
+@[extracted_constraint_definition] def constraint_31 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 38) (row := row) (rotation := 0)) * ((Circuit.main c (column := 2) (row := row) (rotation := 0)) - (Circuit.main c (column := 30) (row := row) (rotation := 0)))) = 0
+@[extracted_constraint_definition] def constraint_32 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 38) (row := row) (rotation := 0)) * ((Circuit.main c (column := 3) (row := row) (rotation := 0)) - (Circuit.main c (column := 31) (row := row) (rotation := 0)))) = 0
+@[extracted_constraint_definition] def constraint_33 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 39) (row := row) (rotation := 0)) * ((Circuit.main c (column := 0) (row := row) (rotation := 0)) - 0)) = 0
+@[extracted_constraint_definition] def constraint_34 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 39) (row := row) (rotation := 0)) * ((Circuit.main c (column := 1) (row := row) (rotation := 0)) - 0)) = 0
+@[extracted_constraint_definition] def constraint_35 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 39) (row := row) (rotation := 0)) * ((Circuit.main c (column := 2) (row := row) (rotation := 0)) - (Circuit.main c (column := 29) (row := row) (rotation := 0)))) = 0
+@[extracted_constraint_definition] def constraint_36 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 39) (row := row) (rotation := 0)) * ((Circuit.main c (column := 3) (row := row) (rotation := 0)) - (Circuit.main c (column := 30) (row := row) (rotation := 0)))) = 0
+@[extracted_constraint_definition] def constraint_37 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 40) (row := row) (rotation := 0)) * ((Circuit.main c (column := 0) (row := row) (rotation := 0)) - 0)) = 0
+@[extracted_constraint_definition] def constraint_38 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 40) (row := row) (rotation := 0)) * ((Circuit.main c (column := 1) (row := row) (rotation := 0)) - 0)) = 0
+@[extracted_constraint_definition] def constraint_39 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 40) (row := row) (rotation := 0)) * ((Circuit.main c (column := 2) (row := row) (rotation := 0)) - 0)) = 0
+@[extracted_constraint_definition] def constraint_40 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 40) (row := row) (rotation := 0)) * ((Circuit.main c (column := 3) (row := row) (rotation := 0)) - (Circuit.main c (column := 29) (row := row) (rotation := 0)))) = 0
+@[extracted_constraint_definition] def constraint_41 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 12) (row := row) (rotation := 0)) * ((Circuit.main c (column := 12) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_42 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 13) (row := row) (rotation := 0)) * ((Circuit.main c (column := 13) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_43 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 14) (row := row) (rotation := 0)) * ((Circuit.main c (column := 14) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_44 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 15) (row := row) (rotation := 0)) * ((Circuit.main c (column := 15) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_45 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 16) (row := row) (rotation := 0)) * ((Circuit.main c (column := 16) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_46 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 17) (row := row) (rotation := 0)) * ((Circuit.main c (column := 17) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_47 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 18) (row := row) (rotation := 0)) * ((Circuit.main c (column := 18) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_48 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 19) (row := row) (rotation := 0)) * ((Circuit.main c (column := 19) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_49 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 20) (row := row) (rotation := 0)) * ((Circuit.main c (column := 20) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_50 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 21) (row := row) (rotation := 0)) * ((Circuit.main c (column := 21) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_51 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 22) (row := row) (rotation := 0)) * ((Circuit.main c (column := 22) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_52 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 23) (row := row) (rotation := 0)) * ((Circuit.main c (column := 23) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_53 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 24) (row := row) (rotation := 0)) * ((Circuit.main c (column := 24) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_54 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 25) (row := row) (rotation := 0)) * ((Circuit.main c (column := 25) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_55 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 26) (row := row) (rotation := 0)) * ((Circuit.main c (column := 26) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_56 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 27) (row := row) (rotation := 0)) * ((Circuit.main c (column := 27) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_57 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  (((((((((0 + (Circuit.main c (column := 20) (row := row) (rotation := 0))) + (Circuit.main c (column := 21) (row := row) (rotation := 0))) + (Circuit.main c (column := 22) (row := row) (rotation := 0))) + (Circuit.main c (column := 23) (row := row) (rotation := 0))) + (Circuit.main c (column := 24) (row := row) (rotation := 0))) + (Circuit.main c (column := 25) (row := row) (rotation := 0))) + (Circuit.main c (column := 26) (row := row) (rotation := 0))) + (Circuit.main c (column := 27) (row := row) (rotation := 0))) - 1) = 0
+@[extracted_constraint_definition] def constraint_58 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 37) (row := row) (rotation := 0)) * ((Circuit.main c (column := 37) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_59 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 38) (row := row) (rotation := 0)) * ((Circuit.main c (column := 38) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_60 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 39) (row := row) (rotation := 0)) * ((Circuit.main c (column := 39) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_61 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 40) (row := row) (rotation := 0)) * ((Circuit.main c (column := 40) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition] def constraint_62 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  (((((0 + (Circuit.main c (column := 37) (row := row) (rotation := 0))) + (Circuit.main c (column := 38) (row := row) (rotation := 0))) + (Circuit.main c (column := 39) (row := row) (rotation := 0))) + (Circuit.main c (column := 40) (row := row) (rotation := 0))) - 1) = 0
+@[extracted_constraint_definition] def constraint_63 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 41) (row := row) (rotation := 0)) * ((Circuit.main c (column := 41) (row := row) (rotation := 0)) - 1)) = 0
+@[extracted_constraint_definition]
+def constrain_interactions {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) :=
+  Circuit.bus c = (List.range (Circuit.last_row c + 1)).flatMap (λ row => [(-((Circuit.main c (column := 41) (row := row) (rotation := 0))), [4, 7, 0, 0, (Circuit.main c (column := 29) (row := row) (rotation := 0)), (Circuit.main c (column := 30) (row := row) (rotation := 0))]),
+  (-((Circuit.main c (column := 41) (row := row) (rotation := 0))), [4, 7, 0, 0, (Circuit.main c (column := 31) (row := row) (rotation := 0)), (Circuit.main c (column := 32) (row := row) (rotation := 0))]),
+  (-((Circuit.main c (column := 41) (row := row) (rotation := 0))), [4, 7, 0, 0, (Circuit.main c (column := 33) (row := row) (rotation := 0)), (Circuit.main c (column := 34) (row := row) (rotation := 0))]),
+  (-((Circuit.main c (column := 41) (row := row) (rotation := 0))), [4, 7, 0, 0, (Circuit.main c (column := 35) (row := row) (rotation := 0)), (Circuit.main c (column := 36) (row := row) (rotation := 0))]),
+  ((Circuit.main c (column := 41) (row := row) (rotation := 0)), [3, 5, (Circuit.main c (column := 0) (row := row) (rotation := 0)), (Circuit.main c (column := 1) (row := row) (rotation := 0)), (Circuit.main c (column := 2) (row := row) (rotation := 0)), (Circuit.main c (column := 3) (row := row) (rotation := 0)), (Circuit.main c (column := 4) (row := row) (rotation := 0)), (Circuit.main c (column := 5) (row := row) (rotation := 0)), (Circuit.main c (column := 6) (row := row) (rotation := 0)), (Circuit.main c (column := 7) (row := row) (rotation := 0)), (Circuit.main c (column := 8) (row := row) (rotation := 0)), (Circuit.main c (column := 9) (row := row) (rotation := 0)), (Circuit.main c (column := 10) (row := row) (rotation := 0)), (Circuit.main c (column := 11) (row := row) (rotation := 0))])])
+@[constraint_and_interaction_simplification]
+def constraint_list {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ)
+: List Prop :=
+  [
+    constraint_0 c row,
+    constraint_1 c row,
+    constraint_2 c row,
+    constraint_3 c row,
+    constraint_4 c row,
+    constraint_5 c row,
+    constraint_6 c row,
+    constraint_7 c row,
+    constraint_8 c row,
+    constraint_9 c row,
+    constraint_10 c row,
+    constraint_11 c row,
+    constraint_12 c row,
+    constraint_13 c row,
+    constraint_14 c row,
+    constraint_15 c row,
+    constraint_16 c row,
+    constraint_17 c row,
+    constraint_18 c row,
+    constraint_19 c row,
+    constraint_20 c row,
+    constraint_21 c row,
+    constraint_22 c row,
+    constraint_23 c row,
+    constraint_24 c row,
+    constraint_25 c row,
+    constraint_26 c row,
+    constraint_27 c row,
+    constraint_28 c row,
+    constraint_29 c row,
+    constraint_30 c row,
+    constraint_31 c row,
+    constraint_32 c row,
+    constraint_33 c row,
+    constraint_34 c row,
+    constraint_35 c row,
+    constraint_36 c row,
+    constraint_37 c row,
+    constraint_38 c row,
+    constraint_39 c row,
+    constraint_40 c row,
+    constraint_41 c row,
+    constraint_42 c row,
+    constraint_43 c row,
+    constraint_44 c row,
+    constraint_45 c row,
+    constraint_46 c row,
+    constraint_47 c row,
+    constraint_48 c row,
+    constraint_49 c row,
+    constraint_50 c row,
+    constraint_51 c row,
+    constraint_52 c row,
+    constraint_53 c row,
+    constraint_54 c row,
+    constraint_55 c row,
+    constraint_56 c row,
+    constraint_57 c row,
+    constraint_58 c row,
+    constraint_59 c row,
+    constraint_60 c row,
+    constraint_61 c row,
+    constraint_62 c row,
+    constraint_63 c row
+  ]
+@[constraint_and_interaction_simplification]
+def allHold {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ)
+: Prop :=
+  constrain_interactions c ∧
+  List.Forall (·) (constraint_list c row)
+end SllAir.Extraction
+------

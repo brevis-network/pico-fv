@@ -10,7 +10,7 @@ namespace Equivalence
   open RV32IM
   open RV32IM_Interactions
   open CpuAir.constraints
-  open CPUAir.Buses
+  open CpuAir.Buses
 
   attribute [local simp]
     program_bus_entry

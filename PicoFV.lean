@@ -12,10 +12,23 @@ import PicoFV.RVSail.RV32IM.Execution
 import PicoFV.RVSail.RV32IM.Operations
 import PicoFV.RVSail.RV32IM.Opcodes.Opcodes
 
-import PicoFV.Airs.Attributes
-import PicoFV.Airs.CPUAir
+import PicoFV.Extraction.AddSubAir
+import PicoFV.Extraction.Attributes
+import PicoFV.Extraction.BitwiseAir
+import PicoFV.Extraction.CpuAir
+import PicoFV.Extraction.DivRemAir
+-- import PicoFV.Extraction.GlobalAir
+import PicoFV.Extraction.LtAir
+import PicoFV.Extraction.MemoryReadWriteAir
+import PicoFV.Extraction.MulAir
+import PicoFV.Extraction.ProgramAir
+import PicoFV.Extraction.ShiftRightAir
+import PicoFV.Extraction.SllAir
 
-import PicoFV.Constraints.CPUAir
+import PicoFV.Airs.Attributes
+import PicoFV.Airs.CpuAir
+
+import PicoFV.Constraints.CpuAir
 
 import PicoFV.Equivalence.ALU
 import PicoFV.Equivalence.ControlFlow
