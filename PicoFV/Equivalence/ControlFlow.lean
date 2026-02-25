@@ -1,4 +1,4 @@
-import PicoFV.Constraints.CPUAir
+import PicoFV.Constraints.CpuAir
 
 import PicoFV.RVSail.RV32IM.Opcodes.Opcodes
 
@@ -10,7 +10,7 @@ namespace Equivalence
   open RV32IM
   open RV32IM_Interactions
   open CpuAir.constraints
-  open CPUAir.Buses
+  open CpuAir.Buses
 
   attribute [local simp]
     program_bus_entry

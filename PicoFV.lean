@@ -13,9 +13,9 @@ import PicoFV.RVSail.RV32IM.Operations
 import PicoFV.RVSail.RV32IM.Opcodes.Opcodes
 
 import PicoFV.Airs.Attributes
-import PicoFV.Airs.CPUAir
+import PicoFV.Airs.CpuAir
 
-import PicoFV.Constraints.CPUAir
+import PicoFV.Constraints.CpuAir
 
 import PicoFV.Equivalence.ALU
 import PicoFV.Equivalence.ControlFlow

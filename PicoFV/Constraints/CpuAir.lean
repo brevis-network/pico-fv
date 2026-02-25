@@ -1,7 +1,7 @@
 import PicoFV.RVSail.RV32IM.Operations
 
-import PicoFV.Extraction.CPUAir
-import PicoFV.Airs.CPUAir
+import PicoFV.Extraction.CpuAir
+import PicoFV.Airs.CpuAir
 
 open Plonky3
 
@@ -2653,7 +2653,7 @@ namespace CpuAir.constraints
 
 end CpuAir.constraints
 
-namespace CPUAir.Buses
+namespace CpuAir.Buses
 
   open RV32IM_Interactions
 
@@ -2701,4 +2701,4 @@ namespace CPUAir.Buses
   def CPU_bus_operations (air : Valid_CpuAir FKB ExtF) (row : ℕ) :=
     RV32IM.bus_operations (bus_row air row) ++ [ .WritePC (BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)) ]
 
-end CPUAir.Buses
+end CpuAir.Buses
