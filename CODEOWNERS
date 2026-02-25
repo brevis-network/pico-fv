@@ -5,13 +5,13 @@
 #
 # 📖 Learn more: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-# =============================================================================
-# GLOBAL OWNERS
-# =============================================================================
-# These owners will be requested for review on ALL pull requests
-# Uncomment and customize the line below:
+=============================================================================
+GLOBAL OWNERS
+=============================================================================
+These owners will be requested for review on ALL pull requests
+Uncomment and customize the line below:
 
-# * @NethermindEth/your-team-name
+* @NethermindEth/PetarMax
 
 # =============================================================================
 # PATH-BASED OWNERSHIP
