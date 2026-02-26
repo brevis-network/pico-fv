@@ -24,9 +24,26 @@ import PicoFV.Extraction.ShiftRightAir
 import PicoFV.Extraction.SllAir
 
 import PicoFV.Airs.Attributes
+import PicoFV.Airs.SubAirs
+import PicoFV.Airs.AddSubAir
+import PicoFV.Airs.BitwiseAir
 import PicoFV.Airs.CpuAir
+import PicoFV.Airs.DivRemAir
+import PicoFV.Airs.LtAir
+import PicoFV.Airs.MemoryReadWriteAir
+import PicoFV.Airs.MulAir
+import PicoFV.Airs.ShiftRightAir
+import PicoFV.Airs.SllAir
 
+import PicoFV.Constraints.AddSubAir
+import PicoFV.Constraints.BitwiseAir
 import PicoFV.Constraints.CpuAir
+import PicoFV.Constraints.DivRemAir
+import PicoFV.Constraints.LtAir
+import PicoFV.Constraints.MemoryReadWriteAir
+import PicoFV.Constraints.MulAir
+import PicoFV.Constraints.ShiftRightAir
+import PicoFV.Constraints.SllAir
 
 import PicoFV.Equivalence.ALU
 import PicoFV.Equivalence.ControlFlow

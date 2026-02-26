@@ -5,6 +5,7 @@ import LeanZKCircuit_Plonky3.Plonky3.Command.Air.define_air
 
 import PicoFV.Extraction.Attributes
 import PicoFV.Airs.Attributes
+import PicoFV.Airs.SubAirs
 
 open Plonky3
 
@@ -101,28 +102,7 @@ each constraint helper file interprets the relevant subset.
 -- ============================================================================
 -- Sub-air definitions
 -- ============================================================================
-
--- Rust: MemoryAccessCols (9 columns)
--- Fields: value (Word = 4), prev_chunk, prev_clk, compare_clk, diff_16bit_limb, diff_8bit_limb
-#define_subair "MemoryAccessCols" using "pico_encapsulation" where
-  Column["value_0"]
-  Column["value_1"]
-  Column["value_2"]
-  Column["value_3"]
-  Column["prev_chunk"]
-  Column["prev_clk"]
-  Column["compare_clk"]
-  Column["diff_16bit_limb"]
-  Column["diff_8bit_limb"]
-
--- Rust: MemoryReadWriteCols (13 columns = prev_value:4 + MemoryAccessCols:9)
--- MemoryReadCols is structurally identical to MemoryAccessCols, so we reuse it directly.
-#define_subair "MemoryReadWriteCols" using "pico_encapsulation" where
-  Column["prev_value_0"]
-  Column["prev_value_1"]
-  Column["prev_value_2"]
-  Column["prev_value_3"]
-  SubAir["access": "MemoryAccessCols" width := 9]
+-- Note: MemoryAccessCols (9) and MemoryReadWriteCols (13) are defined in SubAirs.lean.
 
 -- Rust: InstructionCols (14 columns)
 -- Fields: opcode, op_a (Word = 4), op_b (Word = 4), op_c (Word = 4), op_a_0 (is x0 flag)
