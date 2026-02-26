@@ -334,9 +334,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
       ] at h_bus_hypotheses
-      obtain ⟨ h_pc, h_reg2, h_bus_hypotheses ⟩ := h_bus_hypotheses
-      simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_bus_hypotheses
-      obtain ⟨ h_reg1, h_bus_hypotheses ⟩ := h_bus_hypotheses; clear h_bus_hypotheses
+      obtain ⟨ h_pc, h_reg2, h_reg1 ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- More constraints
@@ -490,7 +489,6 @@ namespace Equivalence
         split_ands
         . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
-        . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
       . intro h_branch
         simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_eq_branching] at h_branch
         simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_npc
@@ -607,9 +605,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
       ] at h_bus_hypotheses
-      obtain ⟨ h_pc, h_reg2, h_bus_hypotheses ⟩ := h_bus_hypotheses
-      simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_bus_hypotheses
-      obtain ⟨ h_reg1, h_bus_hypotheses ⟩ := h_bus_hypotheses; clear h_bus_hypotheses
+      obtain ⟨ h_pc, h_reg2, h_reg1 ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- More constraints
@@ -763,7 +760,6 @@ namespace Equivalence
         split_ands
         . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
-        . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
       . intro h_branch
         simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_eq_branching] at h_branch
         simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_npc
@@ -880,9 +876,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
       ] at h_bus_hypotheses
-      obtain ⟨ h_pc, h_reg2, h_bus_hypotheses ⟩ := h_bus_hypotheses
-      simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_bus_hypotheses
-      obtain ⟨ h_reg1, h_bus_hypotheses ⟩ := h_bus_hypotheses; clear h_bus_hypotheses
+      obtain ⟨ h_pc, h_reg2, h_reg1 ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- More constraints
@@ -1045,7 +1040,6 @@ namespace Equivalence
         split_ands
         . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
-        . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
       . intro h_branch
         simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3] at h_branch
         simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_npc
@@ -1162,9 +1156,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
       ] at h_bus_hypotheses
-      obtain ⟨ h_pc, h_reg2, h_bus_hypotheses ⟩ := h_bus_hypotheses
-      simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_bus_hypotheses
-      obtain ⟨ h_reg1, h_bus_hypotheses ⟩ := h_bus_hypotheses; clear h_bus_hypotheses
+      obtain ⟨ h_pc, h_reg2, h_reg1 ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- More constraints
@@ -1327,7 +1320,6 @@ namespace Equivalence
         split_ands
         . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
-        . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
       . intro h_branch
         simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3] at h_branch
         simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_npc
@@ -1444,9 +1436,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
       ] at h_bus_hypotheses
-      obtain ⟨ h_pc, h_reg2, h_bus_hypotheses ⟩ := h_bus_hypotheses
-      simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_bus_hypotheses
-      obtain ⟨ h_reg1, h_bus_hypotheses ⟩ := h_bus_hypotheses; clear h_bus_hypotheses
+      obtain ⟨ h_pc, h_reg2, h_reg1 ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- More constraints
@@ -1609,7 +1600,6 @@ namespace Equivalence
         split_ands
         . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
-        . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
       . intro h_branch
         simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3] at h_branch
         simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_npc
@@ -1726,9 +1716,8 @@ namespace Equivalence
         h_opcode,
         h_selectors,
       ] at h_bus_hypotheses
-      obtain ⟨ h_pc, h_reg2, h_bus_hypotheses ⟩ := h_bus_hypotheses
-      simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_bus_hypotheses
-      obtain ⟨ h_reg1, h_bus_hypotheses ⟩ := h_bus_hypotheses; clear h_bus_hypotheses
+      obtain ⟨ h_pc, h_reg2, h_reg1 ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- More constraints
@@ -1891,7 +1880,6 @@ namespace Equivalence
         split_ands
         . rw [← h_reg1]; rfl
         . rw [← h_reg2]; rfl
-        . simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
       . intro h_branch
         simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3] at h_branch
         simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_npc

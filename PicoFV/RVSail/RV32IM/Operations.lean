@@ -227,6 +227,22 @@ namespace RV32IM
       conv => lhs; arg 1; arg 2; unfold operation_effect; simp
       apply operation_effect_state_hyps
 
+    @[simp]
+    lemma operation_list_effect_hypotheses_writePC
+    :
+      (operation_list_effect [.WritePC val] state).hypotheses = True
+    := by
+      simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
+
+    @[simp]
+    lemma operation_list_effect_hypotheses_writeReg
+    :
+      (operation_list_effect [.WriteReg reg val] state).hypotheses
+        =
+      True
+    := by
+      simp [operation_list_effect, operation_effect]
+
     lemma operation_list_effect_hypotheses_writeReg_same
       (h_reg : read_xreg (regidx_to_fin reg) state = EStateM.Result.ok val state)
     :
