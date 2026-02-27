@@ -226,6 +226,353 @@ namespace Equivalence
               simp [constraint_and_interaction_simplification, sub_eq_zero, *] at relevant_constraints
               grind
 
+    lemma branching_pc
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+    :
+      air.cols.branching row 0 = 1 →
+        U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
+                    BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
+                    BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
+                    BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
+          = BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega)
+    := by
+      intro h_branch
+
+      simp [
+        bus_row_assumptions,
+        bus_row,
+        h_branch,
+        cpu_branch_cols_simplification,
+      ] at h_assumptions
+      replace h_assumptions := h_assumptions.2.2.1
+      simp [ ALUBus.Spec ] at h_assumptions
+
+      have relevant_constraints :
+        constraint_28 air row ∧ constraint_31 air row ∧ constraint_32 air row ∧ constraint_33 air row ∧
+        constraint_34 air row ∧ constraint_35 air row ∧ constraint_36 air row ∧ constraint_37 air row ∧
+        constraint_38 air row ∧ constraint_39 air row ∧ constraint_40 air row ∧ constraint_41 air row ∧
+        constraint_41 air row ∧ constraint_43 air row ∧ constraint_44 air row ∧ constraint_45 air row
+      := by
+        simp [allHold_simplified] at h_constraints
+        grind
+      simp [
+        pico_encapsulation,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
+        h_branch_instr,
+        h_branch,
+        sub_eq_zero,
+      ] at relevant_constraints
+      simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32.toNat]
+      repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_assumptions; omega)]
+      simp [Fin.val_add, Fin.val_mul]
+      rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
+      grind
+
+    lemma branching_npc
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+    :
+      air.cols.branching row 0 = 1 →
+        U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
+                    BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
+                    BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
+                    BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
+          = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
+    := by
+      intro h_branch
+
+      simp [
+        bus_row_assumptions,
+        bus_row,
+        h_branch,
+        cpu_branch_cols_simplification,
+      ] at h_assumptions
+      replace h_assumptions := h_assumptions.2.2.1
+      simp [ ALUBus.Spec ] at h_assumptions
+
+      have relevant_constraints :
+        constraint_30 air row ∧ constraint_46 air row ∧ constraint_47 air row ∧ constraint_48 air row ∧
+        constraint_49 air row ∧ constraint_50 air row ∧ constraint_51 air row ∧ constraint_52 air row ∧
+        constraint_53 air row ∧ constraint_54 air row ∧ constraint_55 air row ∧ constraint_56 air row ∧
+        constraint_57 air row ∧ constraint_58 air row ∧ constraint_59 air row ∧ constraint_60 air row
+      := by
+        simp [allHold_simplified] at h_constraints
+        grind
+      simp [
+        pico_encapsulation,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
+        h_branch_instr,
+        h_branch,
+        h_is_real,
+        sub_eq_zero,
+      ] at relevant_constraints
+      simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32.toNat]
+      repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_assumptions; omega)]
+      simp [Fin.val_add, Fin.val_mul]
+      rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
+      grind
+
+    lemma non_branching_npc
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_axioms : bus_row_axioms (bus_row air row))
+      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+    :
+      air.cols.branching row 0 = 0 →
+        BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega) + 4#32
+          = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
+    := by
+      intro h_branch
+
+      have relevant_constraints :
+        constraint_63 air row ∧ constraint_64 air row
+      := by
+        simp [allHold_simplified] at h_constraints
+        grind
+      simp [
+        pico_encapsulation,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
+        h_branch_instr,
+        h_branch,
+        h_is_real,
+        sub_eq_zero,
+      ] at relevant_constraints
+
+      simp [ bus_row_axioms, bus_row, h_is_real ] at h_axioms
+
+      simp [← BitVec.toNat_inj]; grind
+
+    lemma is_branch_instruction_characterisation
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+    :
+      let beq := air.cols.opcode_selector.is_beq row 0
+      let bne := air.cols.opcode_selector.is_bne row 0
+      let blt := air.cols.opcode_selector.is_blt row 0
+      let bge := air.cols.opcode_selector.is_bge row 0
+      let bltu := air.cols.opcode_selector.is_bltu row 0
+      let bgeu := air.cols.opcode_selector.is_bgeu row 0
+      let store := air.cols.is_store_instruction row 0
+      (
+        (beq = 1 ∧ bne = 0 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 0) ∨
+        (beq = 0 ∧ bne = 1 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 0) ∨
+        (beq = 0 ∧ bne = 0 ∧ blt = 1 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 0) ∨
+        (beq = 0 ∧ bne = 0 ∧ blt = 0 ∧ bge = 1 ∧ bltu = 0 ∧ bgeu = 0) ∨
+        (beq = 0 ∧ bne = 0 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 1 ∧ bgeu = 0) ∨
+        (beq = 0 ∧ bne = 0 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 1)
+      ) ∧ store = 0
+    := by
+      simp [ bus_row_assumptions ] at h_assumptions
+      replace h_assumptions := h_assumptions.1
+      -- Program bus assumptions
+      simp [
+        bus_row,
+        h_is_real,
+        ProgramBusEntry.operand_properties,
+        -Vector.getElem_mk,
+        -ProgramBusEntry.mk.injEq
+      ] at h_assumptions
+      obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_assumptions
+      have h_eq_mult : mult = -1 := by aesop
+      subst mult
+      have opcode_bounds :=
+        @ProgramBusEntry.inversion_opcode_bounds
+          instr
+          ⟨ -1, data ⟩
+          props
+          (ProgramBusEntry.deserialise (program_bus_entry air row))
+          (by simp [h_eq, h_is_real])
+          (by simp [h_is_real]; aesop)
+      have opcode_selectors :=
+        @ProgramBusEntry.inversion_opcode_selectors
+          instr
+          ⟨ -1, data ⟩
+          props
+          (ProgramBusEntry.deserialise (program_bus_entry air row))
+          (by simp [h_eq, h_is_real])
+          (by simp [h_is_real]; aesop)
+      clear h_eq h_eq_entry
+      simp [program_bus_entry] at opcode_bounds opcode_selectors
+      obtain ⟨ opcode_range, opcode_not_26, opcode_not_29 ⟩ := opcode_bounds
+      simp [Valid_CpuCols.is_branch_instruction] at h_branch_instr
+      repeat rw [Fin.ext_iff (a := air.cols.instruction.opcode row 0)] at opcode_selectors
+      interval_cases (air.cols.instruction.opcode row 0).val <;> simp_all [Valid_CpuCols.is_store_instruction]
+
+    lemma a_lt_b_meaning
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+    :
+      air.cols.branch_a_lt_b row 0 =
+      if (air.cols.opcode_selector.is_blt row 0 = 1 ∨ air.cols.opcode_selector.is_bge row 0 = 1)
+      then
+        (if (U32.toInt
+            #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)] <
+            U32.toInt
+            #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
+        then 1 else 0)
+      else
+        (if (U32.toNat
+            #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)] <
+            U32.toNat
+            #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
+        then 1 else 0)
+    := by
+      obtain ⟨ h_cases, h_store ⟩ := is_branch_instruction_characterisation air row h_is_real h_assumptions h_branch_instr
+      simp [ bus_row_assumptions ] at h_assumptions
+      replace h_assumptions := h_assumptions.2.1
+      simp [
+        bus_row,
+        h_branch_instr,
+        h_is_real,
+        cpu_branch_cols_simplification,
+      ] at h_assumptions
+      replace h_assumptions := h_assumptions.2.2.1
+      obtain h | h | h | h | h | h := h_cases <;> split_ifs
+      all_goals simp_all [ ALUBus.Spec ]
+      all_goals simp [← BitVec.toNat_inj, U32.toNat] at h_assumptions
+      all_goals omega
+
+    lemma a_gt_b_meaning
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+    :
+      air.cols.branch_a_gt_b row 0 =
+      if (air.cols.opcode_selector.is_blt row 0 = 1 ∨ air.cols.opcode_selector.is_bge row 0 = 1)
+      then
+        (if (U32.toInt
+            #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)] <
+            U32.toInt
+            #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
+        then 1 else 0)
+      else
+        (if (U32.toNat
+            #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)] <
+            U32.toNat
+            #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
+              BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
+        then 1 else 0)
+    := by
+      obtain ⟨ h_cases, h_store ⟩ := is_branch_instruction_characterisation air row h_is_real h_assumptions h_branch_instr
+      simp [ bus_row_assumptions ] at h_assumptions
+      replace h_assumptions := h_assumptions.2.1
+      simp [
+        bus_row,
+        h_branch_instr,
+        h_is_real,
+        cpu_branch_cols_simplification,
+      ] at h_assumptions
+      replace h_assumptions := h_assumptions.2.2.2.1
+      obtain h | h | h | h | h | h := h_cases <;> split_ifs
+      all_goals simp_all [ ALUBus.Spec ]
+      all_goals simp [← BitVec.toNat_inj, U32.toNat] at h_assumptions
+      all_goals omega
+
+    lemma a_prev_eq
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+    :
+      air.cols.op_a_access.access.value_0 row 0 = air.cols.op_a_access.prev_value_0 row 0 ∧
+      air.cols.op_a_access.access.value_1 row 0 = air.cols.op_a_access.prev_value_1 row 0 ∧
+      air.cols.op_a_access.access.value_2 row 0 = air.cols.op_a_access.prev_value_2 row 0 ∧
+      air.cols.op_a_access.access.value_3 row 0 = air.cols.op_a_access.prev_value_3 row 0
+    := by
+      obtain relevant_constraints :
+        constraint_24 air row ∧ constraint_25 air row ∧ constraint_26 air row ∧ constraint_27 air row
+      := by
+        simp [allHold_simplified] at h_constraints
+        aesop
+      simp [
+        pico_encapsulation,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
+        sub_eq_zero,
+        h_branch_instr,
+      ] at relevant_constraints
+      simp [(is_branch_instruction_characterisation air row h_is_real h_assumptions h_branch_instr).2] at relevant_constraints
+      assumption
+
+    lemma c_val_eq
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_c_imm : air.cols.opcode_selector.imm_c row 0 = 1)
+    :
+      air.cols.op_c_access.value_0 row 0 = air.cols.instruction.c_0 row 0 ∧
+      air.cols.op_c_access.value_1 row 0 = air.cols.instruction.c_1 row 0 ∧
+      air.cols.op_c_access.value_2 row 0 = air.cols.instruction.c_2 row 0 ∧
+      air.cols.op_c_access.value_3 row 0 = air.cols.instruction.c_3 row 0
+    := by
+      obtain relevant_constraints :
+        constraint_4 air row ∧ constraint_5 air row ∧ constraint_6 air row ∧ constraint_7 air row
+      := by
+        simp [allHold_simplified] at h_constraints
+        aesop
+      simp [
+        pico_encapsulation,
+        cpu_branch_cols_simplification,
+        constraint_and_interaction_simplification,
+        sub_eq_zero,
+        h_c_imm,
+      ] at relevant_constraints
+      assumption
+
   end Auxiliaries
 
   section BTYPE
@@ -290,33 +637,7 @@ namespace Equivalence
               h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
       simp [h_props] at h_eq_props; clear h_props
       simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
-      obtain ⟨ h_reg_rd, h_reg_rs1 ⟩ := h_eq_props
-      -- Constraint processing
-      simp [
-        pico_encapsulation,
-        cpu_branch_cols_simplification,
-        constraint_and_interaction_simplification,
-        h_is_real,
-        h_selectors,
-        sub_eq_zero
-      ] at h_constraints
-      obtain h_eqs :
-        air.cols.ecall_mul_send_to_table row 0 = 0 ∧
-        air.cols.ecall_range_check_operand row 0 = 0 ∧
-        air.cols.is_sequential_instr row 0 = 0
-      := by aesop
-      simp [h_eqs] at h_constraints
-      replace h_constraints := h_constraints.2
-
-      obtain ⟨ h_eq_c0, h_eq_c1, h_eq_c2, h_eq_c3, h0, h1, h2, h_eq_a0, h_eq_a1, h_eq_a2,
-               h_eq_a3, h3, h4, h5, h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_constraints ⟩ := h_constraints
-      clear h0 h1 h2 h3 h4 h5
-      obtain ⟨ hb00, hb01, hb02, hb03, hb04, hb05, hb06, hb07, hb08, hb09,
-               hb10, hb11, hb12, hb13, hb14, hb15, hb16, hb17, hb18, hb19,
-               hb20, hb21, hb22, hb23, hb24, hb25, hb26, hb27, hb28, hb29,
-               hb30, hb31, hb32, hb33, hb34, hb35, hb36, hb37, hb38, hb39,
-               hb40, hb41, h_constraints ⟩ := h_constraints
-      clear h_constraints
+      obtain ⟨ h_reg_rd, h_reg_rs1, h_imm_mod_2 ⟩ := h_eq_props
       -- ALU bus assumptions
       simp [
         bus_row,
@@ -325,7 +646,7 @@ namespace Equivalence
         h_selectors,
         cpu_branch_cols_simplification,
       ] at h_asm_alu
-      obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
+      replace h_asm_alu := h_asm_alu.1
       -- Hypotheses
       simp [
         bus_operations,
@@ -338,59 +659,23 @@ namespace Equivalence
       simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
-      -- More constraints
-      have h_eq_pc_bv :
-        air.cols.branching row 0 = 1 →
-          U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
-            = BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega)
-      := by
-        intro h_branching; simp_all [ALUBus.Spec]
-        trans U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
-        . simp
-        . simp [← hb00, ← BitVec.toNat_inj, U32.toNat]
-          repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_npc; omega)]
-          simp [Fin.val_add, Fin.val_mul]
-          rw [Nat.mod_eq_of_lt]
-          . omega
-          . obtain ⟨ h0, h1, h2, h3, hpc0, hpc1, hpc2, hpc3, rest ⟩ := h_npc
-            clear *- hb02 hb03 hb04 hb05 hb06 hb07 hb08 hb09 hb11 hb12 hb13 hb14 hb15 hb16
-                     hpc0 hpc1 hpc2
-            simp [← hb11, Fin.val_add, Fin.val_mul]
-            rw [Nat.mod_eq_of_lt (by grind)]
-            grind
-      have h_eq_npc_bv :
-        air.cols.branching row 0 = 1 →
-          U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
-            = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
-      := by
-        intro h_branching; simp_all [ALUBus.Spec]
-        trans U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
-        . simp [h_npc]
-        . simp [← hb02, ← BitVec.toNat_inj, U32.toNat]
-          repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_npc; omega)]
-          simp [Fin.val_add, Fin.val_mul]
-          rw [Nat.mod_eq_of_lt]
-          . omega
-          . obtain ⟨ hnpc0, hnpc1, hnpc2, hnpc3, h0, h1, h2, h3, rest ⟩ := h_npc
-            clear *- hb17 hb18 hb19 hb20 hb21 hb22 hb23 hb25 hb26 hb27 hb28 hb29 hb30
-                     hnpc0 hnpc1 hnpc2
-            simp [← hb25, Fin.val_add, Fin.val_mul]
-            rw [Nat.mod_eq_of_lt (by grind)]
-            grind
-      clear hb02 hb03 hb04 hb05 hb06 hb07 hb08 hb09 hb11 hb12 hb13 hb14 hb15 hb16
-            hb17 hb18 hb19 hb20 hb21 hb22 hb23 hb25 hb26 hb27 hb28 hb29 hb30
+      -- Branching
+      have h_is_branching : air.cols.is_branch_instruction row 0 = 1
+        := by simp [Valid_CpuCols.is_branch_instruction, h_selectors]
+      -- Previous a-equalities
+      have h_prev_eq := a_prev_eq air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      -- C-value equalities
+      have h_c_val_eq := c_val_eq air row h_constraints (by aesop)
+      -- Branching is boolean
+      have h_b_branching : constraint_65 air row
+        := by simp [allHold_simplified] at h_constraints; aesop
+      simp [
+        pico_encapsulation,
+        constraint_and_interaction_simplification,
+        h_is_branching,
+        sub_eq_zero
+      ] at h_b_branching
+      -- Characterisation of branching
       have h_eq_branching :
         (U32.toBV
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
@@ -404,37 +689,30 @@ namespace Equivalence
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]) =
         (air.cols.branching row 0 = 1)
       := by
-        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec, ← CpuAir.is_branch_instruction_def]
-        split_ifs at h_gt with h_if
-        . rw [if_neg (by omega)] at h_lt
-          have h_eq_lt : air.cols.branch_a_lt_b row 0 = 0
-          := by
-            clear *- h_lt
-            simp [← BitVec.toNat_inj, U32.toNat] at h_lt
-            omega
-          have h_eq_gt : air.cols.branch_a_gt_b row 0 = 1
-          := by
-            clear *- h_gt
-            simp [← BitVec.toNat_inj, U32.toNat] at h_gt
-            omega
-          simp_all
-          intro h_branch; simp [← BitVec.toNat_inj] at h_branch
-          omega
-        . intro h_branch
-          simp [← BitVec.toNat_inj] at h_branch
-          simp [h_branch] at h_lt h_gt
-          have h_eq_lt : air.cols.branch_a_lt_b row 0 = 0
-          := by
-            clear *- h_lt
-            simp [← BitVec.toNat_inj, U32.toNat] at h_lt
-            omega
-          have h_eq_gt : air.cols.branch_a_gt_b row 0 = 0
-          := by
-            clear *- h_gt
-            simp [← BitVec.toNat_inj, U32.toNat] at h_gt
-            omega
-          simp_all
-      clear h_lt h_gt
+        obtain relevant_constraints
+        : constraint_67 air row ∧ constraint_68 air row ∧
+          constraint_75 air row ∧ constraint_76 air row ∧ constraint_77 air row ∧ constraint_78 air row
+        := by
+          simp [allHold_simplified] at h_constraints
+          aesop
+        simp [
+          pico_encapsulation,
+          cpu_branch_cols_simplification,
+          constraint_and_interaction_simplification,
+          sub_eq_zero,
+          h_selectors
+        ] at relevant_constraints
+        obtain ⟨ h_a_eq_b, h_lt_gt, h_eq_0, h_eq_1, h_eq_2, h_eq_3 ⟩ := relevant_constraints
+        have h_lt := a_lt_b_meaning air row h_is_real (h_all_assumptions row (by omega)) h_is_branching
+        have h_gt := a_gt_b_meaning air row h_is_real (h_all_assumptions row (by omega)) h_is_branching
+        simp [h_selectors] at h_lt h_gt
+        simp [← BitVec.toNat_inj]
+        split_ifs at h_lt <;> split_ifs at h_gt <;> simp_all <;>
+        rcases h_b_branching <;> simp_all <;> omega
+      -- Program counter characterisation
+      have h_branching_pc := branching_pc air row (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_branching_next_pc := branching_npc air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_non_branching_npc := non_branching_npc air row h_is_real (h_all_axioms row h_row) h_constraints h_is_branching
       -- Proof
       extract_lets reg1 reg2 imm'
       rw [
@@ -460,6 +738,7 @@ namespace Equivalence
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)])
         (misa := misa)
         (h_misa := by clear *- risc_v_assumptions; tauto)
+        (by split_ands <;> aesop)
       ]
       . simp [
           OpcodeSpec.RV32.spec_BEQ,
@@ -470,7 +749,7 @@ namespace Equivalence
           h_selectors,
         ]
         simp [operation_list_effect_state_writeReg_same h_reg2]
-        simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3]
+        simp [h_prev_eq]
         simp [operation_list_effect_state_writeReg_same h_reg1]
         simp_all [
           ALUBus.Spec,
@@ -478,26 +757,16 @@ namespace Equivalence
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
         congr
-        split_ifs with h_if
-        . simp_all
-        . have h_eq_branching : air.cols.branching row 0 = 0
-            := by obtain hb34 | hb34 := hb34 <;> simp_all
-          simp_all
-          simp [← hb32, ← BitVec.toNat_inj, Fin.val_add]
-          omega
-      . simp [OpcodeSpec.RV32.spec_BEQ, *]
-        split_ands
-        . rw [← h_reg1]; rfl
-        . rw [← h_reg2]; rfl
+        split_ifs <;> simp_all
       . intro h_branch
-        simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_eq_branching] at h_branch
-        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_npc
+        simp [h_prev_eq, h_eq_branching] at h_branch
+        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_asm_alu
         simp [
           *,
           Transpiler.imm_to_KB_BV_sgn,
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
-        rw [← h_npc.2.2.2.2.2.2.2.2.2.2.2.2]
+        rw [← h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
         simp [← BitVec.toNat_inj]
         exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
 
@@ -561,33 +830,7 @@ namespace Equivalence
               h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
       simp [h_props] at h_eq_props; clear h_props
       simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
-      obtain ⟨ h_reg_rd, h_reg_rs1 ⟩ := h_eq_props
-      -- Constraint processing
-      simp [
-        pico_encapsulation,
-        cpu_branch_cols_simplification,
-        constraint_and_interaction_simplification,
-        h_is_real,
-        h_selectors,
-        sub_eq_zero
-      ] at h_constraints
-      obtain h_eqs :
-        air.cols.ecall_mul_send_to_table row 0 = 0 ∧
-        air.cols.ecall_range_check_operand row 0 = 0 ∧
-        air.cols.is_sequential_instr row 0 = 0
-      := by aesop
-      simp [h_eqs] at h_constraints
-      replace h_constraints := h_constraints.2
-
-      obtain ⟨ h_eq_c0, h_eq_c1, h_eq_c2, h_eq_c3, h0, h1, h2, h_eq_a0, h_eq_a1, h_eq_a2,
-               h_eq_a3, h3, h4, h5, h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_constraints ⟩ := h_constraints
-      clear h0 h1 h2 h3 h4 h5
-      obtain ⟨ hb00, hb01, hb02, hb03, hb04, hb05, hb06, hb07, hb08, hb09,
-               hb10, hb11, hb12, hb13, hb14, hb15, hb16, hb17, hb18, hb19,
-               hb20, hb21, hb22, hb23, hb24, hb25, hb26, hb27, hb28, hb29,
-               hb30, hb31, hb32, hb33, hb34, hb35, hb36, hb37, hb38, hb39,
-               hb40, hb41, h_constraints ⟩ := h_constraints
-      clear h_constraints
+      obtain ⟨ h_reg_rd, h_reg_rs1, h_imm_mod_2 ⟩ := h_eq_props
       -- ALU bus assumptions
       simp [
         bus_row,
@@ -596,7 +839,7 @@ namespace Equivalence
         h_selectors,
         cpu_branch_cols_simplification,
       ] at h_asm_alu
-      obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
+      replace h_asm_alu := h_asm_alu.1
       -- Hypotheses
       simp [
         bus_operations,
@@ -609,59 +852,23 @@ namespace Equivalence
       simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
-      -- More constraints
-      have h_eq_pc_bv :
-        air.cols.branching row 0 = 1 →
-          U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
-            = BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega)
-      := by
-        intro h_branching; simp_all [ALUBus.Spec]
-        trans U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
-        . simp
-        . simp [← hb00, ← BitVec.toNat_inj, U32.toNat]
-          repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_npc; omega)]
-          simp [Fin.val_add, Fin.val_mul]
-          rw [Nat.mod_eq_of_lt]
-          . omega
-          . obtain ⟨ h0, h1, h2, h3, hpc0, hpc1, hpc2, hpc3, rest ⟩ := h_npc
-            clear *- hb02 hb03 hb04 hb05 hb06 hb07 hb08 hb09 hb11 hb12 hb13 hb14 hb15 hb16
-                     hpc0 hpc1 hpc2
-            simp [← hb11, Fin.val_add, Fin.val_mul]
-            rw [Nat.mod_eq_of_lt (by grind)]
-            grind
-      have h_eq_npc_bv :
-        air.cols.branching row 0 = 1 →
-          U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
-            = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
-      := by
-        intro h_branching; simp_all [ALUBus.Spec]
-        trans U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
-        . simp [h_npc]
-        . simp [← hb02, ← BitVec.toNat_inj, U32.toNat]
-          repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_npc; omega)]
-          simp [Fin.val_add, Fin.val_mul]
-          rw [Nat.mod_eq_of_lt]
-          . omega
-          . obtain ⟨ hnpc0, hnpc1, hnpc2, hnpc3, h0, h1, h2, h3, rest ⟩ := h_npc
-            clear *- hb17 hb18 hb19 hb20 hb21 hb22 hb23 hb25 hb26 hb27 hb28 hb29 hb30
-                     hnpc0 hnpc1 hnpc2
-            simp [← hb25, Fin.val_add, Fin.val_mul]
-            rw [Nat.mod_eq_of_lt (by grind)]
-            grind
-      clear hb02 hb03 hb04 hb05 hb06 hb07 hb08 hb09 hb11 hb12 hb13 hb14 hb15 hb16
-            hb17 hb18 hb19 hb20 hb21 hb22 hb23 hb25 hb26 hb27 hb28 hb29 hb30
+      -- Branching
+      have h_is_branching : air.cols.is_branch_instruction row 0 = 1
+        := by simp [Valid_CpuCols.is_branch_instruction, h_selectors]
+      -- Previous a-equalities
+      have h_prev_eq := a_prev_eq air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      -- C-value equalities
+      have h_c_val_eq := c_val_eq air row h_constraints (by aesop)
+      -- Branching is boolean
+      have h_b_branching : constraint_65 air row
+        := by simp [allHold_simplified] at h_constraints; aesop
+      simp [
+        pico_encapsulation,
+        constraint_and_interaction_simplification,
+        h_is_branching,
+        sub_eq_zero
+      ] at h_b_branching
+      -- Characterisation of branching
       have h_eq_branching :
         (¬ (U32.toBV
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
@@ -675,37 +882,30 @@ namespace Equivalence
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])) =
         (air.cols.branching row 0 = 1)
       := by
-        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec, ← CpuAir.is_branch_instruction_def]
-        split_ifs at h_gt with h_if
-        . rw [if_neg (by omega)] at h_lt
-          have h_eq_lt : air.cols.branch_a_lt_b row 0 = 0
-          := by
-            clear *- h_lt
-            simp [← BitVec.toNat_inj, U32.toNat] at h_lt
-            omega
-          have h_eq_gt : air.cols.branch_a_gt_b row 0 = 1
-          := by
-            clear *- h_gt
-            simp [← BitVec.toNat_inj, U32.toNat] at h_gt
-            omega
-          simp_all
-          intro h_branch; simp [← BitVec.toNat_inj] at h_branch
-          omega
-        . intro h_branch
-          simp [← BitVec.toNat_inj] at h_branch
-          simp [h_branch] at h_lt h_gt
-          have h_eq_lt : air.cols.branch_a_lt_b row 0 = 0
-          := by
-            clear *- h_lt
-            simp [← BitVec.toNat_inj, U32.toNat] at h_lt
-            omega
-          have h_eq_gt : air.cols.branch_a_gt_b row 0 = 0
-          := by
-            clear *- h_gt
-            simp [← BitVec.toNat_inj, U32.toNat] at h_gt
-            omega
-          simp_all
-      clear h_lt h_gt
+        obtain relevant_constraints
+        : constraint_69 air row ∧ constraint_70 air row ∧
+          constraint_75 air row ∧ constraint_76 air row ∧ constraint_77 air row ∧ constraint_78 air row
+        := by
+          simp [allHold_simplified] at h_constraints
+          aesop
+        simp [
+          pico_encapsulation,
+          cpu_branch_cols_simplification,
+          constraint_and_interaction_simplification,
+          sub_eq_zero,
+          h_selectors
+        ] at relevant_constraints
+        obtain ⟨ h_a_eq_b, h_lt_gt, h_eq_0, h_eq_1, h_eq_2, h_eq_3 ⟩ := relevant_constraints
+        have h_lt := a_lt_b_meaning air row h_is_real (h_all_assumptions row (by omega)) h_is_branching
+        have h_gt := a_gt_b_meaning air row h_is_real (h_all_assumptions row (by omega)) h_is_branching
+        simp [h_selectors] at h_lt h_gt
+        simp [← BitVec.toNat_inj]
+        split_ifs at h_lt <;> split_ifs at h_gt <;> simp_all <;>
+        rcases h_b_branching <;> simp_all <;> omega
+      -- Program counter characterisation
+      have h_branching_pc := branching_pc air row (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_branching_next_pc := branching_npc air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_non_branching_npc := non_branching_npc air row h_is_real (h_all_axioms row h_row) h_constraints h_is_branching
       -- Proof
       extract_lets reg1 reg2 imm'
       rw [
@@ -731,6 +931,7 @@ namespace Equivalence
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)])
         (misa := misa)
         (h_misa := by clear *- risc_v_assumptions; tauto)
+        (by split_ands <;> aesop)
       ]
       . simp [
           OpcodeSpec.RV32.spec_BNE,
@@ -741,7 +942,7 @@ namespace Equivalence
           h_selectors,
         ]
         simp [operation_list_effect_state_writeReg_same h_reg2]
-        simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3]
+        simp [h_prev_eq]
         simp [operation_list_effect_state_writeReg_same h_reg1]
         simp_all [
           ALUBus.Spec,
@@ -749,26 +950,16 @@ namespace Equivalence
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
         congr
-        split_ifs with h_if
-        . have h_eq_branching : air.cols.branching row 0 = 0
-            := by obtain hb34 | hb34 := hb34 <;> simp_all
-          simp_all
-          simp [← hb32, ← BitVec.toNat_inj, Fin.val_add]
-          omega
-        . simp_all
-      . simp [OpcodeSpec.RV32.spec_BNE, *]
-        split_ands
-        . rw [← h_reg1]; rfl
-        . rw [← h_reg2]; rfl
+        split_ifs <;> simp_all
       . intro h_branch
-        simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_eq_branching] at h_branch
-        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_npc
+        simp [h_prev_eq, h_eq_branching] at h_branch
+        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_asm_alu
         simp [
           *,
           Transpiler.imm_to_KB_BV_sgn,
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
-        rw [← h_npc.2.2.2.2.2.2.2.2.2.2.2.2]
+        rw [← h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
         simp [← BitVec.toNat_inj]
         exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
 
@@ -832,33 +1023,7 @@ namespace Equivalence
               h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
       simp [h_props] at h_eq_props; clear h_props
       simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
-      obtain ⟨ h_reg_rd, h_reg_rs1 ⟩ := h_eq_props
-      -- Constraint processing
-      simp [
-        pico_encapsulation,
-        cpu_branch_cols_simplification,
-        constraint_and_interaction_simplification,
-        h_is_real,
-        h_selectors,
-        sub_eq_zero
-      ] at h_constraints
-      obtain h_eqs :
-        air.cols.ecall_mul_send_to_table row 0 = 0 ∧
-        air.cols.ecall_range_check_operand row 0 = 0 ∧
-        air.cols.is_sequential_instr row 0 = 0
-      := by aesop
-      simp [h_eqs] at h_constraints
-      replace h_constraints := h_constraints.2
-
-      obtain ⟨ h_eq_c0, h_eq_c1, h_eq_c2, h_eq_c3, h0, h1, h2, h_eq_a0, h_eq_a1, h_eq_a2,
-               h_eq_a3, h3, h4, h5, h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_constraints ⟩ := h_constraints
-      clear h0 h1 h2 h3 h4 h5
-      obtain ⟨ hb00, hb01, hb02, hb03, hb04, hb05, hb06, hb07, hb08, hb09,
-               hb10, hb11, hb12, hb13, hb14, hb15, hb16, hb17, hb18, hb19,
-               hb20, hb21, hb22, hb23, hb24, hb25, hb26, hb27, hb28, hb29,
-               hb30, hb31, hb32, hb33, hb34, hb35, hb36, hb37, hb38, hb39,
-               hb40, hb41, h_constraints ⟩ := h_constraints
-      clear h_constraints
+      obtain ⟨ h_reg_rd, h_reg_rs1, h_imm_mod_2 ⟩ := h_eq_props
       -- ALU bus assumptions
       simp [
         bus_row,
@@ -867,7 +1032,7 @@ namespace Equivalence
         h_selectors,
         cpu_branch_cols_simplification,
       ] at h_asm_alu
-      obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
+      replace h_asm_alu := h_asm_alu.1
       -- Hypotheses
       simp [
         bus_operations,
@@ -880,114 +1045,60 @@ namespace Equivalence
       simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
-      -- More constraints
-      have h_eq_pc_bv :
-        air.cols.branching row 0 = 1 →
-          U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
-            = BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega)
-      := by
-        intro h_branching; simp_all [ALUBus.Spec]
-        trans U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
-        . simp
-        . simp [← hb00, ← BitVec.toNat_inj, U32.toNat]
-          repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_npc; omega)]
-          simp [Fin.val_add, Fin.val_mul]
-          rw [Nat.mod_eq_of_lt]
-          . omega
-          . obtain ⟨ h0, h1, h2, h3, hpc0, hpc1, hpc2, hpc3, rest ⟩ := h_npc
-            clear *- hb02 hb03 hb04 hb05 hb06 hb07 hb08 hb09 hb11 hb12 hb13 hb14 hb15 hb16
-                     hpc0 hpc1 hpc2
-            simp [← hb11, Fin.val_add, Fin.val_mul]
-            rw [Nat.mod_eq_of_lt (by grind)]
-            grind
-      have h_eq_npc_bv :
-        air.cols.branching row 0 = 1 →
-          U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
-            = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
-      := by
-        intro h_branching; simp_all [ALUBus.Spec]
-        trans U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
-        . simp [h_npc]
-        . simp [← hb02, ← BitVec.toNat_inj, U32.toNat]
-          repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_npc; omega)]
-          simp [Fin.val_add, Fin.val_mul]
-          rw [Nat.mod_eq_of_lt]
-          . omega
-          . obtain ⟨ hnpc0, hnpc1, hnpc2, hnpc3, h0, h1, h2, h3, rest ⟩ := h_npc
-            clear *- hb17 hb18 hb19 hb20 hb21 hb22 hb23 hb25 hb26 hb27 hb28 hb29 hb30
-                     hnpc0 hnpc1 hnpc2
-            simp [← hb25, Fin.val_add, Fin.val_mul]
-            rw [Nat.mod_eq_of_lt (by grind)]
-            grind
-      clear hb02 hb03 hb04 hb05 hb06 hb07 hb08 hb09 hb11 hb12 hb13 hb14 hb15 hb16
-            hb17 hb18 hb19 hb20 hb21 hb22 hb23 hb25 hb26 hb27 hb28 hb29 hb30
+      -- Branching
+      have h_is_branching : air.cols.is_branch_instruction row 0 = 1
+        := by simp [Valid_CpuCols.is_branch_instruction, h_selectors]
+      -- Previous a-equalities
+      have h_prev_eq := a_prev_eq air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      -- C-value equalities
+      have h_c_val_eq := c_val_eq air row h_constraints (by aesop)
+      -- Branching is boolean
+      have h_b_branching : constraint_65 air row
+        := by simp [allHold_simplified] at h_constraints; aesop
+      simp [
+        pico_encapsulation,
+        constraint_and_interaction_simplification,
+        h_is_branching,
+        sub_eq_zero
+      ] at h_b_branching
+      -- Characterisation of branching
       have h_eq_branching :
-        ((U32.toBV
+        (¬ (U32.toInt
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)]).toInt <
-        (U32.toBV
+             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)] <
+        U32.toInt
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]).toInt) =
-        (air.cols.branching row 0 = 1)
-      := by
-        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec, ← CpuAir.is_branch_instruction_def]
-        . simp_all
-          split_ifs at h_gt with h_if
-          . rw [if_neg (by clear *- h_if; omega)] at h_lt
-            have h_eq_lt : air.cols.branch_a_lt_b row 0 = 0
-            := by
-              clear *- h_lt
-              simp [← BitVec.toNat_inj, U32.toNat] at h_lt
-              omega
-            have h_eq_gt : air.cols.branch_a_gt_b row 0 = 1
-            := by
-              clear *- h_gt
-              simp [← BitVec.toNat_inj, U32.toNat] at h_gt
-              omega
-            simp_all
-            clear *- h_if; omega
-          . have h_eq_gt : air.cols.branch_a_gt_b row 0 = 0
-            := by
-              clear *- h_gt
-              simp [← BitVec.toNat_inj, U32.toNat] at h_gt
-              omega
-            simp_all
-        . simp_all
-          split_ifs at h_lt with h_if
-          . assumption
-          . exfalso; clear *- h_lt
-            simp [← BitVec.toNat_inj, U32.toNat] at h_lt
-      have h_eq_not_branching :
-        ((U32.toBV
-          #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]).toInt ≤
-        (U32.toBV
-          #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)]).toInt) =
+             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])) =
         (air.cols.branching row 0 = 0)
       := by
-        obtain hb34 | hb34 := hb34 <;> simp_all
-      clear h_lt h_gt
+        obtain relevant_constraints
+        : constraint_71 air row ∧ constraint_72 air row ∧
+          constraint_75 air row ∧ constraint_76 air row ∧ constraint_77 air row ∧ constraint_78 air row
+        := by
+          simp [allHold_simplified] at h_constraints
+          aesop
+        simp [
+          pico_encapsulation,
+          cpu_branch_cols_simplification,
+          constraint_and_interaction_simplification,
+          sub_eq_zero,
+          h_selectors
+        ] at relevant_constraints
+        obtain ⟨ h_a_eq_b, h_lt_gt, h_eq_0, h_eq_1, h_eq_2, h_eq_3 ⟩ := relevant_constraints
+        have h_lt := a_lt_b_meaning air row h_is_real (h_all_assumptions row (by omega)) h_is_branching
+        have h_gt := a_gt_b_meaning air row h_is_real (h_all_assumptions row (by omega)) h_is_branching
+        simp [h_selectors] at h_lt h_gt
+        split_ifs at h_lt with h_if_lt <;> split_ifs at h_gt with h_if_gt <;> simp_all
+        . clear *- h_if_lt h_if_gt; omega
+        . rcases h_lt_gt <;> simp_all
+      -- Program counter characterisation
+      have h_branching_pc := branching_pc air row (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_branching_next_pc := branching_npc air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_non_branching_npc := non_branching_npc air row h_is_real (h_all_axioms row h_row) h_constraints h_is_branching
       -- Proof
       extract_lets reg1 reg2 imm'
       rw [
@@ -1013,6 +1124,7 @@ namespace Equivalence
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)])
         (misa := misa)
         (h_misa := by clear *- risc_v_assumptions; tauto)
+        (by split_ands <;> aesop)
       ]
       . simp [
           OpcodeSpec.RV32.spec_BLT,
@@ -1023,7 +1135,7 @@ namespace Equivalence
           h_selectors,
         ]
         simp [operation_list_effect_state_writeReg_same h_reg2]
-        simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3]
+        simp [h_prev_eq]
         simp [operation_list_effect_state_writeReg_same h_reg1]
         simp_all [
           ALUBus.Spec,
@@ -1031,26 +1143,21 @@ namespace Equivalence
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
         congr
-        split_ifs with h_if
-        . simp_all
-          simp [← hb32, ← BitVec.toNat_inj, Fin.val_add]
-          omega
-        . simp_all
-      . simp [OpcodeSpec.RV32.spec_BLT, *]
-        split_ands
-        . rw [← h_reg1]; rfl
-        . rw [← h_reg2]; rfl
+        split_ifs <;> simp_all
       . intro h_branch
-        simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3] at h_branch
-        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_npc
+        simp [h_prev_eq] at h_branch
+        specialize h_branching_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
+        specialize h_branching_next_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
+        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_asm_alu
+        specialize h_asm_alu (by clear *- h_b_branching h_eq_branching h_branch; grind)
         simp [
           *,
           Transpiler.imm_to_KB_BV_sgn,
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
-        simp_all
+        rw [← h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
 
     lemma equivalence_BGE
       [Field ExtF]
@@ -1112,33 +1219,7 @@ namespace Equivalence
               h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
       simp [h_props] at h_eq_props; clear h_props
       simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
-      obtain ⟨ h_reg_rd, h_reg_rs1 ⟩ := h_eq_props
-      -- Constraint processing
-      simp [
-        pico_encapsulation,
-        cpu_branch_cols_simplification,
-        constraint_and_interaction_simplification,
-        h_is_real,
-        h_selectors,
-        sub_eq_zero
-      ] at h_constraints
-      obtain h_eqs :
-        air.cols.ecall_mul_send_to_table row 0 = 0 ∧
-        air.cols.ecall_range_check_operand row 0 = 0 ∧
-        air.cols.is_sequential_instr row 0 = 0
-      := by aesop
-      simp [h_eqs] at h_constraints
-      replace h_constraints := h_constraints.2
-
-      obtain ⟨ h_eq_c0, h_eq_c1, h_eq_c2, h_eq_c3, h0, h1, h2, h_eq_a0, h_eq_a1, h_eq_a2,
-               h_eq_a3, h3, h4, h5, h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_constraints ⟩ := h_constraints
-      clear h0 h1 h2 h3 h4 h5
-      obtain ⟨ hb00, hb01, hb02, hb03, hb04, hb05, hb06, hb07, hb08, hb09,
-               hb10, hb11, hb12, hb13, hb14, hb15, hb16, hb17, hb18, hb19,
-               hb20, hb21, hb22, hb23, hb24, hb25, hb26, hb27, hb28, hb29,
-               hb30, hb31, hb32, hb33, hb34, hb35, hb36, hb37, hb38, hb39,
-               hb40, hb41, h_constraints ⟩ := h_constraints
-      clear h_constraints
+      obtain ⟨ h_reg_rd, h_reg_rs1, h_imm_mod_2 ⟩ := h_eq_props
       -- ALU bus assumptions
       simp [
         bus_row,
@@ -1147,7 +1228,7 @@ namespace Equivalence
         h_selectors,
         cpu_branch_cols_simplification,
       ] at h_asm_alu
-      obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
+      replace h_asm_alu := h_asm_alu.1
       -- Hypotheses
       simp [
         bus_operations,
@@ -1160,114 +1241,60 @@ namespace Equivalence
       simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
-      -- More constraints
-      have h_eq_pc_bv :
-        air.cols.branching row 0 = 1 →
-          U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
-            = BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega)
-      := by
-        intro h_branching; simp_all [ALUBus.Spec]
-        trans U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
-        . simp
-        . simp [← hb00, ← BitVec.toNat_inj, U32.toNat]
-          repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_npc; omega)]
-          simp [Fin.val_add, Fin.val_mul]
-          rw [Nat.mod_eq_of_lt]
-          . omega
-          . obtain ⟨ h0, h1, h2, h3, hpc0, hpc1, hpc2, hpc3, rest ⟩ := h_npc
-            clear *- hb02 hb03 hb04 hb05 hb06 hb07 hb08 hb09 hb11 hb12 hb13 hb14 hb15 hb16
-                     hpc0 hpc1 hpc2
-            simp [← hb11, Fin.val_add, Fin.val_mul]
-            rw [Nat.mod_eq_of_lt (by grind)]
-            grind
-      have h_eq_npc_bv :
-        air.cols.branching row 0 = 1 →
-          U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
-            = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
-      := by
-        intro h_branching; simp_all [ALUBus.Spec]
-        trans U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
-        . simp [h_npc]
-        . simp [← hb02, ← BitVec.toNat_inj, U32.toNat]
-          repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_npc; omega)]
-          simp [Fin.val_add, Fin.val_mul]
-          rw [Nat.mod_eq_of_lt]
-          . omega
-          . obtain ⟨ hnpc0, hnpc1, hnpc2, hnpc3, h0, h1, h2, h3, rest ⟩ := h_npc
-            clear *- hb17 hb18 hb19 hb20 hb21 hb22 hb23 hb25 hb26 hb27 hb28 hb29 hb30
-                     hnpc0 hnpc1 hnpc2
-            simp [← hb25, Fin.val_add, Fin.val_mul]
-            rw [Nat.mod_eq_of_lt (by grind)]
-            grind
-      clear hb02 hb03 hb04 hb05 hb06 hb07 hb08 hb09 hb11 hb12 hb13 hb14 hb15 hb16
-            hb17 hb18 hb19 hb20 hb21 hb22 hb23 hb25 hb26 hb27 hb28 hb29 hb30
+      -- Branching
+      have h_is_branching : air.cols.is_branch_instruction row 0 = 1
+        := by simp [Valid_CpuCols.is_branch_instruction, h_selectors]
+      -- Previous a-equalities
+      have h_prev_eq := a_prev_eq air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      -- C-value equalities
+      have h_c_val_eq := c_val_eq air row h_constraints (by aesop)
+      -- Branching is boolean
+      have h_b_branching : constraint_65 air row
+        := by simp [allHold_simplified] at h_constraints; aesop
+      simp [
+        pico_encapsulation,
+        constraint_and_interaction_simplification,
+        h_is_branching,
+        sub_eq_zero
+      ] at h_b_branching
+      -- Characterisation of branching
       have h_eq_branching :
-        ((U32.toBV
+        (U32.toInt
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)]).toInt ≥
-        (U32.toBV
+             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)] <
+        U32.toInt
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]).toInt) =
-        (air.cols.branching row 0 = 1)
-      := by
-        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec, ← CpuAir.is_branch_instruction_def]
-        . simp_all
-          split_ifs at h_lt with h_if
-          . assumption
-          . exfalso; clear *- h_lt
-            simp [← BitVec.toNat_inj, U32.toNat] at h_lt
-        . simp_all
-          split_ifs at h_gt with h_if
-          . rw [if_neg (by clear *- h_if; omega)] at h_lt
-            have h_eq_lt : air.cols.branch_a_lt_b row 0 = 0
-            := by
-              clear *- h_lt
-              simp [← BitVec.toNat_inj, U32.toNat] at h_lt
-              omega
-            have h_eq_gt : air.cols.branch_a_gt_b row 0 = 1
-            := by
-              clear *- h_gt
-              simp [← BitVec.toNat_inj, U32.toNat] at h_gt
-              omega
-            simp_all
-            clear *- h_if; omega
-          . have h_eq_gt : air.cols.branch_a_gt_b row 0 = 0
-            := by
-              clear *- h_gt
-              simp [← BitVec.toNat_inj, U32.toNat] at h_gt
-              omega
-            simp_all
-      have h_eq_not_branching :
-        ((U32.toBV
-          #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)]).toInt <
-        (U32.toBV
-          #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]).toInt) =
+             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]) =
         (air.cols.branching row 0 = 0)
       := by
-        obtain hb34 | hb34 := hb34 <;> simp_all
-      clear h_lt h_gt
+        obtain relevant_constraints
+        : constraint_73 air row ∧ constraint_74 air row ∧
+          constraint_75 air row ∧ constraint_76 air row ∧ constraint_77 air row ∧ constraint_78 air row
+        := by
+          simp [allHold_simplified] at h_constraints
+          aesop
+        simp [
+          pico_encapsulation,
+          cpu_branch_cols_simplification,
+          constraint_and_interaction_simplification,
+          sub_eq_zero,
+          h_selectors
+        ] at relevant_constraints
+        obtain ⟨ h_a_eq_b, h_lt_gt, h_eq_0, h_eq_1, h_eq_2, h_eq_3 ⟩ := relevant_constraints
+        have h_lt := a_lt_b_meaning air row h_is_real (h_all_assumptions row (by omega)) h_is_branching
+        have h_gt := a_gt_b_meaning air row h_is_real (h_all_assumptions row (by omega)) h_is_branching
+        simp [h_selectors] at h_lt h_gt
+        split_ifs at h_lt with h_if_lt <;> split_ifs at h_gt with h_if_gt <;> simp_all
+        . clear *- h_if_lt h_if_gt; omega
+        . rcases h_a_eq_b <;> simp_all
+      -- Program counter characterisation
+      have h_branching_pc := branching_pc air row (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_branching_next_pc := branching_npc air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_non_branching_npc := non_branching_npc air row h_is_real (h_all_axioms row h_row) h_constraints h_is_branching
       -- Proof
       extract_lets reg1 reg2 imm'
       rw [
@@ -1293,6 +1320,7 @@ namespace Equivalence
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)])
         (misa := misa)
         (h_misa := by clear *- risc_v_assumptions; tauto)
+        (by split_ands <;> aesop)
       ]
       . simp [
           OpcodeSpec.RV32.spec_BGE,
@@ -1303,7 +1331,7 @@ namespace Equivalence
           h_selectors,
         ]
         simp [operation_list_effect_state_writeReg_same h_reg2]
-        simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3]
+        simp [h_prev_eq]
         simp [operation_list_effect_state_writeReg_same h_reg1]
         simp_all [
           ALUBus.Spec,
@@ -1311,26 +1339,21 @@ namespace Equivalence
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
         congr
-        split_ifs with h_if
-        . simp_all
-          simp [← hb32, ← BitVec.toNat_inj, Fin.val_add]
-          omega
-        . simp_all
-      . simp [OpcodeSpec.RV32.spec_BGE, *]
-        split_ands
-        . rw [← h_reg1]; rfl
-        . rw [← h_reg2]; rfl
+        split_ifs <;> simp_all
       . intro h_branch
-        simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3] at h_branch
-        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_npc
+        simp [h_prev_eq] at h_branch
+        specialize h_branching_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
+        specialize h_branching_next_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
+        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_asm_alu
+        specialize h_asm_alu (by clear *- h_b_branching h_eq_branching h_branch; grind)
         simp [
           *,
           Transpiler.imm_to_KB_BV_sgn,
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
-        simp_all
+        rw [← h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
 
     lemma equivalence_BLTU
       [Field ExtF]
@@ -1392,33 +1415,7 @@ namespace Equivalence
               h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
       simp [h_props] at h_eq_props; clear h_props
       simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
-      obtain ⟨ h_reg_rd, h_reg_rs1 ⟩ := h_eq_props
-      -- Constraint processing
-      simp [
-        pico_encapsulation,
-        cpu_branch_cols_simplification,
-        constraint_and_interaction_simplification,
-        h_is_real,
-        h_selectors,
-        sub_eq_zero
-      ] at h_constraints
-      obtain h_eqs :
-        air.cols.ecall_mul_send_to_table row 0 = 0 ∧
-        air.cols.ecall_range_check_operand row 0 = 0 ∧
-        air.cols.is_sequential_instr row 0 = 0
-      := by aesop
-      simp [h_eqs] at h_constraints
-      replace h_constraints := h_constraints.2
-
-      obtain ⟨ h_eq_c0, h_eq_c1, h_eq_c2, h_eq_c3, h0, h1, h2, h_eq_a0, h_eq_a1, h_eq_a2,
-               h_eq_a3, h3, h4, h5, h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_constraints ⟩ := h_constraints
-      clear h0 h1 h2 h3 h4 h5
-      obtain ⟨ hb00, hb01, hb02, hb03, hb04, hb05, hb06, hb07, hb08, hb09,
-               hb10, hb11, hb12, hb13, hb14, hb15, hb16, hb17, hb18, hb19,
-               hb20, hb21, hb22, hb23, hb24, hb25, hb26, hb27, hb28, hb29,
-               hb30, hb31, hb32, hb33, hb34, hb35, hb36, hb37, hb38, hb39,
-               hb40, hb41, h_constraints ⟩ := h_constraints
-      clear h_constraints
+      obtain ⟨ h_reg_rd, h_reg_rs1, h_imm_mod_2 ⟩ := h_eq_props
       -- ALU bus assumptions
       simp [
         bus_row,
@@ -1427,7 +1424,7 @@ namespace Equivalence
         h_selectors,
         cpu_branch_cols_simplification,
       ] at h_asm_alu
-      obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
+      replace h_asm_alu := h_asm_alu.1
       -- Hypotheses
       simp [
         bus_operations,
@@ -1440,114 +1437,60 @@ namespace Equivalence
       simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
-      -- More constraints
-      have h_eq_pc_bv :
-        air.cols.branching row 0 = 1 →
-          U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
-            = BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega)
-      := by
-        intro h_branching; simp_all [ALUBus.Spec]
-        trans U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
-        . simp
-        . simp [← hb00, ← BitVec.toNat_inj, U32.toNat]
-          repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_npc; omega)]
-          simp [Fin.val_add, Fin.val_mul]
-          rw [Nat.mod_eq_of_lt]
-          . omega
-          . obtain ⟨ h0, h1, h2, h3, hpc0, hpc1, hpc2, hpc3, rest ⟩ := h_npc
-            clear *- hb02 hb03 hb04 hb05 hb06 hb07 hb08 hb09 hb11 hb12 hb13 hb14 hb15 hb16
-                     hpc0 hpc1 hpc2
-            simp [← hb11, Fin.val_add, Fin.val_mul]
-            rw [Nat.mod_eq_of_lt (by grind)]
-            grind
-      have h_eq_npc_bv :
-        air.cols.branching row 0 = 1 →
-          U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
-            = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
-      := by
-        intro h_branching; simp_all [ALUBus.Spec]
-        trans U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
-        . simp [h_npc]
-        . simp [← hb02, ← BitVec.toNat_inj, U32.toNat]
-          repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_npc; omega)]
-          simp [Fin.val_add, Fin.val_mul]
-          rw [Nat.mod_eq_of_lt]
-          . omega
-          . obtain ⟨ hnpc0, hnpc1, hnpc2, hnpc3, h0, h1, h2, h3, rest ⟩ := h_npc
-            clear *- hb17 hb18 hb19 hb20 hb21 hb22 hb23 hb25 hb26 hb27 hb28 hb29 hb30
-                     hnpc0 hnpc1 hnpc2
-            simp [← hb25, Fin.val_add, Fin.val_mul]
-            rw [Nat.mod_eq_of_lt (by grind)]
-            grind
-      clear hb02 hb03 hb04 hb05 hb06 hb07 hb08 hb09 hb11 hb12 hb13 hb14 hb15 hb16
-            hb17 hb18 hb19 hb20 hb21 hb22 hb23 hb25 hb26 hb27 hb28 hb29 hb30
+      -- Branching
+      have h_is_branching : air.cols.is_branch_instruction row 0 = 1
+        := by simp [Valid_CpuCols.is_branch_instruction, h_selectors]
+      -- Previous a-equalities
+      have h_prev_eq := a_prev_eq air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      -- C-value equalities
+      have h_c_val_eq := c_val_eq air row h_constraints (by aesop)
+      -- Branching is boolean
+      have h_b_branching : constraint_65 air row
+        := by simp [allHold_simplified] at h_constraints; aesop
+      simp [
+        pico_encapsulation,
+        constraint_and_interaction_simplification,
+        h_is_branching,
+        sub_eq_zero
+      ] at h_b_branching
+      -- Characterisation of branching
       have h_eq_branching :
-        ((U32.toBV
+        (¬ (U32.toNat
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)]).toNat <
-        (U32.toBV
+             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)] <
+        U32.toNat
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]).toNat) =
-        (air.cols.branching row 0 = 1)
-      := by
-        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec, ← CpuAir.is_branch_instruction_def]
-        . simp_all
-          split_ifs at h_gt with h_if
-          . rw [if_neg (by omega)] at h_lt
-            have h_eq_lt : air.cols.branch_a_lt_b row 0 = 0
-            := by
-              clear *- h_lt
-              simp [← BitVec.toNat_inj, U32.toNat] at h_lt
-              omega
-            have h_eq_gt : air.cols.branch_a_gt_b row 0 = 1
-            := by
-              clear *- h_gt
-              simp [← BitVec.toNat_inj, U32.toNat] at h_gt
-              omega
-            simp_all
-            omega
-          . have h_eq_gt : air.cols.branch_a_gt_b row 0 = 0
-            := by
-              clear *- h_gt
-              simp [← BitVec.toNat_inj, U32.toNat] at h_gt
-              omega
-            simp_all
-        . simp_all
-          split_ifs at h_lt with h_if
-          . assumption
-          . exfalso; clear *- h_lt
-            simp [← BitVec.toNat_inj, U32.toNat] at h_lt
-      have h_eq_not_branching :
-        ((U32.toBV
-          #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]).toNat ≤
-        (U32.toBV
-          #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)]).toNat) =
+             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])) =
         (air.cols.branching row 0 = 0)
       := by
-        obtain hb34 | hb34 := hb34 <;> simp_all
-      clear h_lt h_gt
+        obtain relevant_constraints
+        : constraint_71 air row ∧ constraint_72 air row ∧
+          constraint_75 air row ∧ constraint_76 air row ∧ constraint_77 air row ∧ constraint_78 air row
+        := by
+          simp [allHold_simplified] at h_constraints
+          aesop
+        simp [
+          pico_encapsulation,
+          cpu_branch_cols_simplification,
+          constraint_and_interaction_simplification,
+          sub_eq_zero,
+          h_selectors
+        ] at relevant_constraints
+        obtain ⟨ h_a_eq_b, h_lt_gt, h_eq_0, h_eq_1, h_eq_2, h_eq_3 ⟩ := relevant_constraints
+        have h_lt := a_lt_b_meaning air row h_is_real (h_all_assumptions row (by omega)) h_is_branching
+        have h_gt := a_gt_b_meaning air row h_is_real (h_all_assumptions row (by omega)) h_is_branching
+        simp [h_selectors] at h_lt h_gt
+        split_ifs at h_lt with h_if_lt <;> split_ifs at h_gt with h_if_gt <;> simp_all
+        . clear *- h_if_lt h_if_gt; omega
+        . rcases h_lt_gt <;> simp_all
+      -- Program counter characterisation
+      have h_branching_pc := branching_pc air row (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_branching_next_pc := branching_npc air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_non_branching_npc := non_branching_npc air row h_is_real (h_all_axioms row h_row) h_constraints h_is_branching
       -- Proof
       extract_lets reg1 reg2 imm'
       rw [
@@ -1573,6 +1516,7 @@ namespace Equivalence
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)])
         (misa := misa)
         (h_misa := by clear *- risc_v_assumptions; tauto)
+        (by split_ands <;> aesop)
       ]
       . simp [
           OpcodeSpec.RV32.spec_BLTU,
@@ -1583,7 +1527,7 @@ namespace Equivalence
           h_selectors,
         ]
         simp [operation_list_effect_state_writeReg_same h_reg2]
-        simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3]
+        simp [h_prev_eq]
         simp [operation_list_effect_state_writeReg_same h_reg1]
         simp_all [
           ALUBus.Spec,
@@ -1591,26 +1535,21 @@ namespace Equivalence
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
         congr
-        split_ifs with h_if
-        . simp_all
-          simp [← hb32, ← BitVec.toNat_inj, Fin.val_add]
-          omega
-        . simp_all
-      . simp [OpcodeSpec.RV32.spec_BLTU, *]
-        split_ands
-        . rw [← h_reg1]; rfl
-        . rw [← h_reg2]; rfl
+        split_ifs <;> simp_all
       . intro h_branch
-        simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3] at h_branch
-        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_npc
+        simp [h_prev_eq] at h_branch
+        specialize h_branching_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
+        specialize h_branching_next_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
+        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_asm_alu
+        specialize h_asm_alu (by clear *- h_b_branching h_eq_branching h_branch; grind)
         simp [
           *,
           Transpiler.imm_to_KB_BV_sgn,
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
-        simp_all
+        rw [← h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
 
     lemma equivalence_BGEU
       [Field ExtF]
@@ -1672,33 +1611,7 @@ namespace Equivalence
               h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
       simp [h_props] at h_eq_props; clear h_props
       simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
-      obtain ⟨ h_reg_rd, h_reg_rs1 ⟩ := h_eq_props
-      -- Constraint processing
-      simp [
-        pico_encapsulation,
-        cpu_branch_cols_simplification,
-        constraint_and_interaction_simplification,
-        h_is_real,
-        h_selectors,
-        sub_eq_zero
-      ] at h_constraints
-      obtain h_eqs :
-        air.cols.ecall_mul_send_to_table row 0 = 0 ∧
-        air.cols.ecall_range_check_operand row 0 = 0 ∧
-        air.cols.is_sequential_instr row 0 = 0
-      := by aesop
-      simp [h_eqs] at h_constraints
-      replace h_constraints := h_constraints.2
-
-      obtain ⟨ h_eq_c0, h_eq_c1, h_eq_c2, h_eq_c3, h0, h1, h2, h_eq_a0, h_eq_a1, h_eq_a2,
-               h_eq_a3, h3, h4, h5, h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3, h_constraints ⟩ := h_constraints
-      clear h0 h1 h2 h3 h4 h5
-      obtain ⟨ hb00, hb01, hb02, hb03, hb04, hb05, hb06, hb07, hb08, hb09,
-               hb10, hb11, hb12, hb13, hb14, hb15, hb16, hb17, hb18, hb19,
-               hb20, hb21, hb22, hb23, hb24, hb25, hb26, hb27, hb28, hb29,
-               hb30, hb31, hb32, hb33, hb34, hb35, hb36, hb37, hb38, hb39,
-               hb40, hb41, h_constraints ⟩ := h_constraints
-      clear h_constraints
+      obtain ⟨ h_reg_rd, h_reg_rs1, h_imm_mod_2 ⟩ := h_eq_props
       -- ALU bus assumptions
       simp [
         bus_row,
@@ -1707,7 +1620,7 @@ namespace Equivalence
         h_selectors,
         cpu_branch_cols_simplification,
       ] at h_asm_alu
-      obtain ⟨ h_npc, h_lt, h_gt ⟩ := h_asm_alu
+      replace h_asm_alu := h_asm_alu.1
       -- Hypotheses
       simp [
         bus_operations,
@@ -1720,114 +1633,60 @@ namespace Equivalence
       simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
-      -- More constraints
-      have h_eq_pc_bv :
-        air.cols.branching row 0 = 1 →
-          U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
-            = BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega)
-      := by
-        intro h_branching; simp_all [ALUBus.Spec]
-        trans U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
-        . simp
-        . simp [← hb00, ← BitVec.toNat_inj, U32.toNat]
-          repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_npc; omega)]
-          simp [Fin.val_add, Fin.val_mul]
-          rw [Nat.mod_eq_of_lt]
-          . omega
-          . obtain ⟨ h0, h1, h2, h3, hpc0, hpc1, hpc2, hpc3, rest ⟩ := h_npc
-            clear *- hb02 hb03 hb04 hb05 hb06 hb07 hb08 hb09 hb11 hb12 hb13 hb14 hb15 hb16
-                     hpc0 hpc1 hpc2
-            simp [← hb11, Fin.val_add, Fin.val_mul]
-            rw [Nat.mod_eq_of_lt (by grind)]
-            grind
-      have h_eq_npc_bv :
-        air.cols.branching row 0 = 1 →
-          U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
-                      BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
-            = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
-      := by
-        intro h_branching; simp_all [ALUBus.Spec]
-        trans U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
-                          BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
-        . simp [h_npc]
-        . simp [← hb02, ← BitVec.toNat_inj, U32.toNat]
-          repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_npc; omega)]
-          simp [Fin.val_add, Fin.val_mul]
-          rw [Nat.mod_eq_of_lt]
-          . omega
-          . obtain ⟨ hnpc0, hnpc1, hnpc2, hnpc3, h0, h1, h2, h3, rest ⟩ := h_npc
-            clear *- hb17 hb18 hb19 hb20 hb21 hb22 hb23 hb25 hb26 hb27 hb28 hb29 hb30
-                     hnpc0 hnpc1 hnpc2
-            simp [← hb25, Fin.val_add, Fin.val_mul]
-            rw [Nat.mod_eq_of_lt (by grind)]
-            grind
-      clear hb02 hb03 hb04 hb05 hb06 hb07 hb08 hb09 hb11 hb12 hb13 hb14 hb15 hb16
-            hb17 hb18 hb19 hb20 hb21 hb22 hb23 hb25 hb26 hb27 hb28 hb29 hb30
+      -- Branching
+      have h_is_branching : air.cols.is_branch_instruction row 0 = 1
+        := by simp [Valid_CpuCols.is_branch_instruction, h_selectors]
+      -- Previous a-equalities
+      have h_prev_eq := a_prev_eq air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      -- C-value equalities
+      have h_c_val_eq := c_val_eq air row h_constraints (by aesop)
+      -- Branching is boolean
+      have h_b_branching : constraint_65 air row
+        := by simp [allHold_simplified] at h_constraints; aesop
+      simp [
+        pico_encapsulation,
+        constraint_and_interaction_simplification,
+        h_is_branching,
+        sub_eq_zero
+      ] at h_b_branching
+      -- Characterisation of branching
       have h_eq_branching :
-        ((U32.toBV
+        (U32.toNat
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)]).toNat ≥
-        (U32.toBV
+             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)] <
+        U32.toNat
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]).toNat) =
-        (air.cols.branching row 0 = 1)
-      := by
-        obtain hb34 | hb34 := hb34 <;> simp_all [ALUBus.Spec, ← CpuAir.is_branch_instruction_def]
-        . simp_all
-          split_ifs at h_lt with h_if
-          . assumption
-          . exfalso; clear *- h_lt
-            simp [← BitVec.toNat_inj, U32.toNat] at h_lt
-        . simp_all
-          split_ifs at h_gt with h_if
-          . rw [if_neg (by omega)] at h_lt
-            have h_eq_lt : air.cols.branch_a_lt_b row 0 = 0
-            := by
-              clear *- h_lt
-              simp [← BitVec.toNat_inj, U32.toNat] at h_lt
-              omega
-            have h_eq_gt : air.cols.branch_a_gt_b row 0 = 1
-            := by
-              clear *- h_gt
-              simp [← BitVec.toNat_inj, U32.toNat] at h_gt
-              omega
-            simp_all
-            omega
-          . have h_eq_gt : air.cols.branch_a_gt_b row 0 = 0
-            := by
-              clear *- h_gt
-              simp [← BitVec.toNat_inj, U32.toNat] at h_gt
-              omega
-            simp_all
-      have h_eq_not_branching :
-        ((U32.toBV
-          #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)]).toNat <
-        (U32.toBV
-          #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
-             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]).toNat) =
+             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]) =
         (air.cols.branching row 0 = 0)
       := by
-        obtain hb34 | hb34 := hb34 <;> simp_all
-      clear h_lt h_gt
+        obtain relevant_constraints
+        : constraint_73 air row ∧ constraint_74 air row ∧
+          constraint_75 air row ∧ constraint_76 air row ∧ constraint_77 air row ∧ constraint_78 air row
+        := by
+          simp [allHold_simplified] at h_constraints
+          aesop
+        simp [
+          pico_encapsulation,
+          cpu_branch_cols_simplification,
+          constraint_and_interaction_simplification,
+          sub_eq_zero,
+          h_selectors
+        ] at relevant_constraints
+        obtain ⟨ h_a_eq_b, h_lt_gt, h_eq_0, h_eq_1, h_eq_2, h_eq_3 ⟩ := relevant_constraints
+        have h_lt := a_lt_b_meaning air row h_is_real (h_all_assumptions row (by omega)) h_is_branching
+        have h_gt := a_gt_b_meaning air row h_is_real (h_all_assumptions row (by omega)) h_is_branching
+        simp [h_selectors] at h_lt h_gt
+        split_ifs at h_lt with h_if_lt <;> split_ifs at h_gt with h_if_gt <;> simp_all
+        . clear *- h_if_lt h_if_gt; omega
+        . rcases h_a_eq_b <;> simp_all
+      -- Program counter characterisation
+      have h_branching_pc := branching_pc air row (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_branching_next_pc := branching_npc air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_non_branching_npc := non_branching_npc air row h_is_real (h_all_axioms row h_row) h_constraints h_is_branching
       -- Proof
       extract_lets reg1 reg2 imm'
       rw [
@@ -1853,6 +1712,7 @@ namespace Equivalence
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)])
         (misa := misa)
         (h_misa := by clear *- risc_v_assumptions; tauto)
+        (by split_ands <;> aesop)
       ]
       . simp [
           OpcodeSpec.RV32.spec_BGEU,
@@ -1863,7 +1723,7 @@ namespace Equivalence
           h_selectors,
         ]
         simp [operation_list_effect_state_writeReg_same h_reg2]
-        simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3]
+        simp [h_prev_eq]
         simp [operation_list_effect_state_writeReg_same h_reg1]
         simp_all [
           ALUBus.Spec,
@@ -1871,26 +1731,21 @@ namespace Equivalence
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
         congr
-        split_ifs with h_if
-        . simp_all
-          simp [← hb32, ← BitVec.toNat_inj, Fin.val_add]
-          omega
-        . simp_all
-      . simp [OpcodeSpec.RV32.spec_BGEU, *]
-        split_ands
-        . rw [← h_reg1]; rfl
-        . rw [← h_reg2]; rfl
+        split_ifs <;> simp_all
       . intro h_branch
-        simp [h_eq_pa0, h_eq_pa1, h_eq_pa2, h_eq_pa3] at h_branch
-        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_npc
+        simp [h_prev_eq] at h_branch
+        specialize h_branching_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
+        specialize h_branching_next_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
+        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_asm_alu
+        specialize h_asm_alu (by clear *- h_b_branching h_eq_branching h_branch; grind)
         simp [
           *,
           Transpiler.imm_to_KB_BV_sgn,
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
-        simp_all
+        rw [← h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
 
   end BTYPE
 
