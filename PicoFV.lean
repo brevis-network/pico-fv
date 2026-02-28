@@ -45,6 +45,8 @@ import PicoFV.Constraints.MulAir
 import PicoFV.Constraints.ShiftRightAir
 import PicoFV.Constraints.SllAir
 
+import PicoFV.Spec.CpuAir
+
 import PicoFV.Equivalence.Equivalence
 
 -- import PicoFV.RVSail.RV64IM.Auxiliaries

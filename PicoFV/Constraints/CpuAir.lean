@@ -2969,83 +2969,102 @@ namespace CpuAir.Interpretations
     repeat rw [Fin.ext_iff (a := air.cols.instruction.opcode row 0)] at h_opcode_selectors
     interval_cases (air.cols.instruction.opcode row 0).val <;> simp_all
 
-    lemma is_branch_instruction_characterisation
-      [Field ExtF]
-      (air : Valid_CpuAir FKB ExtF)
-      (row : ℕ)
-      (h_is_real : air.cols.is_real row 0 = 1)
-      (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : CpuAir.Extraction.allHold air row)
-      (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
-    :
-      let beq := air.cols.opcode_selector.is_beq row 0
-      let bne := air.cols.opcode_selector.is_bne row 0
-      let blt := air.cols.opcode_selector.is_blt row 0
-      let bge := air.cols.opcode_selector.is_bge row 0
-      let bltu := air.cols.opcode_selector.is_bltu row 0
-      let bgeu := air.cols.opcode_selector.is_bgeu row 0
-      let store := air.cols.is_store_instruction row 0
-      (
-        (beq = 1 ∧ bne = 0 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 0) ∨
-        (beq = 0 ∧ bne = 1 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 0) ∨
-        (beq = 0 ∧ bne = 0 ∧ blt = 1 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 0) ∨
-        (beq = 0 ∧ bne = 0 ∧ blt = 0 ∧ bge = 1 ∧ bltu = 0 ∧ bgeu = 0) ∨
-        (beq = 0 ∧ bne = 0 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 1 ∧ bgeu = 0) ∨
-        (beq = 0 ∧ bne = 0 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 1)
-      ) ∧ store = 0
-    := by
-      have opcode_range := opcode_selectors_breakdown air row h_is_real h_assumptions h_constraints
-      have to_lt : ∀ (x : FKB), x = 0 ∨ x = 1 ↔ x < 2 := by clear *-; omega
-      simp [to_lt] at opcode_range
-      simp [Valid_CpuCols.is_branch_instruction] at h_branch_instr
-      simp [Valid_CpuCols.is_store_instruction]
-      grind (splits := 24)
+  lemma is_branch_instruction_characterisation
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+  :
+    let beq := air.cols.opcode_selector.is_beq row 0
+    let bne := air.cols.opcode_selector.is_bne row 0
+    let blt := air.cols.opcode_selector.is_blt row 0
+    let bge := air.cols.opcode_selector.is_bge row 0
+    let bltu := air.cols.opcode_selector.is_bltu row 0
+    let bgeu := air.cols.opcode_selector.is_bgeu row 0
+    let store := air.cols.is_store_instruction row 0
+    (
+      (beq = 1 ∧ bne = 0 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 0) ∨
+      (beq = 0 ∧ bne = 1 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 0) ∨
+      (beq = 0 ∧ bne = 0 ∧ blt = 1 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 0) ∨
+      (beq = 0 ∧ bne = 0 ∧ blt = 0 ∧ bge = 1 ∧ bltu = 0 ∧ bgeu = 0) ∨
+      (beq = 0 ∧ bne = 0 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 1 ∧ bgeu = 0) ∨
+      (beq = 0 ∧ bne = 0 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 1)
+    ) ∧ store = 0
+  := by
+    have opcode_range := opcode_selectors_breakdown air row h_is_real h_assumptions h_constraints
+    have to_lt : ∀ (x : FKB), x = 0 ∨ x = 1 ↔ x < 2 := by clear *-; omega
+    simp [to_lt] at opcode_range
+    simp [Valid_CpuCols.is_branch_instruction] at h_branch_instr
+    simp [Valid_CpuCols.is_store_instruction]
+    grind (splits := 24)
 
-    lemma is_jump_instruction_characterisation
-      [Field ExtF]
-      (air : Valid_CpuAir FKB ExtF)
-      (row : ℕ)
-      (h_is_real : air.cols.is_real row 0 = 1)
-      (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : CpuAir.Extraction.allHold air row)
-      (h_jump_instr : air.cols.is_jump_instruction row 0 = 1)
-    :
-      let jal := air.cols.opcode_selector.is_jal row 0
-      let jalr := air.cols.opcode_selector.is_jalr row 0
-      (jal = 1 ∧ jalr = 0) ∨
-      (jal = 0 ∧ jalr = 1)
-    := by
-      have opcode_range := opcode_selectors_breakdown air row h_is_real h_assumptions h_constraints
-      have to_lt : ∀ (x : FKB), x = 0 ∨ x = 1 ↔ x < 2 := by clear *-; omega
-      simp [to_lt] at opcode_range
-      simp [Valid_CpuCols.is_jump_instruction] at h_jump_instr
-      grind (splits := 24)
+  lemma branching_binary
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_constraints : CpuAir.Extraction.allHold air row)
+  :
+    (air.cols.branching row 0 = 0 ∨ air.cols.branching row 0 = 1)
+  := by
+    obtain relevant_constraints
+    : constraint_65 air row ∧ constraint_79 air row
+      := by simp [allHold_simplified] at h_constraints; aesop
+    simp [
+      pico_encapsulation,
+      constraint_and_interaction_simplification,
+      sub_eq_zero,
+      *
+    ] at relevant_constraints
+    grind
 
-    lemma is_store_instruction_characterisation
-      [Field ExtF]
-      (air : Valid_CpuAir FKB ExtF)
-      (row : ℕ)
-      (h_is_real : air.cols.is_real row 0 = 1)
-      (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : CpuAir.Extraction.allHold air row)
-      (h_store_instr : air.cols.is_store_instruction row 0 = 1)
-    :
-      let sb := air.cols.opcode_selector.is_sb row 0
-      let sh := air.cols.opcode_selector.is_sh row 0
-      let sw := air.cols.opcode_selector.is_sw row 0
-      let branch := air.cols.is_branch_instruction row 0
-      (
-        (sb = 1 ∧ sh = 0 ∧ sw = 0) ∨
-        (sb = 0 ∧ sh = 1 ∧ sw = 0) ∨
-        (sb = 0 ∧ sh = 0 ∧ sw = 1)
-      ) ∧ branch = 0
-    := by
-      have opcode_range := opcode_selectors_breakdown air row h_is_real h_assumptions h_constraints
-      have to_lt : ∀ (x : FKB), x = 0 ∨ x = 1 ↔ x < 2 := by clear *-; omega
-      simp [to_lt] at opcode_range
-      simp [Valid_CpuCols.is_store_instruction] at h_store_instr
-      simp [Valid_CpuCols.is_branch_instruction]
-      grind (splits := 24)
+  lemma is_jump_instruction_characterisation
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_jump_instr : air.cols.is_jump_instruction row 0 = 1)
+  :
+    let jal := air.cols.opcode_selector.is_jal row 0
+    let jalr := air.cols.opcode_selector.is_jalr row 0
+    (jal = 1 ∧ jalr = 0) ∨
+    (jal = 0 ∧ jalr = 1)
+  := by
+    have opcode_range := opcode_selectors_breakdown air row h_is_real h_assumptions h_constraints
+    have to_lt : ∀ (x : FKB), x = 0 ∨ x = 1 ↔ x < 2 := by clear *-; omega
+    simp [to_lt] at opcode_range
+    simp [Valid_CpuCols.is_jump_instruction] at h_jump_instr
+    grind (splits := 24)
+
+  lemma is_store_instruction_characterisation
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_store_instr : air.cols.is_store_instruction row 0 = 1)
+  :
+    let sb := air.cols.opcode_selector.is_sb row 0
+    let sh := air.cols.opcode_selector.is_sh row 0
+    let sw := air.cols.opcode_selector.is_sw row 0
+    let branch := air.cols.is_branch_instruction row 0
+    (
+      (sb = 1 ∧ sh = 0 ∧ sw = 0) ∨
+      (sb = 0 ∧ sh = 1 ∧ sw = 0) ∨
+      (sb = 0 ∧ sh = 0 ∧ sw = 1)
+    ) ∧ branch = 0
+  := by
+    have opcode_range := opcode_selectors_breakdown air row h_is_real h_assumptions h_constraints
+    have to_lt : ∀ (x : FKB), x = 0 ∨ x = 1 ↔ x < 2 := by clear *-; omega
+    simp [to_lt] at opcode_range
+    simp [Valid_CpuCols.is_store_instruction] at h_store_instr
+    simp [Valid_CpuCols.is_branch_instruction]
+    grind (splits := 24)
 
   -- Instruction type breakdown
   lemma instruction_breakdown

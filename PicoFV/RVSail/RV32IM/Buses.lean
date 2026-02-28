@@ -607,7 +607,7 @@ namespace RV32IM_Interactions
           -- Well formedness
           wf_properties :=
             fun ⟨ _, chunk, clk, register, x_0, x_1, x_2, x_3 ⟩ =>
-              chunk < 65536 ∧ clk < 16777216 ∧ register < 32 ∧ x_0 < 256 ∧ x_1 < 256 ∧ x_2 < 256 ∧ x_3 < 256
+              register < 32 ∧ x_0 < 256 ∧ x_1 < 256 ∧ x_2 < 256 ∧ x_3 < 256
 
           wf_assume_cond := fun entry => entry.1 = -1,
           wf_assert_cond := fun entry => entry.1 = 1,
