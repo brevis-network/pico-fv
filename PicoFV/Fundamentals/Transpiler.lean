@@ -176,7 +176,7 @@ namespace Transpiler
 
   def opcode_of_uop (op : uop) : FKB :=
     match op with
-    | .LUI => 5
+    | .LUI => 0
     | .AUIPC => 27
 
   def transpile_op
@@ -348,7 +348,7 @@ namespace Transpiler
         imm % 2 = 0
       )
     -- JALR
-    | .JALR (imm, rd, rs1) =>
+    | .JALR (imm, rs1, rd) =>
       let opcode := 25
       let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       let imm_KB := imm_to_KB imm true
@@ -394,14 +394,17 @@ namespace Transpiler
     | .UTYPE (imm, rd, op) =>
       let opcode := opcode_of_uop op
       let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
-      let imm_KB := imm_to_KB imm true
+      let imm_KB := imm_to_KB (imm ++ 0#12) true
       .some (
         (
           multiplicity,
           #v[
             pc, opcode, opcode,
             reg_to_KB rd, 0, 0, 0,
-            0, 0, 0, 0,
+            (if op == .AUIPC then imm_KB[0] else 0),
+            (if op == .AUIPC then imm_KB[1] else 0),
+            (if op == .AUIPC then imm_KB[2] else 0),
+            (if op == .AUIPC then imm_KB[3] else 0),
             imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3],
             a_is_0,
             1, 1,

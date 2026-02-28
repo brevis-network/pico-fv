@@ -113,10 +113,7 @@ namespace OpcodeSpec.RV32
   lemma execute_JAL_equiv
     (h : (operation_list_effect (spec_JAL rd imm pc_val) state).hypotheses)
     (h_misa : Sail.readReg Register.misa state = EStateM.Result.ok misa state)
-    (h_success :
-      (BitVec.ofBool (pc_val + BitVec.signExtend 32 imm)[0] = 0#1) ∧
-      (BitVec.ofBool (pc_val + BitVec.signExtend 32 imm)[1] = 0#1)
-    )
+    (h_success : (pc_val + BitVec.signExtend 32 imm) % 4 = 0)
   :
     execute_instruction (instruction.JAL (imm, rd)) state =
     (operation_list_effect (spec_JAL rd imm pc_val) state).state
@@ -133,6 +130,7 @@ namespace OpcodeSpec.RV32
       · simp_all
       · simp_all
     rw [PureSpec.RV32.execute_JAL_pure_equiv input rd h_pc h_misa]
+    rw [BitVec.mod_4_zero_equiv] at h_success
 
     simp [
       input,

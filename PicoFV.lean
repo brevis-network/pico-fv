@@ -45,8 +45,7 @@ import PicoFV.Constraints.MulAir
 import PicoFV.Constraints.ShiftRightAir
 import PicoFV.Constraints.SllAir
 
-import PicoFV.Equivalence.ALU
-import PicoFV.Equivalence.ControlFlow
+import PicoFV.Equivalence.Equivalence
 
 -- import PicoFV.RVSail.RV64IM.Auxiliaries
 -- import PicoFV.RVSail.RV64IM.RV64Operations

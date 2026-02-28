@@ -150,7 +150,8 @@ namespace RV32IM_Interactions
       :
         (entry.opcode = 0 →
           (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .ADD)) ∨
-          (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .ITYPE (imm, rs1, rd, .ADDI))) ∧
+          (entry.imm_b = 0 ∧ entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .ITYPE (imm, rs1, rd, .ADDI)) ∨
+          (entry.imm_b = 1 ∧ entry.imm_c = 1 ∧ ∃ imm rd, instr = .UTYPE (imm, rd, .LUI))) ∧
         (entry.opcode = 1 →
           (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .SUB))) ∧
         (entry.opcode = 2 →
@@ -164,8 +165,7 @@ namespace RV32IM_Interactions
           (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .ITYPE (imm, rs1, rd, .ANDI))) ∧
         (entry.opcode = 5 →
           (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .SLL)) ∨
-          (entry.imm_b = 0 ∧ entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .SHIFTIOP (imm, rs1, rd, .SLLI)) ∨
-          (entry.imm_b = 1 ∧ entry.imm_c = 1 ∧ ∃ imm rd, instr = .UTYPE (imm, rd, .LUI))) ∧
+          (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .SHIFTIOP (imm, rs1, rd, .SLLI))) ∧
         (entry.opcode = 6 →
           (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .SRL)) ∨
           (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .SHIFTIOP (imm, rs1, rd, .SRLI))) ∧
@@ -389,9 +389,6 @@ namespace RV32IM_Interactions
             intro b; cases b
             simp_all; grind (splits := 64) (gen := 64) (ematch := 32) (ringSteps := 16384)
       }
-
-
-
 
     end ProgramBus
 

@@ -2870,3 +2870,745 @@ namespace CpuAir.Interactions
     [ .WritePC (BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)) ]
 
 end CpuAir.Interactions
+
+namespace CpuAir.Interpretations
+
+  open RV32IM_Interactions
+  open CpuAir.ConstraintsAndBuses
+  open CpuAir.Interactions
+
+  set_option maxRecDepth 2_000_000
+
+  attribute [local simp]
+    program_bus_entry
+
+  lemma opcode_selectors_breakdown
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+  :
+    (air.cols.opcode_selector.imm_b row 0 = 0 ∨ air.cols.opcode_selector.imm_b row 0 = 1) ∧
+    (air.cols.opcode_selector.imm_c row 0 = 0 ∨ air.cols.opcode_selector.imm_c row 0 = 1) ∧
+    (air.cols.opcode_selector.is_alu row 0 = 0 ∨ air.cols.opcode_selector.is_alu row 0 = 1) ∧
+    (air.cols.opcode_selector.is_ecall row 0 = 0 ∨ air.cols.opcode_selector.is_ecall row 0 = 1) ∧
+    (air.cols.opcode_selector.is_lb row 0 = 0 ∨ air.cols.opcode_selector.is_lb row 0 = 1) ∧
+    (air.cols.opcode_selector.is_lbu row 0 = 0 ∨ air.cols.opcode_selector.is_lbu row 0 = 1) ∧
+    (air.cols.opcode_selector.is_lh row 0 = 0 ∨ air.cols.opcode_selector.is_lh row 0 = 1) ∧
+    (air.cols.opcode_selector.is_lhu row 0 = 0 ∨ air.cols.opcode_selector.is_lhu row 0 = 1) ∧
+    (air.cols.opcode_selector.is_lw row 0 = 0 ∨ air.cols.opcode_selector.is_lw row 0 = 1) ∧
+    (air.cols.opcode_selector.is_sb row 0 = 0 ∨ air.cols.opcode_selector.is_sb row 0 = 1) ∧
+    (air.cols.opcode_selector.is_sh row 0 = 0 ∨ air.cols.opcode_selector.is_sh row 0 = 1) ∧
+    (air.cols.opcode_selector.is_sw row 0 = 0 ∨ air.cols.opcode_selector.is_sw row 0 = 1) ∧
+    (air.cols.opcode_selector.is_beq row 0 = 0 ∨ air.cols.opcode_selector.is_beq row 0 = 1) ∧
+    (air.cols.opcode_selector.is_bne row 0 = 0 ∨ air.cols.opcode_selector.is_bne row 0 = 1) ∧
+    (air.cols.opcode_selector.is_blt row 0 = 0 ∨ air.cols.opcode_selector.is_blt row 0 = 1) ∧
+    (air.cols.opcode_selector.is_bge row 0 = 0 ∨ air.cols.opcode_selector.is_bge row 0 = 1) ∧
+    (air.cols.opcode_selector.is_bltu row 0 = 0 ∨ air.cols.opcode_selector.is_bltu row 0 = 1) ∧
+    (air.cols.opcode_selector.is_bgeu row 0 = 0 ∨ air.cols.opcode_selector.is_bgeu row 0 = 1) ∧
+    (air.cols.opcode_selector.is_jalr row 0 = 0 ∨ air.cols.opcode_selector.is_jalr row 0 = 1) ∧
+    (air.cols.opcode_selector.is_jal row 0 = 0 ∨ air.cols.opcode_selector.is_jal row 0 = 1) ∧
+    (air.cols.opcode_selector.is_auipc row 0 = 0 ∨ air.cols.opcode_selector.is_auipc row 0 = 1) ∧
+    (air.cols.opcode_selector.is_unimpl row 0 = 0 ∨ air.cols.opcode_selector.is_unimpl row 0 = 1) ∧
+    (air.cols.opcode_selector.is_alu row 0 + air.cols.opcode_selector.is_ecall row 0 + air.cols.opcode_selector.is_lb row 0 +
+     air.cols.opcode_selector.is_lbu row 0 + air.cols.opcode_selector.is_lh row 0 + air.cols.opcode_selector.is_lhu row 0 +
+     air.cols.opcode_selector.is_lw row 0 + air.cols.opcode_selector.is_sb row 0 + air.cols.opcode_selector.is_sh row 0 +
+     air.cols.opcode_selector.is_sw row 0 + air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 +
+     air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 + air.cols.opcode_selector.is_bltu row 0 +
+     air.cols.opcode_selector.is_bgeu row 0 + air.cols.opcode_selector.is_jalr row 0 + air.cols.opcode_selector.is_jal row 0 +
+     air.cols.opcode_selector.is_auipc row 0 + air.cols.opcode_selector.is_unimpl row 0 = 1)
+  := by
+    simp [bus_row_assumptions] at h_assumptions
+    replace h_assumptions := h_assumptions.1
+    simp [
+      bus_row,
+      ProgramBusEntry.operand_properties,
+      h_is_real,
+      -Vector.getElem_mk,
+      -ProgramBusEntry.mk.injEq
+    ] at h_assumptions
+    obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_assumptions
+    have h_eq_mult : mult = -1 := by aesop
+    subst mult
+    have h_opcode_bounds
+      := @ProgramBusEntry.inversion_opcode_bounds
+          instr
+          ⟨ -1, data ⟩
+          props
+          (ProgramBusEntry.deserialise (program_bus_entry air row))
+          (by simp [h_eq, h_is_real])
+          (by simp [h_is_real]; aesop)
+    simp at h_opcode_bounds
+    obtain ⟨ h_op_range, h_op_not_26, h_op_not_29 ⟩ := h_opcode_bounds
+    have h_opcode_selectors
+      := @ProgramBusEntry.inversion_opcode_selectors
+          instr
+          ⟨ -1, data ⟩
+          props
+          (ProgramBusEntry.deserialise (program_bus_entry air row))
+          (by simp [h_eq, h_is_real])
+          (by simp [h_is_real]; aesop)
+    simp at h_opcode_selectors
+    clear h_eq h_eq_entry
+
+    obtain relevant_constraints
+    : constraint_8 air row ∧ constraint_12 air row
+      := by simp [allHold_simplified] at h_constraints; aesop
+    simp [
+      pico_encapsulation,
+      constraint_and_interaction_simplification,
+      sub_eq_zero,
+      *
+    ] at relevant_constraints
+    repeat rw [eq_comm (a := 1)] at relevant_constraints
+    repeat rw [or_comm (a := _ = 1)] at relevant_constraints
+    simp [relevant_constraints]
+
+    repeat rw [Fin.ext_iff (a := air.cols.instruction.opcode row 0)] at h_opcode_selectors
+    interval_cases (air.cols.instruction.opcode row 0).val <;> simp_all
+
+    lemma is_branch_instruction_characterisation
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+    :
+      let beq := air.cols.opcode_selector.is_beq row 0
+      let bne := air.cols.opcode_selector.is_bne row 0
+      let blt := air.cols.opcode_selector.is_blt row 0
+      let bge := air.cols.opcode_selector.is_bge row 0
+      let bltu := air.cols.opcode_selector.is_bltu row 0
+      let bgeu := air.cols.opcode_selector.is_bgeu row 0
+      let store := air.cols.is_store_instruction row 0
+      (
+        (beq = 1 ∧ bne = 0 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 0) ∨
+        (beq = 0 ∧ bne = 1 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 0) ∨
+        (beq = 0 ∧ bne = 0 ∧ blt = 1 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 0) ∨
+        (beq = 0 ∧ bne = 0 ∧ blt = 0 ∧ bge = 1 ∧ bltu = 0 ∧ bgeu = 0) ∨
+        (beq = 0 ∧ bne = 0 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 1 ∧ bgeu = 0) ∨
+        (beq = 0 ∧ bne = 0 ∧ blt = 0 ∧ bge = 0 ∧ bltu = 0 ∧ bgeu = 1)
+      ) ∧ store = 0
+    := by
+      have opcode_range := opcode_selectors_breakdown air row h_is_real h_assumptions h_constraints
+      have to_lt : ∀ (x : FKB), x = 0 ∨ x = 1 ↔ x < 2 := by clear *-; omega
+      simp [to_lt] at opcode_range
+      simp [Valid_CpuCols.is_branch_instruction] at h_branch_instr
+      simp [Valid_CpuCols.is_store_instruction]
+      grind (splits := 24)
+
+    lemma is_jump_instruction_characterisation
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_jump_instr : air.cols.is_jump_instruction row 0 = 1)
+    :
+      let jal := air.cols.opcode_selector.is_jal row 0
+      let jalr := air.cols.opcode_selector.is_jalr row 0
+      (jal = 1 ∧ jalr = 0) ∨
+      (jal = 0 ∧ jalr = 1)
+    := by
+      have opcode_range := opcode_selectors_breakdown air row h_is_real h_assumptions h_constraints
+      have to_lt : ∀ (x : FKB), x = 0 ∨ x = 1 ↔ x < 2 := by clear *-; omega
+      simp [to_lt] at opcode_range
+      simp [Valid_CpuCols.is_jump_instruction] at h_jump_instr
+      grind (splits := 24)
+
+    lemma is_store_instruction_characterisation
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_constraints : CpuAir.Extraction.allHold air row)
+      (h_store_instr : air.cols.is_store_instruction row 0 = 1)
+    :
+      let sb := air.cols.opcode_selector.is_sb row 0
+      let sh := air.cols.opcode_selector.is_sh row 0
+      let sw := air.cols.opcode_selector.is_sw row 0
+      let branch := air.cols.is_branch_instruction row 0
+      (
+        (sb = 1 ∧ sh = 0 ∧ sw = 0) ∨
+        (sb = 0 ∧ sh = 1 ∧ sw = 0) ∨
+        (sb = 0 ∧ sh = 0 ∧ sw = 1)
+      ) ∧ branch = 0
+    := by
+      have opcode_range := opcode_selectors_breakdown air row h_is_real h_assumptions h_constraints
+      have to_lt : ∀ (x : FKB), x = 0 ∨ x = 1 ↔ x < 2 := by clear *-; omega
+      simp [to_lt] at opcode_range
+      simp [Valid_CpuCols.is_store_instruction] at h_store_instr
+      simp [Valid_CpuCols.is_branch_instruction]
+      grind (splits := 24)
+
+  -- Instruction type breakdown
+  lemma instruction_breakdown
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+  :
+    air.cols.is_sequential_instr row 0 = 1 ∨
+    air.cols.is_branch_instruction row 0 = 1 ∨
+    air.cols.is_jump_instruction row 0 = 1 ∨
+    (air.cols.opcode_selector.is_ecall row 0 = 1 ∧ air.cols.ecall_is_halt row 0 = 1)
+  := by
+    have opcode_range := opcode_selectors_breakdown air row h_is_real h_assumptions h_constraints
+    have to_lt : ∀ (x : FKB), x = 0 ∨ x = 1 ↔ x < 2 := by clear *-; omega
+    simp [to_lt] at opcode_range
+    have ⟨ h_sequential_characterisation, h_halt_binary ⟩ : constraint_229 air row ∧ constraint_213 air row
+      := by simp [allHold_simplified] at h_constraints; aesop
+    simp [
+      pico_encapsulation,
+      constraint_and_interaction_simplification,
+      cpu_ecall_cols_simplification,
+      sub_eq_zero,
+      *
+    ] at h_sequential_characterisation h_halt_binary
+    rw [h_sequential_characterisation]
+    simp [Valid_CpuCols.is_branch_instruction, Valid_CpuCols.is_jump_instruction]
+    grind
+
+  -- Constraints 0-3: when `b` is an immediate
+  lemma imm_b_eqs
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_imm_b : air.cols.opcode_selector.imm_b row 0 = 1)
+  :
+    air.cols.op_b_access.value_0 row 0 = air.cols.instruction.b_0 row 0 ∧
+    air.cols.op_b_access.value_1 row 0 = air.cols.instruction.b_1 row 0 ∧
+    air.cols.op_b_access.value_2 row 0 = air.cols.instruction.b_2 row 0 ∧
+    air.cols.op_b_access.value_3 row 0 = air.cols.instruction.b_3 row 0
+  := by
+    obtain relevant_constraints
+    : constraint_0 air row ∧ constraint_1 air row ∧ constraint_2 air row ∧ constraint_3 air row
+      := by simp [allHold_simplified] at h_constraints; aesop
+    simp [
+      pico_encapsulation,
+      constraint_and_interaction_simplification,
+      sub_eq_zero,
+      *
+    ] at relevant_constraints
+    assumption
+
+  -- Constraints 3-7: when `c` is an immediate
+  lemma imm_c_eqs
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_imm_b : air.cols.opcode_selector.imm_c row 0 = 1)
+  :
+    air.cols.op_c_access.value_0 row 0 = air.cols.instruction.c_0 row 0 ∧
+    air.cols.op_c_access.value_1 row 0 = air.cols.instruction.c_1 row 0 ∧
+    air.cols.op_c_access.value_2 row 0 = air.cols.instruction.c_2 row 0 ∧
+    air.cols.op_c_access.value_3 row 0 = air.cols.instruction.c_3 row 0
+  := by
+    obtain relevant_constraints
+    : constraint_4 air row ∧ constraint_5 air row ∧ constraint_6 air row ∧ constraint_7 air row
+      := by simp [allHold_simplified] at h_constraints; aesop
+    simp [
+      pico_encapsulation,
+      constraint_and_interaction_simplification,
+      sub_eq_zero,
+      *
+    ] at relevant_constraints
+    assumption
+
+  -- Constraints 16-19: when `a` is zero
+  lemma a_is_zero_eqs
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_imm_b : air.cols.instruction.a_is_0 row 0 = 1)
+  :
+    air.cols.op_a_access.access.value_0 row 0 = 0 ∧
+    air.cols.op_a_access.access.value_1 row 0 = 0 ∧
+    air.cols.op_a_access.access.value_2 row 0 = 0 ∧
+    air.cols.op_a_access.access.value_3 row 0 = 0
+  := by
+    obtain relevant_constraints
+    : constraint_16 air row ∧ constraint_17 air row ∧ constraint_18 air row ∧ constraint_19 air row
+      := by simp [allHold_simplified] at h_constraints; aesop
+    simp [
+      pico_encapsulation,
+      constraint_and_interaction_simplification,
+      *
+    ] at relevant_constraints
+    assumption
+
+  -- Constraints 24-27: when `a` is unchanged
+  lemma a_unchanged
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_branching_or_store : air.cols.is_branch_instruction row 0 = 1 ∨ air.cols.is_store_instruction row 0 = 1)
+  :
+    air.cols.op_a_access.access.value_0 row 0 = air.cols.op_a_access.prev_value_0 row 0 ∧
+    air.cols.op_a_access.access.value_1 row 0 = air.cols.op_a_access.prev_value_1 row 0 ∧
+    air.cols.op_a_access.access.value_2 row 0 = air.cols.op_a_access.prev_value_2 row 0 ∧
+    air.cols.op_a_access.access.value_3 row 0 = air.cols.op_a_access.prev_value_3 row 0
+  := by
+    obtain relevant_constraints
+    : constraint_24 air row ∧ constraint_25 air row ∧ constraint_26 air row ∧ constraint_27 air row
+      := by simp [allHold_simplified] at h_constraints; aesop
+    simp [
+      pico_encapsulation,
+      cpu_branch_cols_simplification,
+      constraint_and_interaction_simplification,
+      sub_eq_zero,
+      *
+    ] at relevant_constraints
+    obtain h_branch | h_store := h_branching_or_store
+    . have h_branch_characterisation := is_branch_instruction_characterisation air row h_is_real h_assumptions h_constraints h_branch
+      simp_all
+    . have h_store_characterisation := is_store_instruction_characterisation air row h_is_real h_assumptions h_constraints h_store
+      simp_all
+
+  -- Constraints 28, 31-45 : `pc` breakdown when branching
+  lemma branching_pc
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+  :
+    air.cols.branching row 0 = 1 →
+      U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
+                  BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
+                  BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
+                  BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
+        = BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega)
+  := by
+    intro h_branch
+
+    simp [
+      bus_row_assumptions,
+      bus_row,
+      h_branch,
+      cpu_branch_cols_simplification,
+    ] at h_assumptions
+    replace h_assumptions := h_assumptions.2.2.1
+    simp [ ALUBus.Spec ] at h_assumptions
+
+    have relevant_constraints :
+      constraint_28 air row ∧ constraint_31 air row ∧ constraint_32 air row ∧ constraint_33 air row ∧
+      constraint_34 air row ∧ constraint_35 air row ∧ constraint_36 air row ∧ constraint_37 air row ∧
+      constraint_38 air row ∧ constraint_39 air row ∧ constraint_40 air row ∧ constraint_41 air row ∧
+      constraint_41 air row ∧ constraint_43 air row ∧ constraint_44 air row ∧ constraint_45 air row
+    := by
+      simp [allHold_simplified] at h_constraints
+      grind
+    simp [
+      pico_encapsulation,
+      cpu_branch_cols_simplification,
+      constraint_and_interaction_simplification,
+      h_branch_instr,
+      h_branch,
+      sub_eq_zero,
+    ] at relevant_constraints
+    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32.toNat]
+    repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_assumptions; omega)]
+    simp [Fin.val_add, Fin.val_mul]
+    rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
+    grind
+
+  -- Constraints 30, 46-60 : `next_pc` breakdown when branching
+  lemma branching_next_pc
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+  :
+    air.cols.branching row 0 = 1 →
+      U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
+                  BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
+                  BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
+                  BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
+        = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
+  := by
+    intro h_branch
+
+    simp [
+      bus_row_assumptions,
+      bus_row,
+      h_branch,
+      cpu_branch_cols_simplification,
+    ] at h_assumptions
+    replace h_assumptions := h_assumptions.2.2.1
+    simp [ ALUBus.Spec ] at h_assumptions
+
+    have relevant_constraints :
+      constraint_30 air row ∧ constraint_46 air row ∧ constraint_47 air row ∧ constraint_48 air row ∧
+      constraint_49 air row ∧ constraint_50 air row ∧ constraint_51 air row ∧ constraint_52 air row ∧
+      constraint_53 air row ∧ constraint_54 air row ∧ constraint_55 air row ∧ constraint_56 air row ∧
+      constraint_57 air row ∧ constraint_58 air row ∧ constraint_59 air row ∧ constraint_60 air row
+    := by
+      simp [allHold_simplified] at h_constraints
+      grind
+    simp [
+      pico_encapsulation,
+      cpu_branch_cols_simplification,
+      constraint_and_interaction_simplification,
+      h_branch_instr,
+      h_branch,
+      h_is_real,
+      sub_eq_zero,
+    ] at relevant_constraints
+    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32.toNat]
+    repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_assumptions; omega)]
+    simp [Fin.val_add, Fin.val_mul]
+    rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
+    grind
+
+  -- Constraints 63-64 : `next_pc` when not branching
+  lemma not_branching_next_pc
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_axioms : bus_row_axioms (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+  :
+    air.cols.branching row 0 = 0 →
+      BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega) + 4#32
+        = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
+  := by
+    intro h_branch
+
+    have relevant_constraints :
+      constraint_63 air row ∧ constraint_64 air row
+    := by
+      simp [allHold_simplified] at h_constraints
+      grind
+    simp [
+      pico_encapsulation,
+      cpu_branch_cols_simplification,
+      constraint_and_interaction_simplification,
+      h_branch_instr,
+      h_branch,
+      h_is_real,
+      sub_eq_zero,
+    ] at relevant_constraints
+
+    simp [ bus_row_axioms, bus_row, h_is_real ] at h_axioms
+    simp [← BitVec.toNat_inj]; grind
+
+  lemma branch_instruction_a_lt_b
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+  :
+    air.cols.branch_a_lt_b row 0 =
+    if (air.cols.opcode_selector.is_blt row 0 = 1 ∨ air.cols.opcode_selector.is_bge row 0 = 1)
+    then
+      (if (U32.toInt
+          #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)] <
+          U32.toInt
+          #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
+      then 1 else 0)
+    else
+      (if (U32.toNat
+          #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)] <
+          U32.toNat
+          #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
+      then 1 else 0)
+  := by
+    obtain ⟨ h_cases, h_store ⟩ := is_branch_instruction_characterisation air row h_is_real h_assumptions h_constraints h_branch_instr
+    simp [ bus_row_assumptions ] at h_assumptions
+    replace h_assumptions := h_assumptions.2.1
+    simp [
+      bus_row,
+      h_branch_instr,
+      h_is_real,
+      cpu_branch_cols_simplification,
+    ] at h_assumptions
+    replace h_assumptions := h_assumptions.2.2.1
+    obtain h | h | h | h | h | h := h_cases <;> split_ifs
+    all_goals simp_all [ ALUBus.Spec ]
+    all_goals simp [← BitVec.toNat_inj, U32.toNat] at h_assumptions
+    all_goals omega
+
+  lemma branch_instruction_a_gt_b
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
+  :
+    air.cols.branch_a_gt_b row 0 =
+    if (air.cols.opcode_selector.is_blt row 0 = 1 ∨ air.cols.opcode_selector.is_bge row 0 = 1)
+    then
+      (if (U32.toInt
+          #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)] <
+          U32.toInt
+          #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
+      then 1 else 0)
+    else
+      (if (U32.toNat
+          #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)] <
+          U32.toNat
+          #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
+            BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
+      then 1 else 0)
+  := by
+    obtain ⟨ h_cases, h_store ⟩ := is_branch_instruction_characterisation air row h_is_real h_assumptions h_constraints h_branch_instr
+    simp [ bus_row_assumptions ] at h_assumptions
+    replace h_assumptions := h_assumptions.2.1
+    simp [
+      bus_row,
+      h_branch_instr,
+      h_is_real,
+      cpu_branch_cols_simplification,
+    ] at h_assumptions
+    replace h_assumptions := h_assumptions.2.2.2.1
+    obtain h | h | h | h | h | h := h_cases <;> split_ifs
+    all_goals simp_all [ ALUBus.Spec ]
+    all_goals simp [← BitVec.toNat_inj, U32.toNat] at h_assumptions
+    all_goals omega
+
+  -- Constraints 80, 84-98 : jump instruction, `pc + 4`
+  lemma jump_pc_plus_four
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_is_jump : air.cols.is_jump_instruction row 0 = 1)
+    (h_a_not_0 : air.cols.instruction.a_is_0 row 0 = 0)
+  :
+    U32.toBV #v[BitVec.ofNat 8 (air.cols.op_a_access.access.value_0 row 0).val,
+                BitVec.ofNat 8 (air.cols.op_a_access.access.value_1 row 0).val,
+                BitVec.ofNat 8 (air.cols.op_a_access.access.value_2 row 0).val,
+                BitVec.ofNat 8 (air.cols.op_a_access.access.value_3 row 0).val]
+      = BitVec.ofNatLT (w := 32) (air.cols.pc row 0 + 4).val (by omega)
+  := by
+    have h_range_a :
+      (air.cols.op_a_access.access.value_0 row 0) < 256 ∧
+      (air.cols.op_a_access.access.value_1 row 0) < 256 ∧
+      (air.cols.op_a_access.access.value_2 row 0) < 256 ∧
+      (air.cols.op_a_access.access.value_3 row 0) < 256
+    := by
+      simp [ bus_row_assumptions ] at h_assumptions
+      replace h_assumptions := h_assumptions.2.2.1
+      simp [ bus_row, h_is_real, ByteBusEntry.Spec ] at h_assumptions
+      omega
+
+    have relevant_constraints :
+      constraint_80 air row ∧ constraint_84 air row ∧ constraint_85 air row ∧
+      constraint_86 air row ∧ constraint_87 air row ∧ constraint_88 air row ∧
+      constraint_89 air row ∧ constraint_90 air row ∧ constraint_91 air row ∧
+      constraint_92 air row ∧ constraint_93 air row ∧ constraint_94 air row ∧
+      constraint_95 air row ∧ constraint_96 air row ∧ constraint_98 air row
+    := by
+      simp [allHold_simplified] at h_constraints
+      aesop
+    simp [
+      pico_encapsulation,
+      cpu_jump_cols_simplification,
+      constraint_and_interaction_simplification,
+      h_is_jump,
+      sub_eq_zero,
+      h_a_not_0
+    ] at relevant_constraints
+    obtain ⟨ h_eq, h_b0, h_b1, h_b2, h_b3, h_b4, h_b5, h_b6, h_b7,
+              h0, h1, h2, h3, h4, h5 ⟩ := relevant_constraints
+    simp_all
+    simp [← BitVec.toNat_inj, U32.toNat]
+    repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)]
+    simp [Fin.val_add, Fin.val_mul]
+    rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
+    omega
+
+  -- Constraints 81, 99-113 : JAL instruction, `pc`
+  lemma jal_pc
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_is_jal : air.cols.opcode_selector.is_jal row 0 = 1)
+  :
+    U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.jump_pc 0 air.cols row 0),
+                BitVec.ofNat 8 ↑(Valid_CpuCols.jump_pc 1 air.cols row 0),
+                BitVec.ofNat 8 ↑(Valid_CpuCols.jump_pc 2 air.cols row 0),
+                BitVec.ofNat 8 ↑(Valid_CpuCols.jump_pc 3 air.cols row 0)]
+      = BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega)
+  := by
+    simp [
+      bus_row_assumptions,
+      bus_row,
+      h_is_jal,
+      cpu_jump_cols_simplification,
+    ] at h_assumptions
+    replace h_assumptions := h_assumptions.2.2.2.2.2.1
+    simp [ ALUBus.Spec ] at h_assumptions
+
+    have relevant_constraints :
+      constraint_81 air row ∧ constraint_99 air row ∧ constraint_100 air row ∧
+      constraint_101 air row ∧ constraint_102 air row ∧ constraint_103 air row ∧
+      constraint_104 air row ∧ constraint_105 air row ∧ constraint_106 air row ∧
+      constraint_107 air row ∧ constraint_108 air row ∧ constraint_109 air row ∧
+      constraint_110 air row ∧ constraint_111 air row ∧ constraint_113 air row
+    := by
+      simp [allHold_simplified] at h_constraints
+      grind
+    simp [
+      pico_encapsulation,
+      cpu_jump_cols_simplification,
+      constraint_and_interaction_simplification,
+      h_is_jal,
+      sub_eq_zero,
+    ] at relevant_constraints
+    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32.toNat]
+    repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_assumptions; omega)]
+    simp [Fin.val_add, Fin.val_mul]
+    rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
+    grind
+
+  -- Constraints 83, 114-128 : jump `next_pc`
+  lemma jump_next_pc
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_is_jump : air.cols.is_jump_instruction row 0 = 1)
+  :
+    U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.jump_next_pc 0 air.cols row 0),
+                BitVec.ofNat 8 ↑(Valid_CpuCols.jump_next_pc 1 air.cols row 0),
+                BitVec.ofNat 8 ↑(Valid_CpuCols.jump_next_pc 2 air.cols row 0),
+                BitVec.ofNat 8 ↑(Valid_CpuCols.jump_next_pc 3 air.cols row 0)]
+      = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
+  := by
+    have is_jump := is_jump_instruction_characterisation air row h_is_real h_assumptions h_constraints h_is_jump
+    simp [
+      bus_row_assumptions,
+      bus_row,
+      cpu_jump_cols_simplification,
+    ] at h_assumptions
+    replace h_assumptions := h_assumptions.2.2.2.2.2
+    obtain ⟨ h_ass_jal, h_ass_jalr, rest ⟩ := h_assumptions; clear rest
+    simp [ ALUBus.Spec ] at h_ass_jal h_ass_jalr
+
+    have relevant_constraints :
+      constraint_83 air row ∧ constraint_114 air row ∧ constraint_115 air row ∧
+      constraint_116 air row ∧ constraint_117 air row ∧ constraint_118 air row ∧
+      constraint_119 air row ∧ constraint_120 air row ∧ constraint_121 air row ∧
+      constraint_122 air row ∧ constraint_123 air row ∧ constraint_124 air row ∧
+      constraint_125 air row ∧ constraint_126 air row ∧ constraint_128 air row
+    := by
+      simp [allHold_simplified] at h_constraints
+      grind
+    simp [
+      pico_encapsulation,
+      cpu_jump_cols_simplification,
+      constraint_and_interaction_simplification,
+      h_is_jump,
+      h_is_real,
+      sub_eq_zero,
+    ] at relevant_constraints
+    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32.toNat]
+    simp [Fin.val_add, Fin.val_mul]
+    rcases is_jump
+    all_goals
+      simp_all
+      rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
+      grind
+
+  -- Constraints 129-113 : JAL instruction, `pc`
+  lemma auipc_pc
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+    (h_is_auipc : air.cols.opcode_selector.is_auipc row 0 = 1)
+  :
+    U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.auipc_pc 0 air.cols row 0),
+                BitVec.ofNat 8 ↑(Valid_CpuCols.auipc_pc 1 air.cols row 0),
+                BitVec.ofNat 8 ↑(Valid_CpuCols.auipc_pc 2 air.cols row 0),
+                BitVec.ofNat 8 ↑(Valid_CpuCols.auipc_pc 3 air.cols row 0)]
+      = BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega)
+  := by
+    simp [
+      bus_row_assumptions,
+      bus_row,
+      cpu_auipc_cols_simplification,
+      h_is_auipc,
+    ] at h_assumptions
+    replace h_assumptions := h_assumptions.2.2.2.2.2.2.2.1
+    simp [ ALUBus.Spec ] at h_assumptions
+
+    have relevant_constraints :
+      constraint_129 air row ∧ constraint_130 air row ∧ constraint_131 air row ∧ constraint_132 air row ∧
+      constraint_133 air row ∧ constraint_134 air row ∧ constraint_135 air row ∧ constraint_136 air row ∧
+      constraint_137 air row ∧ constraint_138 air row ∧ constraint_139 air row ∧ constraint_140 air row ∧
+      constraint_141 air row ∧ constraint_142 air row ∧ constraint_143 air row ∧ constraint_144 air row
+    := by
+      simp [allHold_simplified] at h_constraints
+      grind
+    simp [
+      pico_encapsulation,
+      constraint_and_interaction_simplification,
+      cpu_auipc_cols_simplification,
+      h_is_auipc,
+      sub_eq_zero,
+    ] at relevant_constraints
+    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32.toNat]
+    repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_assumptions; omega)]
+    simp [Fin.val_add, Fin.val_mul]
+    rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
+    grind
+
+end CpuAir.Interpretations

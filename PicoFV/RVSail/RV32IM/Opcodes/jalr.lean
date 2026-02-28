@@ -120,9 +120,7 @@ namespace OpcodeSpec.RV32
     (h_misa : Sail.readReg Register.misa state = EStateM.Result.ok misa state)
     (h_cur_privilege : Sail.readReg Register.cur_privilege state = EStateM.Result.ok Privilege.Machine state)
     (h_mseccfg : Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state)
-    (h_success :
-      BitVec.ofBool (rs1_val + BitVec.signExtend 32 imm)[1] = 0#1
-    )
+    (h_success : BitVec.ofBool (rs1_val + BitVec.signExtend 32 imm)[1] = 0#1)
   :
     execute_instruction (instruction.JALR (imm, rs1, rd)) state =
     (operation_list_effect (spec_JALR rs1 rd imm pc_val rs1_val) state).state
