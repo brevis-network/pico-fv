@@ -434,20 +434,20 @@ namespace RV32IM_Interactions
         }
 
       def ALUBus.Spec (ALU_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 : FKB) :=
-        a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256 ∧
-        b_0 < 256 ∧ b_1 < 256 ∧ b_2 < 256 ∧ b_3 < 256 ∧
-        c_0 < 256 ∧ c_1 < 256 ∧ c_2 < 256 ∧ c_3 < 256 ∧
+        let result_range := a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256
+        let ops_range := b_0 < 256 ∧ b_1 < 256 ∧ b_2 < 256 ∧ b_3 < 256 ∧
+                         c_0 < 256 ∧ c_1 < 256 ∧ c_2 < 256 ∧ c_3 < 256
         match ALU_opcode with
-        | 0 => U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 1 => U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] - U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 2 => U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ^^^ U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 3 => U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ||| U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 4 => U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] &&& U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 0 => result_range ∧ ops_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 1 => result_range ∧ ops_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] - U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 2 => result_range ∧ ops_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ^^^ U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 3 => result_range ∧ ops_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ||| U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 4 => result_range ∧ ops_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] &&& U32.toBV #v[c_0, c_1, c_2, c_3]
         | 5 => U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] <<< (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
         | 6 => U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] >>> (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
         | 7 => U32.toBV #v[a_0, a_1, a_2, a_3] = (U32.toBV #v[b_0, b_1, b_2, b_3]).sshiftRight (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
-        | 8 => U32.toBV #v[a_0, a_1, a_2, a_3] = if (U32.toBV #v[b_0, b_1, b_2, b_3]).toInt < (U32.toBV #v[c_0, c_1, c_2, c_3]).toInt then 1#32 else 0#32
-        | 9 => U32.toBV #v[a_0, a_1, a_2, a_3] = if (U32.toBV #v[b_0, b_1, b_2, b_3]).toNat < (U32.toBV #v[c_0, c_1, c_2, c_3]).toNat then 1#32 else 0#32
+        | 8 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = if (U32.toBV #v[b_0, b_1, b_2, b_3]).toInt < (U32.toBV #v[c_0, c_1, c_2, c_3]).toInt then 1#32 else 0#32
+        | 9 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = if (U32.toBV #v[b_0, b_1, b_2, b_3]).toNat < (U32.toBV #v[c_0, c_1, c_2, c_3]).toNat then 1#32 else 0#32
         | 30 => U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MUL
         | 31 => U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULH
         | 32 => U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULHU
@@ -523,6 +523,7 @@ namespace RV32IM_Interactions
         | 2 => x_0 = x_2 ^^^ x_3 ∧ x_0 < 256 ∧ x_1 = 0 ∧ x_2 < 256 ∧ x_3 < 256
         | 3 => x_0 = (x_2 <<< x_3) % 256 ∧ x_0 < 256 ∧ x_1 = 0 ∧ x_2 < 256 ∧ x_3 < 256
         | 4 => x_0 = x_2 >>> x_3 ∧ x_1 = x_2 - (x_0 <<< x_3) ∧ x_0 < 256 ∧ x_1 < 256 ∧ x_2 < 256 ∧ x_3 < 256
+        | 5 => (x_0 = if x_2 < x_3 then 1 else 0) ∧ x_1 = 0 ∧ x_2 < 256 ∧ x_3 < 256
         | 6 => (x_0 = if x_2 < 128 then 0 else 1) ∧ x_0 < 256 ∧ x_1 = 0 ∧ x_2 < 256 ∧ x_3 < 256
         | 7 => x_0 = 0 ∧ x_1 = 0 ∧ x_2 < 256 ∧ x_3 < 256
         | 8 => x_0 < 65536 ∧ x_1 = 0 ∧ x_2 = 0 ∧ x_3 = 0

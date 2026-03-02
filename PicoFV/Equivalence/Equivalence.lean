@@ -306,7 +306,7 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg2]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
+      simp [ h_opcode, h_selectors, ALUBus.Spec, and_assoc ] at h_asm_alu
       rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
@@ -423,7 +423,7 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg2]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
+      simp [ h_opcode, h_selectors, ALUBus.Spec, and_assoc ] at h_asm_alu
       rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
@@ -540,7 +540,7 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg2]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
+      simp [ h_opcode, h_selectors, ALUBus.Spec, and_assoc ] at h_asm_alu
       rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
@@ -657,7 +657,7 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg2]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
+      simp [ h_opcode, h_selectors, ALUBus.Spec, and_assoc ] at h_asm_alu
       rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
@@ -774,7 +774,7 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg2]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
+      simp [ h_opcode, h_selectors, ALUBus.Spec, and_assoc ] at h_asm_alu
       rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
@@ -1008,7 +1008,7 @@ namespace Equivalence
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
       simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      rw [h_asm_alu] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
       -- Get the upper bound on the pc
@@ -1125,7 +1125,7 @@ namespace Equivalence
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
       simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      rw [h_asm_alu] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
       -- Get the upper bound on the pc
@@ -1164,6 +1164,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (reg2, reg1, reg0, rop.SLT)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -1241,8 +1242,8 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg2]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      simp [ h_opcode, h_selectors, ALUBus.Spec, operand_ranges ] at h_asm_alu
+      rw [h_asm_alu] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
       . -- Case split
@@ -1283,6 +1284,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (reg2, reg1, reg0, rop.SLTU)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -1360,8 +1362,8 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg2]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      simp [ h_opcode, h_selectors, ALUBus.Spec, operand_ranges ] at h_asm_alu
+      rw [h_asm_alu]
       -- Check for differences
       congr
       . -- Case split
@@ -1484,7 +1486,7 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
+      simp [ h_opcode, h_selectors, ALUBus.Spec, and_assoc ] at h_asm_alu
       rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
@@ -1617,7 +1619,7 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
+      simp [ h_opcode, h_selectors, ALUBus.Spec, and_assoc ] at h_asm_alu
       rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
@@ -1750,7 +1752,7 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
+      simp [ h_opcode, h_selectors, ALUBus.Spec, and_assoc ] at h_asm_alu
       rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
@@ -1883,7 +1885,7 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
+      simp [ h_opcode, h_selectors, ALUBus.Spec, and_assoc ] at h_asm_alu
       rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
@@ -1941,6 +1943,7 @@ namespace Equivalence
       execute_instruction (instruction.ITYPE (imm, reg1, reg0, iop.SLTI)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -2016,8 +2019,8 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      simp [ h_opcode, h_selectors, ALUBus.Spec, operand_ranges ] at h_asm_alu
+      rw [h_asm_alu]
       -- Check for differences
       congr
       . -- Isolate relevant constraints
@@ -2078,6 +2081,7 @@ namespace Equivalence
       execute_instruction (instruction.ITYPE (imm, reg1, reg0, iop.SLTIU)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -2153,8 +2157,8 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      simp [ h_opcode, h_selectors, ALUBus.Spec, operand_ranges ] at h_asm_alu
+      rw [h_asm_alu]
       -- Check for differences
       congr
       . -- Isolate relevant constraints
@@ -2295,7 +2299,7 @@ namespace Equivalence
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
       simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      rw [h_asm_alu] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
       -- Get the upper bound on the pc
@@ -2413,7 +2417,7 @@ namespace Equivalence
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
       simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      rw [h_asm_alu] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
       -- Get the upper bound on the pc
@@ -2531,7 +2535,7 @@ namespace Equivalence
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
       simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      rw [h_asm_alu] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
       -- Get the upper bound on the pc
@@ -3522,6 +3526,7 @@ namespace Equivalence
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
       have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
@@ -3679,15 +3684,14 @@ namespace Equivalence
         split_ifs <;> simp_all
       . intro h_branch
         simp [h_prev_eq, h_eq_branching] at h_branch
-        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_asm_alu
-        simp [
-          *,
+        simp_all [
+          ALUBus.Spec,
           Transpiler.imm_to_KB_BV_sgn,
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
-        rw [← h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+        rw [← h_asm_alu.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
     lemma equivalence_BNE
       [Field ExtF]
@@ -3872,15 +3876,14 @@ namespace Equivalence
         split_ifs <;> simp_all
       . intro h_branch
         simp [h_prev_eq, h_eq_branching] at h_branch
-        simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_asm_alu
-        simp [
-          *,
+        simp_all [
+          ALUBus.Spec,
           Transpiler.imm_to_KB_BV_sgn,
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
-        rw [← h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+        rw [← h_asm_alu.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
     lemma equivalence_BLT
       [Field ExtF]
@@ -4069,14 +4072,13 @@ namespace Equivalence
         specialize h_branching_next_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
         simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_asm_alu
         specialize h_asm_alu (by clear *- h_b_branching h_eq_branching h_branch; grind)
-        simp [
-          *,
+        simp_all [
           Transpiler.imm_to_KB_BV_sgn,
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
-        rw [← h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+        rw [← h_asm_alu.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
     lemma equivalence_BGE
       [Field ExtF]
@@ -4265,14 +4267,13 @@ namespace Equivalence
         specialize h_branching_next_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
         simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_asm_alu
         specialize h_asm_alu (by clear *- h_b_branching h_eq_branching h_branch; grind)
-        simp [
-          *,
+        simp_all [
           Transpiler.imm_to_KB_BV_sgn,
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
-        rw [← h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+        rw [← h_asm_alu.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
     lemma equivalence_BLTU
       [Field ExtF]
@@ -4461,14 +4462,13 @@ namespace Equivalence
         specialize h_branching_next_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
         simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_asm_alu
         specialize h_asm_alu (by clear *- h_b_branching h_eq_branching h_branch; grind)
-        simp [
-          *,
+        simp_all [
           Transpiler.imm_to_KB_BV_sgn,
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
-        rw [← h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+        rw [← h_asm_alu.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
     lemma equivalence_BGEU
       [Field ExtF]
@@ -4657,14 +4657,13 @@ namespace Equivalence
         specialize h_branching_next_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
         simp [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, *] at h_asm_alu
         specialize h_asm_alu (by clear *- h_b_branching h_eq_branching h_branch; grind)
-        simp [
-          *,
+        simp_all [
           Transpiler.imm_to_KB_BV_sgn,
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
-        rw [← h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+        rw [← h_asm_alu.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions h_all_constraints row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
   end BTYPE
 
@@ -4709,6 +4708,7 @@ namespace Equivalence
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
       have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
@@ -4860,7 +4860,7 @@ namespace Equivalence
           simp [← BitVec.toNat_inj]; omega
       . obtain ⟨ h_eq_b0, h_eq_b1, h_eq_b2, h_eq_b3 ⟩ := h_b_val_eq
         simp_all [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, sub_eq_zero]
-        simp [← h_alu.2.2.2.2.2.2.2.2.2.2.2.2, ← BitVec.toNat_inj]
+        simp [← h_alu.2.2, ← BitVec.toNat_inj]
         exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions
           (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
@@ -4890,6 +4890,7 @@ namespace Equivalence
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
       have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
@@ -5000,7 +5001,7 @@ namespace Equivalence
         have h_se : BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm')) = BitVec.signExtend 32 imm' := by bv_decide
         rw [h_se]
         -- Rewrite using ALU equality
-        rw [← h_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+        rw [← h_alu.2]
         -- Establish jump_next_pc_bv = next_pc_bv and mask identity
         have h_jnpc_eq := jump_next_pc air row h_is_real (h_all_assumptions row h_row) (by simp; exact h_all_constraints row h_row) h_is_jump
         rw [h_jnpc_eq]
@@ -5043,7 +5044,7 @@ namespace Equivalence
         have h_se : BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm')) = BitVec.signExtend 32 imm' := by bv_decide
         simp [h_se]
         -- Rewrite to jump_next_pc_bv using ALU equality
-        simp [← h_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+        simp [← h_alu.2]
         -- Establish jump_next_pc_bv = next_pc_bv
         have h_jnpc_eq := jump_next_pc air row h_is_real (h_all_assumptions row h_row) (by simp; exact h_all_constraints row h_row) h_is_jump
         simp [h_jnpc_eq]
@@ -5139,7 +5140,7 @@ namespace Equivalence
       rw [operation_list_effect_state_swap_writePC_writeReg]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
+      simp [ h_opcode, h_selectors, ALUBus.Spec, and_assoc ] at h_asm_alu
       rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr
@@ -5263,7 +5264,7 @@ namespace Equivalence
       -- Prepare the ALU assumptions (AUIPC uses ALU entry index 6)
       replace h_asm_alu := h_asm_alu.2.2.2.2.2.2
       simp [ h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      rw [h_asm_alu.2.2] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
       -- Check for differences
       congr 4
       . -- Isolate relevant constraints (0-3 for op_b = instruction.b, 129 for specific = PC)

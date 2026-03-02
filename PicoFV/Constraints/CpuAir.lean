@@ -3198,6 +3198,74 @@ namespace CpuAir.Interpretations
     . have h_store_characterisation := is_store_instruction_characterisation air row h_is_real h_assumptions h_constraints h_store
       simp_all
 
+  -- `a`, `b`, and `c` values are always bytes
+  lemma operand_range
+    [Field ExtF]
+    (air : Valid_CpuAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_constraints : CpuAir.Extraction.allHold air row)
+  :
+    air.cols.op_a_access.access.value_0 row 0 < 256 ∧ air.cols.op_a_access.access.value_1 row 0 < 256 ∧
+    air.cols.op_a_access.access.value_2 row 0 < 256 ∧ air.cols.op_a_access.access.value_3 row 0 < 256 ∧
+    air.cols.op_a_access.prev_value_0 row 0 < 256 ∧ air.cols.op_a_access.prev_value_1 row 0 < 256 ∧
+    air.cols.op_a_access.prev_value_2 row 0 < 256 ∧ air.cols.op_a_access.prev_value_3 row 0 < 256 ∧
+    air.cols.op_b_access.value_0 row 0 < 256 ∧ air.cols.op_b_access.value_1 row 0 < 256 ∧
+    air.cols.op_b_access.value_2 row 0 < 256 ∧ air.cols.op_b_access.value_3 row 0 < 256 ∧
+    air.cols.op_c_access.value_0 row 0 < 256 ∧ air.cols.op_c_access.value_1 row 0 < 256 ∧
+    air.cols.op_c_access.value_2 row 0 < 256 ∧ air.cols.op_c_access.value_3 row 0 < 256
+  := by
+    have h_assumptions' := h_assumptions
+    simp [bus_row_assumptions] at h_assumptions'
+    obtain ⟨ asm_prog, asm_alu, asm_byte, asm_reg ⟩ := h_assumptions'
+    simp [bus_row, h_is_real, ByteBusEntry.Spec] at asm_byte
+    simp [bus_row, h_is_real] at asm_reg
+    simp [asm_byte, asm_reg]
+    have h_b := asm_reg.1; have h_c := asm_reg.2.2.1
+    clear asm_alu asm_byte asm_reg
+    simp [
+      bus_row,
+      ProgramBusEntry.operand_properties,
+      h_is_real,
+      -Vector.getElem_mk,
+      -ProgramBusEntry.mk.injEq
+    ] at asm_prog
+    obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := asm_prog
+    have h_eq_mult : mult = -1 := by aesop
+    subst mult
+    simp [
+      Transpiler.transpile_op,
+      Transpiler.opcode_of_rop,
+      Transpiler.opcode_of_iop,
+      Transpiler.opcode_of_sop,
+      Transpiler.opcode_of_bop,
+      Transpiler.opcode_of_uop
+    ] at h_eq
+    have h_imm_b := imm_b_eqs air row h_constraints
+    have h_imm_c := imm_c_eqs air row h_constraints
+    have trans_bytes := @Transpiler.imm_to_KB_bytes
+    cases instr <;>
+      simp [-Vector.eq_mk] at h_eq <;>
+      simp [h_eq] at h_eq_entry <;>
+      (try split at h_eq_entry) <;>
+      simp_all
+    . clear h_eq_entry
+      split at h_eq <;> simp [-Vector.eq_mk] at h_eq
+      rw [h_eq.1] at h_b h_c h_imm_b h_imm_c
+      simp at h_b h_c h_imm_b h_imm_c
+      simp [h_b, h_imm_c, trans_bytes]
+    . clear h_eq_entry
+      split at h_eq <;> simp [-Vector.eq_mk] at h_eq
+      rw [h_eq.1] at h_b h_c h_imm_b h_imm_c
+      simp at h_b h_c h_imm_b h_imm_c
+      simp [h_b, h_imm_c, trans_bytes]
+    . clear h_eq_entry
+      split at h_eq <;> simp [-Vector.eq_mk] at h_eq
+      rw [h_eq.1] at h_b h_c h_imm_b h_imm_c
+      simp at h_b h_c h_imm_b h_imm_c
+      simp [h_b, h_c]
+
   -- Constraints 28, 31-45 : `pc` breakdown when branching
   lemma branching_pc
     [Field ExtF]
@@ -3369,6 +3437,7 @@ namespace CpuAir.Interpretations
       then 1 else 0)
   := by
     obtain ⟨ h_cases, h_store ⟩ := is_branch_instruction_characterisation air row h_is_real h_assumptions h_constraints h_branch_instr
+    have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
     simp [ bus_row_assumptions ] at h_assumptions
     replace h_assumptions := h_assumptions.2.1
     simp [
@@ -3420,6 +3489,7 @@ namespace CpuAir.Interpretations
       then 1 else 0)
   := by
     obtain ⟨ h_cases, h_store ⟩ := is_branch_instruction_characterisation air row h_is_real h_assumptions h_constraints h_branch_instr
+    have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
     simp [ bus_row_assumptions ] at h_assumptions
     replace h_assumptions := h_assumptions.2.1
     simp [

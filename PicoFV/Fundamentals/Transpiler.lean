@@ -18,6 +18,13 @@ namespace Transpiler
     let imm_u32 := U32.fromNat (BitVec.extend imm 32 sgn).toNat
     Vector.map (fun x => ⟨ x.toNat, by omega ⟩) imm_u32
 
+  lemma imm_to_KB_bytes
+  :
+    (imm_to_KB imm sgn)[0] < 256 ∧ (imm_to_KB imm sgn)[1] < 256 ∧
+    (imm_to_KB imm sgn)[2] < 256 ∧ (imm_to_KB imm sgn)[3] < 256
+  := by
+    simp [imm_to_KB, U32.fromNat, Fin.lt_def]; omega
+
   lemma imm_to_KB_BV_sgn {w : ℕ} (imm : BitVec w) :
     let imm_KB := imm_to_KB imm true
     U32.toBV #v[imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3]] =

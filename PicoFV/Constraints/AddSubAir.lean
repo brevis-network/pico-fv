@@ -279,3 +279,24 @@ namespace AddSubAir.Interactions
     ]
 
 end AddSubAir.Interactions
+
+namespace AddSubAir.Interpretations
+
+  open RV32IM_Interactions
+  open AddSubAir.ConstraintsAndBuses
+  open AddSubAir.Interactions
+
+  lemma selector_breakdown
+    [Field ExtF]
+    (air : Valid_AddSubAir FKB ExtF)
+    (row : ℕ)
+    (h_constraints : AddSubAir.Extraction.allHold air row)
+  :
+    (air.cols.is_add row 0 = 0 ∨ air.cols.is_add row 0 = 1) ∧
+    (air.cols.is_sub row 0 = 0 ∨ air.cols.is_sub row 0 = 1) ∧
+    (air.cols.is_add row 0 + air.cols.is_sub row 0 = 0) ∨ (air.cols.is_add row 0 + air.cols.is_sub row 0 = 1)
+  := by
+    simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
+    grind
+
+end AddSubAir.Interpretations

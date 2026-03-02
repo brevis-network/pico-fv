@@ -45,7 +45,10 @@ import PicoFV.Constraints.MulAir
 import PicoFV.Constraints.ShiftRightAir
 import PicoFV.Constraints.SllAir
 
+import PicoFV.Spec.AddSubAir
+import PicoFV.Spec.BitwiseAir
 import PicoFV.Spec.CpuAir
+import PicoFV.Spec.LtAir
 
 import PicoFV.Equivalence.Equivalence
 
