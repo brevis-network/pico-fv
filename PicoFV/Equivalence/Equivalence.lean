@@ -814,6 +814,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (reg2, reg1, reg0, rop.SLL)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -930,6 +931,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (reg2, reg1, reg0, rop.SRL)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -1007,8 +1009,8 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg2]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      simp [ h_opcode, h_selectors, ALUBus.Spec, operand_ranges ] at h_asm_alu
+      rw [h_asm_alu]
       -- Check for differences
       congr
       -- Get the upper bound on the pc
@@ -1047,6 +1049,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (reg2, reg1, reg0, rop.SRA)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -1124,8 +1127,8 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg2]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      simp [ h_opcode, h_selectors, ALUBus.Spec, operand_ranges ] at h_asm_alu
+      rw [h_asm_alu]
       -- Check for differences
       congr
       -- Get the upper bound on the pc
@@ -1243,7 +1246,7 @@ namespace Equivalence
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
       simp [ h_opcode, h_selectors, ALUBus.Spec, operand_ranges ] at h_asm_alu
-      rw [h_asm_alu] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      rw [h_asm_alu]
       -- Check for differences
       congr
       . -- Case split
@@ -2223,6 +2226,7 @@ namespace Equivalence
       execute_instruction (instruction.SHIFTIOP (imm, reg1, reg0, sop.SLLI)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -2298,8 +2302,8 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      simp [ h_opcode, h_selectors, ALUBus.Spec, operand_ranges ] at h_asm_alu
+      rw [h_asm_alu]
       -- Check for differences
       congr
       -- Get the upper bound on the pc
@@ -2341,6 +2345,7 @@ namespace Equivalence
       execute_instruction (instruction.SHIFTIOP (imm, reg1, reg0, sop.SRLI)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -2416,8 +2421,8 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      simp [ h_opcode, h_selectors, ALUBus.Spec, operand_ranges ] at h_asm_alu
+      rw [h_asm_alu]
       -- Check for differences
       congr
       -- Get the upper bound on the pc
@@ -2459,6 +2464,7 @@ namespace Equivalence
       execute_instruction (instruction.SHIFTIOP (imm, reg1, reg0, sop.SRAI)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -2534,8 +2540,8 @@ namespace Equivalence
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
-      simp [ h_opcode, h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      simp [ h_opcode, h_selectors, ALUBus.Spec, operand_ranges ] at h_asm_alu
+      rw [h_asm_alu]
       -- Check for differences
       congr
       -- Get the upper bound on the pc
@@ -2578,6 +2584,7 @@ namespace Equivalence
       execute_instruction (instruction.MUL (reg2, reg1, reg0, { result_part := VectorHalf.Low, signed_rs1 := sl, signed_rs2 := sr })) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -2694,6 +2701,7 @@ namespace Equivalence
       execute_instruction (instruction.MUL (reg2, reg1, reg0, { result_part := VectorHalf.High, signed_rs1 := .Signed, signed_rs2 := .Signed })) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -2810,6 +2818,7 @@ namespace Equivalence
       execute_instruction (instruction.MUL (reg2, reg1, reg0, { result_part := VectorHalf.High, signed_rs1 := .Unsigned, signed_rs2 := .Unsigned })) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -2926,6 +2935,7 @@ namespace Equivalence
       execute_instruction (instruction.MUL (reg2, reg1, reg0, { result_part := VectorHalf.High, signed_rs1 := .Signed, signed_rs2 := .Unsigned })) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -3046,6 +3056,7 @@ namespace Equivalence
       execute_instruction (instruction.DIV (reg2, reg1, reg0, false)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -3162,6 +3173,7 @@ namespace Equivalence
       execute_instruction (instruction.DIV (reg2, reg1, reg0, true)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -3282,6 +3294,7 @@ namespace Equivalence
       execute_instruction (instruction.REM (reg2, reg1, reg0, false)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -3398,6 +3411,7 @@ namespace Equivalence
       execute_instruction (instruction.REM (reg2, reg1, reg0, true)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
+      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
       -- General assumptions
       simp [ bus_row_assumptions ] at h_assumptions
       obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
@@ -5264,7 +5278,7 @@ namespace Equivalence
       -- Prepare the ALU assumptions (AUIPC uses ALU entry index 6)
       replace h_asm_alu := h_asm_alu.2.2.2.2.2.2
       simp [ h_selectors, ALUBus.Spec ] at h_asm_alu
-      rw [h_asm_alu.2.2] -- rw [h_asm_alu.2.2.2.2.2.2.2.2.2.2.2.2]
+      rw [h_asm_alu.2.2]
       -- Check for differences
       congr 4
       . -- Isolate relevant constraints (0-3 for op_b = instruction.b, 129 for specific = PC)

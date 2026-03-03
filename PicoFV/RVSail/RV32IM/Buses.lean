@@ -443,19 +443,19 @@ namespace RV32IM_Interactions
         | 2 => result_range ∧ ops_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ^^^ U32.toBV #v[c_0, c_1, c_2, c_3]
         | 3 => result_range ∧ ops_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ||| U32.toBV #v[c_0, c_1, c_2, c_3]
         | 4 => result_range ∧ ops_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] &&& U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 5 => U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] <<< (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
-        | 6 => U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] >>> (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
-        | 7 => U32.toBV #v[a_0, a_1, a_2, a_3] = (U32.toBV #v[b_0, b_1, b_2, b_3]).sshiftRight (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
+        | 5 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] <<< (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
+        | 6 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] >>> (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
+        | 7 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (U32.toBV #v[b_0, b_1, b_2, b_3]).sshiftRight (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
         | 8 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = if (U32.toBV #v[b_0, b_1, b_2, b_3]).toInt < (U32.toBV #v[c_0, c_1, c_2, c_3]).toInt then 1#32 else 0#32
         | 9 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = if (U32.toBV #v[b_0, b_1, b_2, b_3]).toNat < (U32.toBV #v[c_0, c_1, c_2, c_3]).toNat then 1#32 else 0#32
-        | 30 => U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MUL
-        | 31 => U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULH
-        | 32 => U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULHU
-        | 33 => U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULHSU
-        | 34 => U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRS).1
-        | 35 => U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRU).1
-        | 36 => U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRS).2
-        | 37 => U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRU).2
+        | 30 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MUL
+        | 31 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULH
+        | 32 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULHU
+        | 33 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULHSU
+        | 34 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRS).1
+        | 35 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRU).1
+        | 36 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRS).2
+        | 37 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRU).2
         | _ => True
 
       /-- ALU bus entry instance -/
