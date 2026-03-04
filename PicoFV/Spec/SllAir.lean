@@ -28,15 +28,6 @@ namespace SllAir.Spec
     have hprod : b.val * bsm.val ≤ 255 * 128 := Nat.mul_le_mul (by omega) hbsm
     grind
 
-  -- Tactic macro for closing each SLL shift case with a concrete shift amount k
-  set_option hygiene false in
-  local macro "close_sll" : tactic =>
-    `(tactic| (
-      simp_all
-      apply BitVec.eq_of_toNat_eq
-      simp [U32.toBV_toNat, U32.toNat, BitVec.toNat_ofNat, BitVec.toNat_shiftLeft]
-      omega))
-
   lemma spec_SLL
     [Field ExtF]
     (air : Valid_SllAir FKB ExtF)
@@ -61,7 +52,7 @@ namespace SllAir.Spec
     -- Extract byte bounds
     obtain ⟨⟨hsr0, hsr1⟩, ⟨hsr2, hsr3⟩, ⟨hsrc0, hsrc1⟩, hsrc2, hsrc3⟩ := h_assumptions
     -- Extract all constraints
-    obtain ⟨_, h_c0_decomp,
+    obtain ⟨h_ci, h_c0_decomp,
       h_sbn0_sel, h_sbn1_sel, h_sbn2_sel, h_sbn3_sel, h_sbn4_sel, h_sbn5_sel, h_sbn6_sel, h_sbn7_sel,
       h_bsm0, h_bsm1, h_bsm2, h_bsm3, h_bsm4, h_bsm5, h_bsm6, h_bsm7,
       h_sr0, h_sr1, h_sr2, h_sr3,
@@ -75,7 +66,9 @@ namespace SllAir.Spec
       h_sbn_sum,
       h_sbnb0_bin, h_sbnb1_bin, h_sbnb2_bin, h_sbnb3_bin,
       h_sbnb_sum,
-      _⟩ := h_constraints
+      h_is_real⟩ := h_constraints
+    -- Clear unneeded hypotheses
+    clear h_ci h_is_real
     -- Derive bsm bound from constraints
     have hbsm : (air.cols.bit_shift_multiplier row 0).val ≤ 128 := by grind
     -- Derive Nat carry equations before case split
@@ -83,6 +76,7 @@ namespace SllAir.Spec
     have nat_sr1 := sr_nat_next _ _ _ _ _ hsr1 hb1 hbsm hsrc0 hsrc1 h_sr1
     have nat_sr2 := sr_nat_next _ _ _ _ _ hsr2 hb2 hbsm hsrc1 hsrc2 h_sr2
     have nat_sr3 := sr_nat_next _ _ _ _ _ hsr3 hb3 hbsm hsrc2 hsrc3 h_sr3
+    clear h_sr0 h_sr1 h_sr2 h_sr3
 
     have h_mod_32:
       U32.toNat #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
@@ -95,6 +89,8 @@ namespace SllAir.Spec
       clear *- hc0 hc1 hc2 hc3 h_lsb0 h_lsb1 h_lsb2 h_lsb3 h_lsb4 h_lsb5 h_lsb6 h_lsb7
       grind
     rw [h_mod_32]
+    clear h_mod_32 h_c0_decomp h_lsb5 h_lsb6 h_lsb7
+    clear h_sbnb0_bin h_sbnb1_bin h_sbnb2_bin h_sbnb3_bin
 
     -- Case split on 5 low bits (32 cases) and close each
     rcases h_lsb0 with h0 | h0 <;>
@@ -103,7 +99,26 @@ namespace SllAir.Spec
     rcases h_lsb3 with h3 | h3 <;>
     rcases h_lsb4 with h4 | h4
 
-    all_goals close_sll
+    all_goals
+      simp [h0, h1, h2, h3, h4]
+      simp [h0, h1, h2] at h_sbn0_sel h_sbn1_sel h_sbn2_sel h_sbn3_sel h_sbn4_sel h_sbn5_sel h_sbn6_sel h_sbn7_sel
+      simp [h_sbn0_sel, h_sbn1_sel, h_sbn2_sel, h_sbn3_sel, h_sbn4_sel, h_sbn5_sel, h_sbn6_sel, h_sbn7_sel] at h_sbn_sum
+      simp [h_sbn0_sel, h_sbn1_sel, h_sbn2_sel, h_sbn3_sel, h_sbn4_sel, h_sbn5_sel, h_sbn6_sel, h_sbn7_sel, h_sbn_sum]
+        at h_sbn0_bin h_sbn1_bin h_sbn2_bin h_sbn3_bin h_sbn4_bin h_sbn5_bin h_sbn6_bin h_sbn7_bin
+           h_bsm0 h_bsm1 h_bsm2 h_bsm3 h_bsm4 h_bsm5 h_bsm6 h_bsm7
+      simp [h3, h4] at h_sbnb0_sel h_sbnb1_sel h_sbnb2_sel h_sbnb3_sel
+      simp [h_sbnb0_sel, h_sbnb1_sel, h_sbnb2_sel, h_sbnb3_sel] at h_sbnb_sum
+      simp [h_sbnb0_sel, h_sbnb1_sel, h_sbnb2_sel, h_sbnb3_sel, h_sbnb_sum]
+        at h_a0_b0 h_a0_b1 h_a0_b2 h_a0_b3 h_a1_b0 h_a1_b1 h_a1_b2 h_a1_b3 h_a2_b0 h_a2_b1 h_a2_b2 h_a2_b3 h_a3_b0 h_a3_b1 h_a3_b2 h_a3_b3
+      simp [h_bsm0, h_bsm1, h_bsm2, h_bsm3, h_bsm4, h_bsm5, h_bsm6, h_bsm7] at nat_sr0 nat_sr1 nat_sr2 nat_sr3
+      clear h_sbnb0_sel h_sbnb1_sel h_sbnb2_sel h_sbnb3_sel h_sbnb_sum
+      clear h_sbn0_sel h_sbn1_sel h_sbn2_sel h_sbn3_sel h_sbn4_sel h_sbn5_sel h_sbn6_sel h_sbn7_sel
+      clear h_sbn0_bin h_sbn1_bin h_sbn2_bin h_sbn3_bin h_sbn4_bin h_sbn5_bin h_sbn6_bin h_sbn7_bin
+      clear h_bsm0 h_bsm1 h_bsm2 h_bsm3 h_bsm4 h_bsm5 h_bsm6 h_bsm7
+      simp_all
+      apply BitVec.eq_of_toNat_eq
+      simp [U32.toBV_toNat, U32.toNat, BitVec.toNat_ofNat, BitVec.toNat_shiftLeft]
+      omega
 
   lemma assertions
       [Field ExtF]
