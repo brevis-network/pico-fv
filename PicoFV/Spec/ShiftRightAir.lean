@@ -190,18 +190,6 @@ namespace ShiftRightAir.Spec
 
     all_goals close_srl
 
-  -- Tactic macro for closing each SRA shift case with a concrete shift amount
-  set_option hygiene false in
-  local macro "close_sra" : tactic =>
-    `(tactic| (
-      simp_all
-      simp [← BitVec.toNat_inj, U32.toNat]
-      repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)]
-      try simp [Fin.val_add, Fin.val_mul, sub_shift_val]
-      repeat rw [Nat.mod_eq_of_lt (by omega)]
-      try simp [Nat.shiftLeft_eq_mul_pow, Nat.shiftRight_eq_div_pow]
-      try omega))
-
   lemma spec_SRA
     [Field ExtF]
     (air : Valid_ShiftRightAir FKB ExtF)
@@ -352,7 +340,7 @@ namespace ShiftRightAir.Spec
           (by simp [h0, h1, h2])
       simp [h0, h1, h2] at msb_shift_b3 msb_shift_msb
       simp [← BitVec.toInt_inj, U32.toInt, ← U32.msb_3_negative]
-      simp [h_b_msb_is_msb, msb_shift_b3, msb_shift_msb]
+      simp [h_b_msb_is_msb, msb_shift_b3]
       simp [U32.toNat,
             Fin.val_add, Fin.val_mul,
             sub_shift_val_KB_to_Nat]
