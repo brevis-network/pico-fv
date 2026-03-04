@@ -161,10 +161,9 @@ namespace ShiftRightAir.Spec
       ⟨h_bsr4_bound, h_bsr5_bound⟩, ⟨h_bsr6_bound, h_bsr7_bound⟩,
       ⟨h_bitsr0_bound, h_bitsr1_bound⟩, ⟨h_bitsr2_bound, h_bitsr3_bound⟩,
       ⟨h_bitsr4_bound, h_bitsr5_bound⟩, ⟨h_bitsr6_bound, h_bitsr7_bound⟩,
-      ⟨h_carry0_bound_dup, h_carry1_bound_dup⟩, ⟨h_carry2_bound_dup, h_carry3_bound_dup⟩,
-      ⟨h_carry4_bound_dup, h_carry5_bound_dup⟩, ⟨h_carry6_bound_dup, h_carry7_bound_dup⟩,
-      ⟨h_sb0_bound_dup, h_sb1_bound_dup⟩, ⟨h_sb2_bound_dup, h_sb3_bound_dup⟩,
-      ⟨h_sb4_bound_dup, h_sb5_bound_dup⟩, h_sb6_bound_dup, h_sb7_bound_dup⟩ := h_assumptions
+      rest⟩ := h_assumptions
+    -- Clear duplicates
+    clear h_b3_bound_dup rest
     -- Get the mod 32
     have h_mod_32:
       U32.toNat #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
@@ -182,13 +181,72 @@ namespace ShiftRightAir.Spec
     clear h_c0_decomp h_mod_32 hc0 hc1 hc2 hc3
     symm at h_cc0 h_cc1 h_cc2 h_cc3 h_cc4 h_cc5 h_cc6 h_cc7
 
+    clear h_constrain_interactions h_is_real_bin h_is_real_bin2 h_sel_sum h_is_real
+    simp [h_is_sra] at h_bs0_bsr4 h_bs0_bsr5 h_bs0_bsr6 h_bs0_bsr7
+                       h_bs1_bsr3 h_bs1_bsr4 h_bs1_bsr5 h_bs1_bsr6
+                       h_bs2_bsr2 h_bs2_bsr3 h_bs2_bsr4 h_bs2_bsr5
+                       h_bs3_bsr1 h_bs3_bsr2 h_bs3_bsr3 h_bs3_bsr4
+    clear h_is_srl_bin h_is_srl_bin2 h_is_srl h_is_sra_bin h_is_sra_bin2 h_is_sra
+    clear h_low3_bound_bb0 h_low3_bound_bb1 h_low3_bound_bb2 h_low3_bound_bb3 h_low3_bound_bb4 h_low3_bound_bb5 h_low3_bound_bb6 h_low3_bound_bb7
+    clear h_lsb5_bin h_lsb6_bin h_lsb7_bin
+
     rcases h_lsb0_bin with h0 | h0 <;>
     rcases h_lsb1_bin with h1 | h1 <;>
     rcases h_lsb2_bin with h2 | h2 <;>
     rcases h_lsb3_bin with h3 | h3 <;>
     rcases h_lsb4_bin with h4 | h4
 
-    all_goals close_srl
+    all_goals
+      simp [h0, h1, h2, h3, h4]
+      set shift := air.cols.c_least_sig_byte_0 row 0 + air.cols.c_least_sig_byte_1 row 0 * 2 + air.cols.c_least_sig_byte_2 row 0 * 4
+      have eq_shift : shift = air.cols.c_least_sig_byte_0 row 0 + air.cols.c_least_sig_byte_1 row 0 * 2 + air.cols.c_least_sig_byte_2 row 0 * 4 := by rfl
+      simp [h0, h1, h2] at eq_shift; clear h0 h1 h2
+      simp [eq_shift] at h_sbn0_sel h_sbn1_sel h_sbn2_sel h_sbn3_sel h_sbn4_sel h_sbn5_sel h_sbn6_sel h_sbn7_sel
+                         h_sb0_eq h_sb1_eq h_sb2_eq h_sb3_eq h_sb4_eq h_sb5_eq h_sb6_eq h_sb7_eq
+                         h_carry0_eq h_carry1_eq h_carry2_eq h_carry3_eq h_carry4_eq h_carry5_eq h_carry6_eq h_carry7_eq
+      clear eq_shift; subst shift
+      simp [h3, h4] at h_sbnb0_sel h_sbnb1_sel h_sbnb2_sel h_sbnb3_sel
+      simp [h_sbnb0_sel, h_sbnb1_sel, h_sbnb2_sel, h_sbnb3_sel] at h_sbnb_sum
+      clear h3 h4
+      simp [h_sbn0_sel, h_sbn1_sel, h_sbn2_sel, h_sbn3_sel, h_sbn4_sel, h_sbn5_sel, h_sbn6_sel, h_sbn7_sel] at h_sbn_sum
+      clear h_sbn0_bin h_sbn1_bin h_sbn2_bin h_sbn3_bin h_sbn4_bin h_sbn5_bin h_sbn6_bin h_sbn7_bin
+      simp [h_sbn0_sel, h_sbn1_sel, h_sbn2_sel, h_sbn3_sel, h_sbn4_sel, h_sbn5_sel, h_sbn6_sel, h_sbn7_sel, h_sbn_sum]
+        at h_cc0 h_cc1 h_cc2 h_cc3 h_cc4 h_cc5 h_cc6 h_cc7
+      clear h_sbn0_sel h_sbn1_sel h_sbn2_sel h_sbn3_sel h_sbn4_sel h_sbn5_sel h_sbn6_sel h_sbn7_sel h_sbn_sum
+      simp [h_sbnb0_sel, h_sbnb1_sel, h_sbnb2_sel, h_sbnb3_sel, h_sbnb_sum]
+        at h_bs0_bsr0 h_bs0_bsr1 h_bs0_bsr2 h_bs0_bsr3 h_bs0_bsr4 h_bs0_bsr5 h_bs0_bsr6 h_bs0_bsr7
+           h_bs1_bsr0 h_bs1_bsr1 h_bs1_bsr2 h_bs1_bsr3 h_bs1_bsr4 h_bs1_bsr5 h_bs1_bsr6
+           h_bs2_bsr0 h_bs2_bsr1 h_bs2_bsr2 h_bs2_bsr3 h_bs2_bsr4 h_bs2_bsr5
+           h_bs3_bsr0 h_bs3_bsr1 h_bs3_bsr2 h_bs3_bsr3 h_bs3_bsr4
+      clear h_sbnb0_bin h_sbnb1_bin h_sbnb2_bin h_sbnb3_bin
+            h_sbnb0_sel h_sbnb1_sel h_sbnb2_sel h_sbnb3_sel h_sbnb_sum
+      simp [h_a0_eq, h_a1_eq, h_a2_eq, h_a3_eq,
+            h_bitsr0_bound, h_bitsr1_bound, h_bitsr2_bound, h_bitsr3_bound]
+      simp [h_bs0_bsr0, h_bs0_bsr1, h_bs0_bsr2, h_bs0_bsr3, h_bs0_bsr4, h_bs0_bsr5, h_bs0_bsr6, h_bs0_bsr7,
+            h_bs1_bsr0, h_bs1_bsr1, h_bs1_bsr2, h_bs1_bsr3, h_bs1_bsr4, h_bs1_bsr5, h_bs1_bsr6,
+            h_bs2_bsr0, h_bs2_bsr1, h_bs2_bsr2, h_bs2_bsr3, h_bs2_bsr4, h_bs2_bsr5,
+            h_bs3_bsr0, h_bs3_bsr1, h_bs3_bsr2, h_bs3_bsr3, h_bs3_bsr4]
+        at h_sb0_eq h_sb1_eq h_sb2_eq h_sb3_eq h_sb4_eq h_sb5_eq h_sb6_eq h_sb7_eq
+           h_carry0_eq h_carry1_eq h_carry2_eq h_carry3_eq h_carry4_eq h_carry5_eq h_carry6_eq h_carry7_eq
+           h_bsr0_bound h_bsr1_bound h_bsr2_bound h_bsr3_bound h_bsr4_bound h_bsr5_bound h_bsr6_bound h_bsr7_bound
+      clear h_bs0_bsr0 h_bs0_bsr1 h_bs0_bsr2 h_bs0_bsr3 h_bs0_bsr4 h_bs0_bsr5 h_bs0_bsr6 h_bs0_bsr7
+            h_bs1_bsr0 h_bs1_bsr1 h_bs1_bsr2 h_bs1_bsr3 h_bs1_bsr4 h_bs1_bsr5 h_bs1_bsr6
+            h_bs2_bsr0 h_bs2_bsr1 h_bs2_bsr2 h_bs2_bsr3 h_bs2_bsr4 h_bs2_bsr5
+            h_bs3_bsr0 h_bs3_bsr1 h_bs3_bsr2 h_bs3_bsr3 h_bs3_bsr4
+      simp [h_sb0_eq, h_sb1_eq, h_sb2_eq, h_sb3_eq, h_sb4_eq, h_sb5_eq, h_sb6_eq, h_sb7_eq]
+        at h_sb0_bound h_sb1_bound h_sb2_bound h_sb3_bound h_sb4_bound h_sb5_bound h_sb6_bound h_sb7_bound
+           h_cc0 h_cc1 h_cc2 h_cc3 h_cc4 h_cc5 h_cc6 h_cc7
+           h_carry0_eq h_carry1_eq h_carry2_eq h_carry3_eq h_carry4_eq h_carry5_eq h_carry6_eq h_carry7_eq
+      clear h_sb0_eq h_sb1_eq h_sb2_eq h_sb3_eq h_sb4_eq h_sb5_eq h_sb6_eq h_sb7_eq
+      simp [h_cc0, h_cc1, h_cc2, h_cc3, h_cc4, h_cc5, h_cc6, h_cc7]
+        at h_bitsr0_bound h_bitsr1_bound h_bitsr2_bound h_bitsr3_bound h_bitsr4_bound h_bitsr5_bound h_bitsr6_bound h_bitsr7_bound ⊢
+      simp [h_carry1_eq, h_carry2_eq, h_carry3_eq, h_carry4_eq]
+      simp [← BitVec.toNat_inj, U32.toNat]
+      repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)]
+      try simp [Fin.val_add, Fin.val_mul, sub_shift_val_KB_to_Nat]
+      repeat rw [Nat.mod_eq_of_lt (by omega)]
+      try simp [Nat.shiftLeft_eq_mul_pow, Nat.shiftRight_eq_div_pow]
+      try omega
 
   lemma spec_SRA
     [Field ExtF]
@@ -255,10 +313,9 @@ namespace ShiftRightAir.Spec
       ⟨h_bsr4_bound, h_bsr5_bound⟩, ⟨h_bsr6_bound, h_bsr7_bound⟩,
       ⟨h_bitsr0_bound, h_bitsr1_bound⟩, ⟨h_bitsr2_bound, h_bitsr3_bound⟩,
       ⟨h_bitsr4_bound, h_bitsr5_bound⟩, ⟨h_bitsr6_bound, h_bitsr7_bound⟩,
-      ⟨h_carry0_bound_dup, h_carry1_bound_dup⟩, ⟨h_carry2_bound_dup, h_carry3_bound_dup⟩,
-      ⟨h_carry4_bound_dup, h_carry5_bound_dup⟩, ⟨h_carry6_bound_dup, h_carry7_bound_dup⟩,
-      ⟨h_sb0_bound_dup, h_sb1_bound_dup⟩, ⟨h_sb2_bound_dup, h_sb3_bound_dup⟩,
-      ⟨h_sb4_bound_dup, h_sb5_bound_dup⟩, h_sb6_bound_dup, h_sb7_bound_dup⟩ := h_assumptions
+      rest⟩ := h_assumptions
+    -- Clear duplicates
+    clear h_b3_bound_dup rest
     -- Get the mod 32
     have h_mod_32:
       U32.toNat #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
@@ -316,6 +373,14 @@ namespace ShiftRightAir.Spec
         simp [Nat.shiftRight_eq_div_pow] <;>
         omega
 
+    clear h_constrain_interactions h_is_real_bin h_is_real_bin2 h_sel_sum h_is_real
+    simp [h_is_sra] at h_bs0_bsr4 h_bs0_bsr5 h_bs0_bsr6 h_bs0_bsr7
+                       h_bs1_bsr3 h_bs1_bsr4 h_bs1_bsr5 h_bs1_bsr6
+                       h_bs2_bsr2 h_bs2_bsr3 h_bs2_bsr4 h_bs2_bsr5
+                       h_bs3_bsr1 h_bs3_bsr2 h_bs3_bsr3 h_bs3_bsr4
+    clear h_is_srl_bin h_is_srl_bin2 h_is_srl h_is_sra_bin h_is_sra_bin2 h_is_sra
+    clear h_low3_bound_bb0 h_low3_bound_bb1 h_low3_bound_bb2 h_low3_bound_bb3 h_low3_bound_bb4 h_low3_bound_bb5 h_low3_bound_bb6 h_low3_bound_bb7
+    clear h_lsb5_bin h_lsb6_bin h_lsb7_bin
     clear h_b_msb_eq
 
     rcases h_lsb0_bin with h0 | h0 <;>
@@ -324,8 +389,7 @@ namespace ShiftRightAir.Spec
     rcases h_lsb3_bin with h3 | h3 <;>
     rcases h_lsb4_bin with h4 | h4
 
-    case inl.inl.inl.inl.inl =>
-      simp_all
+    all_goals
       have msb_shift_b3 :=
         h_b_msb_is_msb_shift_b3
           (n := air.cols.c_least_sig_byte_0 row 0 + air.cols.c_least_sig_byte_1 row 0 * 2 + air.cols.c_least_sig_byte_2 row 0 * 4)
@@ -338,33 +402,64 @@ namespace ShiftRightAir.Spec
           (m := ⟨ 2 ^ (8 - (air.cols.c_least_sig_byte_0 row 0 + air.cols.c_least_sig_byte_1 row 0 * 2 + air.cols.c_least_sig_byte_2 row 0 * 4)).val, by simp [h0, h1, h2]⟩)
           (by simp [h0, h1, h2])
           (by simp [h0, h1, h2])
-      simp [h0, h1, h2] at msb_shift_b3 msb_shift_msb
+
+    all_goals
+      simp [h0, h1, h2, h3, h4] at msb_shift_b3 msb_shift_msb ⊢
+      set shift := air.cols.c_least_sig_byte_0 row 0 + air.cols.c_least_sig_byte_1 row 0 * 2 + air.cols.c_least_sig_byte_2 row 0 * 4
+      have eq_shift : shift = air.cols.c_least_sig_byte_0 row 0 + air.cols.c_least_sig_byte_1 row 0 * 2 + air.cols.c_least_sig_byte_2 row 0 * 4 := by rfl
+      simp [h0, h1, h2] at eq_shift; clear h0 h1 h2
+      simp [eq_shift] at h_sbn0_sel h_sbn1_sel h_sbn2_sel h_sbn3_sel h_sbn4_sel h_sbn5_sel h_sbn6_sel h_sbn7_sel
+                         h_sb0_eq h_sb1_eq h_sb2_eq h_sb3_eq h_sb4_eq h_sb5_eq h_sb6_eq h_sb7_eq
+                         h_carry0_eq h_carry1_eq h_carry2_eq h_carry3_eq h_carry4_eq h_carry5_eq h_carry6_eq h_carry7_eq
+      clear eq_shift; subst shift
+      simp [h3, h4] at h_sbnb0_sel h_sbnb1_sel h_sbnb2_sel h_sbnb3_sel
+      simp [h_sbnb0_sel, h_sbnb1_sel, h_sbnb2_sel, h_sbnb3_sel] at h_sbnb_sum
+      clear h3 h4
+      simp [h_sbn0_sel, h_sbn1_sel, h_sbn2_sel, h_sbn3_sel, h_sbn4_sel, h_sbn5_sel, h_sbn6_sel, h_sbn7_sel] at h_sbn_sum
+      clear h_sbn0_bin h_sbn1_bin h_sbn2_bin h_sbn3_bin h_sbn4_bin h_sbn5_bin h_sbn6_bin h_sbn7_bin
+      simp [h_sbn0_sel, h_sbn1_sel, h_sbn2_sel, h_sbn3_sel, h_sbn4_sel, h_sbn5_sel, h_sbn6_sel, h_sbn7_sel, h_sbn_sum]
+        at h_cc0 h_cc1 h_cc2 h_cc3 h_cc4 h_cc5 h_cc6 h_cc7
+      clear h_sbn0_sel h_sbn1_sel h_sbn2_sel h_sbn3_sel h_sbn4_sel h_sbn5_sel h_sbn6_sel h_sbn7_sel h_sbn_sum
+      simp [h_sbnb0_sel, h_sbnb1_sel, h_sbnb2_sel, h_sbnb3_sel, h_sbnb_sum]
+        at h_bs0_bsr0 h_bs0_bsr1 h_bs0_bsr2 h_bs0_bsr3 h_bs0_bsr4 h_bs0_bsr5 h_bs0_bsr6 h_bs0_bsr7
+           h_bs1_bsr0 h_bs1_bsr1 h_bs1_bsr2 h_bs1_bsr3 h_bs1_bsr4 h_bs1_bsr5 h_bs1_bsr6
+           h_bs2_bsr0 h_bs2_bsr1 h_bs2_bsr2 h_bs2_bsr3 h_bs2_bsr4 h_bs2_bsr5
+           h_bs3_bsr0 h_bs3_bsr1 h_bs3_bsr2 h_bs3_bsr3 h_bs3_bsr4
+      clear h_sbnb0_bin h_sbnb1_bin h_sbnb2_bin h_sbnb3_bin
+            h_sbnb0_sel h_sbnb1_sel h_sbnb2_sel h_sbnb3_sel h_sbnb_sum
+      simp [h_a0_eq, h_a1_eq, h_a2_eq, h_a3_eq,
+            h_bitsr0_bound, h_bitsr1_bound, h_bitsr2_bound, h_bitsr3_bound]
+      simp [h_bs0_bsr0, h_bs0_bsr1, h_bs0_bsr2, h_bs0_bsr3, h_bs0_bsr4, h_bs0_bsr5, h_bs0_bsr6, h_bs0_bsr7,
+            h_bs1_bsr0, h_bs1_bsr1, h_bs1_bsr2, h_bs1_bsr3, h_bs1_bsr4, h_bs1_bsr5, h_bs1_bsr6,
+            h_bs2_bsr0, h_bs2_bsr1, h_bs2_bsr2, h_bs2_bsr3, h_bs2_bsr4, h_bs2_bsr5,
+            h_bs3_bsr0, h_bs3_bsr1, h_bs3_bsr2, h_bs3_bsr3, h_bs3_bsr4]
+        at h_sb0_eq h_sb1_eq h_sb2_eq h_sb3_eq h_sb4_eq h_sb5_eq h_sb6_eq h_sb7_eq
+           h_carry0_eq h_carry1_eq h_carry2_eq h_carry3_eq h_carry4_eq h_carry5_eq h_carry6_eq h_carry7_eq
+           h_bsr0_bound h_bsr1_bound h_bsr2_bound h_bsr3_bound h_bsr4_bound h_bsr5_bound h_bsr6_bound h_bsr7_bound
+      clear h_bs0_bsr0 h_bs0_bsr1 h_bs0_bsr2 h_bs0_bsr3 h_bs0_bsr4 h_bs0_bsr5 h_bs0_bsr6 h_bs0_bsr7
+            h_bs1_bsr0 h_bs1_bsr1 h_bs1_bsr2 h_bs1_bsr3 h_bs1_bsr4 h_bs1_bsr5 h_bs1_bsr6
+            h_bs2_bsr0 h_bs2_bsr1 h_bs2_bsr2 h_bs2_bsr3 h_bs2_bsr4 h_bs2_bsr5
+            h_bs3_bsr0 h_bs3_bsr1 h_bs3_bsr2 h_bs3_bsr3 h_bs3_bsr4
+      simp [h_sb0_eq, h_sb1_eq, h_sb2_eq, h_sb3_eq, h_sb4_eq, h_sb5_eq, h_sb6_eq, h_sb7_eq]
+        at h_sb0_bound h_sb1_bound h_sb2_bound h_sb3_bound h_sb4_bound h_sb5_bound h_sb6_bound h_sb7_bound
+           h_cc0 h_cc1 h_cc2 h_cc3 h_cc4 h_cc5 h_cc6 h_cc7
+           h_carry0_eq h_carry1_eq h_carry2_eq h_carry3_eq h_carry4_eq h_carry5_eq h_carry6_eq h_carry7_eq
+      clear h_sb0_eq h_sb1_eq h_sb2_eq h_sb3_eq h_sb4_eq h_sb5_eq h_sb6_eq h_sb7_eq
+      simp [h_cc0, h_cc1, h_cc2, h_cc3, h_cc4, h_cc5, h_cc6, h_cc7]
+        at h_bitsr0_bound h_bitsr1_bound h_bitsr2_bound h_bitsr3_bound h_bitsr4_bound h_bitsr5_bound h_bitsr6_bound h_bitsr7_bound ⊢
+      simp [h_carry1_eq, h_carry2_eq, h_carry3_eq, h_carry4_eq]
+
       simp [← BitVec.toInt_inj, U32.toInt, ← U32.msb_3_negative]
-      simp [h_b_msb_is_msb, msb_shift_b3]
-      simp [U32.toNat,
+      simp [h_b_msb_is_msb, msb_shift_b3, msb_shift_msb]
+
+    . simp [U32.toNat,
             Fin.val_add, Fin.val_mul,
             sub_shift_val_KB_to_Nat]
       ring_nf
-      clear *- hb0 hb1 hb2 h_b3_bound_dup
+      clear *- hb0 hb1 hb2 hb3
       omega
 
     all_goals
-      simp_all
-      have msb_shift_b3 :=
-        h_b_msb_is_msb_shift_b3
-          (n := air.cols.c_least_sig_byte_0 row 0 + air.cols.c_least_sig_byte_1 row 0 * 2 + air.cols.c_least_sig_byte_2 row 0 * 4)
-          (m := ⟨ 2 ^ (8 - (air.cols.c_least_sig_byte_0 row 0 + air.cols.c_least_sig_byte_1 row 0 * 2 + air.cols.c_least_sig_byte_2 row 0 * 4)).val, by simp [h0, h1, h2]⟩)
-          (by simp [h0, h1, h2])
-          (by simp [h0, h1, h2])
-      have msb_shift_msb :=
-        h_b_msb_is_msb_shift_msb
-          (n := air.cols.c_least_sig_byte_0 row 0 + air.cols.c_least_sig_byte_1 row 0 * 2 + air.cols.c_least_sig_byte_2 row 0 * 4)
-          (m := ⟨ 2 ^ (8 - (air.cols.c_least_sig_byte_0 row 0 + air.cols.c_least_sig_byte_1 row 0 * 2 + air.cols.c_least_sig_byte_2 row 0 * 4)).val, by simp [h0, h1, h2]⟩)
-          (by simp [h0, h1, h2])
-          (by simp [h0, h1, h2])
-      simp [h0, h1, h2] at msb_shift_b3 msb_shift_msb
-      simp [← BitVec.toInt_inj, U32.toInt, ← U32.msb_3_negative]
-      simp [h_b_msb_is_msb, msb_shift_b3, msb_shift_msb]
       split_ifs with h_b_msb
       . simp [h_b_msb, U32.toNat,
              Fin.val_add, Fin.val_mul,
@@ -373,7 +468,7 @@ namespace ShiftRightAir.Spec
         repeat rw [Int.emod_eq_of_lt (b := KB_prime) (by omega) (by grind)]
         repeat rw [Int.emod_eq_of_lt (b := 256) (by omega) (by omega)]
         ring_nf
-        clear *- hb0 hb1 hb2 h_b3_bound_dup
+        clear *- hb0 hb1 hb2 hb3
         omega
       . simp [h_b_msb] at h_b_msb_bin
         simp [h_b_msb_bin, U32.toNat,
@@ -383,7 +478,7 @@ namespace ShiftRightAir.Spec
         repeat rw [Int.emod_eq_of_lt (b := KB_prime) (by omega) (by grind)]
         repeat rw [Int.emod_eq_of_lt (b := 256) (by omega) (by omega)]
         ring_nf
-        clear *- hb0 hb1 hb2 h_b3_bound_dup
+        clear *- hb0 hb1 hb2 hb3
         omega
 
 end ShiftRightAir.Spec
