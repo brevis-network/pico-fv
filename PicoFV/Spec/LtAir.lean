@@ -82,7 +82,7 @@ namespace LtAir.Spec
     simp only [ALUBus.Spec]
     -- Simplify constraints and assumptions
     simp [constraint_and_interaction_simplification, sub_eq_zero, h_slt, h_sltu] at h_constraints
-    simp [bus_row_assumptions, bus_row, h_slt, h_sltu, ByteBusEntry.Spec] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_slt, h_sltu, ByteBus.Spec] at h_assumptions
     -- Extract assumptions
     obtain ⟨⟨h_bm_eq, h_bm_lt, h_b3_lt⟩, ⟨h_cm_eq, h_cm_lt, h_c3_lt⟩,
             h_sltu_eq, h_cb0_lt, h_cb1_lt⟩ := h_assumptions
@@ -211,7 +211,7 @@ namespace LtAir.Spec
     simp only [ALUBus.Spec]
     -- Simplify constraints and assumptions
     simp [constraint_and_interaction_simplification, sub_eq_zero, h_slt, h_sltu] at h_constraints
-    simp [bus_row_assumptions, bus_row, h_slt, h_sltu, ByteBusEntry.Spec] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_slt, h_sltu, ByteBus.Spec] at h_assumptions
     -- Extract assumptions
     obtain ⟨⟨_, _, _⟩, ⟨_, _, _⟩, h_sltu_eq, h_cb0_lt, h_cb1_lt⟩ := h_assumptions
     -- Extract constraints
@@ -281,7 +281,7 @@ namespace LtAir.Spec
             exact spec_SLT air row h_assumptions h_constraints h_slt
         . constructor
           . -- Byte
-            simp [bus_row, ByteBusEntry.Spec]
+            simp [bus_row, ByteBus.Spec]
             have selectors := selector_breakdown air row h_constraints
             split_ands <;> intro h <;> exfalso <;> grind
           . -- Register

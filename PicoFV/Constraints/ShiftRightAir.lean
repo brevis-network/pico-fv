@@ -940,7 +940,7 @@ namespace ShiftRightAir.Interactions
         (-((air.cols.is_real row 0)), #v[7, 0, 0, (air.cols.shr_carry_output_shifted_byte_4 row 0), (air.cols.shr_carry_output_shifted_byte_5 row 0)]),
         (-((air.cols.is_real row 0)), #v[7, 0, 0, (air.cols.shr_carry_output_shifted_byte_6 row 0), (air.cols.shr_carry_output_shifted_byte_7 row 0)])
       ],
-      Register := []
+      State := []
     }
 
   @[simp]

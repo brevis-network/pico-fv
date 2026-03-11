@@ -119,7 +119,7 @@ namespace ShiftRightAir.Spec
     simp only [ALUBus.Spec]
     intro ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩
     -- Get byte bounds from assumptions
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBusEntry.Spec] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec] at h_assumptions
     -- Simplify constraints
     simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
     -- Extract all constraints
@@ -271,7 +271,7 @@ namespace ShiftRightAir.Spec
     simp only [ALUBus.Spec]
     intro ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩
     -- Get byte bounds from assumptions
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBusEntry.Spec] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec] at h_assumptions
     -- Simplify constraints
     simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
     -- Extract all constraints

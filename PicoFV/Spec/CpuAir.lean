@@ -58,7 +58,7 @@ namespace CpuAir.Spec
           simp [
             bus_row,
             h_is_real,
-            ByteBusEntry.Spec
+            ByteBus.Spec
           ] at asm_byte
           -- Get Register bus assumptions
           simp [

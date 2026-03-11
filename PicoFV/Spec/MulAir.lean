@@ -175,7 +175,7 @@ namespace MulAir.Spec
              h_a0, h_a1, h_a2, h_a3, h_b_bmsb, h_b_cmsb, h_b_bse, h_b_cse, h_bse_msb, h_cse_msb ⟩ := h_constraints
     clear ci; rw [← h_a0, ← h_a1, ← h_a2, ← h_a3]; clear h_a0 h_a1 h_a2 h_a3
 
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBusEntry.Spec, and_assoc] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec, and_assoc] at h_assumptions
     simp [h_assumptions]
     obtain ⟨ eq_bmsb, ub_bmsb, ub_b3, eq_cmsb, ub_cmsb, ub_c3,
              ub_cy0, ub_cy1, ub_cy2, ub_cy3, ub_cy4, ub_cy5, ub_cy6, ub_cy7,
@@ -265,7 +265,7 @@ namespace MulAir.Spec
              h_a0, h_a1, h_a2, h_a3, h_b_bmsb, h_b_cmsb, h_b_bse, h_b_cse, h_bse_msb, h_cse_msb ⟩ := h_constraints
     clear ci; rw [← h_a0, ← h_a1, ← h_a2, ← h_a3]; clear h_a0 h_a1 h_a2 h_a3
 
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBusEntry.Spec, and_assoc] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec, and_assoc] at h_assumptions
     simp [h_assumptions]
     obtain ⟨ eq_bmsb, ub_bmsb, ub_b3, eq_cmsb, ub_cmsb, ub_c3,
              ub_cy0, ub_cy1, ub_cy2, ub_cy3, ub_cy4, ub_cy5, ub_cy6, ub_cy7,
@@ -357,7 +357,7 @@ namespace MulAir.Spec
              h_a0, h_a1, h_a2, h_a3, h_b_bmsb, h_b_cmsb, h_b_bse, h_b_cse, h_bse_msb, h_cse_msb ⟩ := h_constraints
     clear ci; rw [← h_a0, ← h_a1, ← h_a2, ← h_a3]; clear h_a0 h_a1 h_a2 h_a3
 
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBusEntry.Spec, and_assoc] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec, and_assoc] at h_assumptions
     simp [h_assumptions]
     obtain ⟨ eq_bmsb, ub_bmsb, ub_b3, eq_cmsb, ub_cmsb, ub_c3,
              ub_cy0, ub_cy1, ub_cy2, ub_cy3, ub_cy4, ub_cy5, ub_cy6, ub_cy7,
@@ -447,7 +447,7 @@ namespace MulAir.Spec
              h_a0, h_a1, h_a2, h_a3, h_b_bmsb, h_b_cmsb, h_b_bse, h_b_cse, h_bse_msb, h_cse_msb ⟩ := h_constraints
     clear ci; rw [← h_a0, ← h_a1, ← h_a2, ← h_a3]; clear h_a0 h_a1 h_a2 h_a3
 
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBusEntry.Spec, and_assoc] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec, and_assoc] at h_assumptions
     simp [h_assumptions]
     obtain ⟨ eq_bmsb, ub_bmsb, ub_b3, eq_cmsb, ub_cmsb, ub_c3,
              ub_cy0, ub_cy1, ub_cy2, ub_cy3, ub_cy4, ub_cy5, ub_cy6, ub_cy7,

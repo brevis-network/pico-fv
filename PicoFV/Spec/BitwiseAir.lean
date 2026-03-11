@@ -65,12 +65,12 @@ namespace BitwiseAir.Spec
     -- Simplify ALUBus.Spec
     simp only [ALUBus.Spec, and_assoc]
     -- Simplify byte bus assumptions
-    simp [bus_row_assumptions, bus_row, h_xor, h_or, h_and, ByteBusEntry.Spec] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_xor, h_or, h_and, ByteBus.Spec] at h_assumptions
     -- Extract byte-level XOR facts and bounds
     obtain ⟨⟨h_eq0, h_a0, h_b0, h_c0⟩, ⟨h_eq1, h_a1, h_b1, h_c1⟩,
             ⟨h_eq2, h_a2, h_b2, h_c2⟩, h_eq3, h_a3, h_b3, h_c3⟩ := h_assumptions
     -- Provide byte bounds
-    refine ⟨h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3, ?_⟩
+    refine ⟨h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3, h_a0, h_a1, h_a2, h_a3, ?_⟩
     -- Prove U32.toBV a = U32.toBV b ^^^ U32.toBV c from byte-level XOR facts
     simp [U32.toBV, h_eq0, h_eq1, h_eq2, h_eq3]
     rw [FKB.ofNat_xor_eq _ _ h_b3 h_c3, FKB.ofNat_xor_eq _ _ h_b2 h_c2,
@@ -97,12 +97,12 @@ namespace BitwiseAir.Spec
     -- Simplify ALUBus.Spec
     simp only [ALUBus.Spec, and_assoc]
     -- Simplify byte bus assumptions
-    simp [bus_row_assumptions, bus_row, h_xor, h_or, h_and, ByteBusEntry.Spec] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_xor, h_or, h_and, ByteBus.Spec] at h_assumptions
     -- Extract byte-level OR facts and bounds
     obtain ⟨⟨h_eq0, h_a0, h_b0, h_c0⟩, ⟨h_eq1, h_a1, h_b1, h_c1⟩,
             ⟨h_eq2, h_a2, h_b2, h_c2⟩, h_eq3, h_a3, h_b3, h_c3⟩ := h_assumptions
     -- Provide byte bounds
-    refine ⟨h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3, ?_⟩
+    refine ⟨h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3, h_a0, h_a1, h_a2, h_a3, ?_⟩
     -- Prove U32.toBV a = U32.toBV b ||| U32.toBV c from byte-level OR facts
     simp [U32.toBV, h_eq0, h_eq1, h_eq2, h_eq3]
     rw [FKB.ofNat_or_eq _ _ h_b3 h_c3, FKB.ofNat_or_eq _ _ h_b2 h_c2,
@@ -129,12 +129,12 @@ namespace BitwiseAir.Spec
     -- Simplify ALUBus.Spec
     simp only [ALUBus.Spec, and_assoc]
     -- Simplify byte bus assumptions
-    simp [bus_row_assumptions, bus_row, h_xor, h_or, h_and, ByteBusEntry.Spec] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_xor, h_or, h_and, ByteBus.Spec] at h_assumptions
     -- Extract byte-level AND facts and bounds
     obtain ⟨⟨h_eq0, h_a0, h_b0, h_c0⟩, ⟨h_eq1, h_a1, h_b1, h_c1⟩,
             ⟨h_eq2, h_a2, h_b2, h_c2⟩, h_eq3, h_a3, h_b3, h_c3⟩ := h_assumptions
     -- Provide byte bounds
-    refine ⟨h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3, ?_⟩
+    refine ⟨h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3, h_a0, h_a1, h_a2, h_a3, ?_⟩
     -- Prove U32.toBV a = U32.toBV b &&& U32.toBV c from byte-level AND facts
     simp [U32.toBV, h_eq0, h_eq1, h_eq2, h_eq3]
     rw [BitVec.and_append, BitVec.and_append, BitVec.and_append]
@@ -182,7 +182,7 @@ namespace BitwiseAir.Spec
             exact spec_XOR air row h_assumptions h_constraints h_xor
         . constructor
           . -- Byte
-            simp [bus_row, ByteBusEntry.Spec]
+            simp [bus_row, ByteBus.Spec]
             have selectors := selector_breakdown air row h_constraints
             split_ands <;> intro h <;> exfalso <;> grind
           . -- Register

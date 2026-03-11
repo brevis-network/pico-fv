@@ -2839,7 +2839,7 @@ namespace CpuAir.Interactions
         (-air.cols.is_real row 0, #v[8, air.cols.clk_16bit_limb row 0, 0, 0, 0]),
         (-air.cols.is_real row 0, #v[7, 0, 0, air.cols.clk_8bit_limb row 0, 0])
       ],
-      Register := List.map RegisterBusEntry.deserialise [
+      State := List.map StateBusEntry.deserialise [
         (-(1 - air.cols.opcode_selector.imm_b row 0), #v[air.cols.op_b_access.prev_chunk row 0, air.cols.op_b_access.prev_clk row 0, air.cols.instruction.b_0 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0]),
         (  1 - air.cols.opcode_selector.imm_b row 0,  #v[air.cols.chunk row 0, 2 + air.cols.clk row 0, air.cols.instruction.b_0 row 0, air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0]),
         (-(1 - air.cols.opcode_selector.imm_c row 0), #v[air.cols.op_c_access.prev_chunk row 0, air.cols.op_c_access.prev_clk row 0, air.cols.instruction.c_0 row 0, air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0]),
@@ -3219,7 +3219,7 @@ namespace CpuAir.Interpretations
     have h_assumptions' := h_assumptions
     simp [bus_row_assumptions] at h_assumptions'
     obtain ⟨ asm_prog, asm_alu, asm_byte, asm_reg ⟩ := h_assumptions'
-    simp [bus_row, h_is_real, ByteBusEntry.Spec] at asm_byte
+    simp [bus_row, h_is_real, ByteBus.Spec] at asm_byte
     simp [bus_row, h_is_real] at asm_reg
     simp [asm_byte, asm_reg]
     have h_b := asm_reg.1; have h_c := asm_reg.2.2.1
@@ -3529,7 +3529,7 @@ namespace CpuAir.Interpretations
     := by
       simp [ bus_row_assumptions ] at h_assumptions
       replace h_assumptions := h_assumptions.2.2.1
-      simp [ bus_row, h_is_real, ByteBusEntry.Spec ] at h_assumptions
+      simp [ bus_row, h_is_real, ByteBus.Spec ] at h_assumptions
       omega
 
     have relevant_constraints :

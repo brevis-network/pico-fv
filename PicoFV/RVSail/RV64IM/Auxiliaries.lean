@@ -176,7 +176,7 @@ namespace RV64IM
             }
           ⟩
 
-    def reg_of_fin (r : Fin 32) : Register :=
+    def reg_of_fin (r : Fin 32) : State :=
       match r.1 with
         | 1 => Register.x1
         | 2 => Register.x2

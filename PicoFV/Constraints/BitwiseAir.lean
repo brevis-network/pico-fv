@@ -128,7 +128,7 @@ namespace BitwiseAir.Interactions
         (-((((air.cols.is_xor row 0) + (air.cols.is_or row 0)) + (air.cols.is_and row 0))), #v[((((air.cols.is_xor row 0) * 2) + ((air.cols.is_or row 0) * 1)) + ((air.cols.is_and row 0) * 0)), (air.cols.a_2 row 0), 0, (air.cols.b_2 row 0), (air.cols.c_2 row 0)]),
         (-((((air.cols.is_xor row 0) + (air.cols.is_or row 0)) + (air.cols.is_and row 0))), #v[((((air.cols.is_xor row 0) * 2) + ((air.cols.is_or row 0) * 1)) + ((air.cols.is_and row 0) * 0)), (air.cols.a_3 row 0), 0, (air.cols.b_3 row 0), (air.cols.c_3 row 0)])
       ],
-      Register := []
+      State := []
     }
 
   @[simp]

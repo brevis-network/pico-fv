@@ -406,7 +406,7 @@ namespace LtAir.Interactions
         (-(((air.cols.is_slt row 0) + (air.cols.is_slt_u row 0))), #v[0, (air.cols.c_masked row 0), 0, (air.cols.c_3 row 0), 127]),
         (-(((air.cols.is_slt row 0) + (air.cols.is_slt_u row 0))), #v[5, (air.cols.slt_u row 0), 0, (air.cols.cmp_bytes_0 row 0), (air.cols.cmp_bytes_1 row 0)])
       ],
-      Register := []
+      State := []
     }
 
   @[simp]

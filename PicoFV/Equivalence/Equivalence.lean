@@ -268,11 +268,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -300,7 +304,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -385,11 +393,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -417,7 +429,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -502,11 +518,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -534,7 +554,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -619,11 +643,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -651,7 +679,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -736,11 +768,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -768,7 +804,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -854,11 +894,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -886,7 +930,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -971,11 +1019,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -1003,7 +1055,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -1089,11 +1145,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -1121,7 +1181,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -1207,11 +1271,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -1239,7 +1307,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -1327,11 +1399,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -1359,7 +1435,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -1453,10 +1533,13 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -1484,7 +1567,10 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
@@ -1586,10 +1672,13 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -1617,7 +1706,10 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
@@ -1719,10 +1811,13 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -1750,7 +1845,10 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
@@ -1852,10 +1950,13 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -1883,7 +1984,10 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
@@ -1986,10 +2090,13 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -2017,7 +2124,10 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
@@ -2124,10 +2234,13 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -2155,7 +2268,10 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
@@ -2266,10 +2382,13 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -2297,7 +2416,10 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
@@ -2385,10 +2507,13 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -2416,7 +2541,10 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
@@ -2504,10 +2632,13 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -2535,7 +2666,10 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       -- Prepare the ALU assumptions
@@ -2624,11 +2758,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -2656,7 +2794,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -2741,11 +2883,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -2773,7 +2919,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -2858,11 +3008,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -2890,7 +3044,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -2975,11 +3133,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -3007,7 +3169,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -3096,11 +3262,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -3128,7 +3298,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -3213,11 +3387,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -3245,7 +3423,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -3334,11 +3516,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -3366,7 +3552,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -3451,11 +3641,15 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same (by tauto)] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1, h_reg2, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1 h_reg2 h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 reg1 reg2
       rw [
@@ -3483,7 +3677,11 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1,
+        h_reg_rs2
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       simp [operation_list_effect_state_writeReg_same h_reg1]
       simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -3592,9 +3790,12 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg2, h_reg1 ⟩ := h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg2 h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- Branching
@@ -3685,7 +3886,10 @@ namespace Equivalence
           h_is_real,
           h_opcode,
           h_selectors,
+          h_reg_rd,
+          h_reg_rs1
         ]
+        simp [BitVec.ofNatLT_eq_ofNat] at h_branching_pc h_branching_next_pc h_non_branching_npc ⊢
         simp [operation_list_effect_state_writeReg_same h_reg2]
         simp [h_prev_eq]
         simp [operation_list_effect_state_writeReg_same h_reg1]
@@ -3696,6 +3900,7 @@ namespace Equivalence
         ]
         congr
         split_ifs <;> simp_all
+
       . intro h_branch
         simp [h_prev_eq, h_eq_branching] at h_branch
         simp_all [
@@ -3784,9 +3989,12 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg2, h_reg1 ⟩ := h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg2 h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- Branching
@@ -3877,7 +4085,10 @@ namespace Equivalence
           h_is_real,
           h_opcode,
           h_selectors,
+          h_reg_rd,
+          h_reg_rs1
         ]
+        simp [BitVec.ofNatLT_eq_ofNat] at h_branching_pc h_branching_next_pc h_non_branching_npc ⊢
         simp [operation_list_effect_state_writeReg_same h_reg2]
         simp [h_prev_eq]
         simp [operation_list_effect_state_writeReg_same h_reg1]
@@ -3976,9 +4187,12 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg2, h_reg1 ⟩ := h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg2 h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- Branching
@@ -4069,7 +4283,10 @@ namespace Equivalence
           h_is_real,
           h_opcode,
           h_selectors,
+          h_reg_rd,
+          h_reg_rs1
         ]
+        simp [BitVec.ofNatLT_eq_ofNat] at h_branching_pc h_branching_next_pc h_non_branching_npc ⊢
         simp [operation_list_effect_state_writeReg_same h_reg2]
         simp [h_prev_eq]
         simp [operation_list_effect_state_writeReg_same h_reg1]
@@ -4171,9 +4388,12 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg2, h_reg1 ⟩ := h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg2 h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- Branching
@@ -4264,7 +4484,10 @@ namespace Equivalence
           h_is_real,
           h_opcode,
           h_selectors,
+          h_reg_rd,
+          h_reg_rs1
         ]
+        simp [BitVec.ofNatLT_eq_ofNat] at h_branching_pc h_branching_next_pc h_non_branching_npc ⊢
         simp [operation_list_effect_state_writeReg_same h_reg2]
         simp [h_prev_eq]
         simp [operation_list_effect_state_writeReg_same h_reg1]
@@ -4366,9 +4589,12 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg2, h_reg1 ⟩ := h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg2 h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- Branching
@@ -4459,7 +4685,10 @@ namespace Equivalence
           h_is_real,
           h_opcode,
           h_selectors,
+          h_reg_rd,
+          h_reg_rs1
         ]
+        simp [BitVec.ofNatLT_eq_ofNat] at h_branching_pc h_branching_next_pc h_non_branching_npc ⊢
         simp [operation_list_effect_state_writeReg_same h_reg2]
         simp [h_prev_eq]
         simp [operation_list_effect_state_writeReg_same h_reg1]
@@ -4561,9 +4790,12 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg2, h_reg1 ⟩ := h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg2 h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- Branching
@@ -4654,7 +4886,10 @@ namespace Equivalence
           h_is_real,
           h_opcode,
           h_selectors,
+          h_reg_rd,
+          h_reg_rs1
         ]
+        simp [BitVec.ofNatLT_eq_ofNat] at h_branching_pc h_branching_next_pc h_non_branching_npc ⊢
         simp [operation_list_effect_state_writeReg_same h_reg2]
         simp [h_prev_eq]
         simp [operation_list_effect_state_writeReg_same h_reg1]
@@ -4775,8 +5010,10 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd
       ] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg1 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- Jump constraints
@@ -4839,7 +5076,9 @@ namespace Equivalence
           h_is_real,
           h_opcode,
           h_selectors,
+          h_reg_rd
         ]
+        simp [BitVec.ofNatLT_eq_ofNat] at h_jpc_eq h_jnpc_eq ⊢
         rw [operation_list_effect_state_swap_writePC_writeReg]
         simp_all [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, sub_eq_zero]
         -- Branch on zero or non-zero register write
@@ -4957,9 +5196,12 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd,
+        h_reg_rs1
       ] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg2, h_reg1 ⟩ := h_bus_hypotheses
       simp [operation_list_effect_hypotheses_writeReg_same h_reg2] at h_reg1
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg2 h_reg1
       -- RISC-V assumptions
       simp [RISC_V_assumptions] at risc_v_assumptions
       -- Jump constraints
@@ -5007,7 +5249,10 @@ namespace Equivalence
           h_is_real,
           h_opcode,
           h_selectors,
+          h_reg_rd,
+          h_reg_rs1
         ]
+        simp [BitVec.ofNatLT_eq_ofNat] at h_alu ⊢
         rw [operation_list_effect_state_swap_writePC_writeReg]
         simp_all [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, sub_eq_zero]
         simp [operation_list_effect_state_writeReg_same h_reg2]
@@ -5028,6 +5273,7 @@ namespace Equivalence
             simp [BitVec.getElem_eq_testBit_toNat, BitVec.toNat_ofNatLT]; omega
           bv_decide
         rw [h_mask_eq]
+        simp [BitVec.ofNatLT_eq_ofNat] at h_jnpc_eq ⊢
         -- Now WritePC values match. Handle WriteReg via constraint_80.
         subst reg0
         by_cases h_x0 : rd' = regidx.Regidx 0#5
@@ -5038,7 +5284,7 @@ namespace Equivalence
             h_a0,
             write_xreg,
             Transpiler.reg_to_KB,
-            regidx_to_fin
+            regidx_to_fin,
           ]
         . have h_a_not_0 : air.cols.instruction.a_is_0 row 0 = 0 := by
             simp only [h_a_is_0]
@@ -5132,9 +5378,11 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd
       ] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 imm'
       rw [
@@ -5150,7 +5398,9 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       -- Prepare the ALU assumptions
       replace h_asm_alu := h_asm_alu.1
@@ -5255,9 +5505,11 @@ namespace Equivalence
         bus_row,
         h_is_real,
         h_opcode,
-        h_selectors
+        h_selectors,
+        h_reg_rd
       ] at h_bus_hypotheses
       obtain ⟨ h_pc, h_reg0 ⟩ := h_bus_hypotheses
+      simp [BitVec.ofNatLT_eq_ofNat] at h_reg0
       -- Use equivalence with operation effect specification
       extract_lets reg0 imm'
       rw [
@@ -5273,7 +5525,9 @@ namespace Equivalence
         h_is_real,
         h_opcode,
         h_selectors,
+        h_reg_rd
       ]
+      simp [BitVec.ofNatLT_eq_ofNat]
       rw [operation_list_effect_state_swap_writePC_writeReg]
       -- Prepare the ALU assumptions (AUIPC uses ALU entry index 6)
       replace h_asm_alu := h_asm_alu.2.2.2.2.2.2

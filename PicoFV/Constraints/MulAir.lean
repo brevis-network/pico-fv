@@ -408,7 +408,7 @@ namespace MulAir.Interactions
         (-((air.cols.is_real row 0)), #v[7, 0, 0, (air.cols.product_4 row 0), (air.cols.product_5 row 0)]),
         (-((air.cols.is_real row 0)), #v[7, 0, 0, (air.cols.product_6 row 0), (air.cols.product_7 row 0)])
       ],
-      Register := []
+      State := []
     }
 
   @[simp]

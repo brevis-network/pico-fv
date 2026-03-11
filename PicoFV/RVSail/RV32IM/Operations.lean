@@ -296,18 +296,25 @@ namespace RV32IM
 
     def bus_operations (row : BusRow) : List Operation :=
       let program : List Operation := List.map (fun program_row => .ReadPC (BitVec.ofNatLT (w := 32) program_row.pc (by omega))) row.Program
-      let register : List Operation :=
+      let state : List Operation :=
         List.filterMap (
-          fun register_row =>
-            let register : regidx := .Regidx register_row.register.val
-            let value := U32.toBV #v[register_row.x_0, register_row.x_1, register_row.x_2, register_row.x_3]
-            if (register_row.multiplicity = -1) then
-              .some (.ReadReg register value)
-            else if (register_row.multiplicity = 1) then
-              .some (.WriteReg register value)
-            else .none
-        ) row.Register
-      program ++ register
+          fun state_row =>
+            let value := U32.toBV #v[state_row.x_0, state_row.x_1, state_row.x_2, state_row.x_3]
+            if _ : state_row.ptr < 32 then
+              (let register : regidx := .Regidx (BitVec.ofNatLT (w := if false = true then 4 else 5) state_row.ptr.val (by simpa))
+              if (state_row.multiplicity = -1) then
+                .some (.ReadReg register value)
+              else if (state_row.multiplicity = 1) then
+                .some (.WriteReg register value)
+              else .none)
+            else
+              if (state_row.multiplicity = -1) then
+                .some (.ReadMem state_row.ptr.val .Word value)
+              else if (state_row.multiplicity = 1) then
+                .some (.WriteMem state_row.ptr.val .Word value)
+              else .none
+        ) row.State
+      program ++ state
 
   end BusOperations
 

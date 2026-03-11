@@ -113,9 +113,9 @@ namespace RV64IM
                 EStateM.Result.ok (ExecutionResult.Retire_Success ()) {
                   state with
                     mem := (((state.mem.insert addr data0
-                             ).insert (addr + 1) data1
+                              ).insert (addr + 1) data1
                             ).insert (addr + 2) data2
-                           ).insert (addr + 3) data3
+                            ).insert (addr + 3) data3
                 }
               | .Double =>
                 let data0 := BitVec.extractLsb 7 0 val
@@ -129,13 +129,13 @@ namespace RV64IM
                 EStateM.Result.ok (ExecutionResult.Retire_Success ()) {
                   state with
                     mem := (((((((state.mem.insert addr data0
-                                 ).insert (addr + 1) data1
+                                  ).insert (addr + 1) data1
                                 ).insert (addr + 2) data2
-                               ).insert (addr + 3) data3
+                                ).insert (addr + 3) data3
                               ).insert (addr + 4) data4
-                             ).insert (addr + 5) data5
+                              ).insert (addr + 5) data5
                             ).insert (addr + 6) data6
-                           ).insert (addr + 7) data7
+                            ).insert (addr + 7) data7
                 }
         }
 

@@ -48,7 +48,7 @@ namespace SllAir.Spec
     -- Simplify constraints
     simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
     -- Get byte bounds from assumptions
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBusEntry.Spec] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec] at h_assumptions
     -- Extract byte bounds
     obtain ⟨⟨hsr0, hsr1⟩, ⟨hsr2, hsr3⟩, ⟨hsrc0, hsrc1⟩, hsrc2, hsrc3⟩ := h_assumptions
     -- Extract all constraints
@@ -145,7 +145,7 @@ namespace SllAir.Spec
           exact spec_SLL air row h_assumptions h_constraints h_is_real
         . constructor
           . -- Byte
-            simp [bus_row, ByteBusEntry.Spec]
+            simp [bus_row, ByteBus.Spec]
             have h_c := h_constraints
             simp [constraint_and_interaction_simplification, sub_eq_zero] at h_c
             split_ands <;> intro h <;> exfalso <;> grind

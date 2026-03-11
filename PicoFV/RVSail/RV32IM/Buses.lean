@@ -438,11 +438,11 @@ namespace RV32IM_Interactions
         let ops_range := b_0 < 256 ∧ b_1 < 256 ∧ b_2 < 256 ∧ b_3 < 256 ∧
                          c_0 < 256 ∧ c_1 < 256 ∧ c_2 < 256 ∧ c_3 < 256
         match ALU_opcode with
-        | 0 => result_range ∧ ops_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 1 => result_range ∧ ops_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] - U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 2 => result_range ∧ ops_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ^^^ U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 3 => result_range ∧ ops_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ||| U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 4 => result_range ∧ ops_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] &&& U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 0 => ops_range ∧ result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 1 => ops_range ∧ result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] - U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 2 => ops_range ∧ result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ^^^ U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 3 => ops_range ∧ result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ||| U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 4 => ops_range ∧ result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] &&& U32.toBV #v[c_0, c_1, c_2, c_3]
         | 5 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] <<< (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
         | 6 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] >>> (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
         | 7 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (U32.toBV #v[b_0, b_1, b_2, b_3]).sshiftRight (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
@@ -516,7 +516,7 @@ namespace RV32IM_Interactions
           x_3 := entry.2[4],
         }
 
-      def ByteBusEntry.Spec (byte_opcode x_0 x_1 x_2 x_3 : FKB) :=
+      def ByteBus.Spec (byte_opcode x_0 x_1 x_2 x_3 : FKB) :=
         match byte_opcode with
         | 0 => x_0 = x_2 &&& x_3 ∧ x_0 < 256 ∧ x_1 = 0 ∧ x_2 < 256 ∧ x_3 < 256
         | 1 => x_0 = x_2 ||| x_3 ∧ x_0 < 256 ∧ x_1 = 0 ∧ x_2 < 256 ∧ x_3 < 256
@@ -546,7 +546,7 @@ namespace RV32IM_Interactions
           -- Well formedness derived from byte lookup table construction
           wf_properties :=
             fun ⟨ _, byte_opcode, x_0, x_1, x_2, x_3 ⟩ =>
-              ByteBusEntry.Spec byte_opcode x_0 x_1 x_2 x_3
+              ByteBus.Spec byte_opcode x_0 x_1 x_2 x_3
 
           wf_assume_cond := fun entry => entry.1 = -1,
           wf_assert_cond := fun entry => entry.1 = 1,
@@ -562,14 +562,14 @@ namespace RV32IM_Interactions
 
     end ByteBus
 
-    section RegisterBus
+    section StateBus
 
       /-- Byte bus entry -/
-      structure RegisterBusEntry where
+      structure StateBusEntry where
         multiplicity : F
         chunk : F
         clk : F
-        register : F
+        ptr : F
         x_0 : F
         x_1 : F
         x_2 : F
@@ -577,14 +577,14 @@ namespace RV32IM_Interactions
       deriving BEq, DecidableEq, Inhabited
 
       @[simp, grind]
-      def RegisterBusEntry.deserialise
+      def StateBusEntry.deserialise
         (entry : FKB × Vector FKB 7)
-      : RegisterBusEntry FKB :=
+      : StateBusEntry FKB :=
         {
           multiplicity := entry.1,
           chunk := entry.2[0],
           clk := entry.2[1],
-          register := entry.2[2],
+          ptr := entry.2[2],
           x_0 := entry.2[3],
           x_1 := entry.2[4],
           x_2 := entry.2[5],
@@ -593,27 +593,27 @@ namespace RV32IM_Interactions
 
       /-- Register bus entry instance -/
       @[simp, grind]
-      instance RegisterBusEntryInstance
-      : BusEntry FKB (RegisterBusEntry FKB) :=
+      instance StateBusEntryInstance
+      : BusEntry FKB (StateBusEntry FKB) :=
       {
           multiplicity := fun entry => entry.1,
 
           data_length := 7,
-          data := fun ⟨_, chunk, clk, register, x_0, x_1, x_2, x_3⟩ =>
-                    #v[chunk, clk, register, x_0, x_1, x_2, x_3]
+          data := fun ⟨_, chunk, clk, ptr, x_0, x_1, x_2, x_3⟩ =>
+                    #v[chunk, clk, ptr, x_0, x_1, x_2, x_3]
 
           -- No axions
           axioms := fun _ => True
 
           -- Well formedness
           wf_properties :=
-            fun ⟨ _, chunk, clk, register, x_0, x_1, x_2, x_3 ⟩ =>
-              register < 32 ∧ x_0 < 256 ∧ x_1 < 256 ∧ x_2 < 256 ∧ x_3 < 256
+            fun ⟨ _, chunk, clk, ptr, x_0, x_1, x_2, x_3 ⟩ =>
+              x_0 < 256 ∧ x_1 < 256 ∧ x_2 < 256 ∧ x_3 < 256
 
           wf_assume_cond := fun entry => entry.1 = -1,
           wf_assert_cond := fun entry => entry.1 = 1,
 
-          deserialise := RegisterBusEntry.deserialise
+          deserialise := StateBusEntry.deserialise
 
           inv_deser_ser := by simp
           inv_ser_deser := by
@@ -622,7 +622,7 @@ namespace RV32IM_Interactions
             simp_all; grind (gen := 10)
       }
 
-    end RegisterBus
+    end StateBus
 
   end Buses
 
@@ -632,31 +632,31 @@ namespace RV32IM_Interactions
       Program : List (ProgramBusEntry FKB)
       ALU : List (ALUBusEntry FKB)
       Byte : List (ByteBusEntry FKB)
-      Register : List (RegisterBusEntry FKB)
+      State : List (StateBusEntry FKB)
 
     def bus_row_axioms (row : BusRow) : Prop :=
       List.Forall id
         (row.Program.map (BusEntry.axioms FKB) ++
          row.ALU.map (BusEntry.axioms FKB) ++
          row.Byte.map (BusEntry.axioms FKB) ++
-         row.Register.map (BusEntry.axioms FKB))
+         row.State.map (BusEntry.axioms FKB))
 
     def bus_row_assumptions (row : BusRow) : Prop :=
       List.Forall id
         (row.Program.map (BusEntry.assume FKB) ++
          row.ALU.map (BusEntry.assume FKB) ++
          row.Byte.map (BusEntry.assume FKB) ++
-         row.Register.map (BusEntry.assume FKB))
+         row.State.map (BusEntry.assume FKB))
 
     def bus_row_assertions (row : BusRow) : Prop :=
       List.Forall id
         (row.Program.map (BusEntry.assert FKB) ++
          row.ALU.map (BusEntry.assert FKB) ++
          row.Byte.map (BusEntry.assert FKB) ++
-         row.Register.map (BusEntry.assert FKB))
+         row.State.map (BusEntry.assert FKB))
 
     def deserialise_bus_row (row : List (FKB × List FKB)) : BusRow :=
-      let initial_bus_row : BusRow := { Program := [], ALU := [], Byte := [], Register := [] }
+      let initial_bus_row : BusRow := { Program := [], ALU := [], Byte := [], State := [] }
       List.foldl
         (fun result ⟨ multiplicity, entry ⟩ =>
           let bus_id := entry.head!
@@ -665,8 +665,8 @@ namespace RV32IM_Interactions
           | 0 =>
               if _ : entry_data.length = 7 then
                 let entry_data_vector : Vector FKB 7 := ⟨ entry_data.toArray, by simp; omega ⟩
-                let bus_entry := RegisterBusEntry.deserialise (multiplicity, entry_data_vector)
-                { result with Register := result.Register ++ [ bus_entry ] }
+                let bus_entry := StateBusEntry.deserialise (multiplicity, entry_data_vector)
+                { result with State := result.State ++ [ bus_entry ] }
               else result
           | 1 =>
             if _ : entry_data.length = 38 then

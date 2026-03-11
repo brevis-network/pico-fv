@@ -43,15 +43,16 @@ namespace AddSubAir.Spec
     simp only [ALUBus.Spec, h_sub, and_assoc]
     -- Simplify constraints and assumptions
     simp [constraint_and_interaction_simplification, sub_eq_zero, h_add, h_sub] at h_constraints
-    simp [bus_row_assumptions, bus_row, h_add, h_sub, ByteBusEntry.Spec] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_add, h_sub, ByteBus.Spec] at h_assumptions
     -- Extract byte bounds
     obtain ⟨⟨h_op1_0, h_op1_1⟩, ⟨h_op1_2, h_op1_3⟩, ⟨h_op2_0, h_op2_1⟩, ⟨h_op2_2, h_op2_3⟩,
             ⟨h_av0, h_av1⟩, h_av2, h_av3⟩ := h_assumptions
     -- Extract constraint components
     obtain ⟨_, _, _, _, _, _, _, _, _, _, _, hc10, hc11, hc12⟩ := h_constraints
     -- Provide byte bounds, leaving only the addition equation
-    refine ⟨h_av0, h_av1, h_av2, h_av3, h_op1_0, h_op1_1, h_op1_2, h_op1_3,
-            h_op2_0, h_op2_1, h_op2_2, h_op2_3, ?_⟩
+    refine ⟨h_op1_0, h_op1_1, h_op1_2, h_op1_3,
+            h_op2_0, h_op2_1, h_op2_2, h_op2_3,
+            h_av0, h_av1, h_av2, h_av3, ?_⟩
     -- Convert BitVec equation to Nat equation
     apply BitVec.eq_of_toNat_eq
     simp [BitVec.toNat_add, U32.toBV_toNat, U32.toNat, BitVec.toNat_ofNat]
@@ -91,15 +92,16 @@ namespace AddSubAir.Spec
     simp only [ALUBus.Spec, h_add, and_assoc]
     -- Simplify constraints and assumptions
     simp [constraint_and_interaction_simplification, sub_eq_zero, h_is_add, h_add] at h_constraints
-    simp [bus_row_assumptions, bus_row, h_is_add, h_add, ByteBusEntry.Spec] at h_assumptions
+    simp [bus_row_assumptions, bus_row, h_is_add, h_add, ByteBus.Spec] at h_assumptions
     -- Extract byte bounds
     obtain ⟨⟨h_op1_0, h_op1_1⟩, ⟨h_op1_2, h_op1_3⟩, ⟨h_op2_0, h_op2_1⟩, ⟨h_op2_2, h_op2_3⟩,
             ⟨h_av0, h_av1⟩, h_av2, h_av3⟩ := h_assumptions
     -- Extract constraint components
     obtain ⟨_, _, _, _, _, _, _, _, _, _, _, hc10, hc11, hc12⟩ := h_constraints
     -- Provide byte bounds, leaving only the subtraction equation
-    refine ⟨h_op1_0, h_op1_1, h_op1_2, h_op1_3, h_av0, h_av1, h_av2, h_av3,
-            h_op2_0, h_op2_1, h_op2_2, h_op2_3, ?_⟩
+    refine ⟨h_av0, h_av1, h_av2, h_av3,
+            h_op2_0, h_op2_1, h_op2_2, h_op2_3,
+            h_op1_0, h_op1_1, h_op1_2, h_op1_3, ?_⟩
     -- Convert BitVec equation to Nat equation
     apply BitVec.eq_of_toNat_eq
     simp [BitVec.toNat_sub, U32.toBV_toNat, U32.toNat, BitVec.toNat_ofNat]
@@ -135,7 +137,7 @@ namespace AddSubAir.Spec
           . apply spec_SUB air row h_assumptions h_constraints h_opcode
         . constructor
           . -- Byte
-            simp [bus_row, ByteBusEntry.Spec]
+            simp [bus_row, ByteBus.Spec]
             have selectors := selector_breakdown air row h_constraints
             split_ands <;> intro h <;> exfalso <;> grind
           . -- Register
