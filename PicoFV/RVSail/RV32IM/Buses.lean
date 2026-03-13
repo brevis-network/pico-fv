@@ -764,7 +764,7 @@ namespace RV32IM_Interactions
           if is_lw = 1 ∨ is_sw = 1 then 4
             else if is_lh = 1 ∨ is_lhu = 1 ∨ is_sh = 1
               then 2 else 1
-        (a_is_0 = 0 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256) ∧
+        (mem_opcode < 15 → a_is_0 = 0 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256) ∧
         (U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]).toNat + width < Pico_address_space_size_32 ∧
         (mem_opcode = 10 → a_is_0 = 0 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 true) ∧
         (mem_opcode = 11 → a_is_0 = 0 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 true) ∧
@@ -796,9 +796,9 @@ namespace RV32IM_Interactions
               (mem_opcode = 12 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 1, 0, 0, 0 )) ∧
               (mem_opcode = 13 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 1, 0, 0, 0, 0, 0, 0 )) ∧
               (mem_opcode = 14 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 1, 0, 0, 0, 0 )) ∧
-              (mem_opcode = 15 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 1, 0, 0 )) ∧
-              (mem_opcode = 16 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 0, 1, 0 )) ∧
-              (mem_opcode = 17 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 0, 0, 1 ))
+              (mem_opcode = 15 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256 ∧ ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 1, 0, 0 )) ∧
+              (mem_opcode = 16 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256 ∧ ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 0, 1, 0 )) ∧
+              (mem_opcode = 17 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256 ∧ ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 0, 0, 1 ))
 
           -- Well formedness entirely derived from the fact that the entries come from the transpiler
           wf_properties := fun ⟨_, mem_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, a_is_0, is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw⟩ =>

@@ -173,17 +173,17 @@ namespace CpuAir.Spec
     . have eq_opcode_KB : air.cols.instruction.opcode row 0 = 15 := by clear *- eq_opcode; omega
       simp at h_opcode_props h_selectors ⊢
       simp [h_selectors, eq_opcode_KB] at h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs ⊢
-      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs
+      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs ub_a0 ub_a1 ub_a2 ub_a3
       grind
     . have eq_opcode_KB : air.cols.instruction.opcode row 0 = 16 := by clear *- eq_opcode; omega
       simp at h_opcode_props h_selectors ⊢
       simp [h_selectors, eq_opcode_KB] at h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs ⊢
-      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs
+      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs ub_a0 ub_a1 ub_a2 ub_a3
       grind
     . have eq_opcode_KB : air.cols.instruction.opcode row 0 = 17 := by clear *- eq_opcode; omega
       simp at h_opcode_props h_selectors ⊢
       simp [h_selectors, eq_opcode_KB] at h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs ⊢
-      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs
+      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs ub_a0 ub_a1 ub_a2 ub_a3
       grind
     . have eq_opcode_KB : air.cols.instruction.opcode row 0 = 18 := by clear *- eq_opcode; omega
       simp at h_opcode_props h_selectors ⊢

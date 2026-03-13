@@ -49,6 +49,7 @@ import PicoFV.Spec.AddSubAir
 import PicoFV.Spec.BitwiseAir
 import PicoFV.Spec.CpuAir
 import PicoFV.Spec.LtAir
+import PicoFV.Spec.MemoryReadWriteAir
 import PicoFV.Spec.MulAir
 import PicoFV.Spec.ShiftRightAir
 import PicoFV.Spec.SllAir
