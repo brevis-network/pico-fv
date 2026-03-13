@@ -115,7 +115,7 @@ namespace Equivalence
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (h_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
@@ -160,7 +160,7 @@ namespace Equivalence
           rw [← relevant_constraints]
           exact pico_assumptions
         . specialize h_constraints row (by omega)
-          have instruction_breakdown := instruction_breakdown air row h_is_real (h_assumptions row h_row) (by simp; exact h_constraints)
+          have instruction_breakdown := instruction_breakdown air row h_is_real (h_wf row h_row) (by simp; exact h_constraints)
           suffices : air.cols.next_pc row 0 = air.cols.pc row 1
           . replace h_row : (row + 1) ≤ air.last_row
             := by
@@ -204,7 +204,7 @@ namespace Equivalence
                 simp [allHold_simplified] at h_constraints
                 grind
               simp [constraint_and_interaction_simplification, cpu_ecall_cols_simplification, *] at relevant_constraints
-              have := opcode_selectors_breakdown air row h_is_real (h_assumptions row h_row) (by simp; exact h_constraints)
+              have := opcode_selectors_breakdown air row h_is_real (h_wf row h_row) (by simp; exact h_constraints)
               omega
 
   end Auxiliaries
@@ -218,7 +218,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 0 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -230,8 +230,8 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -343,7 +343,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 1 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -355,8 +355,8 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -468,7 +468,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 2 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -480,8 +480,8 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -593,7 +593,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 3 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -605,8 +605,8 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -718,7 +718,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 4 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -730,8 +730,8 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -843,7 +843,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 5 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -854,10 +854,10 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (reg2, reg1, reg0, rop.SLL)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -968,7 +968,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 6 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -979,10 +979,10 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (reg2, reg1, reg0, rop.SRL)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1094,7 +1094,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 7 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -1105,10 +1105,10 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (reg2, reg1, reg0, rop.SRA)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1220,7 +1220,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 8 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -1231,10 +1231,10 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (reg2, reg1, reg0, rop.SLT)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1348,7 +1348,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 9 ∧ air.cols.opcode_selector.imm_c row 0 = 0)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -1359,10 +1359,10 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (reg2, reg1, reg0, rop.SLTU)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1480,7 +1480,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 0 ∧ air.cols.opcode_selector.imm_b row 0 = 0 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -1495,8 +1495,8 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1619,7 +1619,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 2 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -1634,8 +1634,8 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1758,7 +1758,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 3 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -1773,8 +1773,8 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1897,7 +1897,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 4 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -1912,8 +1912,8 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2036,7 +2036,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 8 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -2050,10 +2050,10 @@ namespace Equivalence
       execute_instruction (instruction.ITYPE (imm, reg1, reg0, iop.SLTI)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2180,7 +2180,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 9 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -2194,10 +2194,10 @@ namespace Equivalence
       execute_instruction (instruction.ITYPE (imm, reg1, reg0, iop.SLTIU)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2328,7 +2328,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 5 ∧ air.cols.opcode_selector.imm_b row 0 = 0 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -2342,10 +2342,10 @@ namespace Equivalence
       execute_instruction (instruction.SHIFTIOP (imm, reg1, reg0, sop.SLLI)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2453,7 +2453,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 6 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -2467,10 +2467,10 @@ namespace Equivalence
       execute_instruction (instruction.SHIFTIOP (imm, reg1, reg0, sop.SRLI)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2578,7 +2578,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 7 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -2592,10 +2592,10 @@ namespace Equivalence
       execute_instruction (instruction.SHIFTIOP (imm, reg1, reg0, sop.SRAI)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2707,7 +2707,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 30)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -2718,10 +2718,10 @@ namespace Equivalence
       execute_instruction (instruction.MUL (reg2, reg1, reg0, { result_part := VectorHalf.Low, signed_rs1 := sl, signed_rs2 := sr })) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2832,7 +2832,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 31)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -2843,10 +2843,10 @@ namespace Equivalence
       execute_instruction (instruction.MUL (reg2, reg1, reg0, { result_part := VectorHalf.High, signed_rs1 := .Signed, signed_rs2 := .Signed })) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2957,7 +2957,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 32)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -2968,10 +2968,10 @@ namespace Equivalence
       execute_instruction (instruction.MUL (reg2, reg1, reg0, { result_part := VectorHalf.High, signed_rs1 := .Unsigned, signed_rs2 := .Unsigned })) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -3082,7 +3082,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 33)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -3093,10 +3093,10 @@ namespace Equivalence
       execute_instruction (instruction.MUL (reg2, reg1, reg0, { result_part := VectorHalf.High, signed_rs1 := .Signed, signed_rs2 := .Unsigned })) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -3211,7 +3211,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 34)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -3222,10 +3222,10 @@ namespace Equivalence
       execute_instruction (instruction.DIV (reg2, reg1, reg0, false)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -3336,7 +3336,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 35)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -3347,10 +3347,10 @@ namespace Equivalence
       execute_instruction (instruction.DIV (reg2, reg1, reg0, true)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -3465,7 +3465,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 36)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -3476,10 +3476,10 @@ namespace Equivalence
       execute_instruction (instruction.REM (reg2, reg1, reg0, false)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -3590,7 +3590,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 37)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -3601,10 +3601,10 @@ namespace Equivalence
       execute_instruction (instruction.REM (reg2, reg1, reg0, true)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -3719,7 +3719,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 18)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -3736,14 +3736,14 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -3919,7 +3919,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 19)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -3936,13 +3936,13 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -4117,7 +4117,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 20)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -4134,13 +4134,13 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -4318,7 +4318,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 21)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -4335,13 +4335,13 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -4519,7 +4519,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 22)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -4536,13 +4536,13 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -4720,7 +4720,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 23)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -4737,13 +4737,13 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -4939,7 +4939,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 24)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -4955,14 +4955,14 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -5124,7 +5124,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_assumptions (bus_row air row))
+      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 25)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -5141,14 +5141,14 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_assumptions : bus_row_assumptions (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
-      have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
+      have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -5326,7 +5326,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 0 ∧ air.cols.opcode_selector.imm_b row 0 = 1 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -5340,8 +5340,8 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -5451,7 +5451,7 @@ namespace Equivalence
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_axioms : bus_row_axioms (bus_row air row))
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 27 ∧ air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -5464,10 +5464,10 @@ namespace Equivalence
       execute_instruction (instruction.UTYPE (imm, reg0, uop.AUIPC)) state =
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have h_auipc_pc := auipc_pc air row h_assumptions h_constraints
+      have h_auipc_pc := auipc_pc air row h_wf h_constraints
       -- General assumptions
-      simp [ bus_row_assumptions ] at h_assumptions
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,

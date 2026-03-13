@@ -38,19 +38,32 @@ namespace Interaction
       data_length : ℕ
       data : α → Vector F data_length
 
-      -- Axioms on bus entries
+      -- Infrastructure-external constraints on bus entries
       axioms : α → Prop
+
+      -- Chip-external, but infrastructure-internal constraints on bus entries
+      externals : α → Prop
 
       -- Well-formedness properties of bus entries
       wf_properties : α → Prop
+
       -- Condition under which well-formedness properties are assumed
       wf_assume_cond : α → Prop
       -- Condition under which well-formedness properties need to be asserted
       wf_assert_cond : α → Prop
 
+      -- Condition under which well-formedness properties are assumed
+      ext_assume_cond : α → Prop
+      -- Condition under which well-formedness properties need to be asserted
+      ext_assert_cond : α → Prop
+
+      -- Assumption and assertion of externals
+      ext_assume (a : α) := ext_assume_cond a → externals a
+      ext_assert (a : α) := ext_assert_cond a → externals a
+
       -- Assumption and assertion of well-formedness properties
-      assume (a : α) := wf_assume_cond a → wf_properties a
-      assert (a : α) := wf_assert_cond a → wf_properties a
+      wf_assume (a : α) := wf_assume_cond a → wf_properties a
+      wf_assert (a : α) := wf_assert_cond a → wf_properties a
 
       -- Serialization, deserialization, inverses
       serialise (x : α) := (multiplicity x, data x)

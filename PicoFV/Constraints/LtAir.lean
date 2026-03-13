@@ -406,7 +406,8 @@ namespace LtAir.Interactions
         (-(((air.cols.is_slt row 0) + (air.cols.is_slt_u row 0))), #v[0, (air.cols.c_masked row 0), 0, (air.cols.c_3 row 0), 127]),
         (-(((air.cols.is_slt row 0) + (air.cols.is_slt_u row 0))), #v[5, (air.cols.slt_u row 0), 0, (air.cols.cmp_bytes_0 row 0), (air.cols.cmp_bytes_1 row 0)])
       ],
-      State := []
+      State := [],
+      Memory := []
     }
 
   @[simp]
@@ -421,3 +422,21 @@ namespace LtAir.Interactions
     ]
 
 end LtAir.Interactions
+
+namespace LtAir.Interpretations
+
+  lemma selector_breakdown
+    [Field ExtF]
+    (air : Valid_LtAir FKB ExtF)
+    (row : ℕ)
+    (h_constraints : LtAir.Extraction.allHold air row)
+  :
+    (air.cols.is_slt row 0 = 0 ∨ air.cols.is_slt row 0 = 1) ∧
+    (air.cols.is_slt_u row 0 = 0 ∨ air.cols.is_slt_u row 0 = 1) ∧
+    (air.cols.is_slt row 0 + air.cols.is_slt_u row 0 = 0 ∨
+     air.cols.is_slt row 0 + air.cols.is_slt_u row 0 = 1)
+  := by
+    simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
+    grind
+
+end LtAir.Interpretations

@@ -284,41 +284,41 @@ namespace RV32IM_Interactions
         (h_deser : entry = ProgramBusEntry.deserialise data)
       :
         (entry.opcode =  0 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode =  1 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode =  2 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode =  3 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode =  4 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode =  5 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode =  6 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode =  7 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode =  8 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode =  9 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 10 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 11 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 12 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 13 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 14 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 15 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 16 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 17 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 18 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 19 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 20 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 21 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 22 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 23 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 24 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 )) ∧
-        (entry.opcode = 25 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 )) ∧
-        (entry.opcode = 27 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 )) ∧
-        (entry.opcode = 28 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 30 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 31 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 32 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 33 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 34 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 35 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 36 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
-        (entry.opcode = 37 → ( entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ))
+        (entry.opcode =  1 → ( entry.imm_b, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode =  2 → ( entry.imm_b, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode =  3 → ( entry.imm_b, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode =  4 → ( entry.imm_b, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode =  5 → ( entry.imm_b, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode =  6 → ( entry.imm_b, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode =  7 → ( entry.imm_b, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode =  8 → ( entry.imm_b, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode =  9 → ( entry.imm_b, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 10 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 11 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 12 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 13 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 14 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 15 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 16 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 17 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 18 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 19 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 20 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 21 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 22 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 23 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 24 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 )) ∧
+        (entry.opcode = 25 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 )) ∧
+        (entry.opcode = 27 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 )) ∧
+        (entry.opcode = 28 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 30 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 31 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 32 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 33 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 34 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 35 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 36 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+        (entry.opcode = 37 → ( entry.imm_b, entry.imm_c, entry.is_alu, entry.is_ecall, entry.is_lb, entry.is_lbu, entry.is_lh, entry.is_lhu, entry.is_lw, entry.is_sb, entry.is_sh, entry.is_sw, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal, entry.is_auipc, entry.is_unimpl ) = ( 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ))
       := by
         simp [
           Transpiler.transpile_op,
@@ -361,6 +361,53 @@ namespace RV32IM_Interactions
         . simp [h_trans.1, deserialise] at h_deser
           rw [h_deser]; clear *-; (try split) <;> simp
 
+      lemma ProgramBusEntry.ub_imm
+        { entry : ProgramBusEntry FKB }
+        (h_trans : .some ⟨ data, props ⟩ = Transpiler.transpile_op instr entry.multiplicity entry.pc)
+        (h_deser : entry = ProgramBusEntry.deserialise data)
+      :
+        (entry.imm_b = 1 → entry.b_0 < 256 ∧ entry.b_1 < 256 ∧ entry.b_2 < 256 ∧ entry.b_3 < 256) ∧
+        (entry.imm_c = 1 → entry.c_0 < 256 ∧ entry.c_1 < 256 ∧ entry.c_2 < 256 ∧ entry.c_3 < 256)
+      := by
+        simp [
+          Transpiler.transpile_op,
+          Transpiler.opcode_of_rop,
+          Transpiler.opcode_of_iop,
+          Transpiler.opcode_of_sop,
+          Transpiler.opcode_of_bop,
+          Transpiler.opcode_of_uop
+        ] at h_trans
+        split at h_trans <;> try simp at h_trans
+        . simp [h_trans.1, deserialise] at h_deser
+          rw [h_deser]; clear *-; (try split) <;> simp
+        . simp [h_trans.1, deserialise] at h_deser
+          rw [h_deser]; clear *-; (try split) <;> simp [Transpiler.imm_to_KB_bytes]
+        . simp [h_trans.1, deserialise] at h_deser
+          rw [h_deser]; clear *-; (try split) <;> simp [Transpiler.imm_to_KB_bytes]
+        . split at h_trans <;> simp at h_trans
+          simp [h_trans.1, deserialise] at h_deser
+          rw [h_deser]; (try split) <;> simp [Transpiler.imm_to_KB_bytes]
+        . split at h_trans <;> simp at h_trans
+          simp [h_trans.1, deserialise] at h_deser
+          rw [h_deser]; (try split) <;> simp [Transpiler.imm_to_KB_bytes]
+        . simp [h_trans.1, deserialise] at h_deser
+          rw [h_deser]; clear *-; (try split) <;> simp [Transpiler.imm_to_KB_bytes]
+        . simp [h_trans.1, deserialise] at h_deser
+          rw [h_deser]; clear *-; (try split) <;> simp [Transpiler.imm_to_KB_bytes]
+        . simp [h_trans.1, deserialise] at h_deser
+          rw [h_deser]; clear *-; (try split) <;> simp [Transpiler.imm_to_KB_bytes]
+        . simp [h_trans.1, deserialise] at h_deser
+          rw [h_deser]; clear *-; (try split) <;> simp [Transpiler.imm_to_KB_bytes]
+        . simp [h_trans.1, deserialise] at h_deser
+          rw [h_deser]; clear *-; simp
+        . split at h_trans <;> simp at h_trans
+          simp [h_trans.1, deserialise] at h_deser
+          rw [h_deser]; (try split) <;> simp
+        . simp [h_trans.1, deserialise] at h_deser
+          rw [h_deser]; clear *-; (try split) <;> simp
+        . simp [h_trans.1, deserialise] at h_deser
+          rw [h_deser]; clear *-; (try split) <;> simp
+
       /-- Program bus entry instance -/
       @[simp, grind]
       instance ProgramBusEntryInstance
@@ -372,14 +419,21 @@ namespace RV32IM_Interactions
           data := fun ⟨_, pc, opcode, opcode', a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, a_is_0, imm_b, imm_c, is_alu, is_ecall, is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw, is_beq, is_bne, is_blt, is_bge, is_bltu, is_bgeu, is_jalr, is_jal, is_auipc, is_unimpl⟩ =>
                     #v[pc, opcode, opcode', a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, a_is_0, imm_b, imm_c, is_alu, is_ecall, is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw, is_beq, is_bne, is_blt, is_bge, is_bltu, is_bgeu, is_jalr, is_jal, is_auipc, is_unimpl]
 
-          -- Program counter is bounded and aligned
-          axioms := fun entry => (¬ entry.multiplicity = 0) → entry.pc < 2 ^ 30 ∧ entry.pc % 4 = 0
+          -- Program counter is bounded and aligned axiomatically
+          axioms := fun entry =>
+            (¬ entry.multiplicity = 0) → entry.pc < 2 ^ 30 ∧ entry.pc % 4 = 0
+
+          -- No chip-external constraints
+          externals := fun _ => True
 
           -- Well formedness entirely derived from the fact that the entries come from the transpiler
           wf_properties := ProgramBusEntry.operand_properties
 
           wf_assume_cond := fun entry => entry.1 = -1,
           wf_assert_cond := fun entry => entry.1 = 1,
+
+          ext_assume_cond := fun entry => entry.1 = 1,
+          ext_assert_cond := fun entry => entry.1 = -1,
 
           deserialise := ProgramBusEntry.deserialise
 
@@ -435,27 +489,26 @@ namespace RV32IM_Interactions
 
       def ALUBus.Spec (ALU_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 : FKB) :=
         let result_range := a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256
-        let ops_range := b_0 < 256 ∧ b_1 < 256 ∧ b_2 < 256 ∧ b_3 < 256 ∧
-                         c_0 < 256 ∧ c_1 < 256 ∧ c_2 < 256 ∧ c_3 < 256
+        let operand_range := b_0 < 256 ∧ b_1 < 256 ∧ b_2 < 256 ∧ b_3 < 256 ∧ c_0 < 256 ∧ c_1 < 256 ∧ c_2 < 256 ∧ c_3 < 256
         match ALU_opcode with
-        | 0 => ops_range ∧ result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 1 => ops_range ∧ result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] - U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 2 => ops_range ∧ result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ^^^ U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 3 => ops_range ∧ result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ||| U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 4 => ops_range ∧ result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] &&& U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 5 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] <<< (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
-        | 6 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] >>> (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
-        | 7 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (U32.toBV #v[b_0, b_1, b_2, b_3]).sshiftRight (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
-        | 8 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = if (U32.toBV #v[b_0, b_1, b_2, b_3]).toInt < (U32.toBV #v[c_0, c_1, c_2, c_3]).toInt then 1#32 else 0#32
-        | 9 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = if (U32.toBV #v[b_0, b_1, b_2, b_3]).toNat < (U32.toBV #v[c_0, c_1, c_2, c_3]).toNat then 1#32 else 0#32
-        | 30 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MUL
-        | 31 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULH
-        | 32 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULHU
-        | 33 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULHSU
-        | 34 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRS).1
-        | 35 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRU).1
-        | 36 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRS).2
-        | 37 => ops_range → result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRU).2
+        | 0 => result_range ∧ operand_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 1 => result_range ∧ operand_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] - U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 2 => result_range ∧ operand_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ^^^ U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 3 => result_range ∧ operand_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ||| U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 4 => result_range ∧ operand_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] &&& U32.toBV #v[c_0, c_1, c_2, c_3]
+        | 5 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] <<< (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
+        | 6 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] >>> (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
+        | 7 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (U32.toBV #v[b_0, b_1, b_2, b_3]).sshiftRight (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
+        | 8 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = if (U32.toBV #v[b_0, b_1, b_2, b_3]).toInt < (U32.toBV #v[c_0, c_1, c_2, c_3]).toInt then 1#32 else 0#32
+        | 9 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = if (U32.toBV #v[b_0, b_1, b_2, b_3]).toNat < (U32.toBV #v[c_0, c_1, c_2, c_3]).toNat then 1#32 else 0#32
+        | 30 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MUL
+        | 31 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULH
+        | 32 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULHU
+        | 33 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULHSU
+        | 34 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRS).1
+        | 35 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRU).1
+        | 36 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRS).2
+        | 37 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRU).2
         | _ => True
 
       /-- ALU bus entry instance -/
@@ -469,8 +522,16 @@ namespace RV32IM_Interactions
           data := fun ⟨_, ALU_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3⟩ =>
                     #v[ALU_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3]
 
-          -- No axions
+          -- No axioms
           axioms := fun _ => True
+
+          -- Operands are range-checked externally to the chip
+          externals := fun entry =>
+            ¬(entry.multiplicity = 0) →
+              (entry.ALU_opcode ∈ Finset.Icc 0 9 ∨ entry.ALU_opcode ∈ Finset.Icc 30 37) ∧
+              (entry.ALU_opcode > 4 →
+                 entry.b_0 < 256 ∧ entry.b_1 < 256 ∧ entry.b_2 < 256 ∧ entry.b_3 < 256 ∧
+                 entry.c_0 < 256 ∧ entry.c_1 < 256 ∧ entry.c_2 < 256 ∧ entry.c_3 < 256)
 
           -- Well formedness derived from byte lookup table construction
           wf_properties :=
@@ -479,6 +540,9 @@ namespace RV32IM_Interactions
 
           wf_assume_cond := fun entry => entry.1 = -1,
           wf_assert_cond := fun entry => entry.1 = 1,
+
+          ext_assume_cond := fun entry => entry.1 = 1,
+          ext_assert_cond := fun entry => entry.1 = -1,
 
           deserialise := ALUBusEntry.deserialise
 
@@ -540,8 +604,11 @@ namespace RV32IM_Interactions
           data := fun ⟨_, byte_opcode, x_0, x_1, x_2, x_3⟩ =>
                     #v[byte_opcode, x_0, x_1, x_2, x_3]
 
-          -- No axions
+          -- No axioms
           axioms := fun _ => True
+
+          -- No externals
+          externals := fun _ => True
 
           -- Well formedness derived from byte lookup table construction
           wf_properties :=
@@ -550,6 +617,9 @@ namespace RV32IM_Interactions
 
           wf_assume_cond := fun entry => entry.1 = -1,
           wf_assert_cond := fun entry => entry.1 = 1,
+
+          ext_assume_cond := fun entry => entry.1 = 1,
+          ext_assert_cond := fun entry => entry.1 = -1,
 
           deserialise := ByteBusEntry.deserialise
 
@@ -602,8 +672,11 @@ namespace RV32IM_Interactions
           data := fun ⟨_, chunk, clk, ptr, x_0, x_1, x_2, x_3⟩ =>
                     #v[chunk, clk, ptr, x_0, x_1, x_2, x_3]
 
-          -- No axions
+          -- No axioms
           axioms := fun _ => True
+
+          -- No externals
+          externals := fun _ => True
 
           -- Well formedness
           wf_properties :=
@@ -612,6 +685,9 @@ namespace RV32IM_Interactions
 
           wf_assume_cond := fun entry => entry.1 = -1,
           wf_assert_cond := fun entry => entry.1 = 1,
+
+          ext_assume_cond := fun entry => entry.1 = 1,
+          ext_assert_cond := fun entry => entry.1 = -1,
 
           deserialise := StateBusEntry.deserialise
 
@@ -624,6 +700,127 @@ namespace RV32IM_Interactions
 
     end StateBus
 
+    section MemoryBus
+
+      /-- Memory summary bus entry -/
+      structure MemoryBusEntry where
+        multiplicity : F
+        mem_opcode : F
+        a_0 : F
+        a_1 : F
+        a_2 : F
+        a_3 : F
+        b_0 : F
+        b_1 : F
+        b_2 : F
+        b_3 : F
+        c_0 : F
+        c_1 : F
+        c_2 : F
+        c_3 : F
+        a_is_0 : F
+        is_lb : F
+        is_lbu : F
+        is_lh : F
+        is_lhu : F
+        is_lw : F
+        is_sb : F
+        is_sh : F
+        is_sw : F
+      deriving BEq, DecidableEq, Inhabited
+
+      @[simp, grind]
+      def MemoryBusEntry.deserialise
+        (entry : FKB × Vector FKB 22)
+      : MemoryBusEntry FKB :=
+        {
+          multiplicity := entry.1,
+          mem_opcode := entry.2[0],
+          a_0 := entry.2[1],
+          a_1 := entry.2[2],
+          a_2 := entry.2[3],
+          a_3 := entry.2[4],
+          b_0 := entry.2[5],
+          b_1 := entry.2[6],
+          b_2 := entry.2[7],
+          b_3 := entry.2[8],
+          c_0 := entry.2[9],
+          c_1 := entry.2[10],
+          c_2 := entry.2[11],
+          c_3 := entry.2[12],
+          a_is_0 := entry.2[13]
+          is_lb := entry.2[14],
+          is_lbu := entry.2[15],
+          is_lh := entry.2[16],
+          is_lhu := entry.2[17],
+          is_lw := entry.2[18],
+          is_sb := entry.2[19],
+          is_sh := entry.2[20],
+          is_sw := entry.2[21],
+        }
+
+      def MemoryBus.Spec (mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 a_is_0 _is_lb _is_lbu is_lh is_lhu is_lw _is_sb is_sh is_sw : FKB) : Prop :=
+        let width :=
+          if is_lw = 1 ∨ is_sw = 1 then 4
+            else if is_lh = 1 ∨ is_lhu = 1 ∨ is_sh = 1
+              then 2 else 1
+        (a_is_0 = 0 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256) ∧
+        (U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]).toNat + width < Pico_address_space_size_32 ∧
+        (mem_opcode = 10 → a_is_0 = 0 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 true) ∧
+        (mem_opcode = 11 → a_is_0 = 0 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 true) ∧
+        (mem_opcode = 13 → a_is_0 = 0 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 false) ∧
+        (mem_opcode = 14 → a_is_0 = 0 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 false)
+
+      /-- Program bus entry instance -/
+      @[simp, grind]
+      instance MemoryBusEntryInstance
+      : BusEntry FKB (MemoryBusEntry FKB) :=
+      {
+          multiplicity := fun entry => entry.1,
+
+          data_length := 22,
+          data := fun ⟨_, mem_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, a_is_0, is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw⟩ =>
+                    #v[mem_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, a_is_0, is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw]
+
+          -- No axioms
+          axioms := fun _ => True
+
+          -- Opcode and selectors are constrainted externally
+          externals := fun ⟨multiplicity, mem_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, a_is_0, is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw⟩ =>
+            ¬(multiplicity = 0) →
+              mem_opcode ∈ Finset.Icc 10 17 ∧
+              b_0 < 256 ∧ b_1 < 256 ∧ b_2 < 256 ∧ b_3 < 256 ∧
+              c_0 < 256 ∧ c_1 < 256 ∧ c_2 < 256 ∧ c_3 < 256 ∧
+              (mem_opcode = 10 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 1, 0, 0, 0, 0, 0, 0, 0 )) ∧
+              (mem_opcode = 11 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 1, 0, 0, 0, 0, 0 )) ∧
+              (mem_opcode = 12 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 1, 0, 0, 0 )) ∧
+              (mem_opcode = 13 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 1, 0, 0, 0, 0, 0, 0 )) ∧
+              (mem_opcode = 14 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 1, 0, 0, 0, 0 )) ∧
+              (mem_opcode = 15 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 1, 0, 0 )) ∧
+              (mem_opcode = 16 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 0, 1, 0 )) ∧
+              (mem_opcode = 17 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 0, 0, 1 ))
+
+          -- Well formedness entirely derived from the fact that the entries come from the transpiler
+          wf_properties := fun ⟨_, mem_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, a_is_0, is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw⟩ =>
+            MemoryBus.Spec mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 a_is_0 is_lb is_lbu is_lh is_lhu is_lw is_sb is_sh is_sw
+
+          wf_assume_cond := fun entry => entry.1 = -1,
+          wf_assert_cond := fun entry => entry.1 = 1,
+
+          ext_assume_cond := fun entry => entry.1 = 1,
+          ext_assert_cond := fun entry => entry.1 = -1,
+
+          deserialise := MemoryBusEntry.deserialise
+
+          inv_deser_ser := by simp
+          inv_ser_deser := by
+            simp_all
+            intro b; cases b
+            simp_all; grind (splits := 24) (gen := 28) (ematch := 12)
+      }
+
+    end MemoryBus
+
   end Buses
 
   section ChipRows
@@ -633,30 +830,50 @@ namespace RV32IM_Interactions
       ALU : List (ALUBusEntry FKB)
       Byte : List (ByteBusEntry FKB)
       State : List (StateBusEntry FKB)
+      Memory : List (MemoryBusEntry FKB)
 
     def bus_row_axioms (row : BusRow) : Prop :=
       List.Forall id
         (row.Program.map (BusEntry.axioms FKB) ++
          row.ALU.map (BusEntry.axioms FKB) ++
          row.Byte.map (BusEntry.axioms FKB) ++
-         row.State.map (BusEntry.axioms FKB))
+         row.State.map (BusEntry.axioms FKB) ++
+         row.Memory.map (BusEntry.axioms FKB))
 
-    def bus_row_assumptions (row : BusRow) : Prop :=
+    def bus_row_ext_asm (row : BusRow) : Prop :=
       List.Forall id
-        (row.Program.map (BusEntry.assume FKB) ++
-         row.ALU.map (BusEntry.assume FKB) ++
-         row.Byte.map (BusEntry.assume FKB) ++
-         row.State.map (BusEntry.assume FKB))
+        (row.Program.map (BusEntry.ext_assume FKB) ++
+         row.ALU.map (BusEntry.ext_assume FKB) ++
+         row.Byte.map (BusEntry.ext_assume FKB) ++
+         row.State.map (BusEntry.ext_assume FKB) ++
+         row.Memory.map (BusEntry.ext_assume FKB))
 
-    def bus_row_assertions (row : BusRow) : Prop :=
+    def bus_row_ext_asrt (row : BusRow) : Prop :=
       List.Forall id
-        (row.Program.map (BusEntry.assert FKB) ++
-         row.ALU.map (BusEntry.assert FKB) ++
-         row.Byte.map (BusEntry.assert FKB) ++
-         row.State.map (BusEntry.assert FKB))
+        (row.Program.map (BusEntry.ext_assert FKB) ++
+         row.ALU.map (BusEntry.ext_assert FKB) ++
+         row.Byte.map (BusEntry.ext_assert FKB) ++
+         row.State.map (BusEntry.ext_assert FKB) ++
+         row.Memory.map (BusEntry.ext_assert FKB))
+
+    def bus_row_wf_asm (row : BusRow) : Prop :=
+      List.Forall id
+        (row.Program.map (BusEntry.wf_assume FKB) ++
+         row.ALU.map (BusEntry.wf_assume FKB) ++
+         row.Byte.map (BusEntry.wf_assume FKB) ++
+         row.State.map (BusEntry.wf_assume FKB) ++
+         row.Memory.map (BusEntry.wf_assume FKB))
+
+    def bus_row_wf_asrt (row : BusRow) : Prop :=
+      List.Forall id
+        (row.Program.map (BusEntry.wf_assert FKB) ++
+         row.ALU.map (BusEntry.wf_assert FKB) ++
+         row.Byte.map (BusEntry.wf_assert FKB) ++
+         row.State.map (BusEntry.wf_assert FKB) ++
+         row.Memory.map (BusEntry.wf_assert FKB))
 
     def deserialise_bus_row (row : List (FKB × List FKB)) : BusRow :=
-      let initial_bus_row : BusRow := { Program := [], ALU := [], Byte := [], State := [] }
+      let initial_bus_row : BusRow := { Program := [], ALU := [], Byte := [], State := [], Memory := [] }
       List.foldl
         (fun result ⟨ multiplicity, entry ⟩ =>
           let bus_id := entry.head!
@@ -667,7 +884,13 @@ namespace RV32IM_Interactions
                 let entry_data_vector : Vector FKB 7 := ⟨ entry_data.toArray, by simp; omega ⟩
                 let bus_entry := StateBusEntry.deserialise (multiplicity, entry_data_vector)
                 { result with State := result.State ++ [ bus_entry ] }
-              else result
+              else (
+                if _ : entry_data.length = 22 then
+                  let entry_data_vector : Vector FKB 22 := ⟨ entry_data.toArray, by simp; omega ⟩
+                  let bus_entry := MemoryBusEntry.deserialise (multiplicity, entry_data_vector)
+                  { result with Memory := result.Memory ++ [ bus_entry ] }
+                else result
+              )
           | 1 =>
             if _ : entry_data.length = 38 then
               let entry_data_vector : Vector FKB 38 := ⟨ entry_data.toArray, by simp; omega ⟩

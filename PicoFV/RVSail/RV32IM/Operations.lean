@@ -314,7 +314,33 @@ namespace RV32IM
                 .some (.WriteMem state_row.ptr.val .Word value)
               else .none
         ) row.State
-      program ++ state
+      let memory : List Operation :=
+        List.filterMap (
+          fun (memory_row : MemoryBusEntry FKB) =>
+            let width : Option MemoryWidth :=
+              if (memory_row.is_lw = 1 ∨ memory_row.is_sw = 1) then .some .Word
+              else if (memory_row.is_lh = 1 ∨ memory_row.is_lhu = 1 ∨ memory_row.is_sh = 1) then .some .Half
+              else if (memory_row.is_lb = 1 ∨ memory_row.is_lhu = 1 ∨ memory_row.is_sb = 1) then .some .Byte
+              else .none
+            match width with
+            | .none => .none
+            | .some width =>
+              let address := (U32.toBV #v[memory_row.b_0, memory_row.b_1, memory_row.b_2, memory_row.b_3]
+                                + U32.toBV #v[memory_row.c_0, memory_row.c_1, memory_row.c_2, memory_row.c_3]).toNat
+              let is_store : Bool := memory_row.is_sb == 1 ∨ memory_row.is_sh == 1 ∨ memory_row.is_sw == 1
+              match is_store with
+              | true =>
+                match width with
+                | .Byte => .some (.WriteMem address .Byte (BitVec.ofNat 8 (memory_row.a_0).val))
+                | .Half => .some (.WriteMem address .Byte (BitVec.ofNat 8 (memory_row.a_1).val ++ BitVec.ofNat 8 (memory_row.a_0).val))
+                | .Word => .some (.WriteMem address .Byte (U32.toBV #v[memory_row.a_0, memory_row.a_1, memory_row.a_2, memory_row.a_3]))
+              | false =>
+                match width with
+                | .Byte => .some (.ReadMem address .Byte (BitVec.ofNat 8 (memory_row.a_0).val))
+                | .Half => .some (.ReadMem address .Half (BitVec.ofNat 8 (memory_row.a_1).val ++ BitVec.ofNat 8 (memory_row.a_0).val))
+                | .Word => .some (.ReadMem address .Word (U32.toBV #v[memory_row.a_0, memory_row.a_1, memory_row.a_2, memory_row.a_3]))
+        ) row.Memory
+      program ++ state ++ memory
 
   end BusOperations
 

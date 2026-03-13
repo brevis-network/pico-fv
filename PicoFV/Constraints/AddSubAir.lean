@@ -264,7 +264,8 @@ namespace AddSubAir.Interactions
         (-(((air.cols.is_add row 0) + (air.cols.is_sub row 0))), #v[7, 0, 0, (air.cols.add_value_0 row 0), (air.cols.add_value_1 row 0)]),
         (-(((air.cols.is_add row 0) + (air.cols.is_sub row 0))), #v[7, 0, 0, (air.cols.add_value_2 row 0), (air.cols.add_value_3 row 0)])
       ],
-      State := []
+      State := [],
+      Memory := []
     }
 
   @[simp]
@@ -294,7 +295,7 @@ namespace AddSubAir.Interpretations
   :
     (air.cols.is_add row 0 = 0 ∨ air.cols.is_add row 0 = 1) ∧
     (air.cols.is_sub row 0 = 0 ∨ air.cols.is_sub row 0 = 1) ∧
-    (air.cols.is_add row 0 + air.cols.is_sub row 0 = 0) ∨ (air.cols.is_add row 0 + air.cols.is_sub row 0 = 1)
+    (air.cols.is_add row 0 + air.cols.is_sub row 0 = 0 ∨ air.cols.is_add row 0 + air.cols.is_sub row 0 = 1)
   := by
     simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
     grind

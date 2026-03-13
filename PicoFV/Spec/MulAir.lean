@@ -10,6 +10,7 @@ namespace MulAir.Spec
   open RV32IM_Interactions
   open MulAir.ConstraintsAndBuses
   open MulAir.Interactions
+  open MulAir.Interpretations
 
   private lemma ub_byte_prod {a b : Fin KB} (ha : a.val < 256) (hb : b.val < 256)
   :
@@ -117,30 +118,6 @@ namespace MulAir.Spec
     ring_nf
     omega
 
-  lemma selector_breakdown
-    [Field ExtF]
-    (air : Valid_MulAir FKB ExtF)
-    (row : ℕ)
-    (h_is_real : air.cols.is_real row 0 = 1)
-    (h_constraints : MulAir.Extraction.allHold air row)
-  :
-    (air.cols.is_mul row 0 = 1 → air.cols.is_mulh row 0 = 0 ∧ air.cols.is_mulhu row 0 = 0 ∧ air.cols.is_mulhsu row 0 = 0 ) ∧
-    (air.cols.is_mulh row 0 = 1 → air.cols.is_mul row 0 = 0 ∧ air.cols.is_mulhu row 0 = 0 ∧ air.cols.is_mulhsu row 0 = 0 ) ∧
-    (air.cols.is_mulhu row 0 = 1 → air.cols.is_mul row 0 = 0 ∧ air.cols.is_mulh row 0 = 0 ∧ air.cols.is_mulhsu row 0 = 0 ) ∧
-    (air.cols.is_mulhsu row 0 = 1 → air.cols.is_mul row 0 = 0 ∧ air.cols.is_mulh row 0 = 0 ∧ air.cols.is_mulhu row 0 = 0 )
-  := by
-    have h_selectors :
-      (air.cols.is_mul row 0 = 0 ∨ air.cols.is_mul row 0 = 1) ∧
-      (air.cols.is_mulh row 0 = 0 ∨ air.cols.is_mulh row 0 = 1) ∧
-      (air.cols.is_mulhu row 0 = 0 ∨ air.cols.is_mulhu row 0 = 1) ∧
-      (air.cols.is_mulhsu row 0 = 0 ∨ air.cols.is_mulhsu row 0 = 1) ∧
-      (air.cols.is_mul row 0 + air.cols.is_mulh row 0 + air.cols.is_mulhu row 0 + air.cols.is_mulhsu row 0 = 1)
-    := by
-      simp [constraint_and_interaction_simplification, sub_eq_zero, h_is_real] at h_constraints
-      aesop
-    clear *- h_selectors
-    grind
-
   private lemma U64_extractLsb_low (x : U64) :
       BitVec.extractLsb 31 0 (U64.toBV x) = U32.toBV #v[x[0], x[1], x[2], x[3]] := by
     simp [← BitVec.toNat_inj, U64.toNat, U32.toNat]
@@ -151,12 +128,34 @@ namespace MulAir.Spec
     simp [← BitVec.toNat_inj, U64.toNat, U32.toNat]
     omega
 
+  --
+  -- Externals
+  --
+
+  lemma ext_asrt
+    [Field ExtF]
+    (air : Valid_MulAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_constraints : MulAir.Extraction.allHold air row)
+  :
+    bus_row_ext_asrt (bus_row air row)
+  := by
+    have selector_exclusivity := selector_exclusivity air row h_is_real h_constraints
+    simp [bus_row_ext_asrt, bus_row]
+    grind
+
+  --
+  -- Opcode specifications
+  --
+
   lemma spec_MUL
     [Field ExtF]
     (air : Valid_MulAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
     (h_constraints : MulAir.Extraction.allHold air row)
     (h_is_mul : air.cols.is_mul row 0 = 1)
   :
@@ -167,19 +166,20 @@ namespace MulAir.Spec
       (air.cols.c_0 row 0) (air.cols.c_1 row 0) (air.cols.c_2 row 0) (air.cols.c_3 row 0)
   := by
     simp [ALUBus.Spec]
-    intro ub_b0 ub_b1 ub_b2 ub_b3 ub_c0 ub_c1 ub_c2 ub_c3
-    have selector_breakdown := selector_breakdown air row h_is_real h_constraints
-    simp [h_is_mul] at selector_breakdown; replace selector_breakdown := selector_breakdown.1
+    have selector_exclusivity := selector_exclusivity air row h_is_real h_constraints
+    simp [h_is_mul] at selector_exclusivity; replace selector_exclusivity := selector_exclusivity.1
+    simp [bus_row_ext_asm, bus_row, h_is_real, h_is_mul, selector_exclusivity] at h_ext
+    obtain ⟨ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3⟩ := h_ext
     simp [constraint_and_interaction_simplification, sub_eq_zero, *] at h_constraints
     obtain ⟨ ci, h_bse, h_cse, h_p0, h_p1, h_p2, h_p3, h_p4, h_p5, h_p6, h_p7,
              h_a0, h_a1, h_a2, h_a3, h_b_bmsb, h_b_cmsb, h_b_bse, h_b_cse, h_bse_msb, h_cse_msb ⟩ := h_constraints
     clear ci; rw [← h_a0, ← h_a1, ← h_a2, ← h_a3]; clear h_a0 h_a1 h_a2 h_a3
 
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec, and_assoc] at h_assumptions
-    simp [h_assumptions]
+    simp [bus_row_wf_asm, bus_row, h_is_real, ByteBus.Spec, and_assoc] at h_wf
+    simp [h_wf]
     obtain ⟨ eq_bmsb, ub_bmsb, ub_b3, eq_cmsb, ub_cmsb, ub_c3,
              ub_cy0, ub_cy1, ub_cy2, ub_cy3, ub_cy4, ub_cy5, ub_cy6, ub_cy7,
-             ub_p0, ub_p1, ub_p2, ub_p3, ub_p4, ub_p5, ub_p6, ub_p7 ⟩ := h_assumptions
+             ub_p0, ub_p1, ub_p2, ub_p3, ub_p4, ub_p5, ub_p6, ub_p7 ⟩ := h_wf
     clear ub_b3 ub_c3
 
     set b0 := air.cols.b_0 row 0; set b1 := air.cols.b_1 row 0; set b2 := air.cols.b_2 row 0; set b3 := air.cols.b_3 row 0
@@ -246,7 +246,8 @@ namespace MulAir.Spec
     (air : Valid_MulAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
     (h_constraints : MulAir.Extraction.allHold air row)
     (h_is_mulh : air.cols.is_mulh row 0 = 1)
   :
@@ -257,19 +258,20 @@ namespace MulAir.Spec
       (air.cols.c_0 row 0) (air.cols.c_1 row 0) (air.cols.c_2 row 0) (air.cols.c_3 row 0)
   := by
     simp [ALUBus.Spec]
-    intro ub_b0 ub_b1 ub_b2 ub_b3 ub_c0 ub_c1 ub_c2 ub_c3
-    have selector_breakdown := selector_breakdown air row h_is_real h_constraints
-    simp [h_is_mulh] at selector_breakdown; replace selector_breakdown := selector_breakdown.2.1
+    have selector_exclusivity := selector_exclusivity air row h_is_real h_constraints
+    simp [h_is_mulh] at selector_exclusivity; replace selector_exclusivity := selector_exclusivity.2.1
+    simp [bus_row_ext_asm, bus_row, h_is_real, h_is_mulh, selector_exclusivity] at h_ext
+    obtain ⟨ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3⟩ := h_ext
     simp [constraint_and_interaction_simplification, sub_eq_zero, *] at h_constraints
     obtain ⟨ ci, h_bse, h_cse, h_p0, h_p1, h_p2, h_p3, h_p4, h_p5, h_p6, h_p7,
              h_a0, h_a1, h_a2, h_a3, h_b_bmsb, h_b_cmsb, h_b_bse, h_b_cse, h_bse_msb, h_cse_msb ⟩ := h_constraints
     clear ci; rw [← h_a0, ← h_a1, ← h_a2, ← h_a3]; clear h_a0 h_a1 h_a2 h_a3
 
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec, and_assoc] at h_assumptions
-    simp [h_assumptions]
+    simp [bus_row_wf_asm, bus_row, h_is_real, ByteBus.Spec, and_assoc] at h_wf
+    simp [h_wf]
     obtain ⟨ eq_bmsb, ub_bmsb, ub_b3, eq_cmsb, ub_cmsb, ub_c3,
              ub_cy0, ub_cy1, ub_cy2, ub_cy3, ub_cy4, ub_cy5, ub_cy6, ub_cy7,
-             ub_p0, ub_p1, ub_p2, ub_p3, ub_p4, ub_p5, ub_p6, ub_p7 ⟩ := h_assumptions
+             ub_p0, ub_p1, ub_p2, ub_p3, ub_p4, ub_p5, ub_p6, ub_p7 ⟩ := h_wf
     clear ub_b3 ub_c3
 
     set b0 := air.cols.b_0 row 0; set b1 := air.cols.b_1 row 0; set b2 := air.cols.b_2 row 0; set b3 := air.cols.b_3 row 0
@@ -338,7 +340,8 @@ namespace MulAir.Spec
     (air : Valid_MulAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
     (h_constraints : MulAir.Extraction.allHold air row)
     (h_is_mulhu : air.cols.is_mulhu row 0 = 1)
   :
@@ -349,19 +352,20 @@ namespace MulAir.Spec
       (air.cols.c_0 row 0) (air.cols.c_1 row 0) (air.cols.c_2 row 0) (air.cols.c_3 row 0)
   := by
     simp [ALUBus.Spec]
-    intro ub_b0 ub_b1 ub_b2 ub_b3 ub_c0 ub_c1 ub_c2 ub_c3
-    have selector_breakdown := selector_breakdown air row h_is_real h_constraints
-    simp [h_is_mulhu] at selector_breakdown; replace selector_breakdown := selector_breakdown.2.2.1
+    have selector_exclusivity := selector_exclusivity air row h_is_real h_constraints
+    simp [h_is_mulhu] at selector_exclusivity; replace selector_exclusivity := selector_exclusivity.2.2.1
+    simp [bus_row_ext_asm, bus_row, h_is_real, h_is_mulhu, selector_exclusivity] at h_ext
+    obtain ⟨ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3⟩ := h_ext
     simp [constraint_and_interaction_simplification, sub_eq_zero, *] at h_constraints
     obtain ⟨ ci, h_bse, h_cse, h_p0, h_p1, h_p2, h_p3, h_p4, h_p5, h_p6, h_p7,
              h_a0, h_a1, h_a2, h_a3, h_b_bmsb, h_b_cmsb, h_b_bse, h_b_cse, h_bse_msb, h_cse_msb ⟩ := h_constraints
     clear ci; rw [← h_a0, ← h_a1, ← h_a2, ← h_a3]; clear h_a0 h_a1 h_a2 h_a3
 
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec, and_assoc] at h_assumptions
-    simp [h_assumptions]
+    simp [bus_row_wf_asm, bus_row, h_is_real, ByteBus.Spec, and_assoc] at h_wf
+    simp [h_wf]
     obtain ⟨ eq_bmsb, ub_bmsb, ub_b3, eq_cmsb, ub_cmsb, ub_c3,
              ub_cy0, ub_cy1, ub_cy2, ub_cy3, ub_cy4, ub_cy5, ub_cy6, ub_cy7,
-             ub_p0, ub_p1, ub_p2, ub_p3, ub_p4, ub_p5, ub_p6, ub_p7 ⟩ := h_assumptions
+             ub_p0, ub_p1, ub_p2, ub_p3, ub_p4, ub_p5, ub_p6, ub_p7 ⟩ := h_wf
     clear ub_b3 ub_c3
 
     set b0 := air.cols.b_0 row 0; set b1 := air.cols.b_1 row 0; set b2 := air.cols.b_2 row 0; set b3 := air.cols.b_3 row 0
@@ -428,7 +432,8 @@ namespace MulAir.Spec
     (air : Valid_MulAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
     (h_constraints : MulAir.Extraction.allHold air row)
     (h_is_mulhsu : air.cols.is_mulhsu row 0 = 1)
   :
@@ -439,19 +444,20 @@ namespace MulAir.Spec
       (air.cols.c_0 row 0) (air.cols.c_1 row 0) (air.cols.c_2 row 0) (air.cols.c_3 row 0)
   := by
     simp [ALUBus.Spec]
-    intro ub_b0 ub_b1 ub_b2 ub_b3 ub_c0 ub_c1 ub_c2 ub_c3
-    have selector_breakdown := selector_breakdown air row h_is_real h_constraints
-    simp [h_is_mulhsu] at selector_breakdown; replace selector_breakdown := selector_breakdown.2.2.2
+    have selector_exclusivity := selector_exclusivity air row h_is_real h_constraints
+    simp [h_is_mulhsu] at selector_exclusivity; replace selector_exclusivity := selector_exclusivity.2.2.2
+    simp [bus_row_ext_asm, bus_row, h_is_real, h_is_mulhsu, selector_exclusivity] at h_ext
+    obtain ⟨ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3⟩ := h_ext
     simp [constraint_and_interaction_simplification, sub_eq_zero, *] at h_constraints
     obtain ⟨ ci, h_bse, h_cse, h_p0, h_p1, h_p2, h_p3, h_p4, h_p5, h_p6, h_p7,
              h_a0, h_a1, h_a2, h_a3, h_b_bmsb, h_b_cmsb, h_b_bse, h_b_cse, h_bse_msb, h_cse_msb ⟩ := h_constraints
     clear ci; rw [← h_a0, ← h_a1, ← h_a2, ← h_a3]; clear h_a0 h_a1 h_a2 h_a3
 
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec, and_assoc] at h_assumptions
-    simp [h_assumptions]
+    simp [bus_row_wf_asm, bus_row, h_is_real, ByteBus.Spec, and_assoc] at h_wf
+    simp [h_wf]
     obtain ⟨ eq_bmsb, ub_bmsb, ub_b3, eq_cmsb, ub_cmsb, ub_c3,
              ub_cy0, ub_cy1, ub_cy2, ub_cy3, ub_cy4, ub_cy5, ub_cy6, ub_cy7,
-             ub_p0, ub_p1, ub_p2, ub_p3, ub_p4, ub_p5, ub_p6, ub_p7 ⟩ := h_assumptions
+             ub_p0, ub_p1, ub_p2, ub_p3, ub_p4, ub_p5, ub_p6, ub_p7 ⟩ := h_wf
     clear ub_b3 ub_c3
 
     set b0 := air.cols.b_0 row 0; set b1 := air.cols.b_1 row 0; set b2 := air.cols.b_2 row 0; set b3 := air.cols.b_3 row 0
@@ -513,5 +519,55 @@ namespace MulAir.Spec
     simp [← U32.extend_BitVec_extend, h_b_ext, h_c_ext]
     rw [← core_mul, U64_extractLsb_high]
     rfl
+
+  --
+  -- Well-formedness
+  --
+
+  lemma wf_asrt
+    [Field ExtF]
+    (air : Valid_MulAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : MulAir.Extraction.allHold air row)
+  :
+    bus_row_wf_asrt (bus_row air row)
+  := by
+    -- Set up assumptions
+    have h_wf' := h_wf
+    simp [bus_row_wf_asm] at h_wf'
+    obtain ⟨ asm_prog, asm_alu, asm_byte, asm_state, asm_mem ⟩ := h_wf'
+    -- Main proof
+    simp [bus_row_wf_asrt]
+    constructor
+    -- Program
+    . simp [bus_row]
+    . constructor
+      . -- ALU
+        simp [bus_row]
+        intro h_mult
+        have selectors := selector_breakdown air row h_is_real h_constraints
+        have exclusivity := selector_exclusivity air row h_is_real h_constraints
+        obtain ⟨h_mul, h_mulh, h_mulhu, h_mulhsu, h_sum⟩ := selectors
+        obtain h_mul | h_mul := h_mul
+        · obtain h_mulh | h_mulh := h_mulh
+          · obtain h_mulhu | h_mulhu := h_mulhu
+            . obtain h_mulhsu | h_mulhsu := h_mulhsu
+              . exfalso; grind
+              . have spec := spec_MULHSU air row h_is_real h_ext h_wf h_constraints h_mulhsu
+                simp_all
+            . have spec := spec_MULHU air row h_is_real h_ext h_wf h_constraints h_mulhu
+              simp_all
+          . have spec := spec_MULH air row h_is_real h_ext h_wf h_constraints h_mulh
+            simp_all
+        . have spec := spec_MUL air row h_is_real h_ext h_wf h_constraints h_mul
+          simp_all
+      . constructor
+        . simp [bus_row, ByteBus.Spec]
+          have selectors := selector_exclusivity air row h_is_real h_constraints
+          split_ands <;> intro h <;> exfalso <;> grind
+        . simp [bus_row]
 
 end MulAir.Spec

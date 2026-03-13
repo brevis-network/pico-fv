@@ -728,7 +728,8 @@ namespace SllAir.Interactions
         (-((air.cols.is_real row 0)), #v[7, 0, 0, (air.cols.shift_result_carry_0 row 0), (air.cols.shift_result_carry_1 row 0)]),
         (-((air.cols.is_real row 0)), #v[7, 0, 0, (air.cols.shift_result_carry_2 row 0), (air.cols.shift_result_carry_3 row 0)])
       ],
-      State := []
+      State := [],
+      Memory := []
     }
 
   @[simp]

@@ -32,7 +32,8 @@ namespace SllAir.Spec
     [Field ExtF]
     (air : Valid_SllAir FKB ExtF)
     (row : ℕ)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
     (h_constraints : SllAir.Extraction.allHold air row)
     (h_is_real : air.cols.is_real row 0 = 1)
   :
@@ -44,13 +45,14 @@ namespace SllAir.Spec
   := by
     -- Unfold ALUBus.Spec for opcode 5
     simp only [ALUBus.Spec]
-    intro ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩
+    simp [bus_row_ext_asm, bus_row, h_is_real] at h_ext
+    obtain ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩ := h_ext
     -- Simplify constraints
     simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
     -- Get byte bounds from assumptions
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec] at h_assumptions
+    simp [bus_row_wf_asm, bus_row, h_is_real, ByteBus.Spec] at h_wf
     -- Extract byte bounds
-    obtain ⟨⟨hsr0, hsr1⟩, ⟨hsr2, hsr3⟩, ⟨hsrc0, hsrc1⟩, hsrc2, hsrc3⟩ := h_assumptions
+    obtain ⟨⟨hsr0, hsr1⟩, ⟨hsr2, hsr3⟩, ⟨hsrc0, hsrc1⟩, hsrc2, hsrc3⟩ := h_wf
     -- Extract all constraints
     obtain ⟨h_ci, h_c0_decomp,
       h_sbn0_sel, h_sbn1_sel, h_sbn2_sel, h_sbn3_sel, h_sbn4_sel, h_sbn5_sel, h_sbn6_sel, h_sbn7_sel,
@@ -120,21 +122,22 @@ namespace SllAir.Spec
       simp [U32.toBV_toNat, U32.toNat, BitVec.toNat_ofNat, BitVec.toNat_shiftLeft]
       omega
 
-  lemma assertions
+  lemma wf_asrt
       [Field ExtF]
       (air : Valid_SllAir FKB ExtF)
       (row : ℕ)
-      (h_assumptions : bus_row_assumptions (bus_row air row))
+      (h_ext : bus_row_ext_asm (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_constraints : SllAir.Extraction.allHold air row)
     :
-      bus_row_assertions (bus_row air row)
+      bus_row_wf_asrt (bus_row air row)
     := by
       -- Set up assumptions
-      have h_assumptions' := h_assumptions
-      simp [bus_row_assumptions] at h_assumptions'
-      obtain ⟨ asm_prog, asm_alu, asm_byte, asm_reg ⟩ := h_assumptions'
+      have h_wf' := h_wf
+      simp [bus_row_wf_asm] at h_wf'
+      obtain ⟨ asm_prog, asm_alu, asm_byte, asm_state ⟩ := h_wf'
       -- Main proof
-      simp [bus_row_assertions]
+      simp [bus_row_wf_asrt]
       constructor
       -- Program
       . simp [bus_row]
@@ -142,7 +145,7 @@ namespace SllAir.Spec
         . -- ALU
           simp [bus_row]
           intro h_is_real
-          exact spec_SLL air row h_assumptions h_constraints h_is_real
+          exact spec_SLL air row h_ext h_wf h_constraints h_is_real
         . constructor
           . -- Byte
             simp [bus_row, ByteBus.Spec]

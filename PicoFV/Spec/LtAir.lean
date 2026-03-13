@@ -9,6 +9,7 @@ namespace LtAir.Spec
   open RV32IM_Interactions
   open LtAir.ConstraintsAndBuses
   open LtAir.Interactions
+  open LtAir.Interpretations
 
   set_option maxHeartbeats 1_000_000_000
 
@@ -48,25 +49,32 @@ namespace LtAir.Spec
       U32.negative #v[(b0 : BitVec 8), (b1 : BitVec 8), (b2 : BitVec 8), (b3 : BitVec 8)] := by
     simp [U32.negative, U32.toNat]; omega
 
-  lemma selector_breakdown
+  --
+  -- Externals
+  --
+
+  lemma ext_asrt
     [Field ExtF]
     (air : Valid_LtAir FKB ExtF)
     (row : ℕ)
     (h_constraints : LtAir.Extraction.allHold air row)
   :
-    (air.cols.is_slt row 0 = 0 ∨ air.cols.is_slt row 0 = 1) ∧
-    (air.cols.is_slt_u row 0 = 0 ∨ air.cols.is_slt_u row 0 = 1) ∧
-    (air.cols.is_slt row 0 + air.cols.is_slt_u row 0 = 0 ∨
-     air.cols.is_slt row 0 + air.cols.is_slt_u row 0 = 1)
+    bus_row_ext_asrt (bus_row air row)
   := by
-    simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
+    obtain ⟨ h_b_add, h_b_sub, h_b_sum ⟩ := selector_breakdown air row h_constraints
+    simp [bus_row_ext_asrt, bus_row]
     grind
+
+  --
+  -- Opcode specifications
+  --
 
   lemma spec_SLT
     [Field ExtF]
     (air : Valid_LtAir FKB ExtF)
     (row : ℕ)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
     (h_constraints : LtAir.Extraction.allHold air row)
     (h_slt : air.cols.is_slt row 0 = 1)
   :
@@ -82,10 +90,10 @@ namespace LtAir.Spec
     simp only [ALUBus.Spec]
     -- Simplify constraints and assumptions
     simp [constraint_and_interaction_simplification, sub_eq_zero, h_slt, h_sltu] at h_constraints
-    simp [bus_row_assumptions, bus_row, h_slt, h_sltu, ByteBus.Spec] at h_assumptions
+    simp [bus_row_wf_asm, bus_row, h_slt, h_sltu, ByteBus.Spec] at h_wf
     -- Extract assumptions
     obtain ⟨⟨h_bm_eq, h_bm_lt, h_b3_lt⟩, ⟨h_cm_eq, h_cm_lt, h_c3_lt⟩,
-            h_sltu_eq, h_cb0_lt, h_cb1_lt⟩ := h_assumptions
+            h_sltu_eq, h_cb0_lt, h_cb1_lt⟩ := h_wf
     -- Extract constraints
     obtain ⟨_, h_msb_b, h_msb_c, h_same_bit_binary, h_bb, h_bc, h_ssb_zero_or_eq, h_ssb_or, h_a0, h_a1, h_a2, h_a3,
             h_ceq_bool, h_bf0_bool, h_bf1_bool, h_bf2_bool, h_bf3_bool, _,
@@ -121,7 +129,8 @@ namespace LtAir.Spec
       rw [h_eq, h_cm_eq]; simp [Fin.and_val]
       exact lt_of_le_of_lt Nat.and_le_right (by omega)
     -- Intro ops_range
-    intro ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩
+    simp [bus_row_ext_asm, bus_row, h_slt, h_sltu] at h_ext
+    obtain ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩ := h_ext
     -- Simplify a_1 = a_2 = a_3 = 0
     simp [h_a1, h_a2, h_a3]
     -- result_range for a_0
@@ -195,7 +204,8 @@ namespace LtAir.Spec
     [Field ExtF]
     (air : Valid_LtAir FKB ExtF)
     (row : ℕ)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
     (h_constraints : LtAir.Extraction.allHold air row)
     (h_sltu : air.cols.is_slt_u row 0 = 1)
   :
@@ -211,9 +221,9 @@ namespace LtAir.Spec
     simp only [ALUBus.Spec]
     -- Simplify constraints and assumptions
     simp [constraint_and_interaction_simplification, sub_eq_zero, h_slt, h_sltu] at h_constraints
-    simp [bus_row_assumptions, bus_row, h_slt, h_sltu, ByteBus.Spec] at h_assumptions
+    simp [bus_row_wf_asm, bus_row, h_slt, h_sltu, ByteBus.Spec] at h_wf
     -- Extract assumptions
-    obtain ⟨⟨_, _, _⟩, ⟨_, _, _⟩, h_sltu_eq, h_cb0_lt, h_cb1_lt⟩ := h_assumptions
+    obtain ⟨⟨_, _, _⟩, ⟨_, _, _⟩, h_sltu_eq, h_cb0_lt, h_cb1_lt⟩ := h_wf
     -- Extract constraints
     obtain ⟨_, _, _, _, h_bb, h_bc, _, h_ssb_or, h_a0, h_a1, h_a2, h_a3,
             h_ceq_bool, h_bf0_bool, h_bf1_bool, h_bf2_bool, h_bf3_bool, _,
@@ -224,8 +234,9 @@ namespace LtAir.Spec
       rcases h_ssb_or with h | h; exact h; simp [h_bb, h_bc] at h
     -- Simplify a_0 = slt_u
     simp [h_bb, h_bc, h_ssb] at h_a0
-    -- Intro ops_range and begin proof
-    intro ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩
+    -- Intro ops_range
+    simp [bus_row_ext_asm, bus_row, h_slt, h_sltu] at h_ext
+    obtain ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩ := h_ext
     -- Rewrite goal with constraint equalities
     simp [h_a0, h_a1, h_a2, h_a3]
     -- result_range and U32 comparison
@@ -243,48 +254,53 @@ namespace LtAir.Spec
     rcases h_bf0_bool with hbf0 | hbf0 <;>
     simp_all <;> grind
 
-  lemma assertions
-      [Field ExtF]
-      (air : Valid_LtAir FKB ExtF)
-      (row : ℕ)
-      (h_assumptions : bus_row_assumptions (bus_row air row))
-      (h_constraints : LtAir.Extraction.allHold air row)
-    :
-      bus_row_assertions (bus_row air row)
-    := by
-      -- Set up assumptions
-      have h_assumptions' := h_assumptions
-      simp [bus_row_assumptions] at h_assumptions'
-      obtain ⟨ asm_prog, asm_alu, asm_byte, asm_reg ⟩ := h_assumptions'
-      -- Main proof
-      simp [bus_row_assertions]
-      constructor
-      -- Program
-      . simp [bus_row]
+  --
+  -- Well-formedness
+  --
+
+  lemma wf_asrt
+    [Field ExtF]
+    (air : Valid_LtAir FKB ExtF)
+    (row : ℕ)
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : LtAir.Extraction.allHold air row)
+  :
+    bus_row_wf_asrt (bus_row air row)
+  := by
+    -- Set up assumptions
+    have h_wf' := h_wf
+    simp [bus_row_wf_asm] at h_wf'
+    obtain ⟨ asm_prog, asm_alu, asm_byte, asm_state, asm_mem ⟩ := h_wf'
+    -- Main proof
+    simp [bus_row_wf_asrt]
+    constructor
+    -- Program
+    . simp [bus_row]
+    . constructor
+      . -- ALU
+        simp [bus_row]
+        intro h_mult
+        have selectors := selector_breakdown air row h_constraints
+        obtain ⟨h1, h2, _⟩ := selectors
+        rcases h1 with h_slt | h_slt
+        · -- is_slt = 0
+          rcases h2 with h_sltu | h_sltu
+          · -- is_slt = 0, is_slt_u = 0 → contradiction with h_mult
+            exfalso; grind
+          · -- is_slt_u = 1
+            simp only [h_slt, h_sltu, one_mul, zero_mul, zero_add]
+            exact spec_SLTU air row h_ext h_wf h_constraints h_sltu
+        · -- is_slt = 1
+          have h_sltu : air.cols.is_slt_u row 0 = 0 := by grind
+          simp only [h_slt, h_sltu, one_mul, zero_mul, add_zero]
+          exact spec_SLT air row h_ext h_wf h_constraints h_slt
       . constructor
-        . -- ALU
-          simp [bus_row]
-          intro h_mult
+        . -- Byte
+          simp [bus_row, ByteBus.Spec]
           have selectors := selector_breakdown air row h_constraints
-          obtain ⟨h1, h2, _⟩ := selectors
-          rcases h1 with h_slt | h_slt
-          · -- is_slt = 0
-            rcases h2 with h_sltu | h_sltu
-            · -- is_slt = 0, is_slt_u = 0 → contradiction with h_mult
-              exfalso; grind
-            · -- is_slt_u = 1
-              simp only [h_slt, h_sltu, one_mul, zero_mul, zero_add]
-              exact spec_SLTU air row h_assumptions h_constraints h_sltu
-          · -- is_slt = 1
-            have h_sltu : air.cols.is_slt_u row 0 = 0 := by grind
-            simp only [h_slt, h_sltu, one_mul, zero_mul, add_zero]
-            exact spec_SLT air row h_assumptions h_constraints h_slt
-        . constructor
-          . -- Byte
-            simp [bus_row, ByteBus.Spec]
-            have selectors := selector_breakdown air row h_constraints
-            split_ands <;> intro h <;> exfalso <;> grind
-          . -- Register
-            simp [bus_row]
+          split_ands <;> intro h <;> exfalso <;> grind
+        . -- Register
+          simp [bus_row]
 
 end LtAir.Spec

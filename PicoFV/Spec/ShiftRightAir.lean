@@ -100,7 +100,8 @@ namespace ShiftRightAir.Spec
     [Field ExtF]
     (air : Valid_ShiftRightAir FKB ExtF)
     (row : ℕ)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
     (h_constraints : ShiftRightAir.Extraction.allHold air row)
     (h_is_real : air.cols.is_real row 0 = 1)
     (h_is_srl : air.cols.is_srl row 0 = 1)
@@ -117,9 +118,10 @@ namespace ShiftRightAir.Spec
       grind
     -- Unfold ALUBus.Spec for opcode 6
     simp only [ALUBus.Spec]
-    intro ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩
+    simp [bus_row_ext_asm, bus_row, h_is_real, h_is_srl, h_is_sra] at h_ext
+    obtain ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩ := h_ext
     -- Get byte bounds from assumptions
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec] at h_assumptions
+    simp [bus_row_wf_asm, bus_row, h_is_real, ByteBus.Spec] at h_wf
     -- Simplify constraints
     simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
     -- Extract all constraints
@@ -161,7 +163,7 @@ namespace ShiftRightAir.Spec
       ⟨h_bsr4_bound, h_bsr5_bound⟩, ⟨h_bsr6_bound, h_bsr7_bound⟩,
       ⟨h_bitsr0_bound, h_bitsr1_bound⟩, ⟨h_bitsr2_bound, h_bitsr3_bound⟩,
       ⟨h_bitsr4_bound, h_bitsr5_bound⟩, ⟨h_bitsr6_bound, h_bitsr7_bound⟩,
-      rest⟩ := h_assumptions
+      rest⟩ := h_wf
     -- Clear duplicates
     clear h_b3_bound_dup rest
     -- Get the mod 32
@@ -252,7 +254,8 @@ namespace ShiftRightAir.Spec
     [Field ExtF]
     (air : Valid_ShiftRightAir FKB ExtF)
     (row : ℕ)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
     (h_constraints : ShiftRightAir.Extraction.allHold air row)
     (h_is_real : air.cols.is_real row 0 = 1)
     (h_is_sra : air.cols.is_sra row 0 = 1)
@@ -269,9 +272,10 @@ namespace ShiftRightAir.Spec
       grind
     -- Unfold ALUBus.Spec for opcode 7
     simp only [ALUBus.Spec]
-    intro ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩
+    simp [bus_row_ext_asm, bus_row, h_is_real, h_is_srl, h_is_sra] at h_ext
+    obtain ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩ := h_ext
     -- Get byte bounds from assumptions
-    simp [bus_row_assumptions, bus_row, h_is_real, ByteBus.Spec] at h_assumptions
+    simp [bus_row_wf_asm, bus_row, h_is_real, ByteBus.Spec] at h_wf
     -- Simplify constraints
     simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
     -- Extract all constraints
@@ -313,7 +317,7 @@ namespace ShiftRightAir.Spec
       ⟨h_bsr4_bound, h_bsr5_bound⟩, ⟨h_bsr6_bound, h_bsr7_bound⟩,
       ⟨h_bitsr0_bound, h_bitsr1_bound⟩, ⟨h_bitsr2_bound, h_bitsr3_bound⟩,
       ⟨h_bitsr4_bound, h_bitsr5_bound⟩, ⟨h_bitsr6_bound, h_bitsr7_bound⟩,
-      rest⟩ := h_assumptions
+      rest⟩ := h_wf
     -- Clear duplicates
     clear h_b3_bound_dup rest
     -- Get the mod 32

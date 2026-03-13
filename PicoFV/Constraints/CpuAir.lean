@@ -2847,6 +2847,18 @@ namespace CpuAir.Interactions
         (-air.cols.is_real row 0, #v[air.cols.op_a_access.access.prev_chunk row 0, air.cols.op_a_access.access.prev_clk row 0, air.cols.instruction.a_0 row 0, air.cols.op_a_access.prev_value_0 row 0, air.cols.op_a_access.prev_value_1 row 0, air.cols.op_a_access.prev_value_2 row 0, air.cols.op_a_access.prev_value_3 row 0]),
         ( air.cols.is_real row 0, #v[air.cols.chunk row 0, 3 + air.cols.clk row 0, air.cols.instruction.a_0 row 0, air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0])
       ]
+      Memory := List.map MemoryBusEntry.deserialise [
+        (-air.cols.is_memory_instruction row 0,
+          #v[air.cols.instruction.opcode row 0,
+             air.cols.op_a_access.access.value_0 row 0, air.cols.op_a_access.access.value_1 row 0, air.cols.op_a_access.access.value_2 row 0, air.cols.op_a_access.access.value_3 row 0,
+             air.cols.op_b_access.value_0 row 0, air.cols.op_b_access.value_1 row 0, air.cols.op_b_access.value_2 row 0, air.cols.op_b_access.value_3 row 0,
+             air.cols.op_c_access.value_0 row 0, air.cols.op_c_access.value_1 row 0, air.cols.op_c_access.value_2 row 0, air.cols.op_c_access.value_3 row 0,
+             air.cols.instruction.a_is_0 row 0,
+             air.cols.opcode_selector.is_lb row 0, air.cols.opcode_selector.is_lbu row 0,
+             air.cols.opcode_selector.is_lh row 0, air.cols.opcode_selector.is_lhu row 0,
+             air.cols.opcode_selector.is_lw row 0, air.cols.opcode_selector.is_sb row 0,
+             air.cols.opcode_selector.is_sh row 0, air.cols.opcode_selector.is_sw row 0])
+      ]
     }
 
   @[simp]
@@ -2887,7 +2899,7 @@ namespace CpuAir.Interpretations
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
   :
     (air.cols.opcode_selector.imm_b row 0 = 0 ∨ air.cols.opcode_selector.imm_b row 0 = 1) ∧
@@ -2920,7 +2932,7 @@ namespace CpuAir.Interpretations
      air.cols.opcode_selector.is_bgeu row 0 + air.cols.opcode_selector.is_jalr row 0 + air.cols.opcode_selector.is_jal row 0 +
      air.cols.opcode_selector.is_auipc row 0 + air.cols.opcode_selector.is_unimpl row 0 = 1)
   := by
-    simp [bus_row_assumptions] at h_assumptions
+    simp [bus_row_wf_asm] at h_assumptions
     replace h_assumptions := h_assumptions.1
     simp [
       bus_row,
@@ -2974,7 +2986,7 @@ namespace CpuAir.Interpretations
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
   :
@@ -3025,7 +3037,7 @@ namespace CpuAir.Interpretations
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_jump_instr : air.cols.is_jump_instruction row 0 = 1)
   :
@@ -3045,7 +3057,7 @@ namespace CpuAir.Interpretations
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_store_instr : air.cols.is_store_instruction row 0 = 1)
   :
@@ -3072,7 +3084,7 @@ namespace CpuAir.Interpretations
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
   :
     air.cols.is_sequential_instr row 0 = 1 ∨
@@ -3173,7 +3185,7 @@ namespace CpuAir.Interpretations
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_branching_or_store : air.cols.is_branch_instruction row 0 = 1 ∨ air.cols.is_store_instruction row 0 = 1)
   :
@@ -3204,7 +3216,7 @@ namespace CpuAir.Interpretations
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
   :
     air.cols.op_a_access.access.value_0 row 0 < 256 ∧ air.cols.op_a_access.access.value_1 row 0 < 256 ∧
@@ -3217,8 +3229,8 @@ namespace CpuAir.Interpretations
     air.cols.op_c_access.value_2 row 0 < 256 ∧ air.cols.op_c_access.value_3 row 0 < 256
   := by
     have h_assumptions' := h_assumptions
-    simp [bus_row_assumptions] at h_assumptions'
-    obtain ⟨ asm_prog, asm_alu, asm_byte, asm_reg ⟩ := h_assumptions'
+    simp [bus_row_wf_asm] at h_assumptions'
+    obtain ⟨ asm_prog, asm_alu, asm_byte, asm_reg, asm_mem ⟩ := h_assumptions'
     simp [bus_row, h_is_real, ByteBus.Spec] at asm_byte
     simp [bus_row, h_is_real] at asm_reg
     simp [asm_byte, asm_reg]
@@ -3271,7 +3283,7 @@ namespace CpuAir.Interpretations
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
   :
@@ -3283,9 +3295,8 @@ namespace CpuAir.Interpretations
         = BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega)
   := by
     intro h_branch
-
     simp [
-      bus_row_assumptions,
+      bus_row_wf_asm,
       bus_row,
       h_branch,
       cpu_branch_cols_simplification,
@@ -3321,7 +3332,7 @@ namespace CpuAir.Interpretations
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
   :
@@ -3335,7 +3346,7 @@ namespace CpuAir.Interpretations
     intro h_branch
 
     simp [
-      bus_row_assumptions,
+      bus_row_wf_asm,
       bus_row,
       h_branch,
       cpu_branch_cols_simplification,
@@ -3405,7 +3416,7 @@ namespace CpuAir.Interpretations
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
   :
@@ -3438,7 +3449,7 @@ namespace CpuAir.Interpretations
   := by
     obtain ⟨ h_cases, h_store ⟩ := is_branch_instruction_characterisation air row h_is_real h_assumptions h_constraints h_branch_instr
     have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
-    simp [ bus_row_assumptions ] at h_assumptions
+    simp [ bus_row_wf_asm ] at h_assumptions
     replace h_assumptions := h_assumptions.2.1
     simp [
       bus_row,
@@ -3457,7 +3468,7 @@ namespace CpuAir.Interpretations
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
   :
@@ -3490,7 +3501,7 @@ namespace CpuAir.Interpretations
   := by
     obtain ⟨ h_cases, h_store ⟩ := is_branch_instruction_characterisation air row h_is_real h_assumptions h_constraints h_branch_instr
     have operand_ranges := operand_range air row h_is_real h_assumptions h_constraints
-    simp [ bus_row_assumptions ] at h_assumptions
+    simp [ bus_row_wf_asm ] at h_assumptions
     replace h_assumptions := h_assumptions.2.1
     simp [
       bus_row,
@@ -3510,7 +3521,7 @@ namespace CpuAir.Interpretations
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_is_jump : air.cols.is_jump_instruction row 0 = 1)
     (h_a_not_0 : air.cols.instruction.a_is_0 row 0 = 0)
@@ -3527,7 +3538,7 @@ namespace CpuAir.Interpretations
       (air.cols.op_a_access.access.value_2 row 0) < 256 ∧
       (air.cols.op_a_access.access.value_3 row 0) < 256
     := by
-      simp [ bus_row_assumptions ] at h_assumptions
+      simp [ bus_row_wf_asm ] at h_assumptions
       replace h_assumptions := h_assumptions.2.2.1
       simp [ bus_row, h_is_real, ByteBus.Spec ] at h_assumptions
       omega
@@ -3563,7 +3574,7 @@ namespace CpuAir.Interpretations
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_is_jal : air.cols.opcode_selector.is_jal row 0 = 1)
   :
@@ -3574,7 +3585,7 @@ namespace CpuAir.Interpretations
       = BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega)
   := by
     simp [
-      bus_row_assumptions,
+      bus_row_wf_asm,
       bus_row,
       h_is_jal,
       cpu_jump_cols_simplification,
@@ -3610,7 +3621,7 @@ namespace CpuAir.Interpretations
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_is_jump : air.cols.is_jump_instruction row 0 = 1)
   :
@@ -3622,7 +3633,7 @@ namespace CpuAir.Interpretations
   := by
     have is_jump := is_jump_instruction_characterisation air row h_is_real h_assumptions h_constraints h_is_jump
     simp [
-      bus_row_assumptions,
+      bus_row_wf_asm,
       bus_row,
       cpu_jump_cols_simplification,
     ] at h_assumptions
@@ -3660,7 +3671,7 @@ namespace CpuAir.Interpretations
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
     (row : ℕ)
-    (h_assumptions : bus_row_assumptions (bus_row air row))
+    (h_assumptions : bus_row_wf_asm (bus_row air row))
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_is_auipc : air.cols.opcode_selector.is_auipc row 0 = 1)
   :
@@ -3671,7 +3682,7 @@ namespace CpuAir.Interpretations
       = BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega)
   := by
     simp [
-      bus_row_assumptions,
+      bus_row_wf_asm,
       bus_row,
       cpu_auipc_cols_simplification,
       h_is_auipc,
