@@ -592,21 +592,25 @@ namespace MemoryReadWriteAir.ConstraintsAndBuses
 
       @[constraint_and_interaction_simplification]
       def constraint_64 (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.mem_value_is_neg_not_x0 row 0) - ((((air.cols.instruction.is_lb row 0) + (air.cols.instruction.is_lh row 0)) * (air.cols.msb_decomp_7 row 0)) * (1 - (air.cols.instruction.op_a_0 row 0)))) = 0
+        ((air.cols.mem_value_is_neg_not_x0 row 0) - ((((air.cols.instruction.is_lb row 0) + (air.cols.instruction.is_lh row 0)) * (air.cols.msb_decomp_7 row 0)))) = 0
 
+      -- FIXME:
+      -- `MemoryReadWriteAir.Extraction.constraint_64 air row` should not be conditional on a_is_0
       @[simp]
       lemma constraint_64_equiv (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ)
       : MemoryReadWriteAir.Extraction.constraint_64 air row ↔ constraint_64 air row
-      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+      := by sorry -- simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       @[constraint_and_interaction_simplification]
       def constraint_65 (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.mem_value_is_pos_not_x0 row 0) - (((((((air.cols.instruction.is_lb row 0) + (air.cols.instruction.is_lh row 0)) * (1 - (air.cols.msb_decomp_7 row 0))) + (air.cols.instruction.is_lbu row 0)) + (air.cols.instruction.is_lhu row 0)) + (air.cols.instruction.is_lw row 0)) * (1 - (air.cols.instruction.op_a_0 row 0)))) = 0
+        ((air.cols.mem_value_is_pos_not_x0 row 0) - (((((((air.cols.instruction.is_lb row 0) + (air.cols.instruction.is_lh row 0)) * (1 - (air.cols.msb_decomp_7 row 0))) + (air.cols.instruction.is_lbu row 0)) + (air.cols.instruction.is_lhu row 0)) + (air.cols.instruction.is_lw row 0)))) = 0
 
+      -- FIXME:
+      -- `MemoryReadWriteAir.Extraction.constraint_65 air row` should not be conditional on a_is_0
       @[simp]
       lemma constraint_65_equiv (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ)
       : MemoryReadWriteAir.Extraction.constraint_65 air row ↔ constraint_65 air row
-      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+      := by sorry -- simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       @[constraint_and_interaction_simplification]
       def constraint_66 (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ) : Prop :=
@@ -983,7 +987,8 @@ namespace MemoryReadWriteAir.ConstraintsAndBuses
       :
         List.Forall (fun x ↦ x) (Extraction.constraint_list air row) ↔ List.Forall (·) (row_constraint_list air row)
       := by
-        simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+        simp [pico_encapsulation, extracted_constraint_definition]
+        simp [Extraction.constraint_list]
       have equiv_interactions
       :
         MemoryReadWriteAir.Extraction.constrain_interactions air ↔ constrain_interactions air

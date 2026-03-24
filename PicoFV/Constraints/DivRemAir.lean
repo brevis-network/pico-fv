@@ -1438,3 +1438,178 @@ namespace DivRemAir.Interactions
     ]
 
 end DivRemAir.Interactions
+
+namespace DivRemAir.Interpretations
+
+  open RV32IM_Interactions
+  open DivRemAir.ConstraintsAndBuses
+  open DivRemAir.Interactions
+
+  lemma selector_breakdown
+    [Field ExtF]
+    (air : Valid_DivRemAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_constraints : DivRemAir.Extraction.allHold air row)
+  :
+    (air.cols.is_div row 0 = 0 ∨ air.cols.is_div row 0 = 1) ∧
+    (air.cols.is_divu row 0 = 0 ∨ air.cols.is_divu row 0 = 1) ∧
+    (air.cols.is_rem row 0 = 0 ∨ air.cols.is_rem row 0 = 1) ∧
+    (air.cols.is_remu row 0 = 0 ∨ air.cols.is_remu row 0 = 1) ∧
+    (air.cols.is_div row 0 + air.cols.is_divu row 0 + air.cols.is_rem row 0 + air.cols.is_remu row 0 = 1)
+  := by
+    simp [constraint_and_interaction_simplification, sub_eq_zero, h_is_real] at h_constraints
+    split_ands <;> grind
+
+  lemma selector_exclusivity
+    [Field ExtF]
+    (air : Valid_DivRemAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_constraints : DivRemAir.Extraction.allHold air row)
+  :
+    (air.cols.is_div row 0 = 1 → air.cols.is_divu row 0 = 0 ∧ air.cols.is_rem row 0 = 0 ∧ air.cols.is_remu row 0 = 0 ) ∧
+    (air.cols.is_divu row 0 = 1 → air.cols.is_div row 0 = 0 ∧ air.cols.is_rem row 0 = 0 ∧ air.cols.is_remu row 0 = 0 ) ∧
+    (air.cols.is_rem row 0 = 1 → air.cols.is_div row 0 = 0 ∧ air.cols.is_divu row 0 = 0 ∧ air.cols.is_remu row 0 = 0 ) ∧
+    (air.cols.is_remu row 0 = 1 → air.cols.is_div row 0 = 0 ∧ air.cols.is_divu row 0 = 0 ∧ air.cols.is_rem row 0 = 0 )
+  := by
+    have h_selectors := selector_breakdown air row h_is_real h_constraints
+    clear *- h_selectors
+    grind
+
+  lemma U32_nat_eq_0 {x0 x1 x2 x3 : FKB}
+    (ub_x0 : x0 < 256) (ub_x1 : x1 < 256) (ub_x2 : x2 < 256) (ub_x3 : x3 < 256)
+  :
+    (U32.toNat #v[BitVec.ofNat 8 x0, BitVec.ofNat 8 x1, BitVec.ofNat 8 x2, BitVec.ofNat 8 x3] = 0 ↔ x0 = 0 ∧ x1 = 0 ∧ x2 = 0 ∧ x3 = 0)
+  := by
+    simp [U32.toNat]; omega
+
+  lemma U32_int_eq_0 {x0 x1 x2 x3 : FKB}
+    (ub_x0 : x0 < 256) (ub_x1 : x1 < 256) (ub_x2 : x2 < 256) (ub_x3 : x3 < 256)
+  :
+    (U32.toInt #v[BitVec.ofNat 8 x0, BitVec.ofNat 8 x1, BitVec.ofNat 8 x2, BitVec.ofNat 8 x3] = 0 ↔ x0 = 0 ∧ x1 = 0 ∧ x2 = 0 ∧ x3 = 0)
+  := by
+    simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, U32.toNat]
+    split_ifs <;> omega
+
+  lemma U32_int_eq_minInt {x0 x1 x2 x3 : FKB}
+    (ub_x0 : x0 < 256) (ub_x1 : x1 < 256) (ub_x2 : x2 < 256) (ub_x3 : x3 < 256)
+  :
+    (U32.toInt #v[BitVec.ofNat 8 x0, BitVec.ofNat 8 x1, BitVec.ofNat 8 x2, BitVec.ofNat 8 x3] = -2147483648 ↔ x0 = 0 ∧ x1 = 0 ∧ x2 = 0 ∧ x3 = 128)
+  := by
+    simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, U32.toNat]
+    split_ifs <;> omega
+
+  lemma U32_int_eq_neg_one {x0 x1 x2 x3 : FKB}
+    (ub_x0 : x0 < 256) (ub_x1 : x1 < 256) (ub_x2 : x2 < 256) (ub_x3 : x3 < 256)
+  :
+    (U32.toInt #v[BitVec.ofNat 8 x0, BitVec.ofNat 8 x1, BitVec.ofNat 8 x2, BitVec.ofNat 8 x3] = -1 ↔ x0 = 255 ∧ x1 = 255 ∧ x2 = 255 ∧ x3 = 255)
+  := by
+    simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, U32.toNat]
+    split_ifs <;> omega
+
+  lemma helpers_signed {ExtF}
+    [Field ExtF]
+    (air : Valid_DivRemAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : DivRemAir.Extraction.allHold air row)
+    (h_is_signed : air.cols.is_signed row 0 = 1)
+  :
+    air.cols.b_neg row 0 = (if (air.cols.b_3 row 0).val < 128 then 0 else 1) ∧
+    air.cols.rem_neg row 0 = (if (air.cols.remainder_3 row 0).val < 128 then 0 else 1) ∧
+    air.cols.c_neg row 0 = (if (air.cols.c_3 row 0).val < 128 then 0 else 1) ∧
+    air.cols.abs_rem_alu_event row 0 = (if (air.cols.remainder_3 row 0).val < 128 then 0 else 1) ∧
+    air.cols.abs_c_alu_event row 0 = (if (air.cols.c_3 row 0).val < 128 then 0 else 1) ∧
+    air.cols.is_overflow row 0 = (if air.cols.b_0 row 0 = 0 ∧ air.cols.b_1 row 0 = 0 ∧ air.cols.b_2 row 0 = 0 ∧ air.cols.b_3 row 0 = 128 ∧ air.cols.c_0 row 0 = 255 ∧ air.cols.c_1 row 0 = 255 ∧ air.cols.c_2 row 0 = 255 ∧ air.cols.c_3 row 0 = 255 then 1 else 0)
+  := by
+    simp [bus_row_wf_asm] at h_wf
+    obtain ⟨ u0, asm_alu, asm_byte, u1, u2 ⟩ := h_wf; clear u0 u1 u2
+    simp [bus_row, ByteBus.Spec, h_is_real, and_assoc] at asm_byte
+    obtain ⟨ eq_b_msb, u0, u1, eq_c_msb, u2, u3, eq_rem_msb, u4, u5,
+             ub_q0, ub_q1, ub_q2, ub_q3, ub_r0, ub_r1, ub_r2, ub_r3,
+             rest ⟩ := asm_byte
+    clear u0 u1 u2 u3 u4 u5 rest
+
+    have relevant_constraints :
+      constraint_0 air row ∧ constraint_1 air row ∧ constraint_2 air row ∧
+      constraint_106 air row ∧ constraint_107 air row
+    := by simp [allHold_simplified] at h_constraints; clear *- h_constraints; aesop
+    simp [
+      pico_encapsulation,
+      constraint_and_interaction_simplification,
+      sub_eq_zero,
+      Fin.lt_def,
+      *
+    ] at relevant_constraints
+    obtain ⟨ eq_b_neg, eq_rem_neg, eq_c_neg, eq_c_alu, eq_rem_alu ⟩ := relevant_constraints
+    symm at eq_b_neg eq_rem_neg eq_c_neg
+    simp_all
+    have relevant_constraints :
+      constraint_4 air row ∧ constraint_5 air row ∧ constraint_6 air row ∧ constraint_7 air row ∧ constraint_8 air row ∧ constraint_9 air row ∧ constraint_10 air row ∧ constraint_11 air row ∧ constraint_12 air row ∧ constraint_13 air row ∧
+      constraint_14 air row ∧ constraint_15 air row ∧ constraint_16 air row ∧ constraint_17 air row ∧ constraint_18 air row ∧ constraint_19 air row ∧ constraint_20 air row ∧ constraint_21 air row ∧ constraint_22 air row ∧ constraint_23 air row ∧
+      constraint_24 air row ∧ constraint_25 air row ∧ constraint_26 air row ∧ constraint_27 air row ∧ constraint_28 air row ∧ constraint_29 air row ∧ constraint_30 air row ∧ constraint_31 air row ∧ constraint_32 air row ∧ constraint_33 air row ∧
+      constraint_34 air row ∧ constraint_35 air row ∧ constraint_36 air row ∧ constraint_37 air row ∧ constraint_38 air row ∧ constraint_39 air row ∧ constraint_40 air row ∧ constraint_41 air row ∧ constraint_42 air row ∧ constraint_43 air row ∧
+      constraint_120 air row
+    := by simp [allHold_simplified] at h_constraints; clear *- h_constraints; aesop
+    simp [
+      pico_encapsulation,
+      constraint_and_interaction_simplification,
+      sub_eq_zero,
+      h_is_real,
+      h_is_signed
+    ] at relevant_constraints
+    split_ifs with h_overflow
+    . grind
+    . by_contra h_no_overflow
+      apply h_overflow; clear h_overflow
+      simp [h_no_overflow] at relevant_constraints
+      clear *- relevant_constraints
+      grind
+
+  lemma helpers_general {ExtF}
+    [Field ExtF]
+    (air : Valid_DivRemAir FKB ExtF)
+    (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_constraints : DivRemAir.Extraction.allHold air row)
+  :
+    air.cols.is_c_0.result row 0 = (if air.cols.c_0 row 0 = 0 ∧ air.cols.c_1 row 0 = 0 ∧ air.cols.c_2 row 0 = 0 ∧ air.cols.c_3 row 0 = 0 then 1 else 0) ∧
+    air.cols.remainder_check_multiplicity row 0 = (if air.cols.c_0 row 0 = 0 ∧ air.cols.c_1 row 0 = 0 ∧ air.cols.c_2 row 0 = 0 ∧ air.cols.c_3 row 0 = 0 then 0 else 1)
+  := by
+    have h_eq_is_c_zero : air.cols.is_c_0.result row 0 = if air.cols.c_0 row 0 = 0 ∧ air.cols.c_1 row 0 = 0 ∧ air.cols.c_2 row 0 = 0 ∧ air.cols.c_3 row 0 = 0 then 1 else 0
+    := by
+      have relevant_constraints :
+        constraint_70 air row ∧ constraint_71 air row ∧ constraint_72 air row ∧ constraint_73 air row ∧
+        constraint_74 air row ∧ constraint_75 air row ∧ constraint_76 air row ∧ constraint_77 air row ∧
+        constraint_78 air row ∧ constraint_79 air row ∧ constraint_80 air row ∧ constraint_81 air row ∧
+        constraint_83 air row ∧ constraint_84 air row ∧ constraint_85 air row ∧ constraint_86 air row ∧
+        constraint_87 air row ∧ constraint_88 air row
+      := by simp [allHold_simplified] at h_constraints; clear *- h_constraints; aesop
+      simp [
+        pico_encapsulation,
+        constraint_and_interaction_simplification,
+        sub_eq_zero,
+        h_is_real
+      ] at relevant_constraints
+      split_ifs with h_c_zero
+      . grind
+      . by_contra h_cnz
+        apply h_c_zero; clear h_c_zero
+        simp [h_cnz] at relevant_constraints
+        clear *- relevant_constraints
+        grind
+    simp [h_eq_is_c_zero]
+    have relevant_constraints : constraint_105 air row
+    := by simp [allHold_simplified] at h_constraints; clear *- h_constraints; aesop
+    simp [
+      pico_encapsulation,
+      constraint_and_interaction_simplification,
+      sub_eq_zero,
+      h_is_real,
+      h_eq_is_c_zero
+    ] at relevant_constraints
+    clear *- relevant_constraints; grind
+
+end DivRemAir.Interpretations

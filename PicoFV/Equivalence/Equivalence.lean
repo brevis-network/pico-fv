@@ -211,7 +211,7 @@ namespace Equivalence
 
   section RTYPE
 
-    lemma equivalence_ADD
+    theorem equivalence_ADD
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -231,7 +231,7 @@ namespace Equivalence
     := by
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -336,7 +336,7 @@ namespace Equivalence
       clear *- h_axioms relevant_constraints
       simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_SUB
+    theorem equivalence_SUB
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -356,7 +356,7 @@ namespace Equivalence
     := by
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -461,7 +461,7 @@ namespace Equivalence
       clear *- h_axioms relevant_constraints
       simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_XOR
+    theorem equivalence_XOR
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -481,7 +481,7 @@ namespace Equivalence
     := by
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -586,7 +586,7 @@ namespace Equivalence
       clear *- h_axioms relevant_constraints
       simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_OR
+    theorem equivalence_OR
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -606,7 +606,7 @@ namespace Equivalence
     := by
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -711,7 +711,7 @@ namespace Equivalence
       clear *- h_axioms relevant_constraints
       simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_AND
+    theorem equivalence_AND
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -731,7 +731,7 @@ namespace Equivalence
     := by
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -836,7 +836,7 @@ namespace Equivalence
       clear *- h_axioms relevant_constraints
       simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_SLL
+    theorem equivalence_SLL
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -857,7 +857,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -961,7 +961,7 @@ namespace Equivalence
         clear *- h_axioms relevant_constraints
         simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_SRL
+    theorem equivalence_SRL
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -982,7 +982,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1087,7 +1087,7 @@ namespace Equivalence
       clear *- h_axioms relevant_constraints
       simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_SRA
+    theorem equivalence_SRA
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -1108,7 +1108,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1213,7 +1213,7 @@ namespace Equivalence
       clear *- h_axioms relevant_constraints
       simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_SLT
+    theorem equivalence_SLT
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -1234,7 +1234,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1341,7 +1341,7 @@ namespace Equivalence
         clear *- h_axioms relevant_constraints
         simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_SLTU
+    theorem equivalence_SLTU
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -1362,7 +1362,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1473,7 +1473,7 @@ namespace Equivalence
 
   section ITYPE
 
-    lemma equivalence_ADDI
+    theorem equivalence_ADDI
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -1496,7 +1496,7 @@ namespace Equivalence
     := by
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1612,7 +1612,7 @@ namespace Equivalence
         clear *- h_axioms relevant_constraints
         simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_XORI
+    theorem equivalence_XORI
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -1635,7 +1635,7 @@ namespace Equivalence
     := by
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1751,7 +1751,7 @@ namespace Equivalence
         clear *- h_axioms relevant_constraints
         simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_ORI
+    theorem equivalence_ORI
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -1774,7 +1774,7 @@ namespace Equivalence
     := by
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -1890,7 +1890,7 @@ namespace Equivalence
         clear *- h_axioms relevant_constraints
         simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_ANDI
+    theorem equivalence_ANDI
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -1913,7 +1913,7 @@ namespace Equivalence
     := by
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2029,7 +2029,7 @@ namespace Equivalence
         clear *- h_axioms relevant_constraints
         simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_SLTI
+    theorem equivalence_SLTI
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -2053,7 +2053,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2173,7 +2173,7 @@ namespace Equivalence
         clear *- h_axioms relevant_constraints
         simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_SLTIU
+    theorem equivalence_SLTIU
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -2197,7 +2197,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2321,7 +2321,7 @@ namespace Equivalence
 
   section SHIFTIOP
 
-    lemma equivalence_SLLI
+    theorem equivalence_SLLI
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -2345,7 +2345,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2446,7 +2446,7 @@ namespace Equivalence
       clear *- h_axioms relevant_constraints
       simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_SRLI
+    theorem equivalence_SRLI
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -2470,7 +2470,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2571,7 +2571,7 @@ namespace Equivalence
       clear *- h_axioms relevant_constraints
       simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_SRAI
+    theorem equivalence_SRAI
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -2595,7 +2595,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2700,7 +2700,7 @@ namespace Equivalence
 
   section MUL
 
-    lemma equivalence_MUL
+    theorem equivalence_MUL
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -2721,7 +2721,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2825,7 +2825,7 @@ namespace Equivalence
         clear *- h_axioms relevant_constraints
         simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_MULH
+    theorem equivalence_MULH
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -2846,7 +2846,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -2950,7 +2950,7 @@ namespace Equivalence
         clear *- h_axioms relevant_constraints
         simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_MULHU
+    theorem equivalence_MULHU
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -2971,7 +2971,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -3075,7 +3075,7 @@ namespace Equivalence
         clear *- h_axioms relevant_constraints
         simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_MULHSU
+    theorem equivalence_MULHSU
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -3096,7 +3096,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -3204,7 +3204,7 @@ namespace Equivalence
 
   section DIV
 
-    lemma equivalence_DIV
+    theorem equivalence_DIV
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -3225,7 +3225,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -3329,7 +3329,7 @@ namespace Equivalence
         clear *- h_axioms relevant_constraints
         simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_DIVU
+    theorem equivalence_DIVU
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -3350,7 +3350,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -3458,7 +3458,7 @@ namespace Equivalence
 
   section REM
 
-    lemma equivalence_REM
+    theorem equivalence_REM
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -3479,7 +3479,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -3583,7 +3583,7 @@ namespace Equivalence
         clear *- h_axioms relevant_constraints
         simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_REMU
+    theorem equivalence_REMU
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -3604,7 +3604,7 @@ namespace Equivalence
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -3712,14 +3712,14 @@ namespace Equivalence
 
   section BTYPE
 
-    lemma equivalence_BEQ
+    theorem equivalence_BEQ
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 18)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -3736,14 +3736,14 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -3802,7 +3802,7 @@ namespace Equivalence
       have h_is_branching : air.cols.is_branch_instruction row 0 = 1
         := by simp [Valid_CpuCols.is_branch_instruction, h_selectors]
       -- Previous a-equalities
-      have h_prev_eq := a_unchanged air row h_is_real (h_all_assumptions row h_row) h_constraints (by left; exact h_is_branching)
+      have h_prev_eq := a_unchanged air row h_is_real (h_all_wf row h_row) h_constraints (by left; exact h_is_branching)
       -- C-value equalities
       have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
       -- Branching is boolean
@@ -3842,15 +3842,15 @@ namespace Equivalence
           h_selectors
         ] at relevant_constraints
         obtain ⟨ h_a_eq_b, h_lt_gt, h_eq_0, h_eq_1, h_eq_2, h_eq_3 ⟩ := relevant_constraints
-        have h_lt := branch_instruction_a_lt_b air row h_is_real (h_all_assumptions row (by omega)) h_constraints h_is_branching
-        have h_gt := branch_instruction_a_gt_b air row h_is_real (h_all_assumptions row (by omega)) h_constraints h_is_branching
+        have h_lt := branch_instruction_a_lt_b air row h_is_real (h_all_wf row (by omega)) h_constraints h_is_branching
+        have h_gt := branch_instruction_a_gt_b air row h_is_real (h_all_wf row (by omega)) h_constraints h_is_branching
         simp [h_selectors] at h_lt h_gt
         simp [← BitVec.toNat_inj]
         split_ifs at h_lt <;> split_ifs at h_gt <;> simp_all <;>
         rcases h_b_branching <;> simp_all <;> omega
       -- Program counter characterisation
-      have h_branching_pc := branching_pc air row (h_all_assumptions row h_row) h_constraints h_is_branching
-      have h_branching_next_pc := branching_next_pc air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_branching_pc := branching_pc air row (h_all_wf row h_row) h_constraints h_is_branching
+      have h_branching_next_pc := branching_next_pc air row h_is_real (h_all_wf row h_row) h_constraints h_is_branching
       have h_non_branching_npc := not_branching_next_pc air row h_is_real (h_all_axioms row h_row) h_constraints h_is_branching
       -- Proof
       extract_lets reg1 reg2 imm'
@@ -3910,16 +3910,16 @@ namespace Equivalence
         ]
         rw [← h_asm_alu.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_wf (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
-    lemma equivalence_BNE
+    theorem equivalence_BNE
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 19)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -3936,13 +3936,13 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -4001,7 +4001,7 @@ namespace Equivalence
       have h_is_branching : air.cols.is_branch_instruction row 0 = 1
         := by simp [Valid_CpuCols.is_branch_instruction, h_selectors]
       -- Previous a-equalities
-      have h_prev_eq := a_unchanged air row h_is_real (h_all_assumptions row h_row) h_constraints (by left; exact h_is_branching)
+      have h_prev_eq := a_unchanged air row h_is_real (h_all_wf row h_row) h_constraints (by left; exact h_is_branching)
       -- C-value equalities
       have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
       -- Branching is boolean
@@ -4041,15 +4041,15 @@ namespace Equivalence
           h_selectors
         ] at relevant_constraints
         obtain ⟨ h_a_eq_b, h_lt_gt, h_eq_0, h_eq_1, h_eq_2, h_eq_3 ⟩ := relevant_constraints
-        have h_lt := branch_instruction_a_lt_b air row h_is_real (h_all_assumptions row (by omega)) h_constraints h_is_branching
-        have h_gt := branch_instruction_a_gt_b air row h_is_real (h_all_assumptions row (by omega)) h_constraints h_is_branching
+        have h_lt := branch_instruction_a_lt_b air row h_is_real (h_all_wf row (by omega)) h_constraints h_is_branching
+        have h_gt := branch_instruction_a_gt_b air row h_is_real (h_all_wf row (by omega)) h_constraints h_is_branching
         simp [h_selectors] at h_lt h_gt
         simp [← BitVec.toNat_inj]
         split_ifs at h_lt <;> split_ifs at h_gt <;> simp_all <;>
         rcases h_b_branching <;> simp_all <;> omega
       -- Program counter characterisation
-      have h_branching_pc := branching_pc air row (h_all_assumptions row h_row) h_constraints h_is_branching
-      have h_branching_next_pc := branching_next_pc air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_branching_pc := branching_pc air row (h_all_wf row h_row) h_constraints h_is_branching
+      have h_branching_next_pc := branching_next_pc air row h_is_real (h_all_wf row h_row) h_constraints h_is_branching
       have h_non_branching_npc := not_branching_next_pc air row h_is_real (h_all_axioms row h_row) h_constraints h_is_branching
       -- Proof
       extract_lets reg1 reg2 imm'
@@ -4108,16 +4108,16 @@ namespace Equivalence
         ]
         rw [← h_asm_alu.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_wf (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
-    lemma equivalence_BLT
+    theorem equivalence_BLT
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 20)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -4134,13 +4134,13 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -4199,7 +4199,7 @@ namespace Equivalence
       have h_is_branching : air.cols.is_branch_instruction row 0 = 1
         := by simp [Valid_CpuCols.is_branch_instruction, h_selectors]
       -- Previous a-equalities
-      have h_prev_eq := a_unchanged air row h_is_real (h_all_assumptions row h_row) h_constraints (by left; exact h_is_branching)
+      have h_prev_eq := a_unchanged air row h_is_real (h_all_wf row h_row) h_constraints (by left; exact h_is_branching)
       -- C-value equalities
       have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
       -- Branching is boolean
@@ -4239,15 +4239,15 @@ namespace Equivalence
           h_selectors
         ] at relevant_constraints
         obtain ⟨ h_a_eq_b, h_lt_gt, h_eq_0, h_eq_1, h_eq_2, h_eq_3 ⟩ := relevant_constraints
-        have h_lt := branch_instruction_a_lt_b air row h_is_real (h_all_assumptions row (by omega)) h_constraints h_is_branching
-        have h_gt := branch_instruction_a_gt_b air row h_is_real (h_all_assumptions row (by omega)) h_constraints h_is_branching
+        have h_lt := branch_instruction_a_lt_b air row h_is_real (h_all_wf row (by omega)) h_constraints h_is_branching
+        have h_gt := branch_instruction_a_gt_b air row h_is_real (h_all_wf row (by omega)) h_constraints h_is_branching
         simp [h_selectors] at h_lt h_gt
         split_ifs at h_lt with h_if_lt <;> split_ifs at h_gt with h_if_gt <;> simp_all
         . clear *- h_if_lt h_if_gt; omega
         . rcases h_lt_gt <;> simp_all
       -- Program counter characterisation
-      have h_branching_pc := branching_pc air row (h_all_assumptions row h_row) h_constraints h_is_branching
-      have h_branching_next_pc := branching_next_pc air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_branching_pc := branching_pc air row (h_all_wf row h_row) h_constraints h_is_branching
+      have h_branching_next_pc := branching_next_pc air row h_is_real (h_all_wf row h_row) h_constraints h_is_branching
       have h_non_branching_npc := not_branching_next_pc air row h_is_real (h_all_axioms row h_row) h_constraints h_is_branching
       -- Proof
       extract_lets reg1 reg2 imm'
@@ -4309,16 +4309,16 @@ namespace Equivalence
         ]
         rw [← h_asm_alu.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_wf (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
-    lemma equivalence_BGE
+    theorem equivalence_BGE
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 21)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -4335,13 +4335,13 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -4400,7 +4400,7 @@ namespace Equivalence
       have h_is_branching : air.cols.is_branch_instruction row 0 = 1
         := by simp [Valid_CpuCols.is_branch_instruction, h_selectors]
       -- Previous a-equalities
-      have h_prev_eq := a_unchanged air row h_is_real (h_all_assumptions row h_row) h_constraints (by left; exact h_is_branching)
+      have h_prev_eq := a_unchanged air row h_is_real (h_all_wf row h_row) h_constraints (by left; exact h_is_branching)
       -- C-value equalities
       have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
       -- Branching is boolean
@@ -4440,15 +4440,15 @@ namespace Equivalence
           h_selectors
         ] at relevant_constraints
         obtain ⟨ h_a_eq_b, h_lt_gt, h_eq_0, h_eq_1, h_eq_2, h_eq_3 ⟩ := relevant_constraints
-        have h_lt := branch_instruction_a_lt_b air row h_is_real (h_all_assumptions row (by omega)) h_constraints h_is_branching
-        have h_gt := branch_instruction_a_gt_b air row h_is_real (h_all_assumptions row (by omega)) h_constraints h_is_branching
+        have h_lt := branch_instruction_a_lt_b air row h_is_real (h_all_wf row (by omega)) h_constraints h_is_branching
+        have h_gt := branch_instruction_a_gt_b air row h_is_real (h_all_wf row (by omega)) h_constraints h_is_branching
         simp [h_selectors] at h_lt h_gt
         split_ifs at h_lt with h_if_lt <;> split_ifs at h_gt with h_if_gt <;> simp_all
         . clear *- h_if_lt h_if_gt; omega
         . rcases h_a_eq_b <;> simp_all
       -- Program counter characterisation
-      have h_branching_pc := branching_pc air row (h_all_assumptions row h_row) h_constraints h_is_branching
-      have h_branching_next_pc := branching_next_pc air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_branching_pc := branching_pc air row (h_all_wf row h_row) h_constraints h_is_branching
+      have h_branching_next_pc := branching_next_pc air row h_is_real (h_all_wf row h_row) h_constraints h_is_branching
       have h_non_branching_npc := not_branching_next_pc air row h_is_real (h_all_axioms row h_row) h_constraints h_is_branching
       -- Proof
       extract_lets reg1 reg2 imm'
@@ -4510,16 +4510,16 @@ namespace Equivalence
         ]
         rw [← h_asm_alu.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_wf (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
-    lemma equivalence_BLTU
+    theorem equivalence_BLTU
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 22)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -4536,13 +4536,13 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -4601,7 +4601,7 @@ namespace Equivalence
       have h_is_branching : air.cols.is_branch_instruction row 0 = 1
         := by simp [Valid_CpuCols.is_branch_instruction, h_selectors]
       -- Previous a-equalities
-      have h_prev_eq := a_unchanged air row h_is_real (h_all_assumptions row h_row) h_constraints (by left; exact h_is_branching)
+      have h_prev_eq := a_unchanged air row h_is_real (h_all_wf row h_row) h_constraints (by left; exact h_is_branching)
       -- C-value equalities
       have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
       -- Branching is boolean
@@ -4641,15 +4641,15 @@ namespace Equivalence
           h_selectors
         ] at relevant_constraints
         obtain ⟨ h_a_eq_b, h_lt_gt, h_eq_0, h_eq_1, h_eq_2, h_eq_3 ⟩ := relevant_constraints
-        have h_lt := branch_instruction_a_lt_b air row h_is_real (h_all_assumptions row (by omega)) h_constraints h_is_branching
-        have h_gt := branch_instruction_a_gt_b air row h_is_real (h_all_assumptions row (by omega)) h_constraints h_is_branching
+        have h_lt := branch_instruction_a_lt_b air row h_is_real (h_all_wf row (by omega)) h_constraints h_is_branching
+        have h_gt := branch_instruction_a_gt_b air row h_is_real (h_all_wf row (by omega)) h_constraints h_is_branching
         simp [h_selectors] at h_lt h_gt
         split_ifs at h_lt with h_if_lt <;> split_ifs at h_gt with h_if_gt <;> simp_all
         . clear *- h_if_lt h_if_gt; omega
         . rcases h_lt_gt <;> simp_all
       -- Program counter characterisation
-      have h_branching_pc := branching_pc air row (h_all_assumptions row h_row) h_constraints h_is_branching
-      have h_branching_next_pc := branching_next_pc air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_branching_pc := branching_pc air row (h_all_wf row h_row) h_constraints h_is_branching
+      have h_branching_next_pc := branching_next_pc air row h_is_real (h_all_wf row h_row) h_constraints h_is_branching
       have h_non_branching_npc := not_branching_next_pc air row h_is_real (h_all_axioms row h_row) h_constraints h_is_branching
       -- Proof
       extract_lets reg1 reg2 imm'
@@ -4711,16 +4711,16 @@ namespace Equivalence
         ]
         rw [← h_asm_alu.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_wf (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
-    lemma equivalence_BGEU
+    theorem equivalence_BGEU
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 23)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -4737,13 +4737,13 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -4802,7 +4802,7 @@ namespace Equivalence
       have h_is_branching : air.cols.is_branch_instruction row 0 = 1
         := by simp [Valid_CpuCols.is_branch_instruction, h_selectors]
       -- Previous a-equalities
-      have h_prev_eq := a_unchanged air row h_is_real (h_all_assumptions row h_row) h_constraints (by left; exact h_is_branching)
+      have h_prev_eq := a_unchanged air row h_is_real (h_all_wf row h_row) h_constraints (by left; exact h_is_branching)
       -- C-value equalities
       have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
       -- Branching is boolean
@@ -4842,15 +4842,15 @@ namespace Equivalence
           h_selectors
         ] at relevant_constraints
         obtain ⟨ h_a_eq_b, h_lt_gt, h_eq_0, h_eq_1, h_eq_2, h_eq_3 ⟩ := relevant_constraints
-        have h_lt := branch_instruction_a_lt_b air row h_is_real (h_all_assumptions row (by omega)) h_constraints h_is_branching
-        have h_gt := branch_instruction_a_gt_b air row h_is_real (h_all_assumptions row (by omega)) h_constraints h_is_branching
+        have h_lt := branch_instruction_a_lt_b air row h_is_real (h_all_wf row (by omega)) h_constraints h_is_branching
+        have h_gt := branch_instruction_a_gt_b air row h_is_real (h_all_wf row (by omega)) h_constraints h_is_branching
         simp [h_selectors] at h_lt h_gt
         split_ifs at h_lt with h_if_lt <;> split_ifs at h_gt with h_if_gt <;> simp_all
         . clear *- h_if_lt h_if_gt; omega
         . rcases h_a_eq_b <;> simp_all
       -- Program counter characterisation
-      have h_branching_pc := branching_pc air row (h_all_assumptions row h_row) h_constraints h_is_branching
-      have h_branching_next_pc := branching_next_pc air row h_is_real (h_all_assumptions row h_row) h_constraints h_is_branching
+      have h_branching_pc := branching_pc air row (h_all_wf row h_row) h_constraints h_is_branching
+      have h_branching_next_pc := branching_next_pc air row h_is_real (h_all_wf row h_row) h_constraints h_is_branching
       have h_non_branching_npc := not_branching_next_pc air row h_is_real (h_all_axioms row h_row) h_constraints h_is_branching
       -- Proof
       extract_lets reg1 reg2 imm'
@@ -4912,34 +4912,20 @@ namespace Equivalence
         ]
         rw [← h_asm_alu.2.2]
         simp [← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_wf (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
   end BTYPE
 
-  instance : LawfulBEq regidx where
-    rfl := by intro ⟨ op, pf ⟩; simp at pf; interval_cases op <;> rfl
-    eq_of_beq := by
-      intro ⟨ op₁, pf₁ ⟩ ⟨ op₂, pf₂ ⟩
-      simp at pf₁ pf₂
-      interval_cases op₁ <;> interval_cases op₂ <;> simp <;> rfl
-
   section JTYPE
 
-    instance : LawfulBEq regidx where
-      rfl := by intro ⟨ op, pf ⟩; simp at pf; interval_cases op <;> rfl
-      eq_of_beq := by
-        intro ⟨ op₁, pf₁ ⟩ ⟨ op₂, pf₂ ⟩
-        simp at pf₁ pf₂
-        interval_cases op₁ <;> interval_cases op₂ <;> simp
-
-    lemma equivalence_JAL
+    theorem equivalence_JAL
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 24)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -4955,14 +4941,14 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -5046,9 +5032,9 @@ namespace Equivalence
         simp [allHold_simplified] at h_constraints; aesop
       simp [constraint_and_interaction_simplification, cpu_jump_cols_simplification, h_selectors, h_is_real] at h_constraint_80 h_constraint_81 h_constraint_83
       -- Auxiliaries
-      have h_jpc_eq := jal_pc air row (h_all_assumptions row h_row) h_constraints
+      have h_jpc_eq := jal_pc air row (h_all_wf row h_row) h_constraints
           (by simp [h_selectors])
-      have h_jnpc_eq := jump_next_pc air row h_is_real (h_all_assumptions row h_row) h_constraints
+      have h_jnpc_eq := jump_next_pc air row h_is_real (h_all_wf row h_row) h_constraints
       have h_alu := h_asm_alu_jal.2.2
       clear h_asm_alu h_asm_alu_jal
       -- BitVec extension
@@ -5104,7 +5090,7 @@ namespace Equivalence
             regidx_to_fin
           ]
         . rw [jump_pc_plus_four air row h_is_real
-                (h_all_assumptions row h_row)
+                (h_all_wf row h_row)
                 (by simp; exact (h_all_constraints row h_row))
                 (by simp [Valid_CpuCols.is_jump_instruction, h_selectors])
                 h_nx0
@@ -5114,17 +5100,17 @@ namespace Equivalence
       . obtain ⟨ h_eq_b0, h_eq_b1, h_eq_b2, h_eq_b3 ⟩ := h_b_val_eq
         simp_all [ALUBus.Spec, Transpiler.imm_to_KB_BV_sgn, sub_eq_zero]
         simp [← h_alu.2.2, ← BitVec.toNat_inj]
-        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions
+        exact next_pc_mod_four_eq_zero air h_all_axioms h_all_wf
           (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
 
-    lemma equivalence_JALR
+    theorem equivalence_JALR
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_assumptions : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
       (h_opcode : air.cols.instruction.opcode = 25)
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
@@ -5141,14 +5127,14 @@ namespace Equivalence
       (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
-      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_assumptions row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
       have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
       have operand_ranges := operand_range air row h_is_real h_wf h_constraints
       -- Axioms
       simp [ bus_row_axioms, bus_row ] at h_axioms
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Program bus assumptions
       simp [
         bus_row,
@@ -5262,10 +5248,10 @@ namespace Equivalence
         -- Rewrite using ALU equality
         rw [← h_alu.2]
         -- Establish jump_next_pc_bv = next_pc_bv and mask identity
-        have h_jnpc_eq := jump_next_pc air row h_is_real (h_all_assumptions row h_row) (by simp; exact h_all_constraints row h_row) h_is_jump
+        have h_jnpc_eq := jump_next_pc air row h_is_real (h_all_wf row h_row) (by simp; exact h_all_constraints row h_row) h_is_jump
         rw [h_jnpc_eq]
         -- Mask &&& next_pc = next_pc (since next_pc % 4 = 0)
-        have h_mod4 := next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions
+        have h_mod4 := next_pc_mod_four_eq_zero air h_all_axioms h_all_wf
             (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
         have h_mask_eq : 4294967294#32 &&& BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
             = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega) := by
@@ -5291,7 +5277,7 @@ namespace Equivalence
             rw [show (rd' == regidx.Regidx 0#5) = false from beq_eq_false_iff_ne.mpr h_x0]
             simp
           rw [jump_pc_plus_four air row h_is_real
-                (h_all_assumptions row h_row)
+                (h_all_wf row h_row)
                 (by simp; exact (h_all_constraints row h_row))
                 (by simp [Valid_CpuCols.is_jump_instruction, h_selectors])
                 h_a_not_0]
@@ -5306,10 +5292,10 @@ namespace Equivalence
         -- Rewrite to jump_next_pc_bv using ALU equality
         simp [← h_alu.2]
         -- Establish jump_next_pc_bv = next_pc_bv
-        have h_jnpc_eq := jump_next_pc air row h_is_real (h_all_assumptions row h_row) (by simp; exact h_all_constraints row h_row) h_is_jump
+        have h_jnpc_eq := jump_next_pc air row h_is_real (h_all_wf row h_row) (by simp; exact h_all_constraints row h_row) h_is_jump
         simp [h_jnpc_eq]
         -- BitVec.ofBool next_pc_bv[1] = 0#1
-        have h_mod4 := next_pc_mod_four_eq_zero air h_all_axioms h_all_assumptions
+        have h_mod4 := next_pc_mod_four_eq_zero air h_all_axioms h_all_wf
             (by simp; exact h_all_constraints) row h_row h_is_real pico_assumptions
         have h_bit1 : (BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega))[1] = false := by
           simp [BitVec.getElem_eq_testBit_toNat, BitVec.toNat_ofNatLT, Nat.testBit]; omega
@@ -5319,7 +5305,7 @@ namespace Equivalence
 
   section UTYPE
 
-    lemma equivalence_LUI
+    theorem equivalence_LUI
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -5341,7 +5327,7 @@ namespace Equivalence
     := by
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -5444,7 +5430,7 @@ namespace Equivalence
         clear *- h_axioms relevant_constraints
         simp [← BitVec.toNat_inj]; grind
 
-    lemma equivalence_AUIPC
+    theorem equivalence_AUIPC
       [Field ExtF]
       (air : Valid_CpuAir FKB ExtF)
       (row : ℕ)
@@ -5467,7 +5453,7 @@ namespace Equivalence
       have h_auipc_pc := auipc_pc air row h_wf h_constraints
       -- General assumptions
       simp [ bus_row_wf_asm ] at h_wf
-      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg ⟩ := h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
       -- Recover program bus assumptions
       simp [
         bus_row,
@@ -5574,5 +5560,1444 @@ namespace Equivalence
         simp [← BitVec.toNat_inj]; grind
 
   end UTYPE
+
+  section Memory
+
+    theorem equivalence_LB
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
+      (h_opcode : air.cols.instruction.opcode = 10)
+      (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      let rd : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
+      let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
+      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
+      execute_instruction (instruction.LOAD (imm, rs1, rd, false, 1)) state =
+      (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_ext : bus_row_ext_asm (bus_row air row) := by specialize h_all_ext row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
+      -- Axioms
+      simp [ bus_row_axioms, bus_row ] at h_axioms
+      -- General assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
+      -- Program bus assumptions
+      simp [
+        bus_row,
+        h_is_real,
+        ProgramBusEntry.operand_properties,
+        -Vector.getElem_mk,
+        -ProgramBusEntry.mk.injEq
+      ] at h_asm_prog
+      obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_asm_prog
+      have h_eq_mult : mult = -1 := by aesop
+      subst mult
+      have h_opcode_props
+        := @ProgramBusEntry.operand_properties_inversion
+            instr
+            ⟨ -1, data ⟩
+            props
+            (ProgramBusEntry.deserialise (program_bus_entry air row))
+            (by simp [h_eq, h_is_real])
+            (by simp [h_is_real]; aesop)
+      simp [h_opcode] at h_opcode_props
+      obtain ⟨ imm, rs1, rd, h_eq_instr ⟩ := h_opcode_props
+      subst instr; simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
+      obtain ⟨ h_eq_data, h_eq_props ⟩ := h_eq
+      subst data; simp at h_eq_entry
+      obtain ⟨ h_opcode',
+              h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3,
+              h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
+      simp [h_props] at h_eq_props; clear h_props
+      simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
+      obtain ⟨ h_reg_rd, h_reg_rs1 ⟩ := h_eq_props
+      -- Hypotheses
+      simp [
+        bus_operations,
+        bus_row,
+        h_is_real,
+        h_opcode,
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
+      ] at h_bus_hypotheses
+      obtain ⟨ h_pc, h_rs1, h_rd ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_rs1] at h_rd
+      obtain ⟨ h_rd, h_mem ⟩ := h_rd
+      simp [BitVec.ofNatLT_eq_ofNat] at h_rs1 h_reg_rd
+      simp [operation_list_effect, operation_effect] at h_mem
+      -- C-value equalities
+      have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
+      -- Memory hypotheses
+      simp [
+        bus_row,
+        MemoryBus.Spec,
+        Valid_CpuCols.is_memory_instruction,
+        h_opcode,
+        h_selectors
+      ] at h_asm_mem
+      obtain ⟨ ub_av, ub_addr, h_sign_extend ⟩ := h_asm_mem
+      simp [h_c_val_eq] at h_mem ub_addr
+      simp [h_c0, h_c1, h_c2, h_c3] at h_mem ub_addr
+      rw [Transpiler.imm_to_KB_Nat_sgn] at h_mem ub_addr
+      -- Proof
+      extract_lets rd rs1 imm'
+      rw [
+        OpcodeSpec.RV32.execute_LB_equiv
+        (r1 := rs1) (rd := rd) (imm := imm')
+        (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
+        (r1_val :=
+          U32.toBV
+            #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
+        (data0 := BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0))
+        (misa := misa)
+        (state := state)
+      ]
+      . subst rs1 rd imm'
+        simp [
+          OpcodeSpec.RV32.spec_LB,
+          bus_operations,
+          bus_row,
+          h_is_real,
+          h_opcode,
+          h_selectors,
+          h_reg_rd,
+          h_reg_rs1
+        ]
+        simp [h_c_val_eq, h_c0, h_c1, h_c2, h_c3, Transpiler.imm_to_KB_Nat_sgn]
+        rw [operation_list_effect_state_writeReg_same]
+        . have eq_rd : BitVec.ofNat 5 (air.cols.instruction.a_0 row 0).val = BitVec.ofNatLT (w := 5) (air.cols.instruction.a_0 row 0).val (by omega)
+            := by simp [← BitVec.toNat_inj]; assumption
+          have eq_next_pc : BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega) + 4#32 = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
+          := by
+            simp [← BitVec.toNat_inj]
+            have relevant_constraints : constraint_229 air row ∧ constraint_231 air row
+              := by simp [allHold_simplified] at h_constraints; aesop
+            simp [
+              pico_encapsulation,
+              constraint_and_interaction_simplification,
+              sub_eq_zero,
+              h_is_real,
+              h_selectors
+            ] at relevant_constraints
+            obtain ⟨ is_seq, eq_npc ⟩ := relevant_constraints
+            omega
+          simp [eq_rd, eq_next_pc]
+          conv => rhs; simp [operation_list_effect_state_filter]
+          simp [operation_list_effect_state_swap_writePC_writeReg]
+          by_cases is_x0 : air.cols.instruction.a_0 row 0 = 0
+          . simp [
+              is_x0,
+              operation_list_effect,
+              operation_effect,
+              write_xreg,
+              regidx_to_fin
+            ]
+          . congr
+            rw [h_sign_extend]
+            . simp [BitVec.extend]
+            . rw [if_neg] at h_a_is_0
+              . assumption
+              . intro h_reg; apply is_x0
+                simp [h_a0, Transpiler.reg_to_KB, regidx_to_fin]
+                clear *- h_reg
+                obtain ⟨ rd, pf ⟩ := rd
+                simp_all
+        . trans; rotate_left; exact h_rs1
+          congr; omega
+      . split_ands
+        . simp
+        . assumption
+        . assumption
+        . subst imm'
+          simp [h_c_val_eq] at h_mem ⊢
+          simp [h_c0, h_c1, h_c2, h_c3] at h_mem ⊢
+          rw [Transpiler.imm_to_KB_BV_sgn]
+          rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+          omega
+      . assumption
+      . subst imm'
+        simp [h_c_val_eq] at ub_addr ⊢
+        simp [h_c0, h_c1, h_c2, h_c3] at ub_addr ⊢
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        omega
+
+    theorem equivalence_LH
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
+      (h_opcode : air.cols.instruction.opcode = 11)
+      (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      let rd : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
+      let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
+      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
+      execute_instruction (instruction.LOAD (imm, rs1, rd, false, 2)) state =
+      (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_ext : bus_row_ext_asm (bus_row air row) := by specialize h_all_ext row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
+      -- Axioms
+      simp [ bus_row_axioms, bus_row ] at h_axioms
+      -- General assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
+      -- Program bus assumptions
+      simp [
+        bus_row,
+        h_is_real,
+        ProgramBusEntry.operand_properties,
+        -Vector.getElem_mk,
+        -ProgramBusEntry.mk.injEq
+      ] at h_asm_prog
+      obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_asm_prog
+      have h_eq_mult : mult = -1 := by aesop
+      subst mult
+      have h_opcode_props
+        := @ProgramBusEntry.operand_properties_inversion
+            instr
+            ⟨ -1, data ⟩
+            props
+            (ProgramBusEntry.deserialise (program_bus_entry air row))
+            (by simp [h_eq, h_is_real])
+            (by simp [h_is_real]; aesop)
+      simp [h_opcode] at h_opcode_props
+      obtain ⟨ imm, rs1, rd, h_eq_instr ⟩ := h_opcode_props
+      subst instr; simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
+      obtain ⟨ h_eq_data, h_eq_props ⟩ := h_eq
+      subst data; simp at h_eq_entry
+      obtain ⟨ h_opcode',
+              h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3,
+              h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
+      simp [h_props] at h_eq_props; clear h_props
+      simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
+      obtain ⟨ h_reg_rd, h_reg_rs1 ⟩ := h_eq_props
+      -- Hypotheses
+      simp [
+        bus_operations,
+        bus_row,
+        h_is_real,
+        h_opcode,
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
+      ] at h_bus_hypotheses
+      obtain ⟨ h_pc, h_rs1, h_rd ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_rs1] at h_rd
+      obtain ⟨ h_rd, h_mem ⟩ := h_rd
+      simp [BitVec.ofNatLT_eq_ofNat] at h_rs1 h_reg_rd
+      simp [operation_list_effect, operation_effect, BitVec.extractLsb] at h_mem
+      rw [
+        BitVec.extractLsb'_append_eq_left,
+        BitVec.extractLsb'_append_eq_right
+      ] at h_mem
+      -- C-value equalities
+      have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
+      -- Memory hypotheses
+      simp [
+        bus_row,
+        MemoryBus.Spec,
+        Valid_CpuCols.is_memory_instruction,
+        h_opcode,
+        h_selectors
+      ] at h_asm_mem
+      obtain ⟨ ub_av, ub_addr, h_alignment, h_sign_extend ⟩ := h_asm_mem
+      simp [h_c_val_eq] at h_mem ub_addr h_alignment
+      simp [h_c0, h_c1, h_c2, h_c3] at h_mem ub_addr h_alignment
+      rw [Transpiler.imm_to_KB_Nat_sgn] at h_mem ub_addr h_alignment
+      -- Proof
+      extract_lets rd rs1 imm'
+      rw [
+        OpcodeSpec.RV32.execute_LH_equiv
+        (r1 := rs1) (rd := rd) (imm := imm')
+        (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
+        (r1_val :=
+          U32.toBV
+            #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
+        (data0 := BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0))
+        (data1 := BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0))
+        (misa := misa)
+        (state := state)
+      ]
+      . subst rs1 rd imm'
+        simp [
+          OpcodeSpec.RV32.spec_LH,
+          bus_operations,
+          bus_row,
+          h_is_real,
+          h_opcode,
+          h_selectors,
+          h_reg_rd,
+          h_reg_rs1
+        ]
+        simp [h_c_val_eq, h_c0, h_c1, h_c2, h_c3, Transpiler.imm_to_KB_Nat_sgn]
+        rw [operation_list_effect_state_writeReg_same]
+        . have eq_rd : BitVec.ofNat 5 (air.cols.instruction.a_0 row 0).val = BitVec.ofNatLT (w := 5) (air.cols.instruction.a_0 row 0).val (by omega)
+            := by simp [← BitVec.toNat_inj]; assumption
+          have eq_next_pc : BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega) + 4#32 = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
+          := by
+            simp [← BitVec.toNat_inj]
+            have relevant_constraints : constraint_229 air row ∧ constraint_231 air row
+              := by simp [allHold_simplified] at h_constraints; aesop
+            simp [
+              pico_encapsulation,
+              constraint_and_interaction_simplification,
+              sub_eq_zero,
+              h_is_real,
+              h_selectors
+            ] at relevant_constraints
+            obtain ⟨ is_seq, eq_npc ⟩ := relevant_constraints
+            omega
+          simp [eq_rd, eq_next_pc]
+          conv => rhs; simp [operation_list_effect_state_filter]
+          simp [operation_list_effect_state_swap_writePC_writeReg]
+          by_cases is_x0 : air.cols.instruction.a_0 row 0 = 0
+          . simp [
+              is_x0,
+              operation_list_effect,
+              operation_effect,
+              write_xreg,
+              regidx_to_fin
+            ]
+          . congr
+            rw [h_sign_extend]
+            . simp [BitVec.extend]
+            . rw [if_neg] at h_a_is_0
+              . assumption
+              . intro h_reg; apply is_x0
+                simp [h_a0, Transpiler.reg_to_KB, regidx_to_fin]
+                clear *- h_reg
+                obtain ⟨ rd, pf ⟩ := rd
+                simp_all
+        . trans; rotate_left; exact h_rs1
+          congr; omega
+      . simp [OpcodeSpec.RV32.spec_LH]
+        simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
+        subst rs1; simp [h_pc, h_rs1]
+        subst imm'
+        simp [h_c_val_eq] at h_mem ⊢
+        simp [h_c0, h_c1, h_c2, h_c3] at h_mem ⊢
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        simp [BitVec.extractLsb]
+        repeat rw [BitVec.extractLsb'_append_eq_ite]
+        simpa
+      . assumption
+      . subst imm'
+        simp [h_c_val_eq] at ub_addr ⊢
+        simp [h_c0, h_c1, h_c2, h_c3] at ub_addr ⊢
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        omega
+      . subst imm'
+        simp [h_c_val_eq]
+        simp [h_c0, h_c1, h_c2, h_c3]
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        omega
+
+    theorem equivalence_LW
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
+      (h_opcode : air.cols.instruction.opcode = 12)
+      (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      let rd : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
+      let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
+      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
+      execute_instruction (instruction.LOAD (imm, rs1, rd, true, 4)) state =
+      (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_ext : bus_row_ext_asm (bus_row air row) := by specialize h_all_ext row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
+      -- Axioms
+      simp [ bus_row_axioms, bus_row ] at h_axioms
+      -- General assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
+      -- Program bus assumptions
+      simp [
+        bus_row,
+        h_is_real,
+        ProgramBusEntry.operand_properties,
+        -Vector.getElem_mk,
+        -ProgramBusEntry.mk.injEq
+      ] at h_asm_prog
+      obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_asm_prog
+      have h_eq_mult : mult = -1 := by aesop
+      subst mult
+      have h_opcode_props
+        := @ProgramBusEntry.operand_properties_inversion
+            instr
+            ⟨ -1, data ⟩
+            props
+            (ProgramBusEntry.deserialise (program_bus_entry air row))
+            (by simp [h_eq, h_is_real])
+            (by simp [h_is_real]; aesop)
+      simp [h_opcode] at h_opcode_props
+      obtain ⟨ imm, rs1, rd, h_eq_instr ⟩ := h_opcode_props
+      subst instr; simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
+      obtain ⟨ h_eq_data, h_eq_props ⟩ := h_eq
+      subst data; simp at h_eq_entry
+      obtain ⟨ h_opcode',
+              h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3,
+              h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
+      simp [h_props] at h_eq_props; clear h_props
+      simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
+      obtain ⟨ h_reg_rd, h_reg_rs1 ⟩ := h_eq_props
+      -- Hypotheses
+      simp [
+        bus_operations,
+        bus_row,
+        h_is_real,
+        h_opcode,
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
+      ] at h_bus_hypotheses
+      obtain ⟨ h_pc, h_rs1, h_rd ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_rs1] at h_rd
+      obtain ⟨ h_rd, h_mem ⟩ := h_rd
+      simp [BitVec.ofNatLT_eq_ofNat] at h_rs1 h_reg_rd
+      simp [operation_list_effect, operation_effect, BitVec.extractLsb, U32.toBV] at h_mem
+      (repeat rw [BitVec.extractLsb'_append_eq_ite] at h_mem); simp at h_mem
+      -- C-value equalities
+      have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
+      -- Memory hypotheses
+      simp [
+        bus_row,
+        MemoryBus.Spec,
+        Valid_CpuCols.is_memory_instruction,
+        h_opcode,
+        h_selectors
+      ] at h_asm_mem
+      obtain ⟨ ub_av, ub_addr, h_alignment ⟩ := h_asm_mem
+      simp [h_c_val_eq] at h_mem ub_addr h_alignment
+      simp [h_c0, h_c1, h_c2, h_c3] at h_mem ub_addr h_alignment
+      rw [Transpiler.imm_to_KB_Nat_sgn] at h_mem ub_addr h_alignment
+      -- Proof
+      extract_lets rd rs1 imm'
+      rw [
+        OpcodeSpec.RV32.execute_LW_equiv
+        (r1 := rs1) (rd := rd) (imm := imm')
+        (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
+        (r1_val :=
+          U32.toBV
+            #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
+        (data0 := BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0))
+        (data1 := BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0))
+        (data2 := BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0))
+        (data3 := BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0))
+        (misa := misa)
+        (state := state)
+      ]
+      . subst rs1 rd imm'
+        simp [
+          OpcodeSpec.RV32.spec_LW,
+          bus_operations,
+          bus_row,
+          h_is_real,
+          h_opcode,
+          h_selectors,
+          h_reg_rd,
+          h_reg_rs1
+        ]
+        simp [h_c_val_eq, h_c0, h_c1, h_c2, h_c3, Transpiler.imm_to_KB_Nat_sgn]
+        rw [operation_list_effect_state_writeReg_same]
+        . have eq_rd : BitVec.ofNat 5 (air.cols.instruction.a_0 row 0).val = BitVec.ofNatLT (w := 5) (air.cols.instruction.a_0 row 0).val (by omega)
+            := by simp [← BitVec.toNat_inj]; assumption
+          have eq_next_pc : BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega) + 4#32 = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
+          := by
+            simp [← BitVec.toNat_inj]
+            have relevant_constraints : constraint_229 air row ∧ constraint_231 air row
+              := by simp [allHold_simplified] at h_constraints; aesop
+            simp [
+              pico_encapsulation,
+              constraint_and_interaction_simplification,
+              sub_eq_zero,
+              h_is_real,
+              h_selectors
+            ] at relevant_constraints
+            obtain ⟨ is_seq, eq_npc ⟩ := relevant_constraints
+            omega
+          simp [eq_rd, eq_next_pc]
+          conv => rhs; simp [operation_list_effect_state_filter]
+          simp [operation_list_effect_state_swap_writePC_writeReg]
+          by_cases is_x0 : air.cols.instruction.a_0 row 0 = 0
+          . simp [
+              is_x0,
+              operation_list_effect,
+              operation_effect,
+              write_xreg,
+              regidx_to_fin
+            ]
+          . congr
+        . trans; rotate_left; exact h_rs1
+          congr; omega
+      . simp [OpcodeSpec.RV32.spec_LW]
+        simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
+        subst rs1; simp [h_pc, h_rs1]
+        subst imm'
+        simp [h_c_val_eq] at h_mem ⊢
+        simp [h_c0, h_c1, h_c2, h_c3] at h_mem ⊢
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        simp [BitVec.extractLsb]
+        repeat rw [BitVec.extractLsb'_append_eq_ite]
+        simpa
+      . assumption
+      . subst imm'
+        simp [h_c_val_eq] at ub_addr ⊢
+        simp [h_c0, h_c1, h_c2, h_c3] at ub_addr ⊢
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        omega
+      . subst imm'
+        simp [h_c_val_eq]
+        simp [h_c0, h_c1, h_c2, h_c3]
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        omega
+
+    theorem equivalence_LBU
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
+      (h_opcode : air.cols.instruction.opcode = 13)
+      (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      let rd : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
+      let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
+      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
+      execute_instruction (instruction.LOAD (imm, rs1, rd, true, 1)) state =
+      (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_ext : bus_row_ext_asm (bus_row air row) := by specialize h_all_ext row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
+      -- Axioms
+      simp [ bus_row_axioms, bus_row ] at h_axioms
+      -- General assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
+      -- Program bus assumptions
+      simp [
+        bus_row,
+        h_is_real,
+        ProgramBusEntry.operand_properties,
+        -Vector.getElem_mk,
+        -ProgramBusEntry.mk.injEq
+      ] at h_asm_prog
+      obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_asm_prog
+      have h_eq_mult : mult = -1 := by aesop
+      subst mult
+      have h_opcode_props
+        := @ProgramBusEntry.operand_properties_inversion
+            instr
+            ⟨ -1, data ⟩
+            props
+            (ProgramBusEntry.deserialise (program_bus_entry air row))
+            (by simp [h_eq, h_is_real])
+            (by simp [h_is_real]; aesop)
+      simp [h_opcode] at h_opcode_props
+      obtain ⟨ imm, rs1, rd, h_eq_instr ⟩ := h_opcode_props
+      subst instr; simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
+      obtain ⟨ h_eq_data, h_eq_props ⟩ := h_eq
+      subst data; simp at h_eq_entry
+      obtain ⟨ h_opcode',
+              h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3,
+              h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
+      simp [h_props] at h_eq_props; clear h_props
+      simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
+      obtain ⟨ h_reg_rd, h_reg_rs1 ⟩ := h_eq_props
+      -- Hypotheses
+      simp [
+        bus_operations,
+        bus_row,
+        h_is_real,
+        h_opcode,
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
+      ] at h_bus_hypotheses
+      obtain ⟨ h_pc, h_rs1, h_rd ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_rs1] at h_rd
+      obtain ⟨ h_rd, h_mem ⟩ := h_rd
+      simp [BitVec.ofNatLT_eq_ofNat] at h_rs1 h_reg_rd
+      simp [operation_list_effect, operation_effect] at h_mem
+      -- C-value equalities
+      have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
+      -- Memory hypotheses
+      simp [
+        bus_row,
+        MemoryBus.Spec,
+        Valid_CpuCols.is_memory_instruction,
+        h_opcode,
+        h_selectors
+      ] at h_asm_mem
+      obtain ⟨ ub_av, ub_addr, h_sign_extend ⟩ := h_asm_mem
+      simp [h_c_val_eq] at h_mem ub_addr
+      simp [h_c0, h_c1, h_c2, h_c3] at h_mem ub_addr
+      rw [Transpiler.imm_to_KB_Nat_sgn] at h_mem ub_addr
+      -- Proof
+      extract_lets rd rs1 imm'
+      rw [
+        OpcodeSpec.RV32.execute_LBU_equiv
+        (r1 := rs1) (rd := rd) (imm := imm')
+        (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
+        (r1_val :=
+          U32.toBV
+            #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
+        (data0 := BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0))
+        (misa := misa)
+        (state := state)
+      ]
+      . subst rs1 rd imm'
+        simp [
+          OpcodeSpec.RV32.spec_LBU,
+          bus_operations,
+          bus_row,
+          h_is_real,
+          h_opcode,
+          h_selectors,
+          h_reg_rd,
+          h_reg_rs1
+        ]
+        simp [h_c_val_eq, h_c0, h_c1, h_c2, h_c3, Transpiler.imm_to_KB_Nat_sgn]
+        rw [operation_list_effect_state_writeReg_same]
+        . have eq_rd : BitVec.ofNat 5 (air.cols.instruction.a_0 row 0).val = BitVec.ofNatLT (w := 5) (air.cols.instruction.a_0 row 0).val (by omega)
+            := by simp [← BitVec.toNat_inj]; assumption
+          have eq_next_pc : BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega) + 4#32 = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
+          := by
+            simp [← BitVec.toNat_inj]
+            have relevant_constraints : constraint_229 air row ∧ constraint_231 air row
+              := by simp [allHold_simplified] at h_constraints; aesop
+            simp [
+              pico_encapsulation,
+              constraint_and_interaction_simplification,
+              sub_eq_zero,
+              h_is_real,
+              h_selectors
+            ] at relevant_constraints
+            obtain ⟨ is_seq, eq_npc ⟩ := relevant_constraints
+            omega
+          simp [eq_rd, eq_next_pc]
+          conv => rhs; simp [operation_list_effect_state_filter]
+          simp [operation_list_effect_state_swap_writePC_writeReg]
+          by_cases is_x0 : air.cols.instruction.a_0 row 0 = 0
+          . simp [
+              is_x0,
+              operation_list_effect,
+              operation_effect,
+              write_xreg,
+              regidx_to_fin
+            ]
+          . congr
+            rw [h_sign_extend]
+            . simp [BitVec.extend]
+            . rw [if_neg] at h_a_is_0
+              . assumption
+              . intro h_reg; apply is_x0
+                simp [h_a0, Transpiler.reg_to_KB, regidx_to_fin]
+                clear *- h_reg
+                obtain ⟨ rd, pf ⟩ := rd
+                simp_all
+        . trans; rotate_left; exact h_rs1
+          congr; omega
+      . split_ands
+        . simp
+        . assumption
+        . assumption
+        . subst imm'
+          simp [h_c_val_eq] at h_mem ⊢
+          simp [h_c0, h_c1, h_c2, h_c3] at h_mem ⊢
+          rw [Transpiler.imm_to_KB_BV_sgn]
+          rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+          omega
+      . assumption
+      . subst imm'
+        simp [h_c_val_eq] at ub_addr ⊢
+        simp [h_c0, h_c1, h_c2, h_c3] at ub_addr ⊢
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        omega
+
+    theorem equivalence_LHU
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
+      (h_opcode : air.cols.instruction.opcode = 14)
+      (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      let rd : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
+      let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
+      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
+      execute_instruction (instruction.LOAD (imm, rs1, rd, true, 2)) state =
+      (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_ext : bus_row_ext_asm (bus_row air row) := by specialize h_all_ext row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
+      -- Axioms
+      simp [ bus_row_axioms, bus_row ] at h_axioms
+      -- General assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
+      -- Program bus assumptions
+      simp [
+        bus_row,
+        h_is_real,
+        ProgramBusEntry.operand_properties,
+        -Vector.getElem_mk,
+        -ProgramBusEntry.mk.injEq
+      ] at h_asm_prog
+      obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_asm_prog
+      have h_eq_mult : mult = -1 := by aesop
+      subst mult
+      have h_opcode_props
+        := @ProgramBusEntry.operand_properties_inversion
+            instr
+            ⟨ -1, data ⟩
+            props
+            (ProgramBusEntry.deserialise (program_bus_entry air row))
+            (by simp [h_eq, h_is_real])
+            (by simp [h_is_real]; aesop)
+      simp [h_opcode] at h_opcode_props
+      obtain ⟨ imm, rs1, rd, h_eq_instr ⟩ := h_opcode_props
+      subst instr; simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
+      obtain ⟨ h_eq_data, h_eq_props ⟩ := h_eq
+      subst data; simp at h_eq_entry
+      obtain ⟨ h_opcode',
+              h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3,
+              h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
+      simp [h_props] at h_eq_props; clear h_props
+      simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
+      obtain ⟨ h_reg_rd, h_reg_rs1 ⟩ := h_eq_props
+      -- Hypotheses
+      simp [
+        bus_operations,
+        bus_row,
+        h_is_real,
+        h_opcode,
+        h_selectors,
+        h_reg_rd,
+        h_reg_rs1
+      ] at h_bus_hypotheses
+      obtain ⟨ h_pc, h_rs1, h_rd ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_rs1] at h_rd
+      obtain ⟨ h_rd, h_mem ⟩ := h_rd
+      simp [BitVec.ofNatLT_eq_ofNat] at h_rs1 h_reg_rd
+      simp [operation_list_effect, operation_effect, BitVec.extractLsb] at h_mem
+      rw [
+        BitVec.extractLsb'_append_eq_left,
+        BitVec.extractLsb'_append_eq_right
+      ] at h_mem
+      -- C-value equalities
+      have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
+      -- Memory hypotheses
+      simp [
+        bus_row,
+        MemoryBus.Spec,
+        Valid_CpuCols.is_memory_instruction,
+        h_opcode,
+        h_selectors
+      ] at h_asm_mem
+      obtain ⟨ ub_av, ub_addr, h_alignment, h_sign_extend ⟩ := h_asm_mem
+      simp [h_c_val_eq] at h_mem ub_addr h_alignment
+      simp [h_c0, h_c1, h_c2, h_c3] at h_mem ub_addr h_alignment
+      rw [Transpiler.imm_to_KB_Nat_sgn] at h_mem ub_addr h_alignment
+      -- Proof
+      extract_lets rd rs1 imm'
+      rw [
+        OpcodeSpec.RV32.execute_LHU_equiv
+        (r1 := rs1) (rd := rd) (imm := imm')
+        (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
+        (r1_val :=
+          U32.toBV
+            #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
+        (data0 := BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0))
+        (data1 := BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0))
+        (misa := misa)
+        (state := state)
+      ]
+      . subst rs1 rd imm'
+        simp [
+          OpcodeSpec.RV32.spec_LHU,
+          bus_operations,
+          bus_row,
+          h_is_real,
+          h_opcode,
+          h_selectors,
+          h_reg_rd,
+          h_reg_rs1
+        ]
+        simp [h_c_val_eq, h_c0, h_c1, h_c2, h_c3, Transpiler.imm_to_KB_Nat_sgn]
+        rw [operation_list_effect_state_writeReg_same]
+        . have eq_rd : BitVec.ofNat 5 (air.cols.instruction.a_0 row 0).val = BitVec.ofNatLT (w := 5) (air.cols.instruction.a_0 row 0).val (by omega)
+            := by simp [← BitVec.toNat_inj]; assumption
+          have eq_next_pc : BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega) + 4#32 = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
+          := by
+            simp [← BitVec.toNat_inj]
+            have relevant_constraints : constraint_229 air row ∧ constraint_231 air row
+              := by simp [allHold_simplified] at h_constraints; aesop
+            simp [
+              pico_encapsulation,
+              constraint_and_interaction_simplification,
+              sub_eq_zero,
+              h_is_real,
+              h_selectors
+            ] at relevant_constraints
+            obtain ⟨ is_seq, eq_npc ⟩ := relevant_constraints
+            omega
+          simp [eq_rd, eq_next_pc]
+          conv => rhs; simp [operation_list_effect_state_filter]
+          simp [operation_list_effect_state_swap_writePC_writeReg]
+          by_cases is_x0 : air.cols.instruction.a_0 row 0 = 0
+          . simp [
+              is_x0,
+              operation_list_effect,
+              operation_effect,
+              write_xreg,
+              regidx_to_fin
+            ]
+          . congr
+            rw [h_sign_extend]
+            . simp [BitVec.extend]
+            . rw [if_neg] at h_a_is_0
+              . assumption
+              . intro h_reg; apply is_x0
+                simp [h_a0, Transpiler.reg_to_KB, regidx_to_fin]
+                clear *- h_reg
+                obtain ⟨ rd, pf ⟩ := rd
+                simp_all
+        . trans; rotate_left; exact h_rs1
+          congr; omega
+      . simp [OpcodeSpec.RV32.spec_LHU]
+        simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
+        subst rs1; simp [h_pc, h_rs1]
+        subst imm'
+        simp [h_c_val_eq] at h_mem ⊢
+        simp [h_c0, h_c1, h_c2, h_c3] at h_mem ⊢
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        simp [BitVec.extractLsb]
+        repeat rw [BitVec.extractLsb'_append_eq_ite]
+        simpa
+      . assumption
+      . subst imm'
+        simp [h_c_val_eq] at ub_addr ⊢
+        simp [h_c0, h_c1, h_c2, h_c3] at ub_addr ⊢
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        omega
+      . subst imm'
+        simp [h_c_val_eq]
+        simp [h_c0, h_c1, h_c2, h_c3]
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        omega
+
+    theorem equivalence_SB
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
+      (h_opcode : air.cols.instruction.opcode = 15)
+      (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      let rs2 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
+      let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
+      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
+      execute_instruction (instruction.STORE (imm, rs2, rs1, 1)) state =
+      (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_ext : bus_row_ext_asm (bus_row air row) := by specialize h_all_ext row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
+      have a_unchanged := a_unchanged air row h_is_real h_wf h_constraints
+      -- Axioms
+      simp [ bus_row_axioms, bus_row ] at h_axioms
+      -- General assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
+      -- Program bus assumptions
+      simp [
+        bus_row,
+        h_is_real,
+        ProgramBusEntry.operand_properties,
+        -Vector.getElem_mk,
+        -ProgramBusEntry.mk.injEq
+      ] at h_asm_prog
+      obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_asm_prog
+      have h_eq_mult : mult = -1 := by aesop
+      subst mult
+      have h_opcode_props
+        := @ProgramBusEntry.operand_properties_inversion
+            instr
+            ⟨ -1, data ⟩
+            props
+            (ProgramBusEntry.deserialise (program_bus_entry air row))
+            (by simp [h_eq, h_is_real])
+            (by simp [h_is_real]; aesop)
+      simp [h_opcode] at h_opcode_props
+      obtain ⟨ imm, rs2, rs1, h_eq_instr ⟩ := h_opcode_props
+      subst instr; simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
+      obtain ⟨ h_eq_data, h_eq_props ⟩ := h_eq
+      subst data; simp at h_eq_entry
+      obtain ⟨ h_opcode',
+              h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3,
+              h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
+      simp [h_props] at h_eq_props; clear h_props
+      simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
+      obtain ⟨ h_reg_rs1, h_reg_rs2 ⟩ := h_eq_props
+      -- Hypotheses
+      simp [
+        bus_operations,
+        bus_row,
+        h_is_real,
+        h_opcode,
+        h_selectors,
+        h_reg_rs1,
+        h_reg_rs2
+      ] at h_bus_hypotheses
+      obtain ⟨ h_pc, h_rs1, h_rs2 ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_rs1] at h_rs2
+      obtain ⟨ h_rs2, h_mem ⟩ := h_rs2; clear h_mem
+      simp [BitVec.ofNatLT_eq_ofNat] at h_rs1 h_reg_rs2
+      -- C-value equalities
+      have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
+      -- Memory hypotheses
+      simp [
+        bus_row,
+        MemoryBus.Spec,
+        Valid_CpuCols.is_memory_instruction,
+        h_opcode,
+        h_selectors
+      ] at h_asm_mem
+      -- Proof
+      extract_lets rs2 rs1 imm'
+      rw [
+        OpcodeSpec.RV32.execute_SB_equiv
+        (r1 := rs1) (r2 := rs2) (imm := imm')
+        (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
+        (r1_val :=
+          U32.toBV
+            #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
+        (r2_val :=
+          U32.toBV
+            #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
+        (misa := misa)
+        (state := state)
+      ]
+      . subst rs1 rs2 imm'
+        simp [
+          OpcodeSpec.RV32.spec_SB,
+          bus_operations,
+          bus_row,
+          h_is_real,
+          h_opcode,
+          h_selectors,
+          h_reg_rs2,
+          h_reg_rs1
+        ]
+        simp [h_c_val_eq, h_c0, h_c1, h_c2, h_c3, Transpiler.imm_to_KB_Nat_sgn]
+        rw [operation_list_effect_state_writeReg_same]
+        . have eq_rd : BitVec.ofNat 5 (air.cols.instruction.a_0 row 0).val = BitVec.ofNatLT (w := 5) (air.cols.instruction.a_0 row 0).val (by omega)
+            := by simp [← BitVec.toNat_inj]; assumption
+          have eq_next_pc : BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega) + 4#32 = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
+          := by
+            simp [← BitVec.toNat_inj]
+            have relevant_constraints : constraint_229 air row ∧ constraint_231 air row
+              := by simp [allHold_simplified] at h_constraints; aesop
+            simp [
+              pico_encapsulation,
+              constraint_and_interaction_simplification,
+              sub_eq_zero,
+              h_is_real,
+              h_selectors
+            ] at relevant_constraints
+            obtain ⟨ is_seq, eq_npc ⟩ := relevant_constraints
+            omega
+          simp [eq_next_pc]
+          conv => rhs; simp [operation_list_effect_state_filter]
+          unfold state_filter; simp
+          rw [operation_list_effect_state_writeReg_same]
+          . rw [Transpiler.imm_to_KB_BV_sgn]
+            rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+            simp [BitVec.extractLsb, U32.toBV]
+            rw [BitVec.extractLsb'_append_eq_right]
+            simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
+          . simp [Valid_CpuCols.is_store_instruction, h_selectors] at a_unchanged
+            simp [a_unchanged]
+            assumption
+        . trans; rotate_left; exact h_rs1
+          congr; omega
+      . split_ands
+        . simp
+        . assumption
+        . assumption
+        . subst rs2
+          simp [Valid_CpuCols.is_store_instruction, h_selectors] at a_unchanged
+          simp [a_unchanged]
+          trans; rotate_left; exact h_rs2
+          congr; simp [← BitVec.toNat_inj]; omega
+      . assumption
+      . subst imm'
+        simp [h_c_val_eq] at h_asm_mem ⊢
+        simp [h_c0, h_c1, h_c2, h_c3] at h_asm_mem ⊢
+        rw [Transpiler.imm_to_KB_Nat_sgn] at h_asm_mem
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        omega
+
+    theorem equivalence_SH
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
+      (h_opcode : air.cols.instruction.opcode = 16)
+      (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      let rs2 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
+      let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
+      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
+      execute_instruction (instruction.STORE (imm, rs2, rs1, 2)) state =
+      (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_ext : bus_row_ext_asm (bus_row air row) := by specialize h_all_ext row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
+      have a_unchanged := a_unchanged air row h_is_real h_wf h_constraints
+      -- Axioms
+      simp [ bus_row_axioms, bus_row ] at h_axioms
+      -- General assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
+      -- Program bus assumptions
+      simp [
+        bus_row,
+        h_is_real,
+        ProgramBusEntry.operand_properties,
+        -Vector.getElem_mk,
+        -ProgramBusEntry.mk.injEq
+      ] at h_asm_prog
+      obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_asm_prog
+      have h_eq_mult : mult = -1 := by aesop
+      subst mult
+      have h_opcode_props
+        := @ProgramBusEntry.operand_properties_inversion
+            instr
+            ⟨ -1, data ⟩
+            props
+            (ProgramBusEntry.deserialise (program_bus_entry air row))
+            (by simp [h_eq, h_is_real])
+            (by simp [h_is_real]; aesop)
+      simp [h_opcode] at h_opcode_props
+      obtain ⟨ imm, rs2, rs1, h_eq_instr ⟩ := h_opcode_props
+      subst instr; simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
+      obtain ⟨ h_eq_data, h_eq_props ⟩ := h_eq
+      subst data; simp at h_eq_entry
+      obtain ⟨ h_opcode',
+              h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3,
+              h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
+      simp [h_props] at h_eq_props; clear h_props
+      simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
+      obtain ⟨ h_reg_rs1, h_reg_rs2 ⟩ := h_eq_props
+      -- Hypotheses
+      simp [
+        bus_operations,
+        bus_row,
+        h_is_real,
+        h_opcode,
+        h_selectors,
+        h_reg_rs1,
+        h_reg_rs2
+      ] at h_bus_hypotheses
+      obtain ⟨ h_pc, h_rs1, h_rs2 ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_rs1] at h_rs2
+      obtain ⟨ h_rs2, h_mem ⟩ := h_rs2; clear h_mem
+      simp [BitVec.ofNatLT_eq_ofNat] at h_rs1 h_reg_rs2
+      -- C-value equalities
+      have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
+      -- Memory hypotheses
+      simp [
+        bus_row,
+        MemoryBus.Spec,
+        Valid_CpuCols.is_memory_instruction,
+        h_opcode,
+        h_selectors
+      ] at h_asm_mem
+      obtain ⟨ h_asm_mem, h_alignment ⟩ := h_asm_mem
+      -- Proof
+      extract_lets rs2 rs1 imm'
+      rw [
+        OpcodeSpec.RV32.execute_SH_equiv
+        (r1 := rs1) (r2 := rs2) (imm := imm')
+        (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
+        (r1_val :=
+          U32.toBV
+            #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
+        (r2_val :=
+          U32.toBV
+            #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
+        (misa := misa)
+        (state := state)
+      ]
+      . subst rs1 rs2 imm'
+        simp [
+          OpcodeSpec.RV32.spec_SH,
+          bus_operations,
+          bus_row,
+          h_is_real,
+          h_opcode,
+          h_selectors,
+          h_reg_rs2,
+          h_reg_rs1
+        ]
+        simp [h_c_val_eq, h_c0, h_c1, h_c2, h_c3, Transpiler.imm_to_KB_Nat_sgn]
+        rw [operation_list_effect_state_writeReg_same]
+        . have eq_rd : BitVec.ofNat 5 (air.cols.instruction.a_0 row 0).val = BitVec.ofNatLT (w := 5) (air.cols.instruction.a_0 row 0).val (by omega)
+            := by simp [← BitVec.toNat_inj]; assumption
+          have eq_next_pc : BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega) + 4#32 = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
+          := by
+            simp [← BitVec.toNat_inj]
+            have relevant_constraints : constraint_229 air row ∧ constraint_231 air row
+              := by simp [allHold_simplified] at h_constraints; aesop
+            simp [
+              pico_encapsulation,
+              constraint_and_interaction_simplification,
+              sub_eq_zero,
+              h_is_real,
+              h_selectors
+            ] at relevant_constraints
+            obtain ⟨ is_seq, eq_npc ⟩ := relevant_constraints
+            omega
+          simp [eq_next_pc]
+          conv => rhs; simp [operation_list_effect_state_filter]
+          unfold state_filter; simp
+          rw [operation_list_effect_state_writeReg_same]
+          . rw [Transpiler.imm_to_KB_BV_sgn]
+            rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+            simp [BitVec.extractLsb, U32.toBV]
+            conv =>
+              lhs; arg 1; arg 1; arg 2; arg 1; arg 3; arg 3
+              rw [BitVec.append_assoc]; simp
+            rw [BitVec.extractLsb'_append_eq_right]
+            simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
+          . simp [Valid_CpuCols.is_store_instruction, h_selectors] at a_unchanged
+            simp [a_unchanged]
+            assumption
+        . trans; rotate_left; exact h_rs1
+          congr; omega
+      . split_ands
+        . simp
+        . assumption
+        . assumption
+        . subst rs2
+          simp [Valid_CpuCols.is_store_instruction, h_selectors] at a_unchanged
+          simp [a_unchanged]
+          trans; rotate_left; exact h_rs2
+          congr; simp [← BitVec.toNat_inj]; omega
+      . assumption
+      . subst imm'
+        simp [h_c_val_eq] at h_asm_mem ⊢
+        simp [h_c0, h_c1, h_c2, h_c3] at h_asm_mem ⊢
+        rw [Transpiler.imm_to_KB_Nat_sgn] at h_asm_mem
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        omega
+      . subst imm'
+        simp [h_c_val_eq] at h_alignment ⊢
+        simp [h_c0, h_c1, h_c2, h_c3] at h_alignment ⊢
+        rw [Transpiler.imm_to_KB_Nat_sgn] at h_alignment
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        omega
+
+    theorem equivalence_SW
+      [Field ExtF]
+      (air : Valid_CpuAir FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuAir.Extraction.allHold air row)
+      (h_opcode : air.cols.instruction.opcode = 17)
+      (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      let rs2 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
+      let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
+      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
+                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
+      execute_instruction (instruction.STORE (imm, rs2, rs1, 4)) state =
+      (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      have h_axioms : bus_row_axioms (bus_row air row) := by specialize h_all_axioms row (by omega); assumption
+      have h_ext : bus_row_ext_asm (bus_row air row) := by specialize h_all_ext row (by omega); assumption
+      have h_wf : bus_row_wf_asm (bus_row air row) := by specialize h_all_wf row (by omega); assumption
+      have h_constraints : CpuAir.Extraction.allHold air row := by specialize h_all_constraints row (by omega); assumption
+      have a_unchanged := a_unchanged air row h_is_real h_wf h_constraints
+      -- Axioms
+      simp [ bus_row_axioms, bus_row ] at h_axioms
+      -- General assumptions
+      simp [ bus_row_wf_asm ] at h_wf
+      obtain ⟨ h_asm_prog, h_asm_alu, h_asm_byte, h_asm_reg, h_asm_mem ⟩ := h_wf
+      -- Program bus assumptions
+      simp [
+        bus_row,
+        h_is_real,
+        ProgramBusEntry.operand_properties,
+        -Vector.getElem_mk,
+        -ProgramBusEntry.mk.injEq
+      ] at h_asm_prog
+      obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_asm_prog
+      have h_eq_mult : mult = -1 := by aesop
+      subst mult
+      have h_opcode_props
+        := @ProgramBusEntry.operand_properties_inversion
+            instr
+            ⟨ -1, data ⟩
+            props
+            (ProgramBusEntry.deserialise (program_bus_entry air row))
+            (by simp [h_eq, h_is_real])
+            (by simp [h_is_real]; aesop)
+      simp [h_opcode] at h_opcode_props
+      obtain ⟨ imm, rs2, rs1, h_eq_instr ⟩ := h_opcode_props
+      subst instr; simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
+      obtain ⟨ h_eq_data, h_eq_props ⟩ := h_eq
+      subst data; simp at h_eq_entry
+      obtain ⟨ h_opcode',
+              h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3,
+              h_a_is_0, h_selectors ⟩ := h_eq_entry; clear h_opcode'
+      simp [h_props] at h_eq_props; clear h_props
+      simp [← h_a0, ← h_b0, Transpiler.is_register] at h_eq_props
+      obtain ⟨ h_reg_rs1, h_reg_rs2 ⟩ := h_eq_props
+      -- Hypotheses
+      simp [
+        bus_operations,
+        bus_row,
+        h_is_real,
+        h_opcode,
+        h_selectors,
+        h_reg_rs1,
+        h_reg_rs2
+      ] at h_bus_hypotheses
+      obtain ⟨ h_pc, h_rs1, h_rs2 ⟩ := h_bus_hypotheses
+      simp [operation_list_effect_hypotheses_writeReg_same h_rs1] at h_rs2
+      obtain ⟨ h_rs2, h_mem ⟩ := h_rs2; clear h_mem
+      simp [BitVec.ofNatLT_eq_ofNat] at h_rs1 h_reg_rs2
+      -- C-value equalities
+      have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
+      -- Memory hypotheses
+      simp [
+        bus_row,
+        MemoryBus.Spec,
+        Valid_CpuCols.is_memory_instruction,
+        h_opcode,
+        h_selectors
+      ] at h_asm_mem
+      obtain ⟨ h_asm_mem, h_alignment ⟩ := h_asm_mem
+      -- Proof
+      extract_lets rs2 rs1 imm'
+      rw [
+        OpcodeSpec.RV32.execute_SW_equiv
+        (r1 := rs1) (r2 := rs2) (imm := imm')
+        (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
+        (r1_val :=
+          U32.toBV
+            #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
+        (r2_val :=
+          U32.toBV
+            #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
+                BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
+        (misa := misa)
+        (state := state)
+      ]
+      . subst rs1 rs2 imm'
+        simp [
+          OpcodeSpec.RV32.spec_SW,
+          bus_operations,
+          bus_row,
+          h_is_real,
+          h_opcode,
+          h_selectors,
+          h_reg_rs2,
+          h_reg_rs1
+        ]
+        simp [h_c_val_eq, h_c0, h_c1, h_c2, h_c3, Transpiler.imm_to_KB_Nat_sgn]
+        rw [operation_list_effect_state_writeReg_same]
+        . have eq_rd : BitVec.ofNat 5 (air.cols.instruction.a_0 row 0).val = BitVec.ofNatLT (w := 5) (air.cols.instruction.a_0 row 0).val (by omega)
+            := by simp [← BitVec.toNat_inj]; assumption
+          have eq_next_pc : BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega) + 4#32 = BitVec.ofNatLT (w := 32) (air.cols.next_pc row 0).val (by omega)
+          := by
+            simp [← BitVec.toNat_inj]
+            have relevant_constraints : constraint_229 air row ∧ constraint_231 air row
+              := by simp [allHold_simplified] at h_constraints; aesop
+            simp [
+              pico_encapsulation,
+              constraint_and_interaction_simplification,
+              sub_eq_zero,
+              h_is_real,
+              h_selectors
+            ] at relevant_constraints
+            obtain ⟨ is_seq, eq_npc ⟩ := relevant_constraints
+            omega
+          simp [eq_next_pc]
+          conv => rhs; simp [operation_list_effect_state_filter]
+          unfold state_filter; simp
+          rw [operation_list_effect_state_writeReg_same]
+          . rw [Transpiler.imm_to_KB_BV_sgn]
+            rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+            simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
+          . simp [Valid_CpuCols.is_store_instruction, h_selectors] at a_unchanged
+            simp [a_unchanged]
+            assumption
+        . trans; rotate_left; exact h_rs1
+          congr; omega
+      . split_ands
+        . simp
+        . assumption
+        . assumption
+        . subst rs2
+          simp [Valid_CpuCols.is_store_instruction, h_selectors] at a_unchanged
+          simp [a_unchanged]
+          trans; rotate_left; exact h_rs2
+          congr; simp [← BitVec.toNat_inj]; omega
+      . assumption
+      . subst imm'
+        simp [h_c_val_eq] at h_asm_mem ⊢
+        simp [h_c0, h_c1, h_c2, h_c3] at h_asm_mem ⊢
+        rw [Transpiler.imm_to_KB_Nat_sgn] at h_asm_mem
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        omega
+      . subst imm'
+        simp [h_c_val_eq] at h_alignment ⊢
+        simp [h_c0, h_c1, h_c2, h_c3] at h_alignment ⊢
+        rw [Transpiler.imm_to_KB_Nat_sgn] at h_alignment
+        rw [Transpiler.imm_to_KB_BV_sgn]
+        rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
+        omega
+
+  end Memory
 
 end Equivalence

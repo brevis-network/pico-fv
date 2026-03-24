@@ -270,6 +270,18 @@ namespace Int
         rw [if_neg (by omega)] at h0
         omega
 
+  lemma tdiv_tmod_unique_full_nat {b c q r : ℕ} (hcnz : c ≠ 0) :
+    q = ((b : ℤ).tdiv c).toNat ∧ r = ((b : ℤ).tmod c).toNat ↔
+    b = q * c + r ∧ r < c := by
+    have hmod := @Int.tdiv_tmod_unique b c r q
+    simp_all [Int.tmod_eq_emod]
+    rw [@eq_comm (a := q), @eq_comm (a := r), @eq_comm (a := b), add_comm, mul_comm]
+    trans (r : ℤ) + c * q = b ∧ r < c
+    . rw [← hmod]
+      rw [Int.ofNat_ediv_ofNat, ← Int.natCast_emod]
+      rw [Int.toNat_natCast, Int.toNat_natCast, Int.natCast_inj, Int.natCast_inj]
+    . omega
+
   lemma tmod_range_32
     {b c : ℤ}
     (range_b : -2147483648 ≤ b ∧ b < 2147483648)

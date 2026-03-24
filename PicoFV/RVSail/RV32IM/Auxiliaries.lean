@@ -84,6 +84,13 @@ attribute [simp]
   Sail.ConcurrencyInterfaceV1.sail_mem_write
   Sail.SailME.run
 
+instance : LawfulBEq regidx where
+  rfl := by intro ⟨ op, pf ⟩; simp at pf; interval_cases op <;> rfl
+  eq_of_beq := by
+    intro ⟨ op₁, pf₁ ⟩ ⟨ op₂, pf₂ ⟩
+    simp at pf₁ pf₂
+    interval_cases op₁ <;> interval_cases op₂ <;> simp <;> rfl
+
 namespace RV32IM
 
   section SimplerMonadicReasoning

@@ -132,6 +132,10 @@ lemma toInt_inj {x y : U32} : x.toInt = y.toInt → x = y := by
 lemma negative_toInt {x : U32} : negative x ↔ ¬ 0 ≤ x.toInt := by
   simp [toInt]; split_ifs <;> grind
 
+/-- not `negative` in terms of `toInt` -/
+lemma not_negative_toInt {x : U32} : ¬ negative x ↔ 0 ≤ x.toInt := by
+  simp [toInt]; split_ifs <;> grind
+
 /-- Reconstructing a `U32` from an `ℤ` -/
 def fromInt (z : ℤ) : U32 :=
   let y := (z + if z < 0 then 4294967296 else 0).toNat
@@ -271,6 +275,10 @@ lemma toInt_inj {x y : U64} : x.toInt = y.toInt → x = y := by
 lemma negative_toInt {x : U64} : negative x ↔ ¬ 0 ≤ x.toInt := by
   simp [toInt]; split_ifs <;> grind
 
+/-- not `negative` in terms of `toInt` -/
+lemma not_negative_toInt {x : U64} : ¬ negative x ↔ 0 ≤ x.toInt := by
+  simp [toInt]; split_ifs <;> grind
+
 end toInt_fromInt
 
 end U64
@@ -308,6 +316,13 @@ namespace U32
                      List.getElem_toArray, List.getElem_cons_zero, List.getElem_cons_succ,
                      BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
           omega
+
+    @[simp]
+    lemma extend_toNat {w : U32}
+    :
+      (w.extend false).toNat = w.toNat
+    := by
+      simp [extend, ext, U32.toNat, toNat, U64.toNat, toNat]
 
     @[simp]
     lemma extend_toInt {w : U32}

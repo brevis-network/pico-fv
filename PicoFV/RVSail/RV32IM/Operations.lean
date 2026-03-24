@@ -43,8 +43,8 @@ namespace RV32IM
                         (fun _ ↦ ExecutionResult.Retire_Success ())
                         (Sail.writeReg Register.nextPC val state) }
         | .ReadReg reg val =>
-          { result with
-              hypotheses := result.hypotheses ∧ read_xreg (regidx_to_fin reg) state = EStateM.Result.ok val state }
+            { result with
+                hypotheses := result.hypotheses ∧ read_xreg (regidx_to_fin reg) state = EStateM.Result.ok val state }
         | .WriteReg reg val =>
           { result with
               state := EStateM.Result.map
@@ -60,8 +60,8 @@ namespace RV32IM
             let data1 := BitVec.extractLsb 15 8 val
             { result with
                 hypotheses := result.hypotheses ∧
-                              state.mem[addr]? = .some data0 ∧
-                              state.mem[addr + 1]? = .some data1 }
+                                state.mem[addr]? = .some data0 ∧
+                                state.mem[addr + 1]? = .some data1 }
           | .Word =>
             let data0 := BitVec.extractLsb 7 0 val
             let data1 := BitVec.extractLsb 15 8 val
@@ -69,10 +69,10 @@ namespace RV32IM
             let data3 := BitVec.extractLsb 31 24 val
             { result with
                 hypotheses := result.hypotheses ∧
-                              state.mem[addr]? = .some data0 ∧
-                              state.mem[addr + 1]? = .some data1 ∧
-                              state.mem[addr + 2]? = .some data2 ∧
-                              state.mem[addr + 3]? = .some data3 }
+                                state.mem[addr]? = .some data0 ∧
+                                state.mem[addr + 1]? = .some data1 ∧
+                                state.mem[addr + 2]? = .some data2 ∧
+                                state.mem[addr + 3]? = .some data3 }
         | .WriteMem addr mw val =>
           { result with
               state :=
@@ -228,6 +228,17 @@ namespace RV32IM
       apply operation_effect_state_hyps
 
     @[simp]
+    lemma operation_list_effect_state_readMem
+    :
+      (operation_list_effect (.ReadMem addr width val :: ops) state).state
+        =
+      (operation_list_effect ops state).state
+    := by
+      simp [operation_list_effect, List.foldl_cons]
+      conv => lhs; arg 1; arg 2; unfold operation_effect; simp
+      cases width <;> apply operation_effect_state_hyps
+
+    @[simp]
     lemma operation_list_effect_hypotheses_writePC
     :
       (operation_list_effect [.WritePC val] state).hypotheses = True
@@ -288,6 +299,58 @@ namespace RV32IM
         simp [reg_of_fin, regidx_to_fin]
         split <;> simp
 
+    @[simp]
+    lemma operation_list_effect_hypotheses_swap_writeReg_ReadMem
+    :
+      (operation_list_effect (.WriteReg reg val_reg :: .ReadMem addr width val_mem :: ops) state).hypotheses
+        =
+      (operation_list_effect (.ReadMem addr width val_mem :: .WriteReg reg val_reg :: ops) state).hypotheses
+    := by
+      simp [operation_list_effect, List.foldl_cons]
+      conv => lhs; arg 1; arg 2; unfold operation_effect; simp [Sail.writeReg, PreSail.writeReg]
+      conv => rhs; arg 1; arg 2; unfold operation_effect; simp [Sail.writeReg, PreSail.writeReg]
+      simp [write_xreg]
+      by_cases hz : regidx_to_fin reg = 0
+      . simp_all
+        cases width <;> simp
+      . simp_all [Sail.writeReg, PreSail.writeReg]
+        cases width <;> simp
+
+    @[simp]
+    def state_filter (ops : List Operation) :=
+      List.filter (fun op =>
+        match op with
+        | .ReadPC _ | .ReadReg _ _ | .ReadMem _ _ _ => false
+        | _ => true
+      ) ops
+
+    lemma operation_list_effect_state_filter
+    :
+      (operation_list_effect ops state).state
+        =
+      (operation_list_effect (state_filter ops) state).state
+    := by
+      induction ops generalizing state
+      case nil => simp
+      case cons op ops ih =>
+        cases op <;> simp_all
+        case WritePC val =>
+          simp [operation_list_effect] at *
+          conv => lhs; arg 1; arg 2; simp [operation_effect]
+          conv => rhs; arg 1; arg 2; simp [operation_effect]
+          apply ih
+        case WriteReg reg val =>
+          simp [operation_list_effect] at *
+          conv => lhs; arg 1; arg 2; simp [operation_effect]
+          conv => rhs; arg 1; arg 2; simp [operation_effect]
+          simp [write_xreg]
+          by_cases is_x0 : regidx_to_fin reg = 0 <;> simp [is_x0] <;> apply ih
+        case WriteMem addr width val =>
+          simp [operation_list_effect] at *
+          conv => lhs; arg 1; arg 2; simp [operation_effect]
+          conv => rhs; arg 1; arg 2; simp [operation_effect]
+          cases width <;> simp <;> apply ih
+
   end OperationEffect
 
   section BusOperations
@@ -320,7 +383,7 @@ namespace RV32IM
             let width : Option MemoryWidth :=
               if (memory_row.is_lw = 1 ∨ memory_row.is_sw = 1) then .some .Word
               else if (memory_row.is_lh = 1 ∨ memory_row.is_lhu = 1 ∨ memory_row.is_sh = 1) then .some .Half
-              else if (memory_row.is_lb = 1 ∨ memory_row.is_lhu = 1 ∨ memory_row.is_sb = 1) then .some .Byte
+              else if (memory_row.is_lb = 1 ∨ memory_row.is_lbu = 1 ∨ memory_row.is_sb = 1) then .some .Byte
               else .none
             match width with
             | .none => .none
@@ -332,8 +395,8 @@ namespace RV32IM
               | true =>
                 match width with
                 | .Byte => .some (.WriteMem address .Byte (BitVec.ofNat 8 (memory_row.a_0).val))
-                | .Half => .some (.WriteMem address .Byte (BitVec.ofNat 8 (memory_row.a_1).val ++ BitVec.ofNat 8 (memory_row.a_0).val))
-                | .Word => .some (.WriteMem address .Byte (U32.toBV #v[memory_row.a_0, memory_row.a_1, memory_row.a_2, memory_row.a_3]))
+                | .Half => .some (.WriteMem address .Half (BitVec.ofNat 8 (memory_row.a_1).val ++ BitVec.ofNat 8 (memory_row.a_0).val))
+                | .Word => .some (.WriteMem address .Word (U32.toBV #v[memory_row.a_0, memory_row.a_1, memory_row.a_2, memory_row.a_3]))
               | false =>
                 match width with
                 | .Byte => .some (.ReadMem address .Byte (BitVec.ofNat 8 (memory_row.a_0).val))

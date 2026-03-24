@@ -455,15 +455,7 @@ namespace MulAir.Interpretations
     (air.cols.is_mulhu row 0 = 1 → air.cols.is_mul row 0 = 0 ∧ air.cols.is_mulh row 0 = 0 ∧ air.cols.is_mulhsu row 0 = 0 ) ∧
     (air.cols.is_mulhsu row 0 = 1 → air.cols.is_mul row 0 = 0 ∧ air.cols.is_mulh row 0 = 0 ∧ air.cols.is_mulhu row 0 = 0 )
   := by
-    have h_selectors :
-      (air.cols.is_mul row 0 = 0 ∨ air.cols.is_mul row 0 = 1) ∧
-      (air.cols.is_mulh row 0 = 0 ∨ air.cols.is_mulh row 0 = 1) ∧
-      (air.cols.is_mulhu row 0 = 0 ∨ air.cols.is_mulhu row 0 = 1) ∧
-      (air.cols.is_mulhsu row 0 = 0 ∨ air.cols.is_mulhsu row 0 = 1) ∧
-      (air.cols.is_mul row 0 + air.cols.is_mulh row 0 + air.cols.is_mulhu row 0 + air.cols.is_mulhsu row 0 = 1)
-    := by
-      simp [constraint_and_interaction_simplification, sub_eq_zero, h_is_real] at h_constraints
-      aesop
+    have h_selectors := selector_breakdown air row h_is_real h_constraints
     clear *- h_selectors
     grind
 
