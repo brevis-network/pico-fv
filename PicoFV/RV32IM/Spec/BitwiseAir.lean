@@ -12,6 +12,10 @@ namespace BitwiseAir.Spec
 
   set_option maxHeartbeats 1_000_000_000
 
+  -- =================================================================================
+  -- Helper lemmas converting FKB byte-level bitwise operations to BitVec equivalents.
+  -- =================================================================================
+
   private lemma FKB.ofNat_xor_eq (a b : FKB) (ha : a.val < 256) (hb : b.val < 256) :
       BitVec.ofNat 8 (a ^^^ b).val = BitVec.ofNat 8 a.val ^^^ BitVec.ofNat 8 b.val := by
     simp only [Fin.xor_val]
@@ -30,6 +34,10 @@ namespace BitwiseAir.Spec
       have := Nat.or_lt_two_pow h1 h2; omega
     simp only [Nat.mod_eq_of_lt this, BitVec.ofNat_or]
 
+  -- =================================================================
+  -- Selector breakdown: all selectors are binary, at most one active.
+  -- =================================================================
+
   lemma selector_breakdown
     [Field ExtF]
     (air : Valid_BitwiseAir FKB ExtF)
@@ -44,6 +52,10 @@ namespace BitwiseAir.Spec
   := by
     simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
     grind
+
+  -- ====================================================================================
+  -- XOR (opcode 2): per-byte FKB XOR matches BitVec XOR, composed via BitVec.xor_append.
+  -- ====================================================================================
 
   lemma spec_XOR
     [Field ExtF]
@@ -77,6 +89,10 @@ namespace BitwiseAir.Spec
         FKB.ofNat_xor_eq _ _ h_b1 h_c1, FKB.ofNat_xor_eq _ _ h_b0 h_c0,
         BitVec.xor_append, BitVec.xor_append, BitVec.xor_append]
 
+  -- ================================================================================
+  -- OR (opcode 3): per-byte FKB OR matches BitVec OR, composed via BitVec.or_append.
+  -- ================================================================================
+
   lemma spec_OR
     [Field ExtF]
     (air : Valid_BitwiseAir FKB ExtF)
@@ -109,6 +125,10 @@ namespace BitwiseAir.Spec
         FKB.ofNat_or_eq _ _ h_b1 h_c1, FKB.ofNat_or_eq _ _ h_b0 h_c0,
         BitVec.or_append, BitVec.or_append, BitVec.or_append]
 
+  -- ================================================================================
+  -- AND (opcode 4): per-byte AND matches BitVec AND, composed via BitVec.and_append.
+  -- ================================================================================
+
   lemma spec_AND
     [Field ExtF]
     (air : Valid_BitwiseAir FKB ExtF)
@@ -138,6 +158,10 @@ namespace BitwiseAir.Spec
     -- Prove U32.toBV a = U32.toBV b &&& U32.toBV c from byte-level AND facts
     simp [U32.toBV, *]
     rw [BitVec.and_append, BitVec.and_append, BitVec.and_append]
+
+  -- ================================================================================
+  -- Well-formedness: dispatches to spec_XOR, spec_OR, or spec_AND based on selector.
+  -- ================================================================================
 
   lemma wf_asrt
       [Field ExtF]

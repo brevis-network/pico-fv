@@ -12,6 +12,10 @@ namespace MemoryReadWriteAir.Spec
 
   set_option maxHeartbeats 1_000_000_000
 
+  -- ===================================
+  -- LB (Load Byte, signed) -- opcode 10
+  -- ===================================
+
   lemma spec_LB
     [Field ExtF]
     (air : Valid_MemoryReadWriteAir FKB ExtF)
@@ -158,6 +162,10 @@ namespace MemoryReadWriteAir.Spec
         . simp [BitVec.msb_eq_decide]
           omega
 
+  -- ======================================
+  -- LBU (Load Byte, unsigned) -- opcode 13
+  -- ======================================
+
   lemma spec_LBU
     [Field ExtF]
     (air : Valid_MemoryReadWriteAir FKB ExtF)
@@ -264,6 +272,10 @@ namespace MemoryReadWriteAir.Spec
       simp [← h_eq_pos0, ← h_eq_pos1, ← h_eq_pos2, ← h_eq_pos3]
       simp [← BitVec.toNat_inj, U32.toNat, BitVec.extend]
       omega
+
+  -- ========================================
+  -- LH (Load Half-word, signed) -- opcode 11
+  -- ========================================
 
   lemma spec_LH
     [Field ExtF]
@@ -467,6 +479,10 @@ namespace MemoryReadWriteAir.Spec
         . rw [BitVec.msb_append]; simp [BitVec.msb_eq_decide]
           omega
 
+  -- ===========================================
+  -- LHU (Load Half-word, unsigned) -- opcode 14
+  -- ===========================================
+
   lemma spec_LHU
     [Field ExtF]
     (air : Valid_MemoryReadWriteAir FKB ExtF)
@@ -616,6 +632,10 @@ namespace MemoryReadWriteAir.Spec
       simp [Nat.shiftLeft_eq_mul_pow]
       omega
 
+  -- ===========================
+  -- LW (Load Word) -- opcode 12
+  -- ===========================
+
   lemma spec_LW
     [Field ExtF]
     (air : Valid_MemoryReadWriteAir FKB ExtF)
@@ -751,6 +771,10 @@ namespace MemoryReadWriteAir.Spec
           . exfalso; grind
         . exfalso; grind
 
+  -- ============================
+  -- SB (Store Byte) -- opcode 15
+  -- ============================
+
   lemma spec_SB
     [Field ExtF]
     (air : Valid_MemoryReadWriteAir FKB ExtF)
@@ -819,6 +843,10 @@ namespace MemoryReadWriteAir.Spec
     simp [← BitVec.toNat_inj] at asm_addr
     clear *- ub_addr asm_addr
     omega
+
+  -- =================================
+  -- SH (Store Half-word) -- opcode 16
+  -- =================================
 
   lemma spec_SH
     [Field ExtF]
@@ -938,6 +966,10 @@ namespace MemoryReadWriteAir.Spec
           . simp_all; grind
           . exfalso; grind
         . exfalso; grind
+
+  -- ============================
+  -- SW (Store Word) -- opcode 17
+  -- ============================
 
   lemma spec_SW
     [Field ExtF]

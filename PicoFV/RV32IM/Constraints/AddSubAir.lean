@@ -14,6 +14,12 @@ namespace AddSubAir.ConstraintsAndBuses
 
     section row_constraints
 
+      -- =====================================================================================
+      -- Constraints 0-3: Byte-level addition constraints.
+      -- For each byte i, force op1_i + op2_i = add_value_i modulo 256 with carry propagation.
+      -- Specifically, (op1_i + op2_i - add_value_i + carry_{i-1}) ∈ {0, 256}.
+      -- =====================================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_0 (air : Valid_AddSubAir F ExtF) (row : ℕ) : Prop :=
         (((air.cols.is_add row 0) + (air.cols.is_sub row 0)) * ((((air.cols.operand_1_0 row 0) + (air.cols.operand_2_0 row 0)) - (air.cols.add_value_0 row 0)) * ((((air.cols.operand_1_0 row 0) + (air.cols.operand_2_0 row 0)) - (air.cols.add_value_0 row 0)) - 256))) = 0
@@ -49,6 +55,12 @@ namespace AddSubAir.ConstraintsAndBuses
       lemma constraint_3_equiv (air : Valid_AddSubAir F ExtF) (row : ℕ)
       : AddSubAir.Extraction.constraint_3 air row ↔ constraint_3 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ====================================================================================
+      -- Constraints 4-9: Carry pin-down constraints.
+      -- Constraints 4-6: carry_i = 1 implies overflow = 256 (the difference is exactly 256).
+      -- Constraints 7-9: carry_i ≠ 1 implies no overflow (the difference is 0).
+      -- ====================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_4 (air : Valid_AddSubAir F ExtF) (row : ℕ) : Prop :=
@@ -104,6 +116,11 @@ namespace AddSubAir.ConstraintsAndBuses
       : AddSubAir.Extraction.constraint_9 air row ↔ constraint_9 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- =============================================================================
+      -- Constraints 10-12: Boolean constraints on carry bits.
+      -- Each carry_i satisfies carry_i * (carry_i - 1) = 0, forcing carry_i ∈ {0, 1}.
+      -- =============================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_10 (air : Valid_AddSubAir F ExtF) (row : ℕ) : Prop :=
         (((air.cols.is_add row 0) + (air.cols.is_sub row 0)) * ((air.cols.add_carry_0 row 0) * ((air.cols.add_carry_0 row 0) - 1))) = 0
@@ -130,6 +147,12 @@ namespace AddSubAir.ConstraintsAndBuses
       lemma constraint_12_equiv (air : Valid_AddSubAir F ExtF) (row : ℕ)
       : AddSubAir.Extraction.constraint_12 air row ↔ constraint_12 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- =================================================================
+      -- Constraints 13-16: Selector validity.
+      -- is_add and is_sub are each boolean, and is_add + is_sub ∈ {0, 1},
+      -- ensuring exactly one operation is active per real row.
+      -- =================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_13 (air : Valid_AddSubAir F ExtF) (row : ℕ) : Prop :=
@@ -167,6 +190,10 @@ namespace AddSubAir.ConstraintsAndBuses
       : AddSubAir.Extraction.constraint_16 air row ↔ constraint_16 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- =========================================
+      -- Aggregate list of all 17 row constraints.
+      -- =========================================
+
       @[simp]
       def row_constraint_list (air : Valid_AddSubAir F ExtF) (row : ℕ) : List Prop :=
         [
@@ -192,6 +219,13 @@ namespace AddSubAir.ConstraintsAndBuses
     end row_constraints
 
     section row_buses
+
+      -- ==============================================================================================
+      -- Bus interactions for the AddSub chip:
+      -- 6 ByteBus entries (opcode 7): range checks for operand_1, operand_2, add_value byte pairs.
+      -- 2 ALU entries: opcode 0 for ADD (multiplicity is_add), opcode 1 for SUB (multiplicity is_sub).
+      -- Note: SUB swaps operand order: a=operand_1, b=add_value, c=operand_2.
+      -- ==============================================================================================
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_AddSubAir FKB ExtF) (row : ℕ) : List (FKB × List FKB) := [(-(((air.cols.is_add row 0) + (air.cols.is_sub row 0))), [4, 7, 0, 0, (air.cols.operand_1_0 row 0), (air.cols.operand_1_1 row 0)]),
@@ -286,6 +320,10 @@ namespace AddSubAir.Interpretations
   open RV32IM_Interactions
   open AddSubAir.ConstraintsAndBuses
   open AddSubAir.Interactions
+
+  -- =======================================================================
+  -- Interpretation lemmas: derive semantic properties from raw constraints.
+  -- =======================================================================
 
   lemma selector_breakdown
     [Field ExtF]

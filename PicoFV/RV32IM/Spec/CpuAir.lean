@@ -20,6 +20,11 @@ namespace CpuAir.Spec
   -- Externals
   --
 
+  -- =============================================================================
+  -- Externality assertions: proves all sub-chip external assertions hold for real
+  -- instruction rows. Case splits over all 38 possible opcodes.
+  -- =============================================================================
+
   lemma ext_asrt
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
@@ -275,6 +280,11 @@ namespace CpuAir.Spec
   --
   -- Well-formedness
   --
+
+  -- ===============================================================================
+  -- Well-formedness: proves all bus categories are well-formed (program, ALU, byte,
+  -- state, memory).
+  -- ===============================================================================
 
   lemma wf_asrt
     [Field ExtF]

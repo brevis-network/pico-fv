@@ -14,6 +14,11 @@ namespace CpuAir.ConstraintsAndBuses
 
     section row_constraints
 
+      -- ==========================================================================
+      -- Operand access constraints (constraints 0-15): immediate value validation,
+      -- memory access control for operands b and c.
+      -- ==========================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_0 (air : Valid_CpuAir F ExtF) (row : ℕ) : Prop :=
         air.cols.opcode_selector.imm_b row 0 * (air.cols.op_b_access.value_0 row 0 - air.cols.instruction.b_0 row 0) = 0
@@ -158,6 +163,10 @@ namespace CpuAir.ConstraintsAndBuses
       : CpuAir.Extraction.constraint_15 air row ↔ constraint_15 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ======================================================================================
+      -- Register x0 constraints (constraints 16-19): when a_is_0=1, force op_a values to zero.
+      -- ======================================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_16 (air : Valid_CpuAir F ExtF) (row : ℕ) : Prop :=
         air.cols.instruction.a_is_0 row 0 * air.cols.op_a_access.access.value_0 row 0 = 0
@@ -193,6 +202,11 @@ namespace CpuAir.ConstraintsAndBuses
       lemma constraint_19_equiv (air : Valid_CpuAir F ExtF) (row : ℕ)
       : CpuAir.Extraction.constraint_19 air row ↔ constraint_19 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ===============================================================================
+      -- Control flow constraints (constraints 20-40): is_real, branching, not_branching
+      -- booleans and mutual exclusivity.
+      -- ===============================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_20 (air : Valid_CpuAir F ExtF) (row : ℕ) : Prop :=
@@ -382,6 +396,11 @@ namespace CpuAir.ConstraintsAndBuses
       lemma constraint_40_equiv (air : Valid_CpuAir F ExtF) (row : ℕ)
       : CpuAir.Extraction.constraint_40 air row ↔ constraint_40 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ================================================================================
+      -- Clock and PC constraints (constraints 41-79): PC sequentiality (next_pc = pc + 4
+      -- when sequential), clock advancement with ecall overhead.
+      -- ================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_41 (air : Valid_CpuAir F ExtF) (row : ℕ) : Prop :=
@@ -733,6 +752,11 @@ namespace CpuAir.ConstraintsAndBuses
       lemma constraint_79_equiv (air : Valid_CpuAir F ExtF) (row : ℕ)
       : CpuAir.Extraction.constraint_79 air row ↔ constraint_79 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ==================================================================================
+      -- Instruction type constraints (constraints 80-144): branch PC/next_pc range checks,
+      -- comparison results; jump instruction specifics; AUIPC specifics.
+      -- ==================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_80 (air : Valid_CpuAir F ExtF) (row : ℕ) : Prop :=
@@ -1318,6 +1342,12 @@ namespace CpuAir.ConstraintsAndBuses
       lemma constraint_144_equiv (air : Valid_CpuAir F ExtF) (row : ℕ)
       : CpuAir.Extraction.constraint_144 air row ↔ constraint_144 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ============================================================================
+      -- ECall constraints (constraints 145-242): IsZeroGadget for ecall type checks,
+      -- index bitmap, operand range checker, syscall parameter handling,
+      -- ecall-clock interactions.
+      -- ============================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_145 (air : Valid_CpuAir F ExtF) (row : ℕ) : Prop :=
@@ -2201,6 +2231,11 @@ namespace CpuAir.ConstraintsAndBuses
       : CpuAir.Extraction.constraint_242 air row ↔ constraint_242 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- =========================================================================
+      -- Padding row constraints (constraints 243-260): when is_real=0, all opcode
+      -- selectors must be 0.
+      -- =========================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_243 (air : Valid_CpuAir F ExtF) (row : ℕ) : Prop :=
         (1 - air.cols.is_real row 0) * air.cols.opcode_selector.is_lb row 0 = 0
@@ -2632,6 +2667,12 @@ namespace CpuAir.ConstraintsAndBuses
     end row_constraints
 
     section row_buses
+
+      -- ===========================================================================
+      -- Bus interactions (5 buses): Program (instruction fetch), ALU (7 entries for
+      -- computation), Byte (11 entries for decompositions), State (6 entries for
+      -- register tracking), Memory (1 entry for load/store).
+      -- ===========================================================================
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_CpuAir FKB ExtF) (row : ℕ) : List (FKB × List FKB) := [
@@ -3078,7 +3119,9 @@ namespace CpuAir.Interpretations
     simp [Valid_CpuCols.is_branch_instruction]
     grind (splits := 24)
 
+  -- ==========================
   -- Instruction type breakdown
+  -- ==========================
   lemma instruction_breakdown
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
@@ -3108,7 +3151,9 @@ namespace CpuAir.Interpretations
     simp [Valid_CpuCols.is_branch_instruction, Valid_CpuCols.is_jump_instruction]
     grind
 
+  -- =========================================
   -- Constraints 0-3: when `b` is an immediate
+  -- =========================================
   lemma imm_b_eqs
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
@@ -3132,7 +3177,9 @@ namespace CpuAir.Interpretations
     ] at relevant_constraints
     assumption
 
+  -- =========================================
   -- Constraints 3-7: when `c` is an immediate
+  -- =========================================
   lemma imm_c_eqs
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
@@ -3156,7 +3203,9 @@ namespace CpuAir.Interpretations
     ] at relevant_constraints
     assumption
 
+  -- ===================================
   -- Constraints 16-19: when `a` is zero
+  -- ===================================
   lemma a_is_zero_eqs
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
@@ -3179,7 +3228,9 @@ namespace CpuAir.Interpretations
     ] at relevant_constraints
     assumption
 
+  -- ========================================
   -- Constraints 24-27: when `a` is unchanged
+  -- ========================================
   lemma a_unchanged
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
@@ -3210,7 +3261,9 @@ namespace CpuAir.Interpretations
     . have h_store_characterisation := is_store_instruction_characterisation air row h_is_real h_assumptions h_constraints h_store
       simp_all
 
+  -- =========================================
   -- `a`, `b`, and `c` values are always bytes
+  -- =========================================
   lemma operand_range
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
@@ -3278,7 +3331,9 @@ namespace CpuAir.Interpretations
       simp at h_b h_c h_imm_b h_imm_c
       simp [h_b, h_c]
 
+  -- =====================================================
   -- Constraints 28, 31-45 : `pc` breakdown when branching
+  -- =====================================================
   lemma branching_pc
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
@@ -3326,7 +3381,9 @@ namespace CpuAir.Interpretations
     rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
     grind
 
+  -- ==========================================================
   -- Constraints 30, 46-60 : `next_pc` breakdown when branching
+  -- ==========================================================
   lemma branching_next_pc
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
@@ -3377,7 +3434,9 @@ namespace CpuAir.Interpretations
     rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
     grind
 
+  -- ================================================
   -- Constraints 63-64 : `next_pc` when not branching
+  -- ================================================
   lemma not_branching_next_pc
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
@@ -3515,7 +3574,9 @@ namespace CpuAir.Interpretations
     all_goals simp [← BitVec.toNat_inj, U32.toNat] at h_assumptions
     all_goals omega
 
+  -- ==================================================
   -- Constraints 80, 84-98 : jump instruction, `pc + 4`
+  -- ==================================================
   lemma jump_pc_plus_four
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
@@ -3569,7 +3630,9 @@ namespace CpuAir.Interpretations
     rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
     omega
 
+  -- ==============================================
   -- Constraints 81, 99-113 : JAL instruction, `pc`
+  -- ==============================================
   lemma jal_pc
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
@@ -3615,7 +3678,9 @@ namespace CpuAir.Interpretations
     rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
     grind
 
+  -- ========================================
   -- Constraints 83, 114-128 : jump `next_pc`
+  -- ========================================
   lemma jump_next_pc
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)
@@ -3666,7 +3731,9 @@ namespace CpuAir.Interpretations
       rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
       grind
 
+  -- ===========================================
   -- Constraints 129-113 : JAL instruction, `pc`
+  -- ===========================================
   lemma auipc_pc
     [Field ExtF]
     (air : Valid_CpuAir FKB ExtF)

@@ -17,6 +17,10 @@ namespace AddSubAir.Spec
   -- Externals
   --
 
+  -- ==============================================
+  -- Externality assertions for the AddSub bus row.
+  -- ==============================================
+
   lemma ext_asrt
     [Field ExtF]
     (air : Valid_AddSubAir FKB ExtF)
@@ -32,6 +36,11 @@ namespace AddSubAir.Spec
   --
   -- Opcode specifications
   --
+
+  -- ================================================================
+  -- ADD (opcode 0): proves add_value = operand_1 + operand_2 as U32.
+  -- Case-splits on 3 carry bits (8 cases), closes with omega.
+  -- ================================================================
 
   lemma spec_ADD
     [Field ExtF]
@@ -79,6 +88,11 @@ namespace AddSubAir.Spec
     rcases hc11 <;> simp_all <;>
     rcases hc12 <;> simp_all <;>
     omega
+
+  -- =================================================================================
+  -- SUB (opcode 1): proves operand_1 = add_value + operand_2
+  -- (i.e. add_value = operand_1 - operand_2). Same carry case-split technique as ADD.
+  -- =================================================================================
 
   lemma spec_SUB
     [Field ExtF]
@@ -130,6 +144,10 @@ namespace AddSubAir.Spec
   --
   -- Well-formedness
   --
+
+  -- =============================================================================
+  -- Well-formedness: dispatches to spec_ADD or spec_SUB based on active selector.
+  -- =============================================================================
 
   lemma wf_asrt
     [Field ExtF]

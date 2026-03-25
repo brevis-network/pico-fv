@@ -14,6 +14,12 @@ namespace MulAir.ConstraintsAndBuses
 
     section row_constraints
 
+      -- ==============================================
+      -- Sign extension flags (constraints 0-1):
+      -- b_sign_extend = (is_mulh | is_mulhsu) * b_msb;
+      -- c_sign_extend = is_mulh * c_msb.
+      -- ==============================================
+
       @[constraint_and_interaction_simplification]
       def constraint_0 (air : Valid_MulAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.b_sign_extend row 0) - ((((air.cols.is_mulh row 0) + (air.cols.is_mulhsu row 0)) - ((air.cols.is_mulh row 0) * (air.cols.is_mulhsu row 0))) * (air.cols.b_msb row 0))) = 0
@@ -31,6 +37,12 @@ namespace MulAir.ConstraintsAndBuses
       lemma constraint_1_equiv (air : Valid_MulAir F ExtF) (row : ℕ)
       : MulAir.Extraction.constraint_1 air row ↔ constraint_1 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ===================================================================================
+      -- Schoolbook multiplication carry chain (constraints 2-9): 8 bytes of 64-bit product.
+      -- Each constraint: product_i + carry_i*256 = sum(b_j * c_k for j+k=i) + carry_{i-1}.
+      -- Sign-extended bytes (positions 4-7) use b_sign_extend*255 and c_sign_extend*255.
+      -- ===================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_2 (air : Valid_MulAir F ExtF) (row : ℕ) : Prop :=
@@ -104,6 +116,12 @@ namespace MulAir.ConstraintsAndBuses
       : MulAir.Extraction.constraint_9 air row ↔ constraint_9 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- =================================================================================
+      -- Result routing (constraints 10-17): MUL routes product_0..3 to a_0..3 (low word);
+      -- MULH/MULHU/MULHSU route product_4..7 to a_0..3 (high word).
+      -- Interleaved: even=MUL, odd=high variants.
+      -- =================================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_10 (air : Valid_MulAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.is_mul row 0) * ((air.cols.product_0 row 0) - (air.cols.a_0 row 0))) = 0
@@ -175,6 +193,11 @@ namespace MulAir.ConstraintsAndBuses
       lemma constraint_17_equiv (air : Valid_MulAir F ExtF) (row : ℕ)
       : MulAir.Extraction.constraint_17 air row ↔ constraint_17 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ===================================================================================
+      -- Binary constraints (constraints 18-26): b_msb, c_msb, b_sign_extend, c_sign_extend,
+      -- all four selectors, and is_real.
+      -- ===================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_18 (air : Valid_MulAir F ExtF) (row : ℕ) : Prop :=
@@ -257,6 +280,12 @@ namespace MulAir.ConstraintsAndBuses
       : MulAir.Extraction.constraint_26 air row ↔ constraint_26 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- =======================================================================
+      -- Sign extension consistency and selector uniqueness (constraints 27-29):
+      -- b_sign_extend=1 -> b_msb=1; c_sign_extend=1 -> c_msb=1;
+      -- is_real=1 -> exactly one selector active.
+      -- =======================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_27 (air : Valid_MulAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.b_sign_extend row 0) * ((air.cols.b_msb row 0) - 1)) = 0
@@ -283,6 +312,10 @@ namespace MulAir.ConstraintsAndBuses
       lemma constraint_29_equiv (air : Valid_MulAir F ExtF) (row : ℕ)
       : MulAir.Extraction.constraint_29 air row ↔ constraint_29 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ===========================
+      -- Aggregated constraint list.
+      -- ===========================
 
       @[simp]
       def row_constraint_list (air : Valid_MulAir F ExtF) (row : ℕ) : List Prop :=
@@ -322,6 +355,13 @@ namespace MulAir.ConstraintsAndBuses
     end row_constraints
 
     section row_buses
+
+      -- ==================================================================
+      -- Bus interactions: 2 ByteBus (opcode 6, MSB checks for b_3 and c_3)
+      -- + 8 ByteBus (opcode 8, range checks for carries)
+      -- + 4 ByteBus (opcode 7, range checks for product byte pairs)
+      -- + 1 ALU entry (opcode 30=MUL, 31=MULH, 32=MULHU, 33=MULHSU).
+      -- ==================================================================
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_MulAir FKB ExtF) (row : ℕ) : List (FKB × List FKB) := [(-((air.cols.is_real row 0)), [4, 6, (air.cols.b_msb row 0), 0, (air.cols.b_3 row 0), 0]),
@@ -426,6 +466,10 @@ namespace MulAir.Interactions
 end MulAir.Interactions
 
 namespace MulAir.Interpretations
+
+  -- ==========================================================
+  -- Interpretation lemmas: selector breakdown and exclusivity.
+  -- ==========================================================
 
   lemma selector_breakdown
     [Field ExtF]

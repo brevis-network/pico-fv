@@ -10,7 +10,10 @@ namespace SllAir.Spec
   open SllAir.ConstraintsAndBuses
   open SllAir.Interactions
 
-  -- Helper: Convert FKB shift-result equation (first byte) to Nat carry equation
+  -- =========================================================
+  -- Helpers: convert FKB shift-result carry equations to Nat.
+  -- =========================================================
+
   private lemma sr_nat_first (sr b bsm co : FKB)
       (hsr : sr.val < 256) (hb : b.val < 256) (hbsm : bsm.val ≤ 128)
       (hco : co.val < 256)
@@ -19,7 +22,10 @@ namespace SllAir.Spec
     have hprod : b.val * bsm.val ≤ 255 * 128 := Nat.mul_le_mul (by omega) hbsm
     grind
 
+  -- ==================================================================================
   -- Helper: Convert FKB shift-result equation (subsequent bytes) to Nat carry equation
+  -- ==================================================================================
+
   private lemma sr_nat_next (sr b bsm ci co : FKB)
       (hsr : sr.val < 256) (hb : b.val < 256) (hbsm : bsm.val ≤ 128)
       (hci : ci.val < 256) (hco : co.val < 256)
@@ -27,6 +33,11 @@ namespace SllAir.Spec
       sr.val + co.val * 256 = b.val * bsm.val + ci.val := by
     have hprod : b.val * bsm.val ≤ 255 * 128 := Nat.mul_le_mul (by omega) hbsm
     grind
+
+  -- ==============================================================================
+  -- SLL (opcode 5): 32-case split on c mod 32. Each case resolves shift selectors,
+  -- applies carry-chain Nat equations, closes with BitVec.eq_of_toNat_eq + omega.
+  -- ==============================================================================
 
   lemma spec_SLL
     [Field ExtF]
@@ -121,6 +132,10 @@ namespace SllAir.Spec
       apply BitVec.eq_of_toNat_eq
       simp [U32.toBV_toNat, U32.toNat, BitVec.toNat_ofNat, BitVec.toNat_shiftLeft]
       omega
+
+  -- =======================================================
+  -- Well-formedness: dispatches to spec_SLL when is_real=1.
+  -- =======================================================
 
   lemma wf_asrt
       [Field ExtF]

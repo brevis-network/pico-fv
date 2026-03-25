@@ -14,6 +14,10 @@ namespace LtAir.ConstraintsAndBuses
 
     section row_constraints
 
+      -- ================================================================================================
+      -- MSB extraction (constraints 0-1): extract sign bits from b_3 and c_3 via modular inverse of 128.
+      -- ================================================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_0 (air : Valid_LtAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.msb_b row 0) - (((air.cols.b_3 row 0) - (air.cols.b_masked row 0)) * 2114060289)) = 0
@@ -31,6 +35,11 @@ namespace LtAir.ConstraintsAndBuses
       lemma constraint_1_equiv (air : Valid_LtAir F ExtF) (row : ℕ)
       : LtAir.Extraction.constraint_1 air row ↔ constraint_1 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- =====================================================================================
+      -- Binary flags and sign-bit propagation (constraints 2-4): is_sign_bit_same is boolean;
+      -- bit_b = msb_b * is_slt, bit_c = msb_c * is_slt (zero for unsigned).
+      -- =====================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_2 (air : Valid_LtAir F ExtF) (row : ℕ) : Prop :=
@@ -59,6 +68,12 @@ namespace LtAir.ConstraintsAndBuses
       : LtAir.Extraction.constraint_4 air row ↔ constraint_4 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ==============================================================================================
+      -- Sign-bit comparison logic (constraints 5-7): constraint 5 forces is_sign_bit_same=0 when signs
+      -- differ; constraint 6 ensures consistency; constraint 7 computes result:
+      -- a_0 = bit_b*(1-bit_c) + is_sign_bit_same*slt_u.
+      -- ==============================================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_5 (air : Valid_LtAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.is_sign_bit_same row 0) * ((air.cols.bit_b row 0) - (air.cols.bit_c row 0))) = 0
@@ -86,6 +101,10 @@ namespace LtAir.ConstraintsAndBuses
       : LtAir.Extraction.constraint_7 air row ↔ constraint_7 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- =================================================================
+      -- Result word zero-padding (constraints 8-10): a_1 = a_2 = a_3 = 0.
+      -- =================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_8 (air : Valid_LtAir F ExtF) (row : ℕ) : Prop :=
         (air.cols.a_1 row 0) = 0
@@ -112,6 +131,10 @@ namespace LtAir.ConstraintsAndBuses
       lemma constraint_10_equiv (air : Valid_LtAir F ExtF) (row : ℕ)
       : LtAir.Extraction.constraint_10 air row ↔ constraint_10 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- =======================================================================================
+      -- More binary constraints (constraints 11-15): is_cmp_eq and byte_flags_0..3 are boolean.
+      -- =======================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_11 (air : Valid_LtAir F ExtF) (row : ℕ) : Prop :=
@@ -158,6 +181,10 @@ namespace LtAir.ConstraintsAndBuses
       : LtAir.Extraction.constraint_15 air row ↔ constraint_15 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ==================================================================================================
+      -- Byte flag structure (constraints 16-17): byte flags form one-hot or all-zero; linked to is_cmp_eq.
+      -- ==================================================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_16 (air : Valid_LtAir F ExtF) (row : ℕ) : Prop :=
         (((((air.cols.byte_flags_0 row 0) + (air.cols.byte_flags_1 row 0)) + (air.cols.byte_flags_2 row 0)) + (air.cols.byte_flags_3 row 0)) * (((((air.cols.byte_flags_0 row 0) + (air.cols.byte_flags_1 row 0)) + (air.cols.byte_flags_2 row 0)) + (air.cols.byte_flags_3 row 0)) - 1)) = 0
@@ -175,6 +202,12 @@ namespace LtAir.ConstraintsAndBuses
       lemma constraint_17_equiv (air : Valid_LtAir F ExtF) (row : ℕ)
       : LtAir.Extraction.constraint_17 air row ↔ constraint_17 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ===========================================================================================
+      -- Byte-level comparison scan (constraints 18-25): scanning from MSB (byte 3) to LSB (byte 0),
+      -- flagging the first differing byte pair. Even constraints enforce equality above the flagged
+      -- byte; odd constraints enforce consistency with is_cmp_eq.
+      -- ===========================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_18 (air : Valid_LtAir F ExtF) (row : ℕ) : Prop :=
@@ -248,6 +281,11 @@ namespace LtAir.ConstraintsAndBuses
       : LtAir.Extraction.constraint_25 air row ↔ constraint_25 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ==========================================================================================
+      -- Comparison byte assembly (constraints 26-27): select the first differing byte from b and c
+      -- using byte_flags, with sign-aware masking for SLT.
+      -- ==========================================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_26 (air : Valid_LtAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.cmp_bytes_0 row 0) - ((((0 + ((((air.cols.b_3 row 0) * (air.cols.is_slt_u row 0)) + ((air.cols.b_masked row 0) * (air.cols.is_slt row 0))) * (air.cols.byte_flags_3 row 0))) + ((air.cols.b_2 row 0) * (air.cols.byte_flags_2 row 0))) + ((air.cols.b_1 row 0) * (air.cols.byte_flags_1 row 0))) + ((air.cols.b_0 row 0) * (air.cols.byte_flags_0 row 0)))) = 0
@@ -266,6 +304,11 @@ namespace LtAir.ConstraintsAndBuses
       : LtAir.Extraction.constraint_27 air row ↔ constraint_27 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ================================================================================
+      -- Final comparison (constraint 28): when not equal, uses multiplicative inverse of
+      -- (cmp_bytes_0 - cmp_bytes_1) to determine order.
+      -- ================================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_28 (air : Valid_LtAir F ExtF) (row : ℕ) : Prop :=
         (((air.cols.is_cmp_eq row 0) - 1) * (((air.cols.not_eq_inv row 0) * ((air.cols.cmp_bytes_0 row 0) - (air.cols.cmp_bytes_1 row 0))) - ((air.cols.is_slt row 0) + (air.cols.is_slt_u row 0)))) = 0
@@ -274,6 +317,10 @@ namespace LtAir.ConstraintsAndBuses
       lemma constraint_28_equiv (air : Valid_LtAir F ExtF) (row : ℕ)
       : LtAir.Extraction.constraint_28 air row ↔ constraint_28 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ================================================================================================
+      -- Selector booleans (constraints 29-31): is_slt, is_slt_u are boolean; is_slt + is_slt_u in {0,1}.
+      -- ================================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_29 (air : Valid_LtAir F ExtF) (row : ℕ) : Prop :=
@@ -342,6 +389,11 @@ namespace LtAir.ConstraintsAndBuses
     end row_constraints
 
     section row_buses
+
+      -- ===================================================================================
+      -- Bus interactions: 3 ByteBus entries (MSB decomposition for b and c, comparison byte
+      -- validation) + 1 ALU entry (opcode 8 for SLT, 9 for SLTU).
+      -- ===================================================================================
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_LtAir FKB ExtF) (row : ℕ) : List (FKB × List FKB) := [(-(((air.cols.is_slt row 0) + (air.cols.is_slt_u row 0))), [4, 0, (air.cols.b_masked row 0), 0, (air.cols.b_3 row 0), 127]),
@@ -424,6 +476,10 @@ namespace LtAir.Interactions
 end LtAir.Interactions
 
 namespace LtAir.Interpretations
+
+  -- =======================================================================
+  -- Interpretation lemmas: derive selector properties from raw constraints.
+  -- =======================================================================
 
   lemma selector_breakdown
     [Field ExtF]

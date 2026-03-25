@@ -12,11 +12,21 @@ namespace MulAir.Spec
   open MulAir.Interactions
   open MulAir.Interpretations
 
+  -- ============================================
+  -- Helper: upper bound on product of two bytes.
+  -- ============================================
+
   private lemma ub_byte_prod {a b : Fin KB} (ha : a.val < 256) (hb : b.val < 256)
   :
     a.val * b.val ≤ 65025
   := by
     trans 255 * 255 <;> [ apply mul_le_mul; skip ] <;> omega
+
+  -- ==========================================================================
+  -- Core schoolbook multiplication correctness: given 8 carry-chain equations,
+  -- proves U64.toBV prod = U64.toBV bw * U64.toBV cw.
+  -- Uses joins/divs lemmas to fold carries into a single 64-bit equation.
+  -- ==========================================================================
 
   lemma core_mul
     (b c : U32)
@@ -118,6 +128,10 @@ namespace MulAir.Spec
     ring_nf
     omega
 
+  -- ===========================================
+  -- Helpers: extract low/high 32 bits from U64.
+  -- ===========================================
+
   private lemma U64_extractLsb_low (x : U64) :
       BitVec.extractLsb 31 0 (U64.toBV x) = U32.toBV #v[x[0], x[1], x[2], x[3]] := by
     simp [← BitVec.toNat_inj, U64.toNat, U32.toNat]
@@ -131,6 +145,10 @@ namespace MulAir.Spec
   --
   -- Externals
   --
+
+  -- =======================
+  -- Externality assertions.
+  -- =======================
 
   lemma ext_asrt
     [Field ExtF]
@@ -148,6 +166,11 @@ namespace MulAir.Spec
   --
   -- Opcode specifications
   --
+
+  -- ========================================================================
+  -- MUL (opcode 30): low 32 bits of unsigned product.
+  -- Applies core_mul with extend=false for both operands, extracts low word.
+  -- ========================================================================
 
   lemma spec_MUL
     [Field ExtF]
@@ -240,6 +263,11 @@ namespace MulAir.Spec
     simp [← U32.extend_BitVec_extend, h_b_ext, h_c_ext]
     rw [← core_mul, U64_extractLsb_low]
     rfl
+
+  -- ===============================================================
+  -- MULH (opcode 31): high 32 bits of signed*signed product.
+  -- Applies core_mul with extend=true for both, extracts high word.
+  -- ===============================================================
 
   lemma spec_MULH
     [Field ExtF]
@@ -335,6 +363,10 @@ namespace MulAir.Spec
     rw [← core_mul, U64_extractLsb_high]
     rfl
 
+  -- =============================================================
+  -- MULHU (opcode 32): high 32 bits of unsigned*unsigned product.
+  -- =============================================================
+
   lemma spec_MULHU
     [Field ExtF]
     (air : Valid_MulAir FKB ExtF)
@@ -426,6 +458,11 @@ namespace MulAir.Spec
     simp [← U32.extend_BitVec_extend, h_b_ext, h_c_ext]
     rw [← core_mul, U64_extractLsb_high]
     rfl
+
+  -- ============================================================
+  -- MULHSU (opcode 33): high 32 bits of signed*unsigned product.
+  -- b extends signed, c extends unsigned.
+  -- ============================================================
 
   lemma spec_MULHSU
     [Field ExtF]
@@ -523,6 +560,10 @@ namespace MulAir.Spec
   --
   -- Well-formedness
   --
+
+  -- ==================================================================================
+  -- Well-formedness: dispatches to the per-opcode spec lemma based on active selector.
+  -- ==================================================================================
 
   lemma wf_asrt
     [Field ExtF]

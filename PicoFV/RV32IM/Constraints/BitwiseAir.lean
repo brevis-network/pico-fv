@@ -14,6 +14,12 @@ namespace BitwiseAir.ConstraintsAndBuses
 
     section row_constraints
 
+      -- ==========================================================================
+      -- Constraints 0-2: is_xor, is_or, is_and are each boolean (x * (x - 1) = 0).
+      -- Constraint 3: is_real = is_xor + is_or + is_and is boolean,
+      -- ensuring at most one selector is active per row.
+      -- ==========================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_0 (air : Valid_BitwiseAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.is_xor row 0) * ((air.cols.is_xor row 0) - 1)) = 0
@@ -50,6 +56,10 @@ namespace BitwiseAir.ConstraintsAndBuses
       : BitwiseAir.Extraction.constraint_3 air row ↔ constraint_3 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ===========================================
+      -- Collected constraint list for a single row.
+      -- ===========================================
+
       @[simp]
       def row_constraint_list (air : Valid_BitwiseAir F ExtF) (row : ℕ) : List Prop :=
         [
@@ -62,6 +72,14 @@ namespace BitwiseAir.ConstraintsAndBuses
     end row_constraints
 
     section row_buses
+
+      -- =============================================================================
+      -- Bus interactions:
+      -- 4 ByteBus entries (one per byte of a, b, c), with opcode = is_xor*2 + is_or*1
+      --   encoding the bitwise operation for byte-level lookup.
+      -- 1 ALU entry with opcode = is_xor*2 + is_or*3 + is_and*4,
+      --   carrying the full 4-byte words a, b, c.
+      -- =============================================================================
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_BitwiseAir FKB ExtF) (row : ℕ) : List (FKB × List FKB) := [(-((((air.cols.is_xor row 0) + (air.cols.is_or row 0)) + (air.cols.is_and row 0))), [4, ((((air.cols.is_xor row 0) * 2) + ((air.cols.is_or row 0) * 1)) + ((air.cols.is_and row 0) * 0)), (air.cols.a_0 row 0), 0, (air.cols.b_0 row 0), (air.cols.c_0 row 0)]),

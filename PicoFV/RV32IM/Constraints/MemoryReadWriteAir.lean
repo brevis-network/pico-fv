@@ -14,6 +14,11 @@ namespace MemoryReadWriteAir.ConstraintsAndBuses
 
     section row_constraints
 
+      -- =====================================================================================
+      -- Address range validation (constraints 0-9): MSB decomposition bits are boolean (0-7),
+      -- weighted sum equals MSB byte (8), upper address byte is zero (9).
+      -- =====================================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_0 (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ) : Prop :=
         (((((((((air.cols.instruction.is_lb row 0) + (air.cols.instruction.is_lbu row 0)) + (air.cols.instruction.is_lh row 0)) + (air.cols.instruction.is_lhu row 0)) + (air.cols.instruction.is_lw row 0)) + (air.cols.instruction.is_sb row 0)) + (air.cols.instruction.is_sh row 0)) + (air.cols.instruction.is_sw row 0)) * ((air.cols.addr_word_range_checker.most_sig_byte_decomp_0 row 0) * ((air.cols.addr_word_range_checker.most_sig_byte_decomp_0 row 0) - 1))) = 0
@@ -103,6 +108,12 @@ namespace MemoryReadWriteAir.ConstraintsAndBuses
       lemma constraint_9_equiv (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ)
       : MemoryReadWriteAir.Extraction.constraint_9 air row ↔ constraint_9 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ===========================================================================================
+      -- Memory access tracking (constraints 10-34): prev_chunk/prev_clk handling, LSB decomposition
+      -- for addr%64, offset computation (addr%4 encoded as offset_is_one/two/three), clock and
+      -- chunk sequencing.
+      -- ===========================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_10 (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ) : Prop :=
@@ -328,6 +339,13 @@ namespace MemoryReadWriteAir.ConstraintsAndBuses
       lemma constraint_34_equiv (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ)
       : MemoryReadWriteAir.Extraction.constraint_34 air row ↔ constraint_34 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- =====================================================================================
+      -- Load instruction constraints (constraints 35-62): constraints 35-38 enforce read-only
+      -- (value=prev_value for loads); 39-42 LB/LBU byte extraction by offset; 43-44 alignment
+      -- (LH: offset in {0,2}, LW: offset=0); 45-52 LH/LHU and LW value extraction; 53-62 MSB
+      -- decomposition for sign extension.
+      -- =====================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_35 (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ) : Prop :=
@@ -581,6 +599,11 @@ namespace MemoryReadWriteAir.ConstraintsAndBuses
       : MemoryReadWriteAir.Extraction.constraint_62 air row ↔ constraint_62 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ====================================================================================
+      -- Sign extension flags (constraints 63-65): op_a_0 binary; mem_value_is_neg_not_x0 and
+      -- mem_value_is_pos_not_x0 for signed load sign detection.
+      -- ====================================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_63 (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.instruction.op_a_0 row 0) * ((air.cols.instruction.op_a_0 row 0) - 1)) = 0
@@ -594,8 +617,11 @@ namespace MemoryReadWriteAir.ConstraintsAndBuses
       def constraint_64 (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.mem_value_is_neg_not_x0 row 0) - ((((air.cols.instruction.is_lb row 0) + (air.cols.instruction.is_lh row 0)) * (air.cols.msb_decomp_7 row 0)))) = 0
 
+      -- =========================================================================================
       -- FIXME:
       -- `MemoryReadWriteAir.Extraction.constraint_64 air row` should not be conditional on a_is_0
+      -- =========================================================================================
+
       @[simp]
       lemma constraint_64_equiv (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ)
       : MemoryReadWriteAir.Extraction.constraint_64 air row ↔ constraint_64 air row
@@ -605,8 +631,11 @@ namespace MemoryReadWriteAir.ConstraintsAndBuses
       def constraint_65 (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.mem_value_is_pos_not_x0 row 0) - (((((((air.cols.instruction.is_lb row 0) + (air.cols.instruction.is_lh row 0)) * (1 - (air.cols.msb_decomp_7 row 0))) + (air.cols.instruction.is_lbu row 0)) + (air.cols.instruction.is_lhu row 0)) + (air.cols.instruction.is_lw row 0)))) = 0
 
+      -- =========================================================================================
       -- FIXME:
       -- `MemoryReadWriteAir.Extraction.constraint_65 air row` should not be conditional on a_is_0
+      -- =========================================================================================
+
       @[simp]
       lemma constraint_65_equiv (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ)
       : MemoryReadWriteAir.Extraction.constraint_65 air row ↔ constraint_65 air row
@@ -647,6 +676,11 @@ namespace MemoryReadWriteAir.ConstraintsAndBuses
       lemma constraint_69_equiv (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ)
       : MemoryReadWriteAir.Extraction.constraint_69 air row ↔ constraint_69 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ======================================================================================
+      -- Offset validation (constraints 70-77): offset_is_one/two/three are binary, at most one
+      -- set, linked to addr_offset value.
+      -- ======================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_70 (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ) : Prop :=
@@ -719,6 +753,11 @@ namespace MemoryReadWriteAir.ConstraintsAndBuses
       lemma constraint_77_equiv (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ)
       : MemoryReadWriteAir.Extraction.constraint_77 air row ↔ constraint_77 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ===================================================================================
+      -- Store instruction constraints (constraints 78-91): SB byte store by offset (78-81);
+      -- SH alignment + half-word store (82-87); SW alignment + word store (88-91).
+      -- ===================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_78 (air : Valid_MemoryReadWriteAir F ExtF) (row : ℕ) : Prop :=
@@ -946,6 +985,12 @@ namespace MemoryReadWriteAir.ConstraintsAndBuses
     end row_constraints
 
     section row_buses
+
+      -- =====================================================================================
+      -- Bus interactions: program/ALU entry (instruction metadata), ALU address verification,
+      -- 2 ByteBus (address byte range), 2 ByteBus (clock diffs), 2 State Bus (before/after
+      -- memory state), 1 ALU (sign extension).
+      -- =====================================================================================
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_MemoryReadWriteAir FKB ExtF) (row : ℕ) : List (FKB × List FKB) := [(((((((((air.cols.instruction.is_lb row 0) + (air.cols.instruction.is_lbu row 0)) + (air.cols.instruction.is_lh row 0)) + (air.cols.instruction.is_lhu row 0)) + (air.cols.instruction.is_lw row 0)) + (air.cols.instruction.is_sb row 0)) + (air.cols.instruction.is_sh row 0)) + (air.cols.instruction.is_sw row 0)), [0, (air.cols.instruction.opcode row 0), (air.cols.instruction.op_a_access.access.value_0 row 0), (air.cols.instruction.op_a_access.access.value_1 row 0), (air.cols.instruction.op_a_access.access.value_2 row 0), (air.cols.instruction.op_a_access.access.value_3 row 0), (air.cols.instruction.op_b_access.value_0 row 0), (air.cols.instruction.op_b_access.value_1 row 0), (air.cols.instruction.op_b_access.value_2 row 0), (air.cols.instruction.op_b_access.value_3 row 0), (air.cols.instruction.op_c_access.value_0 row 0), (air.cols.instruction.op_c_access.value_1 row 0), (air.cols.instruction.op_c_access.value_2 row 0), (air.cols.instruction.op_c_access.value_3 row 0), (air.cols.instruction.op_a_0 row 0), (air.cols.instruction.is_lb row 0), (air.cols.instruction.is_lbu row 0), (air.cols.instruction.is_lh row 0), (air.cols.instruction.is_lhu row 0), (air.cols.instruction.is_lw row 0), (air.cols.instruction.is_sb row 0), (air.cols.instruction.is_sh row 0), (air.cols.instruction.is_sw row 0)]),

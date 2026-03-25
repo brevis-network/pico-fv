@@ -14,6 +14,10 @@ namespace ShiftRightAir.ConstraintsAndBuses
 
     section row_constraints
 
+      -- =========================================================================
+      -- Byte decomposition (constraint 0): c_least_sig_byte bits reconstruct c_0.
+      -- =========================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_0 (air : Valid_ShiftRightAir F ExtF) (row : ℕ) : Prop :=
         (((((((((0 + (1 * (air.cols.c_least_sig_byte_0 row 0))) + (2 * (air.cols.c_least_sig_byte_1 row 0))) + (4 * (air.cols.c_least_sig_byte_2 row 0))) + (8 * (air.cols.c_least_sig_byte_3 row 0))) + (16 * (air.cols.c_least_sig_byte_4 row 0))) + (32 * (air.cols.c_least_sig_byte_5 row 0))) + (64 * (air.cols.c_least_sig_byte_6 row 0))) + (128 * (air.cols.c_least_sig_byte_7 row 0))) - (air.cols.c_0 row 0)) = 0
@@ -22,6 +26,11 @@ namespace ShiftRightAir.ConstraintsAndBuses
       lemma constraint_0_equiv (air : Valid_ShiftRightAir F ExtF) (row : ℕ)
       : ShiftRightAir.Extraction.constraint_0 air row ↔ constraint_0 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- =========================================================================================
+      -- Bit-shift selectors (constraints 1-8): shift_by_n_bits_i active when bits [2:0] of c = i.
+      -- Constraint 9: sum = 1.
+      -- =========================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_1 (air : Valid_ShiftRightAir F ExtF) (row : ℕ) : Prop :=
@@ -104,6 +113,11 @@ namespace ShiftRightAir.ConstraintsAndBuses
       : ShiftRightAir.Extraction.constraint_9 air row ↔ constraint_9 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- =============================================================================================
+      -- Byte-shift selectors (constraints 10-13): shift_by_n_bytes_j active when bits [4:3] of c = j.
+      -- Constraint 14: sum = 1.
+      -- =============================================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_10 (air : Valid_ShiftRightAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.shift_by_n_bytes_0 row 0) * (((air.cols.c_least_sig_byte_3 row 0) + ((air.cols.c_least_sig_byte_4 row 0) * 2)) - 0)) = 0
@@ -148,6 +162,11 @@ namespace ShiftRightAir.ConstraintsAndBuses
       lemma constraint_14_equiv (air : Valid_ShiftRightAir F ExtF) (row : ℕ)
       : ShiftRightAir.Extraction.constraint_14 air row ↔ constraint_14 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ======================================================================================
+      -- Byte shift routing (constraints 15-40): routes b bytes into byte_shift_result based on
+      -- byte shift amount. SRA sign-extends with b_msb*255; SRL uses 0.
+      -- ======================================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_15 (air : Valid_ShiftRightAir F ExtF) (row : ℕ) : Prop :=
@@ -383,6 +402,11 @@ namespace ShiftRightAir.ConstraintsAndBuses
       : ShiftRightAir.Extraction.constraint_40 air row ↔ constraint_40 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ===================================================================================
+      -- Bit shift carry chain (constraints 41-48): propagates bit-level right shift through
+      -- byte_shift_result, producing bit_shift_result and carries.
+      -- ===================================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_41 (air : Valid_ShiftRightAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.shr_carry_output_shifted_byte_7 row 0) - (air.cols.bit_shift_result_7 row 0)) = 0
@@ -455,6 +479,10 @@ namespace ShiftRightAir.ConstraintsAndBuses
       : ShiftRightAir.Extraction.constraint_48 air row ↔ constraint_48 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ============================================================
+      -- Result output (constraints 49-52): a_i = bit_shift_result_i.
+      -- ============================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_49 (air : Valid_ShiftRightAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.a_0 row 0) - (air.cols.bit_shift_result_0 row 0)) = 0
@@ -490,6 +518,11 @@ namespace ShiftRightAir.ConstraintsAndBuses
       lemma constraint_52_equiv (air : Valid_ShiftRightAir F ExtF) (row : ℕ)
       : ShiftRightAir.Extraction.constraint_52 air row ↔ constraint_52 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ===================================================================
+      -- Binary constraints (constraints 53-80): selectors, flags, bits, and
+      -- is_srl + is_sra = is_real (constraint 80).
+      -- ===================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_53 (air : Valid_ShiftRightAir F ExtF) (row : ℕ) : Prop :=
@@ -832,6 +865,12 @@ namespace ShiftRightAir.ConstraintsAndBuses
     end row_constraints
 
     section row_buses
+
+      -- ========================================================================
+      -- Bus interactions: 1 ByteBus (opcode 6, MSB check) + 8 ByteBus (opcode 4,
+      -- per-byte shift validation) + 4 ByteBus (opcode 7, range checks)
+      -- + 1 ALU (opcode 6=SRL, 7=SRA).
+      -- ========================================================================
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_ShiftRightAir FKB ExtF) (row : ℕ) : List (FKB × List FKB) := [(-((air.cols.is_real row 0)), [4, 6, (air.cols.b_msb row 0), 0, (air.cols.b_3 row 0), 0]),

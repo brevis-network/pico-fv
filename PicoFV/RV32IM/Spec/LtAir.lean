@@ -13,6 +13,10 @@ namespace LtAir.Spec
 
   set_option maxHeartbeats 1_000_000_000
 
+  -- ====================================================================
+  -- Helper: MSB extraction via modular inverse produces a boolean value.
+  -- ====================================================================
+
   private lemma msb_is_bool (b bm msb : FKB)
       (hb : (b : ℕ) < 256)
       (hbm : bm = b &&& 127)
@@ -38,10 +42,18 @@ namespace LtAir.Spec
         simp only [Fin.val_mul, hsub_val]; norm_num
       exact_mod_cast Fin.ext this
 
+  -- ===============================================
+  -- Helper: byte < 128 implies U32 is non-negative.
+  -- ===============================================
+
   private lemma not_negative_of_msb_lt
       (b0 b1 b2 b3 : FKB) (_h0 : b0 < 256) (_h1 : b1 < 256) (_h2 : b2 < 256) (h3 : (b3 : ℕ) < 128) :
       ¬ U32.negative #v[(b0 : BitVec 8), (b1 : BitVec 8), (b2 : BitVec 8), (b3 : BitVec 8)] := by
     simp [U32.negative, U32.toNat]; omega
+
+  -- ============================================
+  -- Helper: byte >= 128 implies U32 is negative.
+  -- ============================================
 
   private lemma negative_of_msb_ge
       (b0 b1 b2 b3 : FKB) (_h0 : b0 < 256) (_h1 : b1 < 256) (h2 : b2 < 256) (h3 : 128 ≤ (b3 : ℕ))
@@ -52,6 +64,10 @@ namespace LtAir.Spec
   --
   -- Externals
   --
+
+  -- ==========================================
+  -- Externality assertions for the Lt bus row.
+  -- ==========================================
 
   lemma ext_asrt
     [Field ExtF]
@@ -68,6 +84,11 @@ namespace LtAir.Spec
   --
   -- Opcode specifications
   --
+
+  -- =========================================================================================
+  -- SLT (opcode 8): signed less-than. 4-way case split on (bit_b, bit_c), then byte-flag scan
+  -- within each sign case.
+  -- =========================================================================================
 
   lemma spec_SLT
     [Field ExtF]
@@ -200,6 +221,10 @@ namespace LtAir.Spec
         repeat rw [Int.emod_eq_of_lt (by omega) (by omega)]
         grind
 
+  -- ===============================================================================================
+  -- SLTU (opcode 9): unsigned less-than. Simpler -- uses slt_u directly, case-splits on byte flags.
+  -- ===============================================================================================
+
   lemma spec_SLTU
     [Field ExtF]
     (air : Valid_LtAir FKB ExtF)
@@ -257,6 +282,10 @@ namespace LtAir.Spec
   --
   -- Well-formedness
   --
+
+  -- =====================================================
+  -- Well-formedness: dispatches to spec_SLT or spec_SLTU.
+  -- =====================================================
 
   lemma wf_asrt
     [Field ExtF]

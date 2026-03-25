@@ -10,7 +10,10 @@ namespace ShiftRightAir.Spec
   open ShiftRightAir.ConstraintsAndBuses
   open ShiftRightAir.Interactions
 
-  -- Helper: selector breakdown (is_srl, is_sra are binary, sum is binary)
+  -- =========================================================
+  -- Selector breakdown: is_srl, is_sra binary, sum = is_real.
+  -- =========================================================
+
   lemma selector_breakdown
     [Field ExtF]
     (air : Valid_ShiftRightAir FKB ExtF)
@@ -25,7 +28,10 @@ namespace ShiftRightAir.Spec
     simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
     grind
 
-  -- Helper: Convert ByteBusEntry opcode 4 (SHR carry output) to Nat equations
+  -- ==================================================================
+  -- Helpers: convert FKB byte-shift equations to Nat division/modulus.
+  -- ==================================================================
+
   private lemma shr_byte_nat (sb carry bsr low3 : FKB)
       (hsb : sb.val < 256) (hcarry : carry.val < 256)
       (hbsr : bsr.val < 256) (hlow3 : low3.val < 8)
@@ -50,9 +56,12 @@ namespace ShiftRightAir.Spec
       have := Nat.mod_lt bsr.val h_pos
       omega
 
+  -- ===================================================================================
   -- Helper: Convert carry chain constraint to Nat equation
   -- bit_shift_result_i = shifted_byte_i + carry_next * divisor (FKB)
-  -- → bit_shift_result_i.val = shifted_byte_i.val + carry_next.val * divisor.val (Nat)
+  -- to bit_shift_result_i.val = shifted_byte_i.val + carry_next.val * divisor.val (Nat)
+  -- ===================================================================================
+
   private lemma carry_chain_nat (btr sb cn div : FKB)
       (hbtr : btr.val < 256) (hsb : sb.val < 256)
       (hcn : cn.val < 256) (hdiv : div.val ≤ 256)
@@ -61,7 +70,10 @@ namespace ShiftRightAir.Spec
     have hprod : cn.val * div.val ≤ 255 * 256 := Nat.mul_le_mul (by omega) hdiv
     grind
 
+  -- ========================================
   -- Helper: right-shift split from KB to Nat
+  -- ========================================
+
   private lemma sub_shift_val_KB_to_Nat {a b : FKB}
   :
     (a - a >>> b <<< b).val = a.val - a.val >>> b.val <<< b.val
@@ -76,7 +88,10 @@ namespace ShiftRightAir.Spec
       . apply Nat.div_mul_le_self
       . apply lt_of_le_of_lt (b := a.val) (by apply Nat.div_mul_le_self) (hbc := by simp)
 
+  -- =========================================
   -- Helper: right-shift split from Nat to Int
+  -- =========================================
+
   private lemma sub_shift_val_Nat_to_Int {a b : ℕ}
   :
     ((↑(a - a >>> b <<< b)) : ℤ) = ↑a - (↑a / (2 ^ ↑b) * (2 ^ ↑b))
@@ -84,7 +99,10 @@ namespace ShiftRightAir.Spec
     rw [Int.ofNat_sub] <;> simp [Nat.shiftLeft_eq_mul_pow, Nat.shiftRight_eq_div_pow]
     apply Nat.div_mul_le_self
 
+  -- =========================================================================
   -- Tactic macro for closing each SRL shift case with a concrete shift amount
+  -- =========================================================================
+
   set_option hygiene false in
   local macro "close_srl" : tactic =>
     `(tactic| (
@@ -95,6 +113,11 @@ namespace ShiftRightAir.Spec
       repeat rw [Nat.mod_eq_of_lt (by omega)]
       try simp [Nat.shiftLeft_eq_mul_pow, Nat.shiftRight_eq_div_pow]
       try omega))
+
+  -- ================================================================
+  -- SRL (opcode 6): unsigned right shift. 32-case split on c mod 32,
+  -- byte shift + bit shift composition.
+  -- ================================================================
 
   lemma spec_SRL
     [Field ExtF]
@@ -249,6 +272,11 @@ namespace ShiftRightAir.Spec
       repeat rw [Nat.mod_eq_of_lt (by omega)]
       try simp [Nat.shiftLeft_eq_mul_pow, Nat.shiftRight_eq_div_pow]
       try omega
+
+  -- ==============================================================================
+  -- SRA (opcode 7): arithmetic right shift. Like SRL but sign-extends using b_msb.
+  -- Additional MSB validation via ByteBus opcode 6.
+  -- ==============================================================================
 
   lemma spec_SRA
     [Field ExtF]

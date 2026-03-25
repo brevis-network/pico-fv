@@ -11,6 +11,10 @@ namespace DivRemAir.Spec
   open DivRemAir.Interactions
   open DivRemAir.Interpretations
 
+  -- ========================================================================
+  -- Disable simp lemmas that interfere with finite-field / integer reasoning
+  -- ========================================================================
+
   attribute [-simp]
     Int.tmod_eq_emod
     Int.natCast_tdiv_eq_ediv
@@ -21,6 +25,12 @@ namespace DivRemAir.Spec
   --
   -- Externals
   --
+
+  -- ====================================================================
+  -- Proves that bus row externality assertions hold: multiplicity signs,
+  -- byte ranges, and ALU entry consistency for the absolute-value and
+  -- remainder-check sub-operations.
+  -- ====================================================================
 
   lemma ext_asrt
     [Field ExtF]
@@ -99,6 +109,11 @@ namespace DivRemAir.Spec
   -- Auxiliaries
   --
 
+  -- =======================================================================
+  -- Converts a field subtraction b - c * 256 = a into Nat division/modulus:
+  -- a = b % 256 and c = b / 256, given byte-range bounds.
+  -- =======================================================================
+
   lemma div_mod_decomposition {a b c : FKB} :
     a.val < 256 → c.val < KB_prime / 256 → (b - c * 256 = a ↔ a = b % 256 ∧ c = b / 256) := by
     intro ub_a ub_c
@@ -120,6 +135,12 @@ namespace DivRemAir.Spec
       rw [mul_comm, add_comm]
       simp [Fin.ext_iff, Fin.mul_def, Fin.add_def, Fin.mod_def]
       omega
+
+  -- =========================================================================
+  -- Given an 8-byte carry chain in FKB (the field), proves that the
+  -- corresponding U64 values satisfy a_64 = b_64 + c_64.
+  -- Used to lift the per-byte constraint chain into a single 64-bit equation.
+  -- =========================================================================
 
   lemma FKB_add_64 {a0 a1 a2 a3 a4 a5 a6 a7 b0 b1 b2 b3 b4 b5 b6 b7 c1 c2 c3 c4 c5 c6 c7 c0 cry0 cry1 cry2 cry3 cry4 cry5 cry6 cry7 : FKB}
     (ub_a0 : a0 < 256) (ub_a1 : a1 < 256) (ub_a2 : a2 < 256) (ub_a3 : a3 < 256) (ub_a4 : a4 < 256) (ub_a5 : a5 < 256) (ub_a6 : a6 < 256) (ub_a7 : a7 < 256)
@@ -168,6 +189,17 @@ namespace DivRemAir.Spec
   --
   -- DIV-REM specification
   --
+
+  -- ===============================================================================
+  -- Main correctness lemma for signed division/remainder (DIV and REM).
+  -- Shows that the AIR's quotient and remainder columns match
+  -- execute_DIV_REM_pure with the .DRS (signed) variant.
+  -- The proof handles three cases:
+  --   1. c == 0 (division by zero): quotient = 0xFFFFFFFF, remainder = b
+  --   2. b == INT32_MIN and c == -1 (overflow): quotient = INT32_MIN, remainder = 0
+  --   3. Normal case: reconstructs the division from the carry chain and
+  --      MUL ALU entries, then uses Int.ediv/emod properties.
+  -- ===============================================================================
 
   lemma spec_DIV_REM
     [Field ExtF]
@@ -908,6 +940,14 @@ namespace DivRemAir.Spec
   --
   -- DIVU-REMU specification
   --
+
+  -- =======================================================================
+  -- Main correctness lemma for unsigned division/remainder (DIVU and REMU).
+  -- Shows that the AIR's quotient and remainder columns match
+  -- execute_DIV_REM_pure with the .DRU (unsigned) variant.
+  -- Simpler than the signed case: no overflow, no sign extension.
+  -- Two cases: c == 0 (division by zero) and c != 0 (normal).
+  -- =======================================================================
 
   lemma spec_DIVU_REMU
     [Field ExtF]
