@@ -108,12 +108,12 @@ namespace OpcodeSpec.RV32
     (imm : BitVec 13)
     (pc_val r1_val r2_val : BitVec 32)
   : List Operation :=
-    let nextPC := if !(r1_val.toNat < r2_val.toNat) then pc_val + 4#32 else pc_val + BitVec.signExtend 32 imm
+    let increment := if r1_val.toNat < r2_val.toNat then BitVec.signExtend 32 imm else 4#32
     [
       .ReadPC pc_val,
       .ReadReg r1 r1_val,
       .ReadReg r2 r2_val,
-      .WritePC nextPC,
+      .WritePC (pc_val + increment),
     ]
 
   lemma spec_BLTU_hypotheses

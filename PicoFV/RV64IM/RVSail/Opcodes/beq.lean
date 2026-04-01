@@ -96,12 +96,12 @@ namespace OpcodeSpec.RV64
     (imm : BitVec 13)
     (pc_val r1_val r2_val : BitVec 64)
   : List Operation :=
-    let nextPC := if !(r1_val == r2_val) then pc_val + 4#64 else pc_val + BitVec.signExtend 64 imm
+    let increment := if r1_val == r2_val then BitVec.signExtend 64 imm else 4#64
     [
       .ReadPC pc_val,
       .ReadReg r1 r1_val,
       .ReadReg r2 r2_val,
-      .WritePC nextPC,
+      .WritePC (pc_val + increment),
     ]
 
   lemma spec_BEQ_hypotheses
@@ -145,5 +145,6 @@ namespace OpcodeSpec.RV64
       spec_BEQ,
       h_success
     ]
+    congr 1; split_ifs <;> rfl
 
 end OpcodeSpec.RV64

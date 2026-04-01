@@ -995,3 +995,29 @@ namespace ShiftRightAir.Interactions
     ]
 
 end ShiftRightAir.Interactions
+
+-- ==========================================================
+-- Interpretation lemmas: selector breakdown.
+-- ==========================================================
+
+namespace ShiftRightAir.Interpretations
+
+  open ShiftRightAir.ConstraintsAndBuses
+  open ShiftRightAir.Interactions
+
+  /-- Each selector is binary and their sum is 0 or 1. -/
+  lemma selector_breakdown
+    [Field ExtF]
+    (air : Valid_ShiftRightAir FKB ExtF)
+    (row : ℕ)
+    (h_constraints : ShiftRightAir.Extraction.allHold air row)
+  :
+    (air.cols.is_srl row 0 = 0 ∨ air.cols.is_srl row 0 = 1) ∧
+    (air.cols.is_sra row 0 = 0 ∨ air.cols.is_sra row 0 = 1) ∧
+    (air.cols.is_srl row 0 + air.cols.is_sra row 0 = 0 ∨
+     air.cols.is_srl row 0 + air.cols.is_sra row 0 = 1)
+  := by
+    simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
+    grind
+
+end ShiftRightAir.Interpretations

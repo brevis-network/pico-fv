@@ -17,7 +17,7 @@ namespace LtAir.Spec
   -- Helper: MSB extraction via modular inverse produces a boolean value.
   -- ====================================================================
 
-  private lemma msb_is_bool (b bm msb : FKB)
+  lemma msb_is_bool (b bm msb : FKB)
       (hb : (b : ℕ) < 256)
       (hbm : bm = b &&& 127)
       (hmsb : msb = (b - bm) * 2114060289) :

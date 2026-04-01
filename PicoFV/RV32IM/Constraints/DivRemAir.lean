@@ -14,6 +14,12 @@ namespace DivRemAir.ConstraintsAndBuses
 
     section row_constraints
 
+      -- ====================================================================
+      -- Constraints 0-2: Sign flags.
+      -- For signed ops (is_div + is_rem = 1): neg = msb.
+      -- For unsigned ops: neg = 0 (since msb * 0 = 0).
+      -- ====================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_0 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
         (((air.cols.b_msb row 0) * ((air.cols.is_div row 0) + (air.cols.is_rem row 0))) - (air.cols.b_neg row 0)) = 0
@@ -41,6 +47,10 @@ namespace DivRemAir.ConstraintsAndBuses
       : DivRemAir.Extraction.constraint_2 air row ↔ constraint_2 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ====================================================================
+      -- Constraint 3: is_real ∈ {0, 1}.
+      -- ====================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_3 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.is_real row 0) * ((air.cols.is_real row 0) - 1)) = 0
@@ -49,6 +59,14 @@ namespace DivRemAir.ConstraintsAndBuses
       lemma constraint_3_equiv (air : Valid_DivRemAir F ExtF) (row : ℕ)
       : DivRemAir.Extraction.constraint_3 air row ↔ constraint_3 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ====================================================================
+      -- Constraints 4-22: IsEqualWordGadget for is_overflow_b.
+      -- Checks if b = -2^31 (= [0, 0, 0, 128] as bytes).
+      -- 4-11: IsZeroGadget for each byte difference (inverse, result).
+      -- 12-13: is_lower_half_zero, is_upper_half_zero from byte results.
+      -- 14-22: Binary constraints on gadget results + final result.
+      -- ====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_4 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
@@ -220,6 +238,13 @@ namespace DivRemAir.ConstraintsAndBuses
       lemma constraint_22_equiv (air : Valid_DivRemAir F ExtF) (row : ℕ)
       : DivRemAir.Extraction.constraint_22 air row ↔ constraint_22 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ====================================================================
+      -- Constraints 23-42: IsEqualWordGadget for is_overflow_c.
+      -- Checks if c = -1 (= [255, 255, 255, 255] as bytes).
+      -- Same structure as constraints 4-22 but for c bytes.
+      -- Constraint 23 is a duplicate is_real boolean check.
+      -- ====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_23 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
@@ -401,6 +426,11 @@ namespace DivRemAir.ConstraintsAndBuses
       : DivRemAir.Extraction.constraint_42 air row ↔ constraint_42 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ====================================================================
+      -- Constraint 43: is_overflow = is_overflow_b * is_overflow_c * is_signed.
+      -- Overflow only when b = -2^31 and c = -1 and operation is signed.
+      -- ====================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_43 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.is_overflow row 0) - (((air.cols.is_overflow_b.result row 0) * (air.cols.is_overflow_c.result row 0)) * ((air.cols.is_div row 0) + (air.cols.is_rem row 0)))) = 0
@@ -409,6 +439,13 @@ namespace DivRemAir.ConstraintsAndBuses
       lemma constraint_43_equiv (air : Valid_DivRemAir F ExtF) (row : ℕ)
       : DivRemAir.Extraction.constraint_43 air row ↔ constraint_43 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ====================================================================
+      -- Constraints 44-59: Division equation (16 constraints).
+      -- Byte-level: b_i = c_times_quotient_i + remainder_i - carry_i*256 + carry_{i-1}.
+      -- For i ≥ 4: sign-extended with rem_neg*255 and overflow correction.
+      -- Enforces b = c*quotient + remainder at the byte level.
+      -- ====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_44 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
@@ -554,6 +591,13 @@ namespace DivRemAir.ConstraintsAndBuses
       : DivRemAir.Extraction.constraint_59 air row ↔ constraint_59 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ====================================================================
+      -- Constraints 60-67: Output routing.
+      -- DIV/DIVU: a = quotient. REM/REMU: a = remainder.
+      -- Even constraints (60,62,64,66) for DIV/DIVU,
+      -- odd (61,63,65,67) for REM/REMU.
+      -- ====================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_60 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
         (((air.cols.is_divu row 0) + (air.cols.is_div row 0)) * ((air.cols.quotient_0 row 0) - (air.cols.a_0 row 0))) = 0
@@ -626,6 +670,12 @@ namespace DivRemAir.ConstraintsAndBuses
       : DivRemAir.Extraction.constraint_67 air row ↔ constraint_67 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ====================================================================
+      -- Constraints 68-69: Remainder sign constraints.
+      -- 68: rem_neg * (b_neg - 1) = 0 (remainder sign ≤ dividend sign).
+      -- 69: remainder_sum * (1 - rem_neg) = 0 (zero remainder → non-negative).
+      -- ====================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_68 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.rem_neg row 0) * ((air.cols.b_neg row 0) - 1)) = 0
@@ -643,6 +693,12 @@ namespace DivRemAir.ConstraintsAndBuses
       lemma constraint_69_equiv (air : Valid_DivRemAir F ExtF) (row : ℕ)
       : DivRemAir.Extraction.constraint_69 air row ↔ constraint_69 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ====================================================================
+      -- Constraints 70-88: IsZeroWordGadget for is_c_0.
+      -- Checks if c = 0 (division by zero detection).
+      -- Same IsZeroGadget structure as is_overflow gadgets.
+      -- ====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_70 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
@@ -815,6 +871,11 @@ namespace DivRemAir.ConstraintsAndBuses
       : DivRemAir.Extraction.constraint_88 air row ↔ constraint_88 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ====================================================================
+      -- Constraints 89-92: Division-by-zero quotient.
+      -- When is_c_0 = 1: quotient = 0xFFFFFFFF.
+      -- ====================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_89 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.is_c_0.result row 0) * ((air.cols.quotient_0 row 0) - 255)) = 0
@@ -850,6 +911,12 @@ namespace DivRemAir.ConstraintsAndBuses
       lemma constraint_92_equiv (air : Valid_DivRemAir F ExtF) (row : ℕ)
       : DivRemAir.Extraction.constraint_92 air row ↔ constraint_92 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ====================================================================
+      -- Constraints 93-100: Absolute values.
+      -- 93-96: abs_c from c_neg (abs_c = c if c_neg=0, else negated).
+      -- 97-100: abs_remainder from rem_neg (same pattern).
+      -- ====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_93 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
@@ -923,6 +990,12 @@ namespace DivRemAir.ConstraintsAndBuses
       : DivRemAir.Extraction.constraint_100 air row ↔ constraint_100 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ====================================================================
+      -- Constraints 101-104: max_abs_c_or_1.
+      -- If c = 0: max_abs_c_or_1 = 1.
+      -- If c ≠ 0: max_abs_c_or_1 = abs_c.
+      -- ====================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_101 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.max_abs_c_or_1_0 row 0) - (((air.cols.is_c_0.result row 0) * 1) + ((1 - (air.cols.is_c_0.result row 0)) * (air.cols.abs_c_0 row 0)))) = 0
@@ -959,6 +1032,11 @@ namespace DivRemAir.ConstraintsAndBuses
       : DivRemAir.Extraction.constraint_104 air row ↔ constraint_104 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ====================================================================
+      -- Constraint 105: remainder_check_multiplicity =
+      --   (1 - is_c_0.result) * is_real.
+      -- ====================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_105 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
         (((1 - (air.cols.is_c_0.result row 0)) * (air.cols.is_real row 0)) - (air.cols.remainder_check_multiplicity row 0)) = 0
@@ -967,6 +1045,12 @@ namespace DivRemAir.ConstraintsAndBuses
       lemma constraint_105_equiv (air : Valid_DivRemAir F ExtF) (row : ℕ)
       : DivRemAir.Extraction.constraint_105 air row ↔ constraint_105 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ====================================================================
+      -- Constraints 106-107: ALU event flags.
+      -- abs_c_alu_event = c_neg * is_real.
+      -- abs_rem_alu_event = rem_neg * is_real.
+      -- ====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_106 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
@@ -985,6 +1069,11 @@ namespace DivRemAir.ConstraintsAndBuses
       lemma constraint_107_equiv (air : Valid_DivRemAir F ExtF) (row : ℕ)
       : DivRemAir.Extraction.constraint_107 air row ↔ constraint_107 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ====================================================================
+      -- Constraints 108-115: Carry boolean constraints.
+      -- carry_i ∈ {0, 1} for i = 0..7.
+      -- ====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_108 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
@@ -1058,6 +1147,11 @@ namespace DivRemAir.ConstraintsAndBuses
       : DivRemAir.Extraction.constraint_115 air row ↔ constraint_115 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ====================================================================
+      -- Constraints 116-119: Selector boolean constraints.
+      -- is_div, is_divu, is_rem, is_remu ∈ {0, 1}.
+      -- ====================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_116 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.is_div row 0) * ((air.cols.is_div row 0) - 1)) = 0
@@ -1093,6 +1187,11 @@ namespace DivRemAir.ConstraintsAndBuses
       lemma constraint_119_equiv (air : Valid_DivRemAir F ExtF) (row : ℕ)
       : DivRemAir.Extraction.constraint_119 air row ↔ constraint_119 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ====================================================================
+      -- Constraints 120-123: MSB and overflow boolean constraints.
+      -- is_overflow, b_msb, rem_msb, c_msb ∈ {0, 1}.
+      -- ====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_120 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
@@ -1130,6 +1229,11 @@ namespace DivRemAir.ConstraintsAndBuses
       : DivRemAir.Extraction.constraint_123 air row ↔ constraint_123 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ====================================================================
+      -- Constraints 124-127: Sign and control boolean constraints.
+      -- b_neg, rem_neg, c_neg, is_real ∈ {0, 1}.
+      -- ====================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_124 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.b_neg row 0) * ((air.cols.b_neg row 0) - 1)) = 0
@@ -1166,6 +1270,11 @@ namespace DivRemAir.ConstraintsAndBuses
       : DivRemAir.Extraction.constraint_127 air row ↔ constraint_127 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- ====================================================================
+      -- Constraints 128-129: Event flag boolean constraints.
+      -- abs_c_alu_event, abs_rem_alu_event ∈ {0, 1}.
+      -- ====================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_128 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
         ((air.cols.abs_c_alu_event row 0) * ((air.cols.abs_c_alu_event row 0) - 1)) = 0
@@ -1183,6 +1292,12 @@ namespace DivRemAir.ConstraintsAndBuses
       lemma constraint_129_equiv (air : Valid_DivRemAir F ExtF) (row : ℕ)
       : DivRemAir.Extraction.constraint_129 air row ↔ constraint_129 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- ====================================================================
+      -- Constraint 130: Selector sum.
+      -- is_real * (1 - (is_div + is_divu + is_rem + is_remu)) = 0.
+      -- Exactly one selector active when is_real = 1.
+      -- ====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_130 (air : Valid_DivRemAir F ExtF) (row : ℕ) : Prop :=
@@ -1333,6 +1448,22 @@ namespace DivRemAir.ConstraintsAndBuses
 
     section row_buses
 
+      -- ====================================================================
+      -- Bus interactions (17 entries per row):
+      -- 0-1: ALU entries (mult = -is_real): c_times_quotient low/high,
+      --      quotient, c (for MUL verification of c*quotient).
+      -- 2: ALU entry (mult = -abs_c_alu_event): abs_c computation.
+      -- 3: ALU entry (mult = -abs_rem_alu_event): abs_remainder computation.
+      -- 4: ALU entry (mult = -remainder_check_multiplicity):
+      --    abs_remainder < max_abs_c_or_1 (LT check).
+      -- 5-7: ByteBus opcode 6 (mult = -is_real): MSB checks for b_3, c_3,
+      --      remainder_3.
+      -- 8-16: ByteBus opcode 7 (mult = -is_real): range checks for
+      --       quotient, remainder, c_times_quotient byte pairs.
+      -- 17: ALU result (mult = is_real): a, b, c with opcode
+      --     (34=DIV, 35=DIVU, 36=REM, 37=REMU).
+      -- ====================================================================
+
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_DivRemAir FKB ExtF) (row : ℕ) : List (FKB × List FKB) := [(-((air.cols.is_real row 0)), [3, 30, (air.cols.c_times_quotient_0 row 0), (air.cols.c_times_quotient_1 row 0), (air.cols.c_times_quotient_2 row 0), (air.cols.c_times_quotient_3 row 0), (air.cols.quotient_0 row 0), (air.cols.quotient_1 row 0), (air.cols.quotient_2 row 0), (air.cols.quotient_3 row 0), (air.cols.c_0 row 0), (air.cols.c_1 row 0), (air.cols.c_2 row 0), (air.cols.c_3 row 0)]),
         (-((air.cols.is_real row 0)), [3, ((((air.cols.is_div row 0) + (air.cols.is_rem row 0)) * 31) + (((air.cols.is_divu row 0) + (air.cols.is_remu row 0)) * 32)), (air.cols.c_times_quotient_4 row 0), (air.cols.c_times_quotient_5 row 0), (air.cols.c_times_quotient_6 row 0), (air.cols.c_times_quotient_7 row 0), (air.cols.quotient_0 row 0), (air.cols.quotient_1 row 0), (air.cols.quotient_2 row 0), (air.cols.quotient_3 row 0), (air.cols.c_0 row 0), (air.cols.c_1 row 0), (air.cols.c_2 row 0), (air.cols.c_3 row 0)]),
@@ -1394,6 +1525,10 @@ namespace DivRemAir.ConstraintsAndBuses
 
 end DivRemAir.ConstraintsAndBuses
 
+-- ==========================================================
+-- Structured bus view: typed ALU/Byte/State/Memory entries.
+-- ==========================================================
+
 namespace DivRemAir.Interactions
 
   open RV32IM_Interactions
@@ -1439,12 +1574,19 @@ namespace DivRemAir.Interactions
 
 end DivRemAir.Interactions
 
+-- ==========================================================
+-- Interpretation lemmas: selector breakdown/exclusivity,
+-- helpers_signed (sign flags, event flags, is_overflow),
+-- helpers_general (is_c_0.result, remainder_check_multiplicity).
+-- ==========================================================
+
 namespace DivRemAir.Interpretations
 
   open RV32IM_Interactions
   open DivRemAir.ConstraintsAndBuses
   open DivRemAir.Interactions
 
+  /-- Each selector is binary and exactly one is active when is_real = 1. -/
   lemma selector_breakdown
     [Field ExtF]
     (air : Valid_DivRemAir FKB ExtF)
@@ -1461,6 +1603,7 @@ namespace DivRemAir.Interpretations
     simp [constraint_and_interaction_simplification, sub_eq_zero, h_is_real] at h_constraints
     split_ands <;> grind
 
+  /-- If one selector is 1, all others are 0. -/
   lemma selector_exclusivity
     [Field ExtF]
     (air : Valid_DivRemAir FKB ExtF)
@@ -1477,6 +1620,7 @@ namespace DivRemAir.Interpretations
     clear *- h_selectors
     grind
 
+  /-- U32 word equality helpers for overflow/zero detection. -/
   lemma U32_nat_eq_0 {x0 x1 x2 x3 : FKB}
     (ub_x0 : x0 < 256) (ub_x1 : x1 < 256) (ub_x2 : x2 < 256) (ub_x3 : x3 < 256)
   :
@@ -1508,6 +1652,9 @@ namespace DivRemAir.Interpretations
     simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, U32.toNat]
     split_ifs <;> omega
 
+  /-- For signed ops: derives b_neg, rem_neg, c_neg, abs_c_alu_event,
+      abs_rem_alu_event as if-expressions on MSB bytes, and is_overflow
+      as a conjunction check on b = -2^31 ∧ c = -1. -/
   lemma helpers_signed {ExtF}
     [Field ExtF]
     (air : Valid_DivRemAir FKB ExtF)
@@ -1568,6 +1715,8 @@ namespace DivRemAir.Interpretations
       clear *- relevant_constraints
       grind
 
+  /-- For all ops: derives is_c_0.result (is c zero?) and
+      remainder_check_multiplicity as if-expressions on c bytes. -/
   lemma helpers_general {ExtF}
     [Field ExtF]
     (air : Valid_DivRemAir FKB ExtF)

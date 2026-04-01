@@ -4296,7 +4296,10 @@ namespace Equivalence
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
         congr
-        split_ifs <;> simp_all
+        split_ifs with h_if <;> [ skip; simp_all ]
+        have eq_branch : air.cols.branching row 0 = 1
+          := by clear *- h_b_branching h_if h_eq_branching; omega
+        simp_all
       . intro h_branch
         simp [h_prev_eq] at h_branch
         specialize h_branching_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
@@ -4497,7 +4500,10 @@ namespace Equivalence
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
         congr
-        split_ifs <;> simp_all
+        split_ifs with h_if <;> [ skip; simp_all ]
+        have eq_branch : air.cols.branching row 0 = 1
+          := by clear *- h_b_branching h_if h_eq_branching; omega
+        simp_all
       . intro h_branch
         simp [h_prev_eq] at h_branch
         specialize h_branching_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
@@ -4698,7 +4704,10 @@ namespace Equivalence
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
         congr
-        split_ifs <;> simp_all
+        split_ifs with h_if <;> [ skip; simp_all ]
+        have eq_branch : air.cols.branching row 0 = 1
+          := by clear *- h_b_branching h_if h_eq_branching; omega
+        simp_all
       . intro h_branch
         simp [h_prev_eq] at h_branch
         specialize h_branching_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)
@@ -4899,7 +4908,10 @@ namespace Equivalence
           show BitVec.signExtend 32 (BitVec.setWidth 13 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide
         ]
         congr
-        split_ifs <;> simp_all
+        split_ifs with h_if <;> [ skip; simp_all ]
+        have eq_branch : air.cols.branching row 0 = 1
+          := by clear *- h_b_branching h_if h_eq_branching; omega
+        simp_all
       . intro h_branch
         simp [h_prev_eq] at h_branch
         specialize h_branching_pc (by clear *- h_b_branching h_eq_branching h_branch; grind)

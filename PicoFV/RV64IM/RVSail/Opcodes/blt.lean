@@ -103,12 +103,12 @@ namespace OpcodeSpec.RV64
     (imm : BitVec 13)
     (pc_val r1_val r2_val : BitVec 64)
   : List Operation :=
-    let nextPC := if !(r1_val.toInt < r2_val.toInt) then pc_val + 4#64 else pc_val + BitVec.signExtend 64 imm
+    let increment := if r1_val.toInt < r2_val.toInt then BitVec.signExtend 64 imm else 4#64
     [
       .ReadPC pc_val,
       .ReadReg r1 r1_val,
       .ReadReg r2 r2_val,
-      .WritePC nextPC,
+      .WritePC (pc_val + increment),
     ]
 
   lemma spec_BLT_hypotheses
@@ -152,5 +152,6 @@ namespace OpcodeSpec.RV64
       spec_BLT,
       h_success
     ]
+    congr 1; split_ifs with h1 h2 <;> first | rfl | omega
 
 end OpcodeSpec.RV64
