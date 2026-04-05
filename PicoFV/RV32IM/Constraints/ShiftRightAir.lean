@@ -864,6 +864,40 @@ namespace ShiftRightAir.ConstraintsAndBuses
 
     end row_constraints
 
+    /-- All 68 column values of a ShiftRightAir row. No non-deterministic columns. -/
+    def row [Field ExtF] (air : Valid_ShiftRightAir FKB ExtF) (r : ℕ) : Vector FKB 68 :=
+      #v[ air.cols.a_0 r 0, air.cols.a_1 r 0, air.cols.a_2 r 0, air.cols.a_3 r 0,
+          air.cols.b_0 r 0, air.cols.b_1 r 0, air.cols.b_2 r 0, air.cols.b_3 r 0,
+          air.cols.c_0 r 0, air.cols.c_1 r 0, air.cols.c_2 r 0, air.cols.c_3 r 0,
+          air.cols.shift_by_n_bits_0 r 0, air.cols.shift_by_n_bits_1 r 0,
+          air.cols.shift_by_n_bits_2 r 0, air.cols.shift_by_n_bits_3 r 0,
+          air.cols.shift_by_n_bits_4 r 0, air.cols.shift_by_n_bits_5 r 0,
+          air.cols.shift_by_n_bits_6 r 0, air.cols.shift_by_n_bits_7 r 0,
+          air.cols.shift_by_n_bytes_0 r 0, air.cols.shift_by_n_bytes_1 r 0,
+          air.cols.shift_by_n_bytes_2 r 0, air.cols.shift_by_n_bytes_3 r 0,
+          air.cols.byte_shift_result_0 r 0, air.cols.byte_shift_result_1 r 0,
+          air.cols.byte_shift_result_2 r 0, air.cols.byte_shift_result_3 r 0,
+          air.cols.byte_shift_result_4 r 0, air.cols.byte_shift_result_5 r 0,
+          air.cols.byte_shift_result_6 r 0, air.cols.byte_shift_result_7 r 0,
+          air.cols.bit_shift_result_0 r 0, air.cols.bit_shift_result_1 r 0,
+          air.cols.bit_shift_result_2 r 0, air.cols.bit_shift_result_3 r 0,
+          air.cols.bit_shift_result_4 r 0, air.cols.bit_shift_result_5 r 0,
+          air.cols.bit_shift_result_6 r 0, air.cols.bit_shift_result_7 r 0,
+          air.cols.shr_carry_output_carry_0 r 0, air.cols.shr_carry_output_carry_1 r 0,
+          air.cols.shr_carry_output_carry_2 r 0, air.cols.shr_carry_output_carry_3 r 0,
+          air.cols.shr_carry_output_carry_4 r 0, air.cols.shr_carry_output_carry_5 r 0,
+          air.cols.shr_carry_output_carry_6 r 0, air.cols.shr_carry_output_carry_7 r 0,
+          air.cols.shr_carry_output_shifted_byte_0 r 0, air.cols.shr_carry_output_shifted_byte_1 r 0,
+          air.cols.shr_carry_output_shifted_byte_2 r 0, air.cols.shr_carry_output_shifted_byte_3 r 0,
+          air.cols.shr_carry_output_shifted_byte_4 r 0, air.cols.shr_carry_output_shifted_byte_5 r 0,
+          air.cols.shr_carry_output_shifted_byte_6 r 0, air.cols.shr_carry_output_shifted_byte_7 r 0,
+          air.cols.b_msb r 0,
+          air.cols.c_least_sig_byte_0 r 0, air.cols.c_least_sig_byte_1 r 0,
+          air.cols.c_least_sig_byte_2 r 0, air.cols.c_least_sig_byte_3 r 0,
+          air.cols.c_least_sig_byte_4 r 0, air.cols.c_least_sig_byte_5 r 0,
+          air.cols.c_least_sig_byte_6 r 0, air.cols.c_least_sig_byte_7 r 0,
+          air.cols.is_srl r 0, air.cols.is_sra r 0, air.cols.is_real r 0 ]
+
     section row_buses
 
       -- ========================================================================

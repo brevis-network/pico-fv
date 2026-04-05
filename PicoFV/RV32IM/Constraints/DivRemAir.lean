@@ -1446,6 +1446,63 @@ namespace DivRemAir.ConstraintsAndBuses
 
     end row_constraints
 
+    /-- All 96 column values of a DivRemAir row, as a vector.
+        Includes the 12 inverse fields from IsZeroGadgets. -/
+    def row [Field ExtF] (air : Valid_DivRemAir FKB ExtF) (r : ℕ) : Vector FKB 96 :=
+      #v[ -- a, b, c (Words)
+          air.cols.a_0 r 0, air.cols.a_1 r 0, air.cols.a_2 r 0, air.cols.a_3 r 0,
+          air.cols.b_0 r 0, air.cols.b_1 r 0, air.cols.b_2 r 0, air.cols.b_3 r 0,
+          air.cols.c_0 r 0, air.cols.c_1 r 0, air.cols.c_2 r 0, air.cols.c_3 r 0,
+          -- quotient, remainder, abs_remainder, abs_c, max_abs_c_or_1 (Words)
+          air.cols.quotient_0 r 0, air.cols.quotient_1 r 0, air.cols.quotient_2 r 0, air.cols.quotient_3 r 0,
+          air.cols.remainder_0 r 0, air.cols.remainder_1 r 0, air.cols.remainder_2 r 0, air.cols.remainder_3 r 0,
+          air.cols.abs_remainder_0 r 0, air.cols.abs_remainder_1 r 0,
+          air.cols.abs_remainder_2 r 0, air.cols.abs_remainder_3 r 0,
+          air.cols.abs_c_0 r 0, air.cols.abs_c_1 r 0, air.cols.abs_c_2 r 0, air.cols.abs_c_3 r 0,
+          air.cols.max_abs_c_or_1_0 r 0, air.cols.max_abs_c_or_1_1 r 0,
+          air.cols.max_abs_c_or_1_2 r 0, air.cols.max_abs_c_or_1_3 r 0,
+          -- c_times_quotient (Long word), carry (Long word)
+          air.cols.c_times_quotient_0 r 0, air.cols.c_times_quotient_1 r 0,
+          air.cols.c_times_quotient_2 r 0, air.cols.c_times_quotient_3 r 0,
+          air.cols.c_times_quotient_4 r 0, air.cols.c_times_quotient_5 r 0,
+          air.cols.c_times_quotient_6 r 0, air.cols.c_times_quotient_7 r 0,
+          air.cols.carry_0 r 0, air.cols.carry_1 r 0, air.cols.carry_2 r 0, air.cols.carry_3 r 0,
+          air.cols.carry_4 r 0, air.cols.carry_5 r 0, air.cols.carry_6 r 0, air.cols.carry_7 r 0,
+          -- is_c_0 gadget (IsZeroWordGadget: 11 columns)
+          air.cols.is_c_0.is_zero_byte_0.inverse r 0, air.cols.is_c_0.is_zero_byte_0.result r 0,
+          air.cols.is_c_0.is_zero_byte_1.inverse r 0, air.cols.is_c_0.is_zero_byte_1.result r 0,
+          air.cols.is_c_0.is_zero_byte_2.inverse r 0, air.cols.is_c_0.is_zero_byte_2.result r 0,
+          air.cols.is_c_0.is_zero_byte_3.inverse r 0, air.cols.is_c_0.is_zero_byte_3.result r 0,
+          air.cols.is_c_0.is_lower_half_zero r 0, air.cols.is_c_0.is_upper_half_zero r 0,
+          air.cols.is_c_0.result r 0,
+          -- Operation selectors
+          air.cols.is_div r 0, air.cols.is_divu r 0, air.cols.is_rem r 0, air.cols.is_remu r 0,
+          -- is_overflow
+          air.cols.is_overflow r 0,
+          -- is_overflow_b gadget (IsEqualWordGadget = IsZeroWordGadget: 11 columns)
+          air.cols.is_overflow_b.is_zero_byte_0.inverse r 0, air.cols.is_overflow_b.is_zero_byte_0.result r 0,
+          air.cols.is_overflow_b.is_zero_byte_1.inverse r 0, air.cols.is_overflow_b.is_zero_byte_1.result r 0,
+          air.cols.is_overflow_b.is_zero_byte_2.inverse r 0, air.cols.is_overflow_b.is_zero_byte_2.result r 0,
+          air.cols.is_overflow_b.is_zero_byte_3.inverse r 0, air.cols.is_overflow_b.is_zero_byte_3.result r 0,
+          air.cols.is_overflow_b.is_lower_half_zero r 0, air.cols.is_overflow_b.is_upper_half_zero r 0,
+          air.cols.is_overflow_b.result r 0,
+          -- is_overflow_c gadget (IsEqualWordGadget = IsZeroWordGadget: 11 columns)
+          air.cols.is_overflow_c.is_zero_byte_0.inverse r 0, air.cols.is_overflow_c.is_zero_byte_0.result r 0,
+          air.cols.is_overflow_c.is_zero_byte_1.inverse r 0, air.cols.is_overflow_c.is_zero_byte_1.result r 0,
+          air.cols.is_overflow_c.is_zero_byte_2.inverse r 0, air.cols.is_overflow_c.is_zero_byte_2.result r 0,
+          air.cols.is_overflow_c.is_zero_byte_3.inverse r 0, air.cols.is_overflow_c.is_zero_byte_3.result r 0,
+          air.cols.is_overflow_c.is_lower_half_zero r 0, air.cols.is_overflow_c.is_upper_half_zero r 0,
+          air.cols.is_overflow_c.result r 0,
+          -- Sign/Neg bits
+          air.cols.b_msb r 0, air.cols.rem_msb r 0, air.cols.c_msb r 0,
+          air.cols.b_neg r 0, air.cols.rem_neg r 0, air.cols.c_neg r 0,
+          -- ALU event flags
+          air.cols.abs_c_alu_event r 0, air.cols.abs_rem_alu_event r 0,
+          -- Control
+          air.cols.is_real r 0,
+          -- Remainder check multiplicity
+          air.cols.remainder_check_multiplicity r 0 ]
+
     section row_buses
 
       -- ====================================================================

@@ -830,6 +830,16 @@ namespace RV32IM_Interactions
       State : List (StateBusEntry FKB)
       Memory : List (MemoryBusEntry FKB)
 
+    /-- Filter a `BusRow` to keep only entries with negative multiplicity (= -1).
+        These are the "read" entries: the chip assumes them and sends them
+        to other chips for verification via the bus argument. -/
+    def BusRow.readEntries (br : BusRow) : BusRow :=
+      { Program := br.Program.filter (fun e => e.multiplicity = -1)
+        ALU     := br.ALU.filter     (fun e => e.multiplicity = -1)
+        Byte    := br.Byte.filter    (fun e => e.multiplicity = -1)
+        State   := br.State.filter   (fun e => e.multiplicity = -1)
+        Memory  := br.Memory.filter  (fun e => e.multiplicity = -1) }
+
     def bus_row_axioms (row : BusRow) : Prop :=
       List.Forall id
         (row.Program.map (BusEntry.axioms FKB) ++

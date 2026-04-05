@@ -47,15 +47,15 @@ namespace Interaction
       -- Well-formedness properties of bus entries
       wf_properties : α → Prop
 
+      -- Condition under which external properties are assumed
+      ext_assume_cond : α → Prop
+      -- Condition under which external properties need to be asserted
+      ext_assert_cond : α → Prop
+
       -- Condition under which well-formedness properties are assumed
       wf_assume_cond : α → Prop
       -- Condition under which well-formedness properties need to be asserted
       wf_assert_cond : α → Prop
-
-      -- Condition under which well-formedness properties are assumed
-      ext_assume_cond : α → Prop
-      -- Condition under which well-formedness properties need to be asserted
-      ext_assert_cond : α → Prop
 
       -- Assumption and assertion of externals
       ext_assume (a : α) := ext_assume_cond a → externals a
@@ -65,7 +65,7 @@ namespace Interaction
       wf_assume (a : α) := wf_assume_cond a → wf_properties a
       wf_assert (a : α) := wf_assert_cond a → wf_properties a
 
-      -- Serialization, deserialization, inverses
+      -- Serialisation, deserialisation, inverses
       serialise (x : α) := (multiplicity x, data x)
       serialiseToList (x : α) := (multiplicity x, (data x).toList)
       deserialise : F × Vector F data_length → α

@@ -218,6 +218,17 @@ namespace AddSubAir.ConstraintsAndBuses
 
     end row_constraints
 
+    /-- All 17 column values of an AddSubAir row. -/
+    def row (air : Valid_AddSubAir FKB ExtF) (r : ℕ) : Vector FKB 17 :=
+      #v[ air.cols.add_value_0 r 0, air.cols.add_value_1 r 0,
+          air.cols.add_value_2 r 0, air.cols.add_value_3 r 0,
+          air.cols.add_carry_0 r 0, air.cols.add_carry_1 r 0, air.cols.add_carry_2 r 0,
+          air.cols.operand_1_0 r 0, air.cols.operand_1_1 r 0,
+          air.cols.operand_1_2 r 0, air.cols.operand_1_3 r 0,
+          air.cols.operand_2_0 r 0, air.cols.operand_2_1 r 0,
+          air.cols.operand_2_2 r 0, air.cols.operand_2_3 r 0,
+          air.cols.is_add r 0, air.cols.is_sub r 0 ]
+
     section row_buses
 
       -- ==============================================================================================

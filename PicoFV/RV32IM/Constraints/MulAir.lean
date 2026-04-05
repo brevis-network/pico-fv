@@ -354,6 +354,19 @@ namespace MulAir.ConstraintsAndBuses
 
     end row_constraints
 
+    /-- All 37 column values of a MulAir row. No non-deterministic columns. -/
+    def row [Field ExtF] (air : Valid_MulAir FKB ExtF) (r : ℕ) : Vector FKB 37 :=
+      #v[ air.cols.a_0 r 0, air.cols.a_1 r 0, air.cols.a_2 r 0, air.cols.a_3 r 0,
+          air.cols.b_0 r 0, air.cols.b_1 r 0, air.cols.b_2 r 0, air.cols.b_3 r 0,
+          air.cols.c_0 r 0, air.cols.c_1 r 0, air.cols.c_2 r 0, air.cols.c_3 r 0,
+          air.cols.carry_0 r 0, air.cols.carry_1 r 0, air.cols.carry_2 r 0, air.cols.carry_3 r 0,
+          air.cols.carry_4 r 0, air.cols.carry_5 r 0, air.cols.carry_6 r 0, air.cols.carry_7 r 0,
+          air.cols.product_0 r 0, air.cols.product_1 r 0, air.cols.product_2 r 0, air.cols.product_3 r 0,
+          air.cols.product_4 r 0, air.cols.product_5 r 0, air.cols.product_6 r 0, air.cols.product_7 r 0,
+          air.cols.b_msb r 0, air.cols.c_msb r 0, air.cols.b_sign_extend r 0, air.cols.c_sign_extend r 0,
+          air.cols.is_mul r 0, air.cols.is_mulh r 0, air.cols.is_mulhu r 0, air.cols.is_mulhsu r 0,
+          air.cols.is_real r 0 ]
+
     section row_buses
 
       -- ==================================================================

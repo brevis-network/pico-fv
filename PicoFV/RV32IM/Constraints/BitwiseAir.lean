@@ -71,6 +71,13 @@ namespace BitwiseAir.ConstraintsAndBuses
 
     end row_constraints
 
+    /-- All 15 column values of a BitwiseAir row. -/
+    def row (air : Valid_BitwiseAir FKB ExtF) (r : ℕ) : Vector FKB 15 :=
+      #v[ air.cols.a_0 r 0, air.cols.a_1 r 0, air.cols.a_2 r 0, air.cols.a_3 r 0,
+          air.cols.b_0 r 0, air.cols.b_1 r 0, air.cols.b_2 r 0, air.cols.b_3 r 0,
+          air.cols.c_0 r 0, air.cols.c_1 r 0, air.cols.c_2 r 0, air.cols.c_3 r 0,
+          air.cols.is_xor r 0, air.cols.is_or r 0, air.cols.is_and r 0 ]
+
     section row_buses
 
       -- =============================================================================

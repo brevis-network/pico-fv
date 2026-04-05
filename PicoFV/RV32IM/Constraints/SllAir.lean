@@ -699,6 +699,26 @@ namespace SllAir.ConstraintsAndBuses
 
     end row_constraints
 
+    /-- All 42 column values of a SllAir row. No non-deterministic columns. -/
+    def row [Field ExtF] (air : Valid_SllAir FKB ExtF) (r : ℕ) : Vector FKB 42 :=
+      #v[ air.cols.a_0 r 0, air.cols.a_1 r 0, air.cols.a_2 r 0, air.cols.a_3 r 0,
+          air.cols.b_0 r 0, air.cols.b_1 r 0, air.cols.b_2 r 0, air.cols.b_3 r 0,
+          air.cols.c_0 r 0, air.cols.c_1 r 0, air.cols.c_2 r 0, air.cols.c_3 r 0,
+          air.cols.c_lsb_0 r 0, air.cols.c_lsb_1 r 0, air.cols.c_lsb_2 r 0, air.cols.c_lsb_3 r 0,
+          air.cols.c_lsb_4 r 0, air.cols.c_lsb_5 r 0, air.cols.c_lsb_6 r 0, air.cols.c_lsb_7 r 0,
+          air.cols.shift_by_n_bits_0 r 0, air.cols.shift_by_n_bits_1 r 0,
+          air.cols.shift_by_n_bits_2 r 0, air.cols.shift_by_n_bits_3 r 0,
+          air.cols.shift_by_n_bits_4 r 0, air.cols.shift_by_n_bits_5 r 0,
+          air.cols.shift_by_n_bits_6 r 0, air.cols.shift_by_n_bits_7 r 0,
+          air.cols.bit_shift_multiplier r 0,
+          air.cols.shift_result_0 r 0, air.cols.shift_result_1 r 0,
+          air.cols.shift_result_2 r 0, air.cols.shift_result_3 r 0,
+          air.cols.shift_result_carry_0 r 0, air.cols.shift_result_carry_1 r 0,
+          air.cols.shift_result_carry_2 r 0, air.cols.shift_result_carry_3 r 0,
+          air.cols.shift_by_n_bytes_0 r 0, air.cols.shift_by_n_bytes_1 r 0,
+          air.cols.shift_by_n_bytes_2 r 0, air.cols.shift_by_n_bytes_3 r 0,
+          air.cols.is_real r 0 ]
+
     section row_buses
 
       -- ============================================================================

@@ -984,6 +984,100 @@ namespace MemoryReadWriteAir.ConstraintsAndBuses
 
     end row_constraints
 
+    /-- All 95 column values of a MemoryReadWriteAir row. -/
+    def row [Field ExtF] (air : Valid_MemoryReadWriteAir FKB ExtF) (r : ℕ) : Vector FKB 95 :=
+      #v[ -- chunk, clk (2)
+          air.cols.chunk r 0, air.cols.clk r 0,
+          -- addr_word (4)
+          air.cols.addr_word_0 r 0, air.cols.addr_word_1 r 0,
+          air.cols.addr_word_2 r 0, air.cols.addr_word_3 r 0,
+          -- addr_word_range_checker (10)
+          air.cols.addr_word_range_checker.most_sig_byte_decomp_0 r 0,
+          air.cols.addr_word_range_checker.most_sig_byte_decomp_1 r 0,
+          air.cols.addr_word_range_checker.most_sig_byte_decomp_2 r 0,
+          air.cols.addr_word_range_checker.most_sig_byte_decomp_3 r 0,
+          air.cols.addr_word_range_checker.most_sig_byte_decomp_4 r 0,
+          air.cols.addr_word_range_checker.most_sig_byte_decomp_5 r 0,
+          air.cols.addr_word_range_checker.most_sig_byte_decomp_6 r 0,
+          air.cols.addr_word_range_checker.most_sig_byte_decomp_7 r 0,
+          air.cols.addr_word_range_checker.upper_all_one_inverse r 0,  -- non-det (IsZeroGadget)
+          air.cols.addr_word_range_checker.upper_all_one_result r 0,
+          -- addr_aligned (1)
+          air.cols.addr_aligned r 0,
+          -- aa_lsb_decomp (6)
+          air.cols.aa_lsb_decomp_0 r 0, air.cols.aa_lsb_decomp_1 r 0,
+          air.cols.aa_lsb_decomp_2 r 0, air.cols.aa_lsb_decomp_3 r 0,
+          air.cols.aa_lsb_decomp_4 r 0, air.cols.aa_lsb_decomp_5 r 0,
+          -- addr_offset (1)
+          air.cols.addr_offset r 0,
+          -- memory_access: prev_value (4, framework) + access (9) = 13
+          air.cols.memory_access.prev_value_0 r 0,  -- framework (memory consistency)
+          air.cols.memory_access.prev_value_1 r 0,  -- framework
+          air.cols.memory_access.prev_value_2 r 0,  -- framework
+          air.cols.memory_access.prev_value_3 r 0,  -- framework
+          air.cols.memory_access.access.value_0 r 0,
+          air.cols.memory_access.access.value_1 r 0,
+          air.cols.memory_access.access.value_2 r 0,
+          air.cols.memory_access.access.value_3 r 0,
+          air.cols.memory_access.access.prev_chunk r 0,      -- framework (ordering)
+          air.cols.memory_access.access.prev_clk r 0,        -- framework (ordering)
+          air.cols.memory_access.access.compare_clk r 0,     -- framework (ordering)
+          air.cols.memory_access.access.diff_16bit_limb r 0,  -- framework (ordering)
+          air.cols.memory_access.access.diff_8bit_limb r 0,   -- framework (ordering)
+          -- offset_is (3)
+          air.cols.offset_is_one r 0, air.cols.offset_is_two r 0, air.cols.offset_is_three r 0,
+          -- msb_decomp (8, non-det for non-signed-load ops)
+          air.cols.msb_decomp_0 r 0, air.cols.msb_decomp_1 r 0,
+          air.cols.msb_decomp_2 r 0, air.cols.msb_decomp_3 r 0,
+          air.cols.msb_decomp_4 r 0, air.cols.msb_decomp_5 r 0,
+          air.cols.msb_decomp_6 r 0, air.cols.msb_decomp_7 r 0,
+          -- unsigned_mem_val (4)
+          air.cols.unsigned_mem_val_0 r 0, air.cols.unsigned_mem_val_1 r 0,
+          air.cols.unsigned_mem_val_2 r 0, air.cols.unsigned_mem_val_3 r 0,
+          -- mem_value flags (2)
+          air.cols.mem_value_is_pos_not_x0 r 0, air.cols.mem_value_is_neg_not_x0 r 0,
+          -- instruction: opcode, op_a_0, selectors (10)
+          air.cols.instruction.opcode r 0, air.cols.instruction.op_a_0 r 0,
+          air.cols.instruction.is_lb r 0, air.cols.instruction.is_lbu r 0,
+          air.cols.instruction.is_lh r 0, air.cols.instruction.is_lhu r 0,
+          air.cols.instruction.is_lw r 0, air.cols.instruction.is_sb r 0,
+          air.cols.instruction.is_sh r 0, air.cols.instruction.is_sw r 0,
+          -- instruction.op_a_access: prev_value (4, framework) + access (9) = 13
+          air.cols.instruction.op_a_access.prev_value_0 r 0,  -- framework (register consistency)
+          air.cols.instruction.op_a_access.prev_value_1 r 0,  -- framework
+          air.cols.instruction.op_a_access.prev_value_2 r 0,  -- framework
+          air.cols.instruction.op_a_access.prev_value_3 r 0,  -- framework
+          air.cols.instruction.op_a_access.access.value_0 r 0,
+          air.cols.instruction.op_a_access.access.value_1 r 0,
+          air.cols.instruction.op_a_access.access.value_2 r 0,
+          air.cols.instruction.op_a_access.access.value_3 r 0,
+          air.cols.instruction.op_a_access.access.prev_chunk r 0,      -- framework (ordering)
+          air.cols.instruction.op_a_access.access.prev_clk r 0,        -- framework (ordering)
+          air.cols.instruction.op_a_access.access.compare_clk r 0,     -- framework (ordering)
+          air.cols.instruction.op_a_access.access.diff_16bit_limb r 0,  -- framework (ordering)
+          air.cols.instruction.op_a_access.access.diff_8bit_limb r 0,   -- framework (ordering)
+          -- instruction.op_b_access: value (4) + ordering (5) = 9
+          air.cols.instruction.op_b_access.value_0 r 0,
+          air.cols.instruction.op_b_access.value_1 r 0,
+          air.cols.instruction.op_b_access.value_2 r 0,
+          air.cols.instruction.op_b_access.value_3 r 0,
+          air.cols.instruction.op_b_access.prev_chunk r 0,      -- framework (ordering)
+          air.cols.instruction.op_b_access.prev_clk r 0,        -- framework (ordering)
+          air.cols.instruction.op_b_access.compare_clk r 0,     -- framework (ordering)
+          air.cols.instruction.op_b_access.diff_16bit_limb r 0,  -- framework (ordering)
+          air.cols.instruction.op_b_access.diff_8bit_limb r 0,   -- framework (ordering)
+          -- instruction.op_c_access: value (4) + ordering (5) = 9
+          air.cols.instruction.op_c_access.value_0 r 0,
+          air.cols.instruction.op_c_access.value_1 r 0,
+          air.cols.instruction.op_c_access.value_2 r 0,
+          air.cols.instruction.op_c_access.value_3 r 0,
+          air.cols.instruction.op_c_access.prev_chunk r 0,      -- framework (ordering)
+          air.cols.instruction.op_c_access.prev_clk r 0,        -- framework (ordering)
+          air.cols.instruction.op_c_access.compare_clk r 0,     -- framework (ordering)
+          air.cols.instruction.op_c_access.diff_16bit_limb r 0,  -- framework (ordering)
+          air.cols.instruction.op_c_access.diff_8bit_limb r 0    -- framework (ordering)
+      ]
+
     section row_buses
 
       -- =====================================================================================

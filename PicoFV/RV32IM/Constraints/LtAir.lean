@@ -388,6 +388,22 @@ namespace LtAir.ConstraintsAndBuses
 
     end row_constraints
 
+    /-- All 30 column values of a LtAir row, including `not_eq_inv`. -/
+    def row [Field ExtF] (air : Valid_LtAir FKB ExtF) (r : ℕ) : Vector FKB 30 :=
+      #v[ air.cols.is_slt r 0, air.cols.is_slt_u r 0,
+          air.cols.a_0 r 0, air.cols.a_1 r 0, air.cols.a_2 r 0, air.cols.a_3 r 0,
+          air.cols.b_0 r 0, air.cols.b_1 r 0, air.cols.b_2 r 0, air.cols.b_3 r 0,
+          air.cols.c_0 r 0, air.cols.c_1 r 0, air.cols.c_2 r 0, air.cols.c_3 r 0,
+          air.cols.byte_flags_0 r 0, air.cols.byte_flags_1 r 0,
+          air.cols.byte_flags_2 r 0, air.cols.byte_flags_3 r 0,
+          air.cols.b_masked r 0, air.cols.c_masked r 0,
+          air.cols.bit_b r 0, air.cols.bit_c r 0,
+          air.cols.msb_b r 0, air.cols.msb_c r 0,
+          air.cols.slt_u r 0, air.cols.is_cmp_eq r 0, air.cols.is_sign_bit_same r 0,
+          air.cols.cmp_bytes_0 r 0, air.cols.cmp_bytes_1 r 0,
+          -- Non-deterministic: free when operands are equal (is_cmp_eq = 1)
+          air.cols.not_eq_inv r 0 ]
+
     section row_buses
 
       -- ===================================================================================

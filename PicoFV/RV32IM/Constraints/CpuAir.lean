@@ -2666,6 +2666,81 @@ namespace CpuAir.ConstraintsAndBuses
 
     end row_constraints
 
+    /-- All 117 column values of a CpuAir row. -/
+    def row [Field ExtF] (air : Valid_CpuAir FKB ExtF) (r : ℕ) : Vector FKB 117 :=
+      #v[ -- chunk, clk, clk_16bit_limb, clk_8bit_limb (4)
+          air.cols.chunk r 0, air.cols.clk r 0,
+          air.cols.clk_16bit_limb r 0, air.cols.clk_8bit_limb r 0,
+          -- pc, next_pc (2)
+          air.cols.pc r 0, air.cols.next_pc r 0,
+          -- instruction (14): opcode, a_0..3, b_0..3, c_0..3, a_is_0
+          air.cols.instruction.opcode r 0,
+          air.cols.instruction.a_0 r 0, air.cols.instruction.a_1 r 0,
+          air.cols.instruction.a_2 r 0, air.cols.instruction.a_3 r 0,
+          air.cols.instruction.b_0 r 0, air.cols.instruction.b_1 r 0,
+          air.cols.instruction.b_2 r 0, air.cols.instruction.b_3 r 0,
+          air.cols.instruction.c_0 r 0, air.cols.instruction.c_1 r 0,
+          air.cols.instruction.c_2 r 0, air.cols.instruction.c_3 r 0,
+          air.cols.instruction.a_is_0 r 0,
+          -- opcode_selector (22): imm_b, imm_c, is_alu, is_ecall, is_lb..is_sw, is_beq..is_bgeu, is_jalr, is_jal, is_auipc, is_unimpl
+          air.cols.opcode_selector.imm_b r 0, air.cols.opcode_selector.imm_c r 0,
+          air.cols.opcode_selector.is_alu r 0, air.cols.opcode_selector.is_ecall r 0,
+          air.cols.opcode_selector.is_lb r 0, air.cols.opcode_selector.is_lbu r 0,
+          air.cols.opcode_selector.is_lh r 0, air.cols.opcode_selector.is_lhu r 0,
+          air.cols.opcode_selector.is_lw r 0,
+          air.cols.opcode_selector.is_sb r 0, air.cols.opcode_selector.is_sh r 0,
+          air.cols.opcode_selector.is_sw r 0,
+          air.cols.opcode_selector.is_beq r 0, air.cols.opcode_selector.is_bne r 0,
+          air.cols.opcode_selector.is_blt r 0, air.cols.opcode_selector.is_bge r 0,
+          air.cols.opcode_selector.is_bltu r 0, air.cols.opcode_selector.is_bgeu r 0,
+          air.cols.opcode_selector.is_jalr r 0, air.cols.opcode_selector.is_jal r 0,
+          air.cols.opcode_selector.is_auipc r 0, air.cols.opcode_selector.is_unimpl r 0,
+          -- op_a_access (MemoryReadWriteCols = 13): prev_value_0..3, access.{value_0..3, prev_chunk, prev_clk, compare_clk, diff_16bit_limb, diff_8bit_limb}
+          air.cols.op_a_access.prev_value_0 r 0, air.cols.op_a_access.prev_value_1 r 0,
+          air.cols.op_a_access.prev_value_2 r 0, air.cols.op_a_access.prev_value_3 r 0,
+          air.cols.op_a_access.access.value_0 r 0, air.cols.op_a_access.access.value_1 r 0,
+          air.cols.op_a_access.access.value_2 r 0, air.cols.op_a_access.access.value_3 r 0,
+          air.cols.op_a_access.access.prev_chunk r 0, air.cols.op_a_access.access.prev_clk r 0,
+          air.cols.op_a_access.access.compare_clk r 0,
+          air.cols.op_a_access.access.diff_16bit_limb r 0, air.cols.op_a_access.access.diff_8bit_limb r 0,
+          -- op_b_access (MemoryAccessCols = 9): value_0..3, prev_chunk, prev_clk, compare_clk, diff_16bit_limb, diff_8bit_limb
+          air.cols.op_b_access.value_0 r 0, air.cols.op_b_access.value_1 r 0,
+          air.cols.op_b_access.value_2 r 0, air.cols.op_b_access.value_3 r 0,
+          air.cols.op_b_access.prev_chunk r 0, air.cols.op_b_access.prev_clk r 0,
+          air.cols.op_b_access.compare_clk r 0,
+          air.cols.op_b_access.diff_16bit_limb r 0, air.cols.op_b_access.diff_8bit_limb r 0,
+          -- op_c_access (MemoryAccessCols = 9): value_0..3, prev_chunk, prev_clk, compare_clk, diff_16bit_limb, diff_8bit_limb
+          air.cols.op_c_access.value_0 r 0, air.cols.op_c_access.value_1 r 0,
+          air.cols.op_c_access.value_2 r 0, air.cols.op_c_access.value_3 r 0,
+          air.cols.op_c_access.prev_chunk r 0, air.cols.op_c_access.prev_clk r 0,
+          air.cols.op_c_access.compare_clk r 0,
+          air.cols.op_c_access.diff_16bit_limb r 0, air.cols.op_c_access.diff_8bit_limb r 0,
+          -- opcode_specific (38): specific_0..37
+          air.cols.opcode_specific.specific_0 r 0, air.cols.opcode_specific.specific_1 r 0,
+          air.cols.opcode_specific.specific_2 r 0, air.cols.opcode_specific.specific_3 r 0,
+          air.cols.opcode_specific.specific_4 r 0, air.cols.opcode_specific.specific_5 r 0,
+          air.cols.opcode_specific.specific_6 r 0, air.cols.opcode_specific.specific_7 r 0,
+          air.cols.opcode_specific.specific_8 r 0, air.cols.opcode_specific.specific_9 r 0,
+          air.cols.opcode_specific.specific_10 r 0, air.cols.opcode_specific.specific_11 r 0,
+          air.cols.opcode_specific.specific_12 r 0, air.cols.opcode_specific.specific_13 r 0,
+          air.cols.opcode_specific.specific_14 r 0, air.cols.opcode_specific.specific_15 r 0,
+          air.cols.opcode_specific.specific_16 r 0, air.cols.opcode_specific.specific_17 r 0,
+          air.cols.opcode_specific.specific_18 r 0, air.cols.opcode_specific.specific_19 r 0,
+          air.cols.opcode_specific.specific_20 r 0, air.cols.opcode_specific.specific_21 r 0,
+          air.cols.opcode_specific.specific_22 r 0, air.cols.opcode_specific.specific_23 r 0,
+          air.cols.opcode_specific.specific_24 r 0, air.cols.opcode_specific.specific_25 r 0,
+          air.cols.opcode_specific.specific_26 r 0, air.cols.opcode_specific.specific_27 r 0,
+          air.cols.opcode_specific.specific_28 r 0, air.cols.opcode_specific.specific_29 r 0,
+          air.cols.opcode_specific.specific_30 r 0, air.cols.opcode_specific.specific_31 r 0,
+          air.cols.opcode_specific.specific_32 r 0, air.cols.opcode_specific.specific_33 r 0,
+          air.cols.opcode_specific.specific_34 r 0, air.cols.opcode_specific.specific_35 r 0,
+          air.cols.opcode_specific.specific_36 r 0, air.cols.opcode_specific.specific_37 r 0,
+          -- control flags (6): is_real, branching, not_branching, ecall_mul_send_to_table, ecall_range_check_operand, is_sequential_instr
+          air.cols.is_real r 0, air.cols.branching r 0,
+          air.cols.not_branching r 0, air.cols.ecall_mul_send_to_table r 0,
+          air.cols.ecall_range_check_operand r 0, air.cols.is_sequential_instr r 0
+      ]
+
     section row_buses
 
       -- ===========================================================================
