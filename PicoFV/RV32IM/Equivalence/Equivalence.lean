@@ -5724,14 +5724,7 @@ namespace Equivalence
             ]
           . congr
             rw [h_sign_extend]
-            . simp [BitVec.extend]
-            . rw [if_neg] at h_a_is_0
-              . assumption
-              . intro h_reg; apply is_x0
-                simp [h_a0, Transpiler.reg_to_KB, regidx_to_fin]
-                clear *- h_reg
-                obtain ⟨ rd, pf ⟩ := rd
-                simp_all
+            simp [BitVec.extend]
         . trans; rotate_left; exact h_rs1
           congr; omega
       . split_ands
@@ -5906,14 +5899,7 @@ namespace Equivalence
             ]
           . congr
             rw [h_sign_extend]
-            . simp [BitVec.extend]
-            . rw [if_neg] at h_a_is_0
-              . assumption
-              . intro h_reg; apply is_x0
-                simp [h_a0, Transpiler.reg_to_KB, regidx_to_fin]
-                clear *- h_reg
-                obtain ⟨ rd, pf ⟩ := rd
-                simp_all
+            simp [BitVec.extend]
         . trans; rotate_left; exact h_rs1
           congr; omega
       . simp [OpcodeSpec.RV32.spec_LH]
@@ -6269,14 +6255,7 @@ namespace Equivalence
             ]
           . congr
             rw [h_sign_extend]
-            . simp [BitVec.extend]
-            . rw [if_neg] at h_a_is_0
-              . assumption
-              . intro h_reg; apply is_x0
-                simp [h_a0, Transpiler.reg_to_KB, regidx_to_fin]
-                clear *- h_reg
-                obtain ⟨ rd, pf ⟩ := rd
-                simp_all
+            simp [BitVec.extend]
         . trans; rotate_left; exact h_rs1
           congr; omega
       . split_ands
@@ -6451,14 +6430,7 @@ namespace Equivalence
             ]
           . congr
             rw [h_sign_extend]
-            . simp [BitVec.extend]
-            . rw [if_neg] at h_a_is_0
-              . assumption
-              . intro h_reg; apply is_x0
-                simp [h_a0, Transpiler.reg_to_KB, regidx_to_fin]
-                clear *- h_reg
-                obtain ⟨ rd, pf ⟩ := rd
-                simp_all
+            simp [BitVec.extend]
         . trans; rotate_left; exact h_rs1
           congr; omega
       . simp [OpcodeSpec.RV32.spec_LHU]

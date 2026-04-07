@@ -426,14 +426,8 @@ namespace RV32IM_Interactions
           -- No chip-external constraints
           externals := fun _ => True
 
-          -- Well formedness entirely derived from the fact that the entries come from the transpiler
+          -- Well-formedness entirely derived from the fact that the entries come from the transpiler
           wf_properties := ProgramBusEntry.operand_properties
-
-          wf_assume_cond := fun entry => entry.1 = -1,
-          wf_assert_cond := fun entry => entry.1 = 1,
-
-          ext_assume_cond := fun entry => entry.1 = 1,
-          ext_assert_cond := fun entry => entry.1 = -1,
 
           deserialise := ProgramBusEntry.deserialise
 
@@ -487,6 +481,7 @@ namespace RV32IM_Interactions
           c_3 := entry.2[12],
         }
 
+      /-- ALU bus pure specification -/
       def ALUBus.Spec (ALU_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 : FKB) :=
         let result_range := a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256
         let operand_range := b_0 < 256 ∧ b_1 < 256 ∧ b_2 < 256 ∧ b_3 < 256 ∧ c_0 < 256 ∧ c_1 < 256 ∧ c_2 < 256 ∧ c_3 < 256
@@ -533,16 +528,10 @@ namespace RV32IM_Interactions
                  entry.b_0 < 256 ∧ entry.b_1 < 256 ∧ entry.b_2 < 256 ∧ entry.b_3 < 256 ∧
                  entry.c_0 < 256 ∧ entry.c_1 < 256 ∧ entry.c_2 < 256 ∧ entry.c_3 < 256)
 
-          -- Well formedness derived from byte lookup table construction
+          -- Well-formedness captured by pure specification
           wf_properties :=
             fun ⟨ _, ALU_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3 ⟩ =>
               ALUBus.Spec ALU_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3
-
-          wf_assume_cond := fun entry => entry.1 = -1,
-          wf_assert_cond := fun entry => entry.1 = 1,
-
-          ext_assume_cond := fun entry => entry.1 = 1,
-          ext_assert_cond := fun entry => entry.1 = -1,
 
           deserialise := ALUBusEntry.deserialise
 
@@ -580,6 +569,7 @@ namespace RV32IM_Interactions
           x_3 := entry.2[4],
         }
 
+      /-- Byte bus pure specification -/
       def ByteBus.Spec (byte_opcode x_0 x_1 x_2 x_3 : FKB) :=
         match byte_opcode with
         | 0 => x_0 = x_2 &&& x_3 ∧ x_0 < 256 ∧ x_1 = 0 ∧ x_2 < 256 ∧ x_3 < 256
@@ -610,16 +600,10 @@ namespace RV32IM_Interactions
           -- No externals
           externals := fun _ => True
 
-          -- Well formedness derived from byte lookup table construction
+          -- Well-formedness captured by pure specification
           wf_properties :=
             fun ⟨ _, byte_opcode, x_0, x_1, x_2, x_3 ⟩ =>
               ByteBus.Spec byte_opcode x_0 x_1 x_2 x_3
-
-          wf_assume_cond := fun entry => entry.1 = -1,
-          wf_assert_cond := fun entry => entry.1 = 1,
-
-          ext_assume_cond := fun entry => entry.1 = 1,
-          ext_assert_cond := fun entry => entry.1 = -1,
 
           deserialise := ByteBusEntry.deserialise
 
@@ -634,7 +618,7 @@ namespace RV32IM_Interactions
 
     section StateBus
 
-      /-- Byte bus entry -/
+      /-- State bus entry -/
       structure StateBusEntry where
         multiplicity : F
         chunk : F
@@ -678,16 +662,10 @@ namespace RV32IM_Interactions
           -- No externals
           externals := fun _ => True
 
-          -- Well formedness
+          -- Well-formedness
           wf_properties :=
             fun ⟨ _, chunk, clk, ptr, x_0, x_1, x_2, x_3 ⟩ =>
               x_0 < 256 ∧ x_1 < 256 ∧ x_2 < 256 ∧ x_3 < 256
-
-          wf_assume_cond := fun entry => entry.1 = -1,
-          wf_assert_cond := fun entry => entry.1 = 1,
-
-          ext_assume_cond := fun entry => entry.1 = 1,
-          ext_assert_cond := fun entry => entry.1 = -1,
 
           deserialise := StateBusEntry.deserialise
 
@@ -702,7 +680,7 @@ namespace RV32IM_Interactions
 
     section MemoryBus
 
-      /-- Memory summary bus entry -/
+      /-- Memory bus entry -/
       structure MemoryBusEntry where
         multiplicity : F
         mem_opcode : F
@@ -759,17 +737,18 @@ namespace RV32IM_Interactions
           is_sw := entry.2[21],
         }
 
-      def MemoryBus.Spec (mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 a_is_0 : FKB) : Prop :=
-        (mem_opcode < 15 → a_is_0 = 0 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256) ∧
+      /-- Memory bus pure specification -/
+      def MemoryBus.Spec (mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 : FKB) : Prop :=
+        (mem_opcode < 15 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256) ∧
         (U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]).toNat < Pico_address_space_size_32 ∧
         (mem_opcode = 11 ∨ mem_opcode = 14 ∨ mem_opcode = 16 → 2 ∣ (U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]).toNat) ∧
         (mem_opcode = 12 ∨ mem_opcode = 17 → 4 ∣ (U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]).toNat) ∧
-        (mem_opcode = 10 → a_is_0 = 0 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 true) ∧
-        (mem_opcode = 11 → a_is_0 = 0 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 true) ∧
-        (mem_opcode = 13 → a_is_0 = 0 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 false) ∧
-        (mem_opcode = 14 → a_is_0 = 0 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 false)
+        (mem_opcode = 10 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 true) ∧
+        (mem_opcode = 11 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 true) ∧
+        (mem_opcode = 13 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 false) ∧
+        (mem_opcode = 14 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 false)
 
-      /-- Program bus entry instance -/
+      /-- Memory bus entry instance -/
       @[simp, grind]
       instance MemoryBusEntryInstance
       : BusEntry FKB (MemoryBusEntry FKB) :=
@@ -783,7 +762,7 @@ namespace RV32IM_Interactions
           -- No axioms
           axioms := fun _ => True
 
-          -- Opcode and selectors are constrainted externally
+          -- Opcode and selectors are constrained externally
           externals := fun ⟨multiplicity, mem_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, a_is_0, is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw⟩ =>
             ¬(multiplicity = 0) →
               mem_opcode ∈ Finset.Icc 10 17 ∧
@@ -798,15 +777,9 @@ namespace RV32IM_Interactions
               (mem_opcode = 16 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256 ∧ ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 0, 1, 0 )) ∧
               (mem_opcode = 17 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256 ∧ ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 0, 0, 1 ))
 
-          -- Well formedness entirely derived from the fact that the entries come from the transpiler
+          -- Well-formedness derived from pure specification
           wf_properties := fun ⟨_, mem_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, a_is_0, _, _, _, _, _, _, _, _⟩ =>
-            MemoryBus.Spec mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 a_is_0
-
-          wf_assume_cond := fun entry => entry.1 = -1,
-          wf_assert_cond := fun entry => entry.1 = 1,
-
-          ext_assume_cond := fun entry => entry.1 = 1,
-          ext_assert_cond := fun entry => entry.1 = -1,
+            MemoryBus.Spec mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3
 
           deserialise := MemoryBusEntry.deserialise
 
