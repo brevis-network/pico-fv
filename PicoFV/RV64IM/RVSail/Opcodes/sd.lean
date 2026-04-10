@@ -144,7 +144,7 @@ namespace PureSpec.RV64
     dsimp; simp only [*]; dsimp; simp only [*]; dsimp
     rw [if_pos (by simp [*]; omega)]
     dsimp; simp only [*]
-    rw [if_pos (by simp; omega)]
+    rw [if_pos (by simp)]
     dsimp; simp only [*]; dsimp
     rw [if_neg (by simp; omega)]; simp [*]
     simp [execute_STORED_pure, EStateM.set, modify_memory_8,

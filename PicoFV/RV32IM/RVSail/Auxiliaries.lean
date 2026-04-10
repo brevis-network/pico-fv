@@ -664,13 +664,13 @@ namespace RV32IM
       (Sail.readReg Register.mstatus state = EStateM.Result.ok mstatus state ∧ BitVec.extractLsb 17 17 mstatus = 0#1) ∧
       -- A2.1 : Single PMA region
       Sail.readReg Register.pma_regions state = EStateM.Result.ok [ pmaRegion ] state ∧
-      -- A2.2 : with base 0 and at least 2^29 bytes in size
+      -- A2.2 : with base 0 and at least the required size
       pmaRegion.base = 0 ∧
       Pico_address_space_size_32 ≤ pmaRegion.size.toNat ∧
-      -- A2.3 : with all addresses readable and writable, and misaligned accesses treated as errors
+      -- A2.3 : with all addresses readable and writable, and misaligned accesses allowed
       pmaRegion.attributes.readable ∧
       pmaRegion.attributes.writable ∧
-      pmaRegion.attributes.misaligned_fault = misaligned_fault.AlignmentFault ∧
+      pmaRegion.attributes.misaligned_fault = misaligned_fault.NoFault ∧
       -- Assumption A3: no host-target interface
       Sail.readReg Register.htif_tohost_base state = EStateM.Result.ok .none state ∧
       -- Assumption A4.1: misa register exists

@@ -82,7 +82,6 @@ namespace PureSpec.RV32
          (by
           repeat rw [Int.emod_eq_of_lt (b := 18446744073709551616) (by omega) (by omega)];
           omega)]; simp [*]
-    rw [if_pos (by omega)]; simp [*]
     rw [if_neg (by omega)]
 
     simp [write_reg_state, execute_LOADHU_pure, *]
