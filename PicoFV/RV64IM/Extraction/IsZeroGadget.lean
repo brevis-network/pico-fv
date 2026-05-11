@@ -1,4 +1,4 @@
---Extracted on 2026-5-4 at 11:18:05.883157140 using git commit "1d13964da22c7cf660eb6ee312c9c08ab6f76126"
+--Extracted on 2026-5-11 at 15:37:39.508101486 using git commit "22b0aae6321c1f63c72aafd0b506b5f45b91ffb1"
 import Mathlib.Data.List.Defs
 
 import LeanZKCircuit_Plonky3.Plonky3.Circuit
@@ -9,7 +9,7 @@ open Plonky3
 
 set_option linter.all false
 
-namespace IsZeroGadget64.Extraction
+namespace IsZeroGadget.Extraction
 --Num constraints: 3
 --Constraints---
 @[extracted_constraint_definition] def constraint_0 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
@@ -34,5 +34,5 @@ def allHold {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] 
 : Prop :=
   constrain_interactions c ∧
   List.Forall (·) (constraint_list c row)
-end IsZeroGadget64.Extraction
+end IsZeroGadget.Extraction
 ------
