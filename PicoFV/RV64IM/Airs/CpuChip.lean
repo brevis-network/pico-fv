@@ -7,8 +7,12 @@ import PicoFV.RV64IM.Extraction.Attributes
 import PicoFV.RV64IM.Airs.Attributes
 import PicoFV.RV64IM.Airs.SubAirs
 import PicoFV.RV64IM.Airs.IsZeroGadget
-import PicoFV.RV64IM.Airs.U16ToU8Gadget
-import PicoFV.RV64IM.Airs.FieldWordRangeChecker
+-- EcallCols.syscall_code_bytes is evaluated with both variants depending on path:
+--   ecall/constraints.rs:47  → eval_u16_to_u8_safe   (main syscall path)
+--   ecall/constraints.rs:296 → eval_u16_to_u8_unsafe (is_commit path)
+--   ecall/constraints.rs:332 → eval_u16_to_u8_unsafe (is_commit_deferred_proofs path)
+import PicoFV.RV64IM.Airs.U16ToU8GadgetSafe
+import PicoFV.RV64IM.Airs.U16ToU8GadgetUnsafe
 
 open Plonky3
 
@@ -148,45 +152,6 @@ This matches `Extraction/CpuChip.lean`.
   Column["is_jal"]
   Column["is_auipc"]
   Column["is_unimpl"]
-
--- ============================================================================
--- BranchCols (3 columns)
--- ============================================================================
-
-#define_subair "BranchCols" using "pico_encapsulation" where
-  Column["a_eq_b"]
-  Column["a_gt_b"]
-  Column["a_lt_b"]
-
--- ============================================================================
--- EcallCols (36 columns)
--- ============================================================================
-
-#define_subair "EcallCols" using "pico_encapsulation" where
-  -- syscall_code_bytes: U16ToU8Gadget = 4
-  SubAir["syscall_code_bytes": "U16ToU8Gadget" width := 4]
-  -- 5 IsZeroGadgets (2 cols each)
-  SubAir["is_enter_unconstrained": "IsZeroGadget" width := 2]
-  SubAir["is_hint_len": "IsZeroGadget" width := 2]
-  SubAir["is_halt": "IsZeroGadget" width := 2]
-  SubAir["is_commit": "IsZeroGadget" width := 2]
-  SubAir["is_commit_deferred_proofs": "IsZeroGadget" width := 2]
-  -- index_bitmap: [T; PV_DIGEST_NUM_WORDS = 8]
-  Column["index_bitmap_0"]
-  Column["index_bitmap_1"]
-  Column["index_bitmap_2"]
-  Column["index_bitmap_3"]
-  Column["index_bitmap_4"]
-  Column["index_bitmap_5"]
-  Column["index_bitmap_6"]
-  Column["index_bitmap_7"]
-  -- operand_range_check_cols: FieldWordRangeChecker = 10
-  SubAir["operand_range_check_cols": "FieldWordRangeChecker" width := 10]
-  -- operand_to_check: Word = 4
-  Column["operand_to_check_0"]
-  Column["operand_to_check_1"]
-  Column["operand_to_check_2"]
-  Column["operand_to_check_3"]
 
 -- ============================================================================
 -- OpcodeSpecificCols (36 columns)

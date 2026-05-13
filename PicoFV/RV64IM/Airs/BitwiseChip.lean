@@ -5,7 +5,7 @@ import LeanZKCircuit_Plonky3.Plonky3.Command.Air.define_air
 
 import PicoFV.RV64IM.Extraction.Attributes
 import PicoFV.RV64IM.Airs.Attributes
-import PicoFV.RV64IM.Airs.BitWiseU16Gadget
+import PicoFV.RV64IM.Airs.BitwiseU16Gadget
 
 open Plonky3
 

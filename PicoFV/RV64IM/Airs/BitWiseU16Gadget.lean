@@ -5,8 +5,9 @@ import LeanZKCircuit_Plonky3.Plonky3.Command.Air.define_air
 
 import PicoFV.RV64IM.Extraction.Attributes
 import PicoFV.RV64IM.Airs.Attributes
-import PicoFV.RV64IM.Airs.U16ToU8Gadget
-import PicoFV.RV64IM.Airs.BitWiseGadget
+-- bitwise_u16.rs:61-62 calls `eval_u16_to_u8_unsafe` for both b_low_bytes and c_low_bytes.
+import PicoFV.RV64IM.Airs.U16ToU8GadgetUnsafe
+import PicoFV.RV64IM.Airs.BitwiseGadget
 
 open Plonky3
 

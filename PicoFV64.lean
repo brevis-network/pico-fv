@@ -26,7 +26,8 @@ import PicoFV.RV64IM.Extraction.ShiftRightChip
 import PicoFV.RV64IM.Airs.Attributes
 import PicoFV.RV64IM.Airs.SubAirs
 import PicoFV.RV64IM.Airs.U16MSBGadget
-import PicoFV.RV64IM.Airs.U16ToU8Gadget
+import PicoFV.RV64IM.Airs.U16ToU8GadgetUnsafe
+import PicoFV.RV64IM.Airs.U16ToU8GadgetSafe
 import PicoFV.RV64IM.Airs.IsZeroGadget
 import PicoFV.RV64IM.Airs.IsZeroWordGadget
 import PicoFV.RV64IM.Airs.IsEqualWordGadget
@@ -34,13 +35,12 @@ import PicoFV.RV64IM.Airs.AddGadget
 import PicoFV.RV64IM.Airs.AddwGadget
 import PicoFV.RV64IM.Airs.SubGadget
 import PicoFV.RV64IM.Airs.SubwGadget
-import PicoFV.RV64IM.Airs.BitWiseGadget
-import PicoFV.RV64IM.Airs.BitWiseU16Gadget
+import PicoFV.RV64IM.Airs.BitwiseGadget
+import PicoFV.RV64IM.Airs.BitwiseU16Gadget
 import PicoFV.RV64IM.Airs.LtWordU16Gadget
 import PicoFV.RV64IM.Airs.LtSignedGadget
 import PicoFV.RV64IM.Airs.LtUnsignedGadget
 import PicoFV.RV64IM.Airs.MulGadget
-import PicoFV.RV64IM.Airs.FieldWordRangeChecker
 
 -- Air wrappers (chips)
 import PicoFV.RV64IM.Airs.AddChip
