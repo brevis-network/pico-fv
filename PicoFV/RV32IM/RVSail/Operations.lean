@@ -362,7 +362,7 @@ namespace RV32IM
       let state : List Operation :=
         List.filterMap (
           fun state_row =>
-            let value := U32.toBV #v[state_row.x_0, state_row.x_1, state_row.x_2, state_row.x_3]
+            let value := U32b.toBV #v[state_row.x_0, state_row.x_1, state_row.x_2, state_row.x_3]
             if _ : state_row.ptr < 32 then
               (let register : regidx := .Regidx (BitVec.ofNatLT (w := if false = true then 4 else 5) state_row.ptr.val (by simpa))
               if (state_row.multiplicity = -1) then
@@ -388,20 +388,20 @@ namespace RV32IM
             match width with
             | .none => .none
             | .some width =>
-              let address := (U32.toBV #v[memory_row.b_0, memory_row.b_1, memory_row.b_2, memory_row.b_3]
-                                + U32.toBV #v[memory_row.c_0, memory_row.c_1, memory_row.c_2, memory_row.c_3]).toNat
+              let address := (U32b.toBV #v[memory_row.b_0, memory_row.b_1, memory_row.b_2, memory_row.b_3]
+                                + U32b.toBV #v[memory_row.c_0, memory_row.c_1, memory_row.c_2, memory_row.c_3]).toNat
               let is_store : Bool := memory_row.is_sb == 1 ∨ memory_row.is_sh == 1 ∨ memory_row.is_sw == 1
               match is_store with
               | true =>
                 match width with
                 | .Byte => .some (.WriteMem address .Byte (BitVec.ofNat 8 (memory_row.a_0).val))
                 | .Half => .some (.WriteMem address .Half (BitVec.ofNat 8 (memory_row.a_1).val ++ BitVec.ofNat 8 (memory_row.a_0).val))
-                | .Word => .some (.WriteMem address .Word (U32.toBV #v[memory_row.a_0, memory_row.a_1, memory_row.a_2, memory_row.a_3]))
+                | .Word => .some (.WriteMem address .Word (U32b.toBV #v[memory_row.a_0, memory_row.a_1, memory_row.a_2, memory_row.a_3]))
               | false =>
                 match width with
                 | .Byte => .some (.ReadMem address .Byte (BitVec.ofNat 8 (memory_row.a_0).val))
                 | .Half => .some (.ReadMem address .Half (BitVec.ofNat 8 (memory_row.a_1).val ++ BitVec.ofNat 8 (memory_row.a_0).val))
-                | .Word => .some (.ReadMem address .Word (U32.toBV #v[memory_row.a_0, memory_row.a_1, memory_row.a_2, memory_row.a_3]))
+                | .Word => .some (.ReadMem address .Word (U32b.toBV #v[memory_row.a_0, memory_row.a_1, memory_row.a_2, memory_row.a_3]))
         ) row.Memory
       program ++ state ++ memory
 

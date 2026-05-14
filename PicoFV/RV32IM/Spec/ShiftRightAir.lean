@@ -107,7 +107,7 @@ namespace ShiftRightAir.Spec
   local macro "close_srl" : tactic =>
     `(tactic| (
       simp_all
-      simp [← BitVec.toNat_inj, U32.toNat]
+      simp [← BitVec.toNat_inj, U32b.toNat]
       repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)]
       try simp [Fin.val_add, Fin.val_mul, sub_shift_val_KB_to_Nat]
       repeat rw [Nat.mod_eq_of_lt (by omega)]
@@ -191,13 +191,13 @@ namespace ShiftRightAir.Spec
     clear h_b3_bound_dup rest
     -- Get the mod 32
     have h_mod_32:
-      U32.toNat #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
+      U32b.toNat #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
                    BitVec.ofNat 8 ↑(air.cols.c_2 row 0), BitVec.ofNat 8 ↑(air.cols.c_3 row 0)] % 32
         =
       air.cols.c_least_sig_byte_0 row 0 + 2 * air.cols.c_least_sig_byte_1 row 0 +
       4 * air.cols.c_least_sig_byte_2 row 0 + 8 * air.cols.c_least_sig_byte_3 row 0 + 16 * air.cols.c_least_sig_byte_4 row 0
     := by
-      simp [U32.toNat, ← h_c0_decomp]
+      simp [U32b.toNat, ← h_c0_decomp]
       clear *- hc0 hc1 hc2 hc3 h_lsb0_bin
                h_lsb0_bin h_lsb1_bin h_lsb2_bin h_lsb3_bin
                h_lsb4_bin h_lsb5_bin h_lsb6_bin h_lsb7_bin
@@ -266,7 +266,7 @@ namespace ShiftRightAir.Spec
       simp [h_cc0, h_cc1, h_cc2, h_cc3, h_cc4, h_cc5, h_cc6, h_cc7]
         at h_bitsr0_bound h_bitsr1_bound h_bitsr2_bound h_bitsr3_bound h_bitsr4_bound h_bitsr5_bound h_bitsr6_bound h_bitsr7_bound ⊢
       simp [h_carry1_eq, h_carry2_eq, h_carry3_eq, h_carry4_eq]
-      simp [← BitVec.toNat_inj, U32.toNat]
+      simp [← BitVec.toNat_inj, U32b.toNat]
       repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)]
       try simp [Fin.val_add, Fin.val_mul, sub_shift_val_KB_to_Nat]
       repeat rw [Nat.mod_eq_of_lt (by omega)]
@@ -350,13 +350,13 @@ namespace ShiftRightAir.Spec
     clear h_b3_bound_dup rest
     -- Get the mod 32
     have h_mod_32:
-      U32.toNat #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
+      U32b.toNat #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
                    BitVec.ofNat 8 ↑(air.cols.c_2 row 0), BitVec.ofNat 8 ↑(air.cols.c_3 row 0)] % 32
         =
       air.cols.c_least_sig_byte_0 row 0 + 2 * air.cols.c_least_sig_byte_1 row 0 +
       4 * air.cols.c_least_sig_byte_2 row 0 + 8 * air.cols.c_least_sig_byte_3 row 0 + 16 * air.cols.c_least_sig_byte_4 row 0
     := by
-      simp [U32.toNat, ← h_c0_decomp]
+      simp [U32b.toNat, ← h_c0_decomp]
       clear *- hc0 hc1 hc2 hc3 h_lsb0_bin
                h_lsb0_bin h_lsb1_bin h_lsb2_bin h_lsb3_bin
                h_lsb4_bin h_lsb5_bin h_lsb6_bin h_lsb7_bin
@@ -481,10 +481,10 @@ namespace ShiftRightAir.Spec
         at h_bitsr0_bound h_bitsr1_bound h_bitsr2_bound h_bitsr3_bound h_bitsr4_bound h_bitsr5_bound h_bitsr6_bound h_bitsr7_bound ⊢
       simp [h_carry1_eq, h_carry2_eq, h_carry3_eq, h_carry4_eq]
 
-      simp [← BitVec.toInt_inj, U32.toInt, ← U32.msb_3_negative]
+      simp [← BitVec.toInt_inj, U32b.toInt, ← U32b.msb_3_negative]
       simp [h_b_msb_is_msb, msb_shift_b3, msb_shift_msb]
 
-    . simp [U32.toNat,
+    . simp [U32b.toNat,
             Fin.val_add, Fin.val_mul,
             sub_shift_val_KB_to_Nat]
       ring_nf
@@ -493,7 +493,7 @@ namespace ShiftRightAir.Spec
 
     all_goals
       split_ifs with h_b_msb
-      . simp [h_b_msb, U32.toNat,
+      . simp [h_b_msb, U32b.toNat,
              Fin.val_add, Fin.val_mul,
              sub_shift_val_KB_to_Nat, sub_shift_val_Nat_to_Int,
              Int.shiftRight_eq_div_pow]
@@ -503,7 +503,7 @@ namespace ShiftRightAir.Spec
         clear *- hb0 hb1 hb2 hb3
         omega
       . simp [h_b_msb] at h_b_msb_bin
-        simp [h_b_msb_bin, U32.toNat,
+        simp [h_b_msb_bin, U32b.toNat,
              Fin.val_add, Fin.val_mul,
              sub_shift_val_KB_to_Nat, sub_shift_val_Nat_to_Int,
              Int.shiftRight_eq_div_pow]

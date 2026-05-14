@@ -15,7 +15,7 @@ namespace Transpiler
     reg < 32
 
   def imm_to_KB {w : ℕ} (imm : BitVec w) (sgn : Bool) : Vector FKB 4 :=
-    let imm_u32 := U32.fromNat (BitVec.extend imm 32 sgn).toNat
+    let imm_u32 := U32b.fromNat (BitVec.extend imm 32 sgn).toNat
     Vector.map (fun x => ⟨ x.toNat, by omega ⟩) imm_u32
 
   lemma imm_to_KB_bytes
@@ -23,126 +23,63 @@ namespace Transpiler
     (imm_to_KB imm sgn)[0] < 256 ∧ (imm_to_KB imm sgn)[1] < 256 ∧
     (imm_to_KB imm sgn)[2] < 256 ∧ (imm_to_KB imm sgn)[3] < 256
   := by
-    simp [imm_to_KB, U32.fromNat, Fin.lt_def]; omega
+    simp [imm_to_KB, U32b.fromNat, Fin.lt_def]; omega
 
   lemma imm_to_KB_BV_sgn {w : ℕ} (imm : BitVec w) :
     let imm_KB := imm_to_KB imm true
-    U32.toBV #v[imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3]] =
+    U32b.toBV #v[imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3]] =
     BitVec.signExtend 32 imm
   := by
     simp [← BitVec.toNat_inj]
     simp [
-      U32.toNat,
+      U32b.toNat,
       imm_to_KB,
-      U32.fromNat,
+      U32b.fromNat,
       BitVec.extend,
     ]
     omega
 
   lemma imm_to_KB_Nat_sgn {w : ℕ} (imm : BitVec w) :
     let imm_KB := imm_to_KB imm true
-    U32.toNat #v[imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3]] =
+    U32b.toNat #v[imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3]] =
     (BitVec.signExtend 32 imm).toNat
   := by
     simp [← imm_to_KB_BV_sgn]
 
   lemma imm_to_KB_Int_sgn {w : ℕ} (imm : BitVec w) :
     let imm_KB := imm_to_KB imm true
-    U32.toInt #v[imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3]] =
+    U32b.toInt #v[imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3]] =
     (BitVec.signExtend 32 imm).toInt
   := by
     simp [← imm_to_KB_BV_sgn]
 
   lemma imm_to_KB_BV_usgn {w : ℕ} (imm : BitVec w) :
     let imm_KB := imm_to_KB imm false
-    U32.toBV #v[imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3]] =
+    U32b.toBV #v[imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3]] =
     BitVec.zeroExtend 32 imm
   := by
     simp [← BitVec.toNat_inj]
     simp [
-      U32.toNat,
+      U32b.toNat,
       imm_to_KB,
-      U32.fromNat,
+      U32b.fromNat,
       BitVec.extend,
     ]
     omega
 
   lemma imm_to_KB_Nat_usgn {w : ℕ} (imm : BitVec w) :
     let imm_KB := imm_to_KB imm false
-    U32.toNat #v[imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3]] =
+    U32b.toNat #v[imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3]] =
     (BitVec.zeroExtend 32 imm).toNat
   := by
     simp [← imm_to_KB_BV_usgn]
 
   lemma imm_to_KB_Int_usgn {w : ℕ} (imm : BitVec w) :
     let imm_KB := imm_to_KB imm false
-    U32.toInt #v[imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3]] =
+    U32b.toInt #v[imm_KB[0], imm_KB[1], imm_KB[2], imm_KB[3]] =
     (BitVec.zeroExtend 32 imm).toInt
   := by
     simp [← imm_to_KB_BV_usgn]
-
-  lemma imm_mod_2_to_KB {w : ℕ} (imm : BitVec w) (sgn : Bool)
-    (h_imm : imm % 2 = 0)
-  :
-    let imm_KB := imm_to_KB imm sgn
-    imm_KB[0] % 2 = 0
-  := by
-    simp_all [← BitVec.toNat_inj]
-    by_cases h_w : 1 < w
-    . rw [Nat.mod_eq_of_lt (a := 2)] at h_imm
-      . simp_all [imm_to_KB, U32.fromNat, BitVec.extend]
-        split_ifs <;> simp [Fin.ext_iff] <;> [ skip; omega ]
-        simp [BitVec.toNat_signExtend]
-        repeat rw [Nat.add_mod_eq_sub]
-        split_ifs <;> simp_all <;> try omega
-        by_cases h_w' : 32 < w
-        . have h_pow_w : 4294967296 < 2 ^ w
-          := by
-            apply lt_of_le_of_lt (b := 2 ^ 32) <;> [ simp; skip ]
-            exact Nat.pow_lt_pow_right (by simp) h_w'
-          omega
-        . simp at h_w'
-          interval_cases w <;> simp_all
-      . apply lt_of_le_of_lt (b := 2 ^ 1) <;> [ simp; skip ]
-        exact Nat.pow_lt_pow_right (by simp) h_w
-    . have h_eq : 2 % 2 ^ w = 0
-        := by simp at h_w; interval_cases w <;> simp
-      rw [h_eq] at h_imm; clear h_eq; simp at h_imm
-      have h_eq : imm = 0 := by grind
-      simp_all [imm_to_KB, U32.fromNat, BitVec.extend]
-      split_ifs <;> simp [BitVec.signExtend]
-
-  lemma imm_mod_4096_to_KB {w : ℕ} (imm : BitVec w) (sgn : Bool)
-    (h_imm : imm % 4096 = 0)
-  :
-    let imm_KB := imm_to_KB imm sgn
-    imm_KB[0] = 0 ∧ imm_KB[1] % 4 = 0
-  := by
-    simp_all [← BitVec.toNat_inj]
-    by_cases h_w : 12 < w
-    . rw [Nat.mod_eq_of_lt (a := 4096)] at h_imm
-      . have h_mod : imm.toNat % 256 = 0 := by omega
-        simp_all [imm_to_KB, U32.fromNat, BitVec.extend]
-        split_ifs <;> simp [Fin.ext_iff] <;> [ skip; omega ]
-        simp [BitVec.toNat_signExtend]
-        repeat rw [Nat.add_mod_eq_sub]
-        split_ifs <;> simp_all <;> try omega
-        by_cases h_w' : 32 < w
-        . have h_pow_w : 4294967296 < 2 ^ w
-          := by
-            apply lt_of_le_of_lt (b := 2 ^ 32) <;> [ simp; skip ]
-            exact Nat.pow_lt_pow_right (by simp) h_w'
-          omega
-        . simp at h_w'
-          interval_cases w <;> simp_all <;> omega
-      . apply lt_of_le_of_lt (b := 2 ^ 12) <;> [ simp; skip ]
-        exact Nat.pow_lt_pow_right (by simp) h_w
-    . have h_eq : 4096 % 2 ^ w = 0
-        := by simp at h_w; interval_cases w <;> simp
-      rw [h_eq] at h_imm; clear h_eq; simp at h_imm
-      have h_eq : imm = 0 := by grind
-      simp_all [imm_to_KB, U32.fromNat, BitVec.extend]
-      split_ifs <;> simp [BitVec.signExtend]
 
   def opcode_of_rop (op : rop) : FKB :=
     match op with

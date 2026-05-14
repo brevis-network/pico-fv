@@ -283,13 +283,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_ADD_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -408,13 +408,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_SUB_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -533,13 +533,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_XOR_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -658,13 +658,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_OR_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -783,13 +783,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_AND_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -909,13 +909,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_SLL_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -1034,13 +1034,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_SRL_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -1160,13 +1160,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_SRA_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -1286,13 +1286,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_SLT_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -1414,13 +1414,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_SLTU_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -1487,7 +1487,7 @@ namespace Equivalence
     :
       let reg0 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -1546,13 +1546,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_ADDI_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -1626,7 +1626,7 @@ namespace Equivalence
     :
       let reg0 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -1685,13 +1685,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_XORI_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -1765,7 +1765,7 @@ namespace Equivalence
     :
       let reg0 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -1824,13 +1824,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_ORI_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -1904,7 +1904,7 @@ namespace Equivalence
     :
       let reg0 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -1963,13 +1963,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_ANDI_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -2043,7 +2043,7 @@ namespace Equivalence
     :
       let reg0 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -2103,13 +2103,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_SLTI_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -2187,7 +2187,7 @@ namespace Equivalence
     :
       let reg0 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -2247,13 +2247,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_SLTIU_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -2335,7 +2335,7 @@ namespace Equivalence
     :
       let reg0 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 6 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 6 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -2395,13 +2395,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_SLLI_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -2460,7 +2460,7 @@ namespace Equivalence
     :
       let reg0 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 6 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 6 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -2520,13 +2520,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_SRLI_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -2585,7 +2585,7 @@ namespace Equivalence
     :
       let reg0 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 6 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 6 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -2645,13 +2645,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_SRAI_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -2773,13 +2773,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_MUL_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -2898,13 +2898,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_MULH_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -3023,13 +3023,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_MULHU_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -3148,13 +3148,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_MULHSU_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -3277,13 +3277,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_DIV_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -3402,13 +3402,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_DIVU_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -3531,13 +3531,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_REM_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -3656,13 +3656,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_REMU_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -3728,7 +3728,7 @@ namespace Equivalence
     :
       let reg1 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg2 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 13 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 13 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -3816,12 +3816,12 @@ namespace Equivalence
       ] at h_b_branching
       -- Characterisation of branching
       have h_eq_branching :
-        (U32.toBV
+        (U32b.toBV
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)] =
-        U32.toBV
+        U32b.toBV
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
@@ -3858,19 +3858,19 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_BEQ_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -3928,7 +3928,7 @@ namespace Equivalence
     :
       let reg1 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg2 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 13 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 13 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -4015,12 +4015,12 @@ namespace Equivalence
       ] at h_b_branching
       -- Characterisation of branching
       have h_eq_branching :
-        (¬ (U32.toBV
+        (¬ (U32b.toBV
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)] =
-        U32.toBV
+        U32b.toBV
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
@@ -4057,19 +4057,19 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_BNE_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -4126,7 +4126,7 @@ namespace Equivalence
     :
       let reg1 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg2 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 13 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 13 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -4213,12 +4213,12 @@ namespace Equivalence
       ] at h_b_branching
       -- Characterisation of branching
       have h_eq_branching :
-        (¬ (U32.toInt
+        (¬ (U32b.toInt
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)] <
-        U32.toInt
+        U32b.toInt
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
@@ -4255,19 +4255,19 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_BLT_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -4330,7 +4330,7 @@ namespace Equivalence
     :
       let reg1 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg2 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 13 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 13 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -4417,12 +4417,12 @@ namespace Equivalence
       ] at h_b_branching
       -- Characterisation of branching
       have h_eq_branching :
-        (U32.toInt
+        (U32b.toInt
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)] <
-        U32.toInt
+        U32b.toInt
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
@@ -4459,19 +4459,19 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_BGE_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -4534,7 +4534,7 @@ namespace Equivalence
     :
       let reg1 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg2 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 13 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 13 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -4621,12 +4621,12 @@ namespace Equivalence
       ] at h_b_branching
       -- Characterisation of branching
       have h_eq_branching :
-        (¬ (U32.toNat
+        (¬ (U32b.toNat
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)] <
-        U32.toNat
+        U32b.toNat
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
@@ -4663,19 +4663,19 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_BLTU_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -4738,7 +4738,7 @@ namespace Equivalence
     :
       let reg1 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg2 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 13 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 13 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -4825,12 +4825,12 @@ namespace Equivalence
       ] at h_b_branching
       -- Characterisation of branching
       have h_eq_branching :
-        (U32.toNat
+        (U32b.toNat
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_2 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_a_access.prev_value_3 row 0)] <
-        U32.toNat
+        U32b.toNat
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
              BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
@@ -4867,19 +4867,19 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_BGEU_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -4945,7 +4945,7 @@ namespace Equivalence
       (pico_assumptions : pico_CpuAir_control_flow_assumptions air)
     :
       let reg1 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
-      let imm : BitVec 21 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
+      let imm : BitVec 21 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)]
@@ -5057,7 +5057,7 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_JAL_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
@@ -5131,7 +5131,7 @@ namespace Equivalence
     :
       let reg0 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let reg1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -5222,13 +5222,13 @@ namespace Equivalence
         OpcodeSpec.RV32.execute_JALR_equiv
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (rs1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (imm :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
@@ -5330,7 +5330,7 @@ namespace Equivalence
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
       let reg0 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
-      let imm : BitVec 20 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 20 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)] >>> 12
@@ -5422,7 +5422,7 @@ namespace Equivalence
         subst imm'
         simp [relevant_constraints, h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3]
         simp [Transpiler.imm_to_KB_BV_sgn]
-        simp [U32.toBV]
+        simp [U32b.toBV]
         bv_decide
       . -- Get the upper bound on the pc
         simp [ bus_row_axioms, bus_row, h_is_real ] at h_axioms
@@ -5455,7 +5455,7 @@ namespace Equivalence
       (h_bus_hypotheses : (operation_list_effect (RV32IM.bus_operations (bus_row air row)) state).hypotheses)
     :
       let reg0 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
-      let imm : BitVec 20 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 20 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                         BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)] >>> 12
@@ -5591,7 +5591,7 @@ namespace Equivalence
     :
       let rd : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -5673,7 +5673,7 @@ namespace Equivalence
         (r1 := rs1) (rd := rd) (imm := imm')
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
@@ -5761,7 +5761,7 @@ namespace Equivalence
     :
       let rd : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -5847,7 +5847,7 @@ namespace Equivalence
         (r1 := rs1) (rd := rd) (imm := imm')
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
@@ -5943,7 +5943,7 @@ namespace Equivalence
     :
       let rd : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -6003,7 +6003,7 @@ namespace Equivalence
       simp [operation_list_effect_hypotheses_writeReg_same h_rs1] at h_rd
       obtain ⟨ h_rd, h_mem ⟩ := h_rd
       simp [BitVec.ofNatLT_eq_ofNat] at h_rs1 h_reg_rd
-      simp [operation_list_effect, operation_effect, BitVec.extractLsb, U32.toBV] at h_mem
+      simp [operation_list_effect, operation_effect, BitVec.extractLsb, U32b.toBV] at h_mem
       (repeat rw [BitVec.extractLsb'_append_eq_ite] at h_mem); simp at h_mem
       -- C-value equalities
       have h_c_val_eq := imm_c_eqs air row h_constraints (by aesop)
@@ -6026,7 +6026,7 @@ namespace Equivalence
         (r1 := rs1) (rd := rd) (imm := imm')
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
@@ -6122,7 +6122,7 @@ namespace Equivalence
     :
       let rd : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -6204,7 +6204,7 @@ namespace Equivalence
         (r1 := rs1) (rd := rd) (imm := imm')
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
@@ -6292,7 +6292,7 @@ namespace Equivalence
     :
       let rd : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -6378,7 +6378,7 @@ namespace Equivalence
         (r1 := rs1) (rd := rd) (imm := imm')
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
@@ -6474,7 +6474,7 @@ namespace Equivalence
     :
       let rs2 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -6552,13 +6552,13 @@ namespace Equivalence
         (r1 := rs1) (r2 := rs2) (imm := imm')
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
@@ -6601,7 +6601,7 @@ namespace Equivalence
           rw [operation_list_effect_state_writeReg_same]
           . rw [Transpiler.imm_to_KB_BV_sgn]
             rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
-            simp [BitVec.extractLsb, U32.toBV]
+            simp [BitVec.extractLsb, U32b.toBV]
             rw [BitVec.extractLsb'_append_eq_right]
             simp [operation_list_effect, operation_effect, Sail.writeReg, PreSail.writeReg]
           . simp [Valid_CpuCols.is_store_instruction, h_selectors] at a_unchanged
@@ -6643,7 +6643,7 @@ namespace Equivalence
     :
       let rs2 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -6722,13 +6722,13 @@ namespace Equivalence
         (r1 := rs1) (r2 := rs2) (imm := imm')
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
@@ -6771,7 +6771,7 @@ namespace Equivalence
           rw [operation_list_effect_state_writeReg_same]
           . rw [Transpiler.imm_to_KB_BV_sgn]
             rw [show BitVec.signExtend 32 (BitVec.setWidth 12 (BitVec.signExtend 32 imm)) = BitVec.signExtend 32 imm by bv_decide]
-            simp [BitVec.extractLsb, U32.toBV]
+            simp [BitVec.extractLsb, U32b.toBV]
             conv =>
               lhs; arg 1; arg 1; arg 2; arg 1; arg 3; arg 3
               rw [BitVec.append_assoc]; simp
@@ -6823,7 +6823,7 @@ namespace Equivalence
     :
       let rs2 : regidx := .Regidx (air.cols.instruction.a_0 row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.b_0 row 0).val
-      let imm : BitVec 12 := U32.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
+      let imm : BitVec 12 := U32b.toBV #v[BitVec.ofNat 8 ↑(air.cols.op_c_access.value_0 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_1 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_2 row 0),
                                          BitVec.ofNat 8 ↑(air.cols.op_c_access.value_3 row 0)]
@@ -6902,13 +6902,13 @@ namespace Equivalence
         (r1 := rs1) (r2 := rs2) (imm := imm')
         (pc_val := BitVec.ofNatLT (w := 32) (air.cols.pc row 0).val (by omega))
         (r1_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
         (r2_val :=
-          U32.toBV
+          U32b.toBV
             #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
                 BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),

@@ -1,5 +1,5 @@
 import PicoFV.Fundamentals.Core
-import PicoFV.Fundamentals.U32
+import PicoFV.Fundamentals.Word
 
 set_option maxHeartbeats 1_000_000_000
 
@@ -30,16 +30,22 @@ namespace KoalaBear
     instance : Coe FKB (BitVec 8) where
       coe bb := BitVec.ofNat 8 bb.val
 
+    instance : Coe (BitVec 16) FKB where
+      coe b := ⟨ b.toNat, by omega ⟩
+
+    instance : Coe FKB (BitVec 16) where
+      coe bb := BitVec.ofNat 16 bb.val
+
   end coercions
 
-  section U32
+  section U32b
 
     @[simp, grind]
     def isU32 (v : Vector FKB 4) :=
       v[0].val < 256 ∧ v[1].val < 256 ∧ v[2].val < 256 ∧ v[3].val < 256
 
     @[simp, grind]
-    def toU32 (v : Vector FKB 4) : U32 :=
+    def toU32 (v : Vector FKB 4) : U32b :=
       #v[ { toFin := ⟨ v[0].val % 256, (by grind)⟩ },
           { toFin := ⟨ v[1].val % 256, (by grind)⟩ },
           { toFin := ⟨ v[2].val % 256, (by grind)⟩ },
@@ -49,7 +55,7 @@ namespace KoalaBear
     def toBV32 (v : Vector FKB 4) : BitVec 32 :=
       (toU32 v).toBV
 
-  end U32
+  end U32b
 
   section toInt
 

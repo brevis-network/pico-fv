@@ -3418,7 +3418,7 @@ namespace CpuAir.Interpretations
     (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
   :
     air.cols.branching row 0 = 1 →
-      U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
+      U32b.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 0 air.cols row 0),
                   BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 1 air.cols row 0),
                   BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 2 air.cols row 0),
                   BitVec.ofNat 8 ↑(Valid_CpuCols.branch_pc 3 air.cols row 0)]
@@ -3450,7 +3450,7 @@ namespace CpuAir.Interpretations
       h_branch,
       sub_eq_zero,
     ] at relevant_constraints
-    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32.toNat]
+    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32b.toNat]
     repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_assumptions; omega)]
     simp [Fin.val_add, Fin.val_mul]
     rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
@@ -3469,7 +3469,7 @@ namespace CpuAir.Interpretations
     (h_branch_instr : air.cols.is_branch_instruction row 0 = 1)
   :
     air.cols.branching row 0 = 1 →
-      U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
+      U32b.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 0 air.cols row 0),
                   BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 1 air.cols row 0),
                   BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 2 air.cols row 0),
                   BitVec.ofNat 8 ↑(Valid_CpuCols.branch_next_pc 3 air.cols row 0)]
@@ -3503,7 +3503,7 @@ namespace CpuAir.Interpretations
       h_is_real,
       sub_eq_zero,
     ] at relevant_constraints
-    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32.toNat]
+    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32b.toNat]
     repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_assumptions; omega)]
     simp [Fin.val_add, Fin.val_mul]
     rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
@@ -3557,24 +3557,24 @@ namespace CpuAir.Interpretations
     air.cols.branch_a_lt_b row 0 =
     if (air.cols.opcode_selector.is_blt row 0 = 1 ∨ air.cols.opcode_selector.is_bge row 0 = 1)
     then
-      (if (U32.toInt
+      (if (U32b.toInt
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)] <
-          U32.toInt
+          U32b.toInt
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)])
       then 1 else 0)
     else
-      (if (U32.toNat
+      (if (U32b.toNat
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)] <
-          U32.toNat
+          U32b.toNat
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
@@ -3594,7 +3594,7 @@ namespace CpuAir.Interpretations
     replace h_assumptions := h_assumptions.2.2.1
     obtain h | h | h | h | h | h := h_cases <;> split_ifs
     all_goals simp_all [ ALUBus.Spec ]
-    all_goals simp [← BitVec.toNat_inj, U32.toNat] at h_assumptions
+    all_goals simp [← BitVec.toNat_inj, U32b.toNat] at h_assumptions
     all_goals omega
 
   lemma branch_instruction_a_gt_b
@@ -3609,24 +3609,24 @@ namespace CpuAir.Interpretations
     air.cols.branch_a_gt_b row 0 =
     if (air.cols.opcode_selector.is_blt row 0 = 1 ∨ air.cols.opcode_selector.is_bge row 0 = 1)
     then
-      (if (U32.toInt
+      (if (U32b.toInt
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)] <
-          U32.toInt
+          U32b.toInt
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_3 row 0)])
       then 1 else 0)
     else
-      (if (U32.toNat
+      (if (U32b.toNat
           #v[BitVec.ofNat 8 ↑(air.cols.op_b_access.value_0 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_1 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_2 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_b_access.value_3 row 0)] <
-          U32.toNat
+          U32b.toNat
           #v[BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_1 row 0),
             BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_2 row 0),
@@ -3646,7 +3646,7 @@ namespace CpuAir.Interpretations
     replace h_assumptions := h_assumptions.2.2.2.1
     obtain h | h | h | h | h | h := h_cases <;> split_ifs
     all_goals simp_all [ ALUBus.Spec ]
-    all_goals simp [← BitVec.toNat_inj, U32.toNat] at h_assumptions
+    all_goals simp [← BitVec.toNat_inj, U32b.toNat] at h_assumptions
     all_goals omega
 
   -- ==================================================
@@ -3662,7 +3662,7 @@ namespace CpuAir.Interpretations
     (h_is_jump : air.cols.is_jump_instruction row 0 = 1)
     (h_a_not_0 : air.cols.instruction.a_is_0 row 0 = 0)
   :
-    U32.toBV #v[BitVec.ofNat 8 (air.cols.op_a_access.access.value_0 row 0).val,
+    U32b.toBV #v[BitVec.ofNat 8 (air.cols.op_a_access.access.value_0 row 0).val,
                 BitVec.ofNat 8 (air.cols.op_a_access.access.value_1 row 0).val,
                 BitVec.ofNat 8 (air.cols.op_a_access.access.value_2 row 0).val,
                 BitVec.ofNat 8 (air.cols.op_a_access.access.value_3 row 0).val]
@@ -3699,7 +3699,7 @@ namespace CpuAir.Interpretations
     obtain ⟨ h_eq, h_b0, h_b1, h_b2, h_b3, h_b4, h_b5, h_b6, h_b7,
               h0, h1, h2, h3, h4, h5 ⟩ := relevant_constraints
     simp_all
-    simp [← BitVec.toNat_inj, U32.toNat]
+    simp [← BitVec.toNat_inj, U32b.toNat]
     repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)]
     simp [Fin.val_add, Fin.val_mul]
     rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
@@ -3716,7 +3716,7 @@ namespace CpuAir.Interpretations
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_is_jal : air.cols.opcode_selector.is_jal row 0 = 1)
   :
-    U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.jump_pc 0 air.cols row 0),
+    U32b.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.jump_pc 0 air.cols row 0),
                 BitVec.ofNat 8 ↑(Valid_CpuCols.jump_pc 1 air.cols row 0),
                 BitVec.ofNat 8 ↑(Valid_CpuCols.jump_pc 2 air.cols row 0),
                 BitVec.ofNat 8 ↑(Valid_CpuCols.jump_pc 3 air.cols row 0)]
@@ -3747,7 +3747,7 @@ namespace CpuAir.Interpretations
       h_is_jal,
       sub_eq_zero,
     ] at relevant_constraints
-    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32.toNat]
+    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32b.toNat]
     repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_assumptions; omega)]
     simp [Fin.val_add, Fin.val_mul]
     rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]
@@ -3765,7 +3765,7 @@ namespace CpuAir.Interpretations
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_is_jump : air.cols.is_jump_instruction row 0 = 1)
   :
-    U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.jump_next_pc 0 air.cols row 0),
+    U32b.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.jump_next_pc 0 air.cols row 0),
                 BitVec.ofNat 8 ↑(Valid_CpuCols.jump_next_pc 1 air.cols row 0),
                 BitVec.ofNat 8 ↑(Valid_CpuCols.jump_next_pc 2 air.cols row 0),
                 BitVec.ofNat 8 ↑(Valid_CpuCols.jump_next_pc 3 air.cols row 0)]
@@ -3798,7 +3798,7 @@ namespace CpuAir.Interpretations
       h_is_real,
       sub_eq_zero,
     ] at relevant_constraints
-    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32.toNat]
+    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32b.toNat]
     simp [Fin.val_add, Fin.val_mul]
     rcases is_jump
     all_goals
@@ -3817,7 +3817,7 @@ namespace CpuAir.Interpretations
     (h_constraints : CpuAir.Extraction.allHold air row)
     (h_is_auipc : air.cols.opcode_selector.is_auipc row 0 = 1)
   :
-    U32.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.auipc_pc 0 air.cols row 0),
+    U32b.toBV #v[BitVec.ofNat 8 ↑(Valid_CpuCols.auipc_pc 0 air.cols row 0),
                 BitVec.ofNat 8 ↑(Valid_CpuCols.auipc_pc 1 air.cols row 0),
                 BitVec.ofNat 8 ↑(Valid_CpuCols.auipc_pc 2 air.cols row 0),
                 BitVec.ofNat 8 ↑(Valid_CpuCols.auipc_pc 3 air.cols row 0)]
@@ -3847,7 +3847,7 @@ namespace CpuAir.Interpretations
       h_is_auipc,
       sub_eq_zero,
     ] at relevant_constraints
-    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32.toNat]
+    simp [← relevant_constraints.1, ← BitVec.toNat_inj, U32b.toNat]
     repeat rw [Nat.mod_eq_of_lt (b := 256) (by clear *- h_assumptions; omega)]
     simp [Fin.val_add, Fin.val_mul]
     rw [Nat.mod_eq_of_lt (b := KB_prime) (by grind)]

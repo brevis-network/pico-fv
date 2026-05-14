@@ -1,9 +1,9 @@
 import PicoFV.Fundamentals.Core
 import PicoFV.Fundamentals.KoalaBear
-import PicoFV.Fundamentals.U32
+import PicoFV.Fundamentals.Word
+import PicoFV.Fundamentals.Interaction
 
-import PicoFV.RV32IM.Fundamentals.Interaction
-import PicoFV.RV32IM.Fundamentals.Transpiler
+import PicoFV.RV32IM.Transpiler.Transpiler
 
 import PicoFV.RV32IM.RVSail.Auxiliaries
 import PicoFV.RV32IM.RVSail.Buses

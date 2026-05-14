@@ -1677,36 +1677,36 @@ namespace DivRemAir.Interpretations
     clear *- h_selectors
     grind
 
-  /-- U32 word equality helpers for overflow/zero detection. -/
+  /-- U32b word equality helpers for overflow/zero detection. -/
   lemma U32_nat_eq_0 {x0 x1 x2 x3 : FKB}
     (ub_x0 : x0 < 256) (ub_x1 : x1 < 256) (ub_x2 : x2 < 256) (ub_x3 : x3 < 256)
   :
-    (U32.toNat #v[BitVec.ofNat 8 x0, BitVec.ofNat 8 x1, BitVec.ofNat 8 x2, BitVec.ofNat 8 x3] = 0 ↔ x0 = 0 ∧ x1 = 0 ∧ x2 = 0 ∧ x3 = 0)
+    (U32b.toNat #v[BitVec.ofNat 8 x0, BitVec.ofNat 8 x1, BitVec.ofNat 8 x2, BitVec.ofNat 8 x3] = 0 ↔ x0 = 0 ∧ x1 = 0 ∧ x2 = 0 ∧ x3 = 0)
   := by
-    simp [U32.toNat]; omega
+    simp [U32b.toNat]; omega
 
   lemma U32_int_eq_0 {x0 x1 x2 x3 : FKB}
     (ub_x0 : x0 < 256) (ub_x1 : x1 < 256) (ub_x2 : x2 < 256) (ub_x3 : x3 < 256)
   :
-    (U32.toInt #v[BitVec.ofNat 8 x0, BitVec.ofNat 8 x1, BitVec.ofNat 8 x2, BitVec.ofNat 8 x3] = 0 ↔ x0 = 0 ∧ x1 = 0 ∧ x2 = 0 ∧ x3 = 0)
+    (U32b.toInt #v[BitVec.ofNat 8 x0, BitVec.ofNat 8 x1, BitVec.ofNat 8 x2, BitVec.ofNat 8 x3] = 0 ↔ x0 = 0 ∧ x1 = 0 ∧ x2 = 0 ∧ x3 = 0)
   := by
-    simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, U32.toNat]
+    simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, U32b.toNat]
     split_ifs <;> omega
 
   lemma U32_int_eq_minInt {x0 x1 x2 x3 : FKB}
     (ub_x0 : x0 < 256) (ub_x1 : x1 < 256) (ub_x2 : x2 < 256) (ub_x3 : x3 < 256)
   :
-    (U32.toInt #v[BitVec.ofNat 8 x0, BitVec.ofNat 8 x1, BitVec.ofNat 8 x2, BitVec.ofNat 8 x3] = -2147483648 ↔ x0 = 0 ∧ x1 = 0 ∧ x2 = 0 ∧ x3 = 128)
+    (U32b.toInt #v[BitVec.ofNat 8 x0, BitVec.ofNat 8 x1, BitVec.ofNat 8 x2, BitVec.ofNat 8 x3] = -2147483648 ↔ x0 = 0 ∧ x1 = 0 ∧ x2 = 0 ∧ x3 = 128)
   := by
-    simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, U32.toNat]
+    simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, U32b.toNat]
     split_ifs <;> omega
 
   lemma U32_int_eq_neg_one {x0 x1 x2 x3 : FKB}
     (ub_x0 : x0 < 256) (ub_x1 : x1 < 256) (ub_x2 : x2 < 256) (ub_x3 : x3 < 256)
   :
-    (U32.toInt #v[BitVec.ofNat 8 x0, BitVec.ofNat 8 x1, BitVec.ofNat 8 x2, BitVec.ofNat 8 x3] = -1 ↔ x0 = 255 ∧ x1 = 255 ∧ x2 = 255 ∧ x3 = 255)
+    (U32b.toInt #v[BitVec.ofNat 8 x0, BitVec.ofNat 8 x1, BitVec.ofNat 8 x2, BitVec.ofNat 8 x3] = -1 ↔ x0 = 255 ∧ x1 = 255 ∧ x2 = 255 ∧ x3 = 255)
   := by
-    simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, U32.toNat]
+    simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, U32b.toNat]
     split_ifs <;> omega
 
   /-- For signed ops: derives b_neg, rem_neg, c_neg, abs_c_alu_event,

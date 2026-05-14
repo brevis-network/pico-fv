@@ -593,8 +593,9 @@ namespace RV64IM
 
   section Memory
 
-    -- Pico address space size
-    notation "Pico_address_space_size_64" => 2 ^ 63
+    -- Pico address space size. Pico's RV64 `Addr<T> = [T; 3]` representation
+    -- caps addresses at 48 bits, so we use `2^48` as the tight upper bound.
+    notation "Pico_address_space_size_64" => 2 ^ 48
 
     @[simp]
     lemma bare_is_bare : (SATPMode.Bare == SATPMode.Bare) = true := rfl

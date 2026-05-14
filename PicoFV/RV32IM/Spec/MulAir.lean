@@ -24,14 +24,14 @@ namespace MulAir.Spec
 
   -- ==========================================================================
   -- Core schoolbook multiplication correctness: given 8 carry-chain equations,
-  -- proves U64.toBV prod = U64.toBV bw * U64.toBV cw.
+  -- proves U64b.toBV prod = U64b.toBV bw * U64b.toBV cw.
   -- Uses joins/divs lemmas to fold carries into a single 64-bit equation.
   -- ==========================================================================
 
   lemma core_mul
-    (b c : U32)
+    (b c : U32b)
     (sgn_b sgn_c : Bool)
-    (prod : U64)
+    (prod : U64b)
     (cy0 cy1 cy2 cy3 cy4 cy5 cy6 cy7 : ℕ) :
     let bw := b.extend sgn_b
     let cw := c.extend sgn_c
@@ -64,10 +64,10 @@ namespace MulAir.Spec
       bw[2].toNat * cw[5].toNat + bw[3].toNat * cw[4].toNat +
       bw[4].toNat * cw[3].toNat + bw[5].toNat * cw[2].toNat +
       bw[6].toNat * cw[1].toNat + bw[7].toNat * cw[0].toNat + cy6 →
-    U64.toBV prod = U64.toBV bw * U64.toBV cw := by
+    U64b.toBV prod = U64b.toBV bw * U64b.toBV cw := by
     intro bw cw h0 h1 h2 h3 h4 h5 h6 h7
 
-    simp [← BitVec.toNat_inj,U64.toNat]
+    simp [← BitVec.toNat_inj,U64b.toNat]
 
     set p0 := prod[0].toNat; set p1 := prod[1].toNat; set p2 := prod[2].toNat; set p3 := prod[3].toNat
     set p4 := prod[4].toNat; set p5 := prod[5].toNat; set p6 := prod[6].toNat; set p7 := prod[7].toNat
@@ -129,17 +129,17 @@ namespace MulAir.Spec
     omega
 
   -- ===========================================
-  -- Helpers: extract low/high 32 bits from U64.
+  -- Helpers: extract low/high 32 bits from U64b.
   -- ===========================================
 
-  private lemma U64_extractLsb_low (x : U64) :
-      BitVec.extractLsb 31 0 (U64.toBV x) = U32.toBV #v[x[0], x[1], x[2], x[3]] := by
-    simp [← BitVec.toNat_inj, U64.toNat, U32.toNat]
+  private lemma U64_extractLsb_low (x : U64b) :
+      BitVec.extractLsb 31 0 (U64b.toBV x) = U32b.toBV #v[x[0], x[1], x[2], x[3]] := by
+    simp [← BitVec.toNat_inj, U64b.toNat, U32b.toNat]
     omega
 
-  private lemma U64_extractLsb_high (x : U64) :
-      BitVec.extractLsb 63 32 (U64.toBV x) = U32.toBV #v[x[4], x[5], x[6], x[7]] := by
-    simp [← BitVec.toNat_inj, U64.toNat, U32.toNat]
+  private lemma U64_extractLsb_high (x : U64b) :
+      BitVec.extractLsb 63 32 (U64b.toBV x) = U32b.toBV #v[x[4], x[5], x[6], x[7]] := by
+    simp [← BitVec.toNat_inj, U64b.toNat, U32b.toNat]
     omega
 
   --
@@ -232,35 +232,35 @@ namespace MulAir.Spec
 
     simp [RV32IM.execute_MUL_pure]
 
-    set b : U32 := #v[b0, b1, b2, b3]
-    set c : U32 := #v[c0, c1, c2, c3]
-    set prod : U64 := #v[p0, p1, p2, p3, p4, p5, p6, p7]
+    set b : U32b := #v[b0, b1, b2, b3]
+    set c : U32b := #v[c0, c1, c2, c3]
+    set prod : U64b := #v[p0, p1, p2, p3, p4, p5, p6, p7]
 
     rw [eq_sub_iff_add_eq] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
     simp [Fin.ext_iff, Fin.val_add, Fin.val_mul] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
     rw [Nat.mod_eq_of_lt (by omega)] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
     rw [Nat.mod_eq_of_lt (by omega)] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
 
-    have h_b_ext : b.extend false = (#v[b0, b1, b2, b3, b_ext, b_ext, b_ext, b_ext] : U64)
+    have h_b_ext : b.extend false = (#v[b0, b1, b2, b3, b_ext, b_ext, b_ext, b_ext] : U64b)
     := by
       have : b.ext false = b_ext.val := by
         subst b_ext
-        simp [U32.ext, h_bse]
-      simp only [U32.extend]; congr
+        simp [U32b.ext, h_bse]
+      simp only [U32b.extend]; congr
 
-    have h_c_ext : c.extend false = (#v[c0, c1, c2, c3, c_ext, c_ext, c_ext, c_ext] : U64)
+    have h_c_ext : c.extend false = (#v[c0, c1, c2, c3, c_ext, c_ext, c_ext, c_ext] : U64b)
     := by
       have : c.ext false = c_ext.val := by
         subst c_ext
-        simp [U32.ext, h_cse]
-      simp only [U32.extend]; congr
+        simp [U32b.ext, h_cse]
+      simp only [U32b.extend]; congr
 
     have core_mul := core_mul b c false false prod cy0.val cy1.val cy2.val cy3.val cy4.val cy5.val cy6.val cy7.val
     simp [prod, h_b_ext, h_c_ext] at core_mul
     repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at core_mul
     specialize core_mul h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
 
-    simp [← U32.extend_BitVec_extend, h_b_ext, h_c_ext]
+    simp [← U32b.extend_BitVec_extend, h_b_ext, h_c_ext]
     rw [← core_mul, U64_extractLsb_low]
     rfl
 
@@ -329,37 +329,37 @@ namespace MulAir.Spec
 
     simp [RV32IM.execute_MUL_pure]
 
-    set b : U32 := #v[b0, b1, b2, b3]
-    set c : U32 := #v[c0, c1, c2, c3]
-    set prod : U64 := #v[p0, p1, p2, p3, p4, p5, p6, p7]
+    set b : U32b := #v[b0, b1, b2, b3]
+    set c : U32b := #v[c0, c1, c2, c3]
+    set prod : U64b := #v[p0, p1, p2, p3, p4, p5, p6, p7]
 
     rw [eq_sub_iff_add_eq] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
     simp [Fin.ext_iff, Fin.val_add, Fin.val_mul] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
     rw [Nat.mod_eq_of_lt (by omega)] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
     rw [Nat.mod_eq_of_lt (by omega)] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
 
-    have h_b_ext : b.extend true = (#v[b0, b1, b2, b3, b_ext, b_ext, b_ext, b_ext] : U64)
+    have h_b_ext : b.extend true = (#v[b0, b1, b2, b3, b_ext, b_ext, b_ext, b_ext] : U64b)
     := by
       have : b.ext true = b_ext.val := by
         subst b_ext
-        simp [U32.ext, h_bse, eq_bmsb, b, ← U32.msb_3_negative, BitVec.msb_eq_decide]
+        simp [U32b.ext, h_bse, eq_bmsb, b, ← U32b.msb_3_negative, BitVec.msb_eq_decide]
         clear *- ub_b3; grind
-      simp only [U32.extend]; congr
+      simp only [U32b.extend]; congr
 
-    have h_c_ext : c.extend true = (#v[c0, c1, c2, c3, c_ext, c_ext, c_ext, c_ext] : U64)
+    have h_c_ext : c.extend true = (#v[c0, c1, c2, c3, c_ext, c_ext, c_ext, c_ext] : U64b)
     := by
       have : c.ext true = c_ext.val := by
         subst c_ext
-        simp [U32.ext, h_cse, eq_cmsb, c, ← U32.msb_3_negative, BitVec.msb_eq_decide]
+        simp [U32b.ext, h_cse, eq_cmsb, c, ← U32b.msb_3_negative, BitVec.msb_eq_decide]
         clear *- ub_c3; grind
-      simp only [U32.extend]; congr
+      simp only [U32b.extend]; congr
 
     have core_mul := core_mul b c true true prod cy0.val cy1.val cy2.val cy3.val cy4.val cy5.val cy6.val cy7.val
     simp [prod, h_b_ext, h_c_ext] at core_mul
     repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at core_mul
     specialize core_mul h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
 
-    simp [← U32.extend_BitVec_extend, h_b_ext, h_c_ext]
+    simp [← U32b.extend_BitVec_extend, h_b_ext, h_c_ext]
     rw [← core_mul, U64_extractLsb_high]
     rfl
 
@@ -427,35 +427,35 @@ namespace MulAir.Spec
 
     simp [RV32IM.execute_MUL_pure]
 
-    set b : U32 := #v[b0, b1, b2, b3]
-    set c : U32 := #v[c0, c1, c2, c3]
-    set prod : U64 := #v[p0, p1, p2, p3, p4, p5, p6, p7]
+    set b : U32b := #v[b0, b1, b2, b3]
+    set c : U32b := #v[c0, c1, c2, c3]
+    set prod : U64b := #v[p0, p1, p2, p3, p4, p5, p6, p7]
 
     rw [eq_sub_iff_add_eq] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
     simp [Fin.ext_iff, Fin.val_add, Fin.val_mul] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
     rw [Nat.mod_eq_of_lt (by omega)] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
     rw [Nat.mod_eq_of_lt (by omega)] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
 
-    have h_b_ext : b.extend false = (#v[b0, b1, b2, b3, b_ext, b_ext, b_ext, b_ext] : U64)
+    have h_b_ext : b.extend false = (#v[b0, b1, b2, b3, b_ext, b_ext, b_ext, b_ext] : U64b)
     := by
       have : b.ext false = b_ext.val := by
         subst b_ext
-        simp [U32.ext, h_bse]
-      simp only [U32.extend]; congr
+        simp [U32b.ext, h_bse]
+      simp only [U32b.extend]; congr
 
-    have h_c_ext : c.extend false = (#v[c0, c1, c2, c3, c_ext, c_ext, c_ext, c_ext] : U64)
+    have h_c_ext : c.extend false = (#v[c0, c1, c2, c3, c_ext, c_ext, c_ext, c_ext] : U64b)
     := by
       have : c.ext false = c_ext.val := by
         subst c_ext
-        simp [U32.ext, h_cse]
-      simp only [U32.extend]; congr
+        simp [U32b.ext, h_cse]
+      simp only [U32b.extend]; congr
 
     have core_mul := core_mul b c false false prod cy0.val cy1.val cy2.val cy3.val cy4.val cy5.val cy6.val cy7.val
     simp [prod, h_b_ext, h_c_ext] at core_mul
     repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at core_mul
     specialize core_mul h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
 
-    simp [← U32.extend_BitVec_extend, h_b_ext, h_c_ext]
+    simp [← U32b.extend_BitVec_extend, h_b_ext, h_c_ext]
     rw [← core_mul, U64_extractLsb_high]
     rfl
 
@@ -524,36 +524,36 @@ namespace MulAir.Spec
 
     simp [RV32IM.execute_MUL_pure]
 
-    set b : U32 := #v[b0, b1, b2, b3]
-    set c : U32 := #v[c0, c1, c2, c3]
-    set prod : U64 := #v[p0, p1, p2, p3, p4, p5, p6, p7]
+    set b : U32b := #v[b0, b1, b2, b3]
+    set c : U32b := #v[c0, c1, c2, c3]
+    set prod : U64b := #v[p0, p1, p2, p3, p4, p5, p6, p7]
 
     rw [eq_sub_iff_add_eq] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
     simp [Fin.ext_iff, Fin.val_add, Fin.val_mul] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
     rw [Nat.mod_eq_of_lt (by omega)] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
     rw [Nat.mod_eq_of_lt (by omega)] at h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
 
-    have h_b_ext : b.extend true = (#v[b0, b1, b2, b3, b_ext, b_ext, b_ext, b_ext] : U64)
+    have h_b_ext : b.extend true = (#v[b0, b1, b2, b3, b_ext, b_ext, b_ext, b_ext] : U64b)
     := by
       have : b.ext true = b_ext.val := by
         subst b_ext
-        simp [U32.ext, h_bse, eq_bmsb, b, ← U32.msb_3_negative, BitVec.msb_eq_decide]
+        simp [U32b.ext, h_bse, eq_bmsb, b, ← U32b.msb_3_negative, BitVec.msb_eq_decide]
         clear *- ub_b3; grind
-      simp only [U32.extend]; congr
+      simp only [U32b.extend]; congr
 
-    have h_c_ext : c.extend false = (#v[c0, c1, c2, c3, c_ext, c_ext, c_ext, c_ext] : U64)
+    have h_c_ext : c.extend false = (#v[c0, c1, c2, c3, c_ext, c_ext, c_ext, c_ext] : U64b)
     := by
       have : c.ext false = c_ext.val := by
         subst c_ext
-        simp [U32.ext, h_cse]
-      simp only [U32.extend]; congr
+        simp [U32b.ext, h_cse]
+      simp only [U32b.extend]; congr
 
     have core_mul := core_mul b c true false prod cy0.val cy1.val cy2.val cy3.val cy4.val cy5.val cy6.val cy7.val
     simp [prod, h_b_ext, h_c_ext] at core_mul
     repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at core_mul
     specialize core_mul h_p0 h_p1 h_p2 h_p3 h_p4 h_p5 h_p6 h_p7
 
-    simp [← U32.extend_BitVec_extend, h_b_ext, h_c_ext]
+    simp [← U32b.extend_BitVec_extend, h_b_ext, h_c_ext]
     rw [← core_mul, U64_extractLsb_high]
     rfl
 

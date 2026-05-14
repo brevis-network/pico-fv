@@ -1,7 +1,6 @@
 import LeanZKCircuit_Plonky3.Interactions
 
 import PicoFV.Fundamentals.KoalaBear
-import PicoFV.RV32IM.Fundamentals.Transpiler
 
 set_option maxHeartbeats 1_000_000_000
 
@@ -111,16 +110,16 @@ lemma forall_id_true {len : ℕ}
 
 end List
 
-namespace BabyBear
+namespace KoalaBear
 
-  /-- Only zero equals its negation in BabyBear -/
+  /-- Only zero equals its negation in KoalaBear -/
   @[simp, grind .]
   lemma eq_neg_eq_zero_lr (m : FKB) : -m = m ↔ m = 0 := by grind
 
   @[simp, grind .]
   lemma eq_neg_eq_zero_rl (m : FKB) : m = -m ↔ m = 0 := by grind
 
-end BabyBear
+end KoalaBear
 
 namespace InteractionList
 

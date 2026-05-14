@@ -138,7 +138,7 @@ namespace DivRemAir.Spec
 
   -- =========================================================================
   -- Given an 8-byte carry chain in FKB (the field), proves that the
-  -- corresponding U64 values satisfy a_64 = b_64 + c_64.
+  -- corresponding U64b values satisfy a_64 = b_64 + c_64.
   -- Used to lift the per-byte constraint chain into a single 64-bit equation.
   -- =========================================================================
 
@@ -163,13 +163,13 @@ namespace DivRemAir.Spec
     (b_cr6 : cry6 = 0 ∨ cry6 = 1)
     (b_cr7 : cry7 = 0 ∨ cry7 = 1)
   :
-    U64.toBV #v[a0, a1, a2, a3, a4, a5, a6, a7] =
-      U64.toBV #v[b0, b1, b2, b3, b4, b5, b6, b7] + U64.toBV #v[c0, c1, c2, c3, c4, c5, c6, c7]
+    U64b.toBV #v[a0, a1, a2, a3, a4, a5, a6, a7] =
+      U64b.toBV #v[b0, b1, b2, b3, b4, b5, b6, b7] + U64b.toBV #v[c0, c1, c2, c3, c4, c5, c6, c7]
   := by
     rw [add_comm_sub] at eq_p1 eq_p2 eq_p3 eq_p4 eq_p5 eq_p6 eq_p7
     rw [← add_sub_assoc] at eq_p1 eq_p2 eq_p3 eq_p4 eq_p5 eq_p6 eq_p7
     rw [div_mod_decomposition (by assumption) (by clear *- b_cr0 b_cr1 b_cr2 b_cr3 b_cr4 b_cr5 b_cr6 b_cr7; omega)] at eq_p0 eq_p1 eq_p2 eq_p3 eq_p4 eq_p5 eq_p6 eq_p7
-    simp [← BitVec.toNat_inj, U64.toNat]
+    simp [← BitVec.toNat_inj, U64b.toNat]
     repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
 
     have joins : forall (i : Fin 8) (a b : ℕ), a % (256 ^ i.val) + (b + a / (256 ^ i.val)) % 256 * (256 ^ i.val) = (a + b * (256 ^ i.val)) % (256 ^ (i.val + 1)) := by
@@ -211,10 +211,10 @@ namespace DivRemAir.Spec
     (h_constraints : DivRemAir.Extraction.allHold air row)
     (h_div_rem : air.cols.is_div row 0 + air.cols.is_rem row 0 = 1)
   :
-    ⟨ U32.toBV #v[air.cols.quotient_0 row 0, air.cols.quotient_1 row 0, air.cols.quotient_2 row 0, air.cols.quotient_3 row 0],
-      U32.toBV #v[air.cols.remainder_0 row 0, air.cols.remainder_1 row 0, air.cols.remainder_2 row 0, air.cols.remainder_3 row 0]⟩ =
-    RV32IM.execute_DIV_REM_pure (U32.toBV #v[air.cols.b_0 row 0, air.cols.b_1 row 0, air.cols.b_2 row 0, air.cols.b_3 row 0])
-                                (U32.toBV #v[air.cols.c_0 row 0, air.cols.c_1 row 0, air.cols.c_2 row 0, air.cols.c_3 row 0]) .DRS
+    ⟨ U32b.toBV #v[air.cols.quotient_0 row 0, air.cols.quotient_1 row 0, air.cols.quotient_2 row 0, air.cols.quotient_3 row 0],
+      U32b.toBV #v[air.cols.remainder_0 row 0, air.cols.remainder_1 row 0, air.cols.remainder_2 row 0, air.cols.remainder_3 row 0]⟩ =
+    RV32IM.execute_DIV_REM_pure (U32b.toBV #v[air.cols.b_0 row 0, air.cols.b_1 row 0, air.cols.b_2 row 0, air.cols.b_3 row 0])
+                                (U32b.toBV #v[air.cols.c_0 row 0, air.cols.c_1 row 0, air.cols.c_2 row 0, air.cols.c_3 row 0]) .DRS
   := by
     obtain ⟨ eq_divu, eq_remu ⟩ : air.cols.is_divu row 0 = 0 ∧ air.cols.is_remu row 0 = 0
       := by
@@ -258,7 +258,7 @@ namespace DivRemAir.Spec
     -- Main proof
     simp [RV32IM.execute_DIV_REM_pure, RV32IM.execute_DIV_REM_pure_int]
     by_cases h_c_zero :
-      U32.toInt
+      U32b.toInt
         #v[BitVec.ofNat 8 (air.cols.c_0 row 0), BitVec.ofNat 8 (air.cols.c_1 row 0),
            BitVec.ofNat 8 (air.cols.c_2 row 0), BitVec.ofNat 8 (air.cols.c_3 row 0)] = 0 <;>
     simp [h_c_zero] <;>
@@ -277,13 +277,13 @@ namespace DivRemAir.Spec
           sub_eq_zero,
           *
         ] at relevant_q_constraints
-        simp [relevant_q_constraints, U32.toBV]
+        simp [relevant_q_constraints, U32b.toBV]
       . simp [eq_c0, eq_c1, eq_c2, eq_c3, RV32IM.execute_MUL_pure] at alu_mul_l
-        conv at alu_mul_l => rhs; simp [U32.toBV, BitVec.extend]
+        conv at alu_mul_l => rhs; simp [U32b.toBV, BitVec.extend]
         simp [← BitVec.toInt_inj, U32_int_eq_0 ub_cq0 ub_cq1 ub_cq2 ub_cq3] at alu_mul_l
         obtain ⟨ eq_cq0, eq_cq1, eq_cq2, eq_cq3 ⟩ := alu_mul_l
         simp [← BitVec.toInt_inj]
-        have range_r := U32.toInt_range #v[BitVec.ofNat 8 (air.cols.b_0 row 0), BitVec.ofNat 8 (air.cols.b_1 row 0), BitVec.ofNat 8 (air.cols.b_2 row 0), BitVec.ofNat 8 (air.cols.b_3 row 0)]
+        have range_r := U32b.toInt_range #v[BitVec.ofNat 8 (air.cols.b_0 row 0), BitVec.ofNat 8 (air.cols.b_1 row 0), BitVec.ofNat 8 (air.cols.b_2 row 0), BitVec.ofNat 8 (air.cols.b_3 row 0)]
         rw [Int.bmod_eq_of_le (by clear *- range_r; omega) (by clear *- range_r; omega)]
         have relevant_r_constraints :
           constraint_44 air row ∧ constraint_45 air row ∧ constraint_46 air row ∧ constraint_47 air row ∧
@@ -304,10 +304,10 @@ namespace DivRemAir.Spec
     . have alu_mul := RV32IM.combine_MUL_MULH alu_mul_l alu_mul_h
       simp at alu_mul; clear alu_mul_l alu_mul_h
       by_cases h_overflow :
-        U32.toInt #v[BitVec.ofNat 8 (air.cols.b_0 row 0), BitVec.ofNat 8 (air.cols.b_1 row 0),
+        U32b.toInt #v[BitVec.ofNat 8 (air.cols.b_0 row 0), BitVec.ofNat 8 (air.cols.b_1 row 0),
                      BitVec.ofNat 8 (air.cols.b_2 row 0), BitVec.ofNat 8 (air.cols.b_3 row 0)]
           = -2147483648 ∧
-        U32.toInt #v[BitVec.ofNat 8 (air.cols.c_0 row 0), BitVec.ofNat 8 (air.cols.c_1 row 0),
+        U32b.toInt #v[BitVec.ofNat 8 (air.cols.c_0 row 0), BitVec.ofNat 8 (air.cols.c_1 row 0),
                      BitVec.ofNat 8 (air.cols.c_2 row 0), BitVec.ofNat 8 (air.cols.c_3 row 0)]
           = -1 <;>
       simp [h_overflow] <;>
@@ -338,7 +338,7 @@ namespace DivRemAir.Spec
         suffices h_eq :
           air.cols.quotient_0 row 0 = 0 ∧ air.cols.quotient_1 row 0 = 0 ∧ air.cols.quotient_2 row 0 = 0 ∧ air.cols.quotient_3 row 0 = 128 ∧
           air.cols.remainder_0 row 0 = 0 ∧ air.cols.remainder_1 row 0 = 0 ∧ air.cols.remainder_2 row 0 = 0 ∧ air.cols.remainder_3 row 0 = 0
-        . simp [h_eq, U32.toBV]
+        . simp [h_eq, U32b.toBV]
         . have relevant_constraints :
             constraint_108 air row ∧ constraint_109 air row ∧ constraint_110 air row ∧ constraint_111 air row ∧
             constraint_112 air row ∧ constraint_113 air row ∧ constraint_114 air row ∧ constraint_115 air row
@@ -363,11 +363,11 @@ namespace DivRemAir.Spec
           specialize alu_sum ub_cq0 ub_cq1 ub_cq2 ub_cq3 ub_cq4 ub_cq5 ub_cq6 ub_cq7 ub_r0 ub_r1 ub_r2 ub_r3 ub_rem_neg ub_rem_neg ub_rem_neg ub_rem_neg
           specialize alu_sum b_cr0 b_cr1 b_cr2 b_cr3 b_cr4 b_cr5 b_cr6 b_cr7
           clear b_cr0 b_cr1 b_cr2 b_cr3 b_cr4 b_cr5 b_cr6 b_cr7 eq_p0 eq_p1 eq_p2 eq_p3 eq_p4 eq_p5 eq_p6 eq_p7
-          simp [← BitVec.toNat_inj, U64.toNat] at alu_sum
+          simp [← BitVec.toNat_inj, U64b.toNat] at alu_sum
           repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at alu_sum
           have eq_ext_c :
-            U32.extend #v[255#8, 255#8, 255#8, 255#8] true = #v[255, 255, 255, 255, 255, 255, 255, 255]
-            := by simp [U32.extend, U32.ext, ← U32.msb_3_negative, BitVec.msb_eq_decide]
+            U32b.extend #v[255#8, 255#8, 255#8, 255#8] true = #v[255, 255, 255, 255, 255, 255, 255, 255]
+            := by simp [U32b.extend, U32b.ext, ← U32b.msb_3_negative, BitVec.msb_eq_decide]
           split_ifs at eq_rem_neg with h_rem_neg
           . simp [eq_rem_neg] at alu_sum h_rem_char
             obtain eq_rs :
@@ -380,15 +380,15 @@ namespace DivRemAir.Spec
               := by clear *- ub_cq0 ub_cq1 ub_cq2 ub_cq3 ub_cq4 ub_cq5 ub_cq6 ub_cq7 alu_sum; omega
             by_cases h_msb_q3 : 128 ≤ (air.cols.quotient_3 row 0).val % 256
             . have eq_ext_q :
-                U32.extend #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)] true =
+                U32b.extend #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)] true =
                 #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0), 255, 255, 255, 255]
-                := by simp [U32.extend, U32.ext, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_msb_q3]
+                := by simp [U32b.extend, U32b.ext, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_msb_q3]
               clear alu_sum
               simp [eq_ext_q, eq_ext_c, eq_cqs] at alu_mul
               -- Deep recursion if `BitVec.toNat_mul` not disabled
               simp [← BitVec.toNat_inj, -BitVec.toNat_mul] at alu_mul
               repeat rw [BitVec.toNat_mul] at alu_mul
-              simp [U64.toNat] at alu_mul
+              simp [U64b.toNat] at alu_mul
               repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at alu_mul
               ring_nf at alu_mul
               have : (340282366841710300930663525768809676800 + (air.cols.quotient_0 row 0).val * 18446744073709551615 + (air.cols.quotient_1 row 0) * 4722366482869645213440 + (air.cols.quotient_2 row 0) * 1208925819614629174640640 + (air.cols.quotient_3 row 0) * 309485009821345068708003840) % 18446744073709551616 =
@@ -397,15 +397,15 @@ namespace DivRemAir.Spec
               rw [this] at alu_mul; clear this
               omega
             . have eq_ext_q :
-                U32.extend #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)] true =
+                U32b.extend #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)] true =
                 #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0), 0, 0, 0, 0]
-                := by simp [U32.extend, U32.ext, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_msb_q3]
+                := by simp [U32b.extend, U32b.ext, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_msb_q3]
               clear alu_sum
               simp [eq_ext_q, eq_ext_c, eq_cqs] at alu_mul
               -- Deep recursion if `BitVec.toNat_mul` not disabled
               simp [← BitVec.toNat_inj, -BitVec.toNat_mul] at alu_mul
               repeat rw [BitVec.toNat_mul] at alu_mul
-              simp [U64.toNat] at alu_mul
+              simp [U64b.toNat] at alu_mul
               repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at alu_mul
               ring_nf at alu_mul
               rw [Nat.mod_eq_of_lt (by clear *- ub_q3; omega)] at h_msb_q3; simp at h_msb_q3
@@ -433,14 +433,14 @@ namespace DivRemAir.Spec
                 := by clear alu_mul; omega
               by_cases h_msb_q3 : 128 ≤ (air.cols.quotient_3 row 0).val % 256
               . have eq_ext_q :
-                  U32.extend #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)] true =
+                  U32b.extend #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)] true =
                   #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0), 255, 255, 255, 255]
-                  := by simp [U32.extend, U32.ext, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_msb_q3]
+                  := by simp [U32b.extend, U32b.ext, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_msb_q3]
                 simp [eq_ext_q, eq_ext_c] at alu_mul
                 -- Deep recursion if `BitVec.toNat_mul` not disabled
                 simp [← BitVec.toNat_inj, -BitVec.toNat_mul] at alu_mul
                 repeat rw [BitVec.toNat_mul] at alu_mul
-                simp [U64.toNat] at alu_mul
+                simp [U64b.toNat] at alu_mul
                 repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at alu_mul
                 ring_nf at alu_mul
                 rw [Nat.mod_eq_of_lt (by clear *- ub_q3; omega)] at h_msb_q3
@@ -450,14 +450,14 @@ namespace DivRemAir.Spec
                 rw [this] at alu_mul; clear this
                 omega
               . have eq_ext_q :
-                  U32.extend #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)] true =
+                  U32b.extend #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)] true =
                   #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0), 0, 0, 0, 0]
-                  := by simp [U32.extend, U32.ext, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_msb_q3]
+                  := by simp [U32b.extend, U32b.ext, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_msb_q3]
                 simp [eq_ext_q, eq_ext_c] at alu_mul
                 -- Deep recursion if `BitVec.toNat_mul` not disabled
                 simp [← BitVec.toNat_inj, -BitVec.toNat_mul] at alu_mul
                 repeat rw [BitVec.toNat_mul] at alu_mul
-                simp [U64.toNat] at alu_mul
+                simp [U64b.toNat] at alu_mul
                 repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at alu_mul
                 ring_nf at alu_mul
                 rw [Nat.mod_eq_of_lt (by clear *- ub_q3; omega)] at h_msb_q3; simp at h_msb_q3
@@ -476,14 +476,14 @@ namespace DivRemAir.Spec
               simp [eqs] at alu_mul ⊢ ; clear alu_sum
               by_cases h_msb_q3 : 128 ≤ (air.cols.quotient_3 row 0).val % 256
               . have eq_ext_q :
-                  U32.extend #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)] true =
+                  U32b.extend #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)] true =
                   #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0), 255, 255, 255, 255]
-                  := by simp [U32.extend, U32.ext, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_msb_q3]
+                  := by simp [U32b.extend, U32b.ext, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_msb_q3]
                 simp [eq_ext_q, eq_ext_c] at alu_mul
                 -- Deep recursion if `BitVec.toNat_mul` not disabled
                 simp [← BitVec.toNat_inj, -BitVec.toNat_mul] at alu_mul
                 repeat rw [BitVec.toNat_mul] at alu_mul
-                simp [U64.toNat] at alu_mul
+                simp [U64b.toNat] at alu_mul
                 repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at alu_mul
                 ring_nf at alu_mul
                 rw [Nat.mod_eq_of_lt (by clear *- ub_q3; omega)] at h_msb_q3
@@ -494,14 +494,14 @@ namespace DivRemAir.Spec
                 clear *- alu_mul ub_q0 ub_q1 ub_q2 ub_q3 h_msb_q3
                 omega
               . have eq_ext_q :
-                  U32.extend #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)] true =
+                  U32b.extend #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)] true =
                   #v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0), 0, 0, 0, 0]
-                  := by simp [U32.extend, U32.ext, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_msb_q3]
+                  := by simp [U32b.extend, U32b.ext, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_msb_q3]
                 simp [eq_ext_q, eq_ext_c] at alu_mul
                 -- Deep recursion if `BitVec.toNat_mul` not disabled
                 simp [← BitVec.toNat_inj, -BitVec.toNat_mul] at alu_mul
                 repeat rw [BitVec.toNat_mul] at alu_mul
-                simp [U64.toNat] at alu_mul
+                simp [U64b.toNat] at alu_mul
                 repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at alu_mul
                 ring_nf at alu_mul
                 rw [Nat.mod_eq_of_lt (by clear *- ub_q3; omega)] at h_msb_q3; simp at h_msb_q3
@@ -525,18 +525,18 @@ namespace DivRemAir.Spec
           sub_eq_zero,
           eq_overflow
         ] at relevant_constraints
-        set b_ext : FKB := ⟨ U32.ext #v[air.cols.b_0 row 0, air.cols.b_1 row 0, air.cols.b_2 row 0, air.cols.b_3 row 0] true, by clear *-; have := @U32.ext_le_255; grind⟩
+        set b_ext : FKB := ⟨ U32b.ext #v[air.cols.b_0 row 0, air.cols.b_1 row 0, air.cols.b_2 row 0, air.cols.b_3 row 0] true, by clear *-; have := @U32b.ext_le_255; grind⟩
         have eq_b_neg_prod : air.cols.b_neg row 0 * 255 = b_ext
         := by
           subst b_ext; rw [eq_b_neg]; clear *- ub_b3
-          simp [U32.ext, ← U32.msb_3_negative, BitVec.msb_eq_decide]
+          simp [U32b.ext, ← U32b.msb_3_negative, BitVec.msb_eq_decide]
           simp [Fin.ext_iff]; split_ifs <;> simp <;> omega
         have ub_b_ext : b_ext < 256 := by rw [← eq_b_neg_prod]; clear *- eq_b_neg; grind
-        set r_ext : FKB := ⟨ U32.ext #v[air.cols.remainder_0 row 0, air.cols.remainder_1 row 0, air.cols.remainder_2 row 0, air.cols.remainder_3 row 0] true, by clear *-; have := @U32.ext_le_255; grind⟩
+        set r_ext : FKB := ⟨ U32b.ext #v[air.cols.remainder_0 row 0, air.cols.remainder_1 row 0, air.cols.remainder_2 row 0, air.cols.remainder_3 row 0] true, by clear *-; have := @U32b.ext_le_255; grind⟩
         have eq_rem_neg_prod : air.cols.rem_neg row 0 * 255 = r_ext
         := by
           subst r_ext; rw [eq_rem_neg]; clear *- ub_r3
-          simp [U32.ext, ← U32.msb_3_negative, BitVec.msb_eq_decide]
+          simp [U32b.ext, ← U32b.msb_3_negative, BitVec.msb_eq_decide]
           simp [Fin.ext_iff]; split_ifs <;> simp <;> omega
         have ub_r_ext : r_ext < 256 := by rw [← eq_rem_neg_prod]; clear *- eq_rem_neg; grind
         simp [eq_rem_neg_prod, eq_b_neg] at relevant_constraints
@@ -549,7 +549,7 @@ namespace DivRemAir.Spec
           air.cols.c_times_quotient_7 row 0 + r_ext - air.cols.carry_7 row 0 * 256 + air.cols.carry_6 row 0 = b_ext
         := by
           clear *- ub_b3 eq_p4p eq_p5p eq_p6p eq_p7p eq_p4n eq_p5n eq_p6n eq_p7n
-          subst b_ext; simp [U32.ext, ← U32.msb_3_negative, BitVec.msb_eq_decide]
+          subst b_ext; simp [U32b.ext, ← U32b.msb_3_negative, BitVec.msb_eq_decide]
           split_ifs with h_if <;> grind
         clear eq_p4p eq_p5p eq_p6p eq_p7p eq_p4n eq_p5n eq_p6n eq_p7n
         have relevant_constraints :
@@ -571,43 +571,43 @@ namespace DivRemAir.Spec
         specialize alu_sum b_cr0 b_cr1 b_cr2 b_cr3 b_cr4 b_cr5 b_cr6 b_cr7
         clear b_cr0 b_cr1 b_cr2 b_cr3 b_cr4 b_cr5 b_cr6 b_cr7 eq_p0 eq_p1 eq_p2 eq_p3 eq_p4 eq_p5 eq_p6 eq_p7
         replace alu_sum :
-          (U32.extend
+          (U32b.extend
             #v[BitVec.ofNat 8 (air.cols.b_0 row 0), BitVec.ofNat 8 (air.cols.b_1 row 0),
                BitVec.ofNat 8 (air.cols.b_2 row 0), BitVec.ofNat 8 (air.cols.b_3 row 0)]
             true).toBV =
-            U64.toBV
+            U64b.toBV
               #v[BitVec.ofNat 8 (air.cols.c_times_quotient_0 row 0), BitVec.ofNat 8 (air.cols.c_times_quotient_1 row 0),
                  BitVec.ofNat 8 (air.cols.c_times_quotient_2 row 0), BitVec.ofNat 8 (air.cols.c_times_quotient_3 row 0),
                  BitVec.ofNat 8 (air.cols.c_times_quotient_4 row 0), BitVec.ofNat 8 (air.cols.c_times_quotient_5 row 0),
                  BitVec.ofNat 8 (air.cols.c_times_quotient_6 row 0), BitVec.ofNat 8 (air.cols.c_times_quotient_7 row 0)] +
-              (U32.extend
+              (U32b.extend
                  #v[BitVec.ofNat 8 (air.cols.remainder_0 row 0), BitVec.ofNat 8 (air.cols.remainder_1 row 0),
                     BitVec.ofNat 8 (air.cols.remainder_2 row 0), BitVec.ofNat 8 (air.cols.remainder_3 row 0)] true).toBV
-          := by clear *- alu_sum; subst b_ext r_ext; simpa [U32.extend]
+          := by clear *- alu_sum; subst b_ext r_ext; simpa [U32b.extend]
         clear eq_b_neg_prod eq_rem_neg_prod ub_r_ext ub_b_ext b_ext r_ext
         simp [← BitVec.toInt_inj]
-        have range_b := U32.toInt_range (#v[BitVec.ofNat 8 (air.cols.b_0 row 0), BitVec.ofNat 8 (air.cols.b_1 row 0), BitVec.ofNat 8 (air.cols.b_2 row 0), BitVec.ofNat 8 (air.cols.b_3 row 0)])
-        have range_c := U32.toInt_range (#v[BitVec.ofNat 8 (air.cols.c_0 row 0), BitVec.ofNat 8 (air.cols.c_1 row 0), BitVec.ofNat 8 (air.cols.c_2 row 0), BitVec.ofNat 8 (air.cols.c_3 row 0)])
-        have range_q := U32.toInt_range (#v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)])
-        have range_r := U32.toInt_range (#v[BitVec.ofNat 8 (air.cols.remainder_0 row 0), BitVec.ofNat 8 (air.cols.remainder_1 row 0), BitVec.ofNat 8 (air.cols.remainder_2 row 0), BitVec.ofNat 8 (air.cols.remainder_3 row 0)])
+        have range_b := U32b.toInt_range (#v[BitVec.ofNat 8 (air.cols.b_0 row 0), BitVec.ofNat 8 (air.cols.b_1 row 0), BitVec.ofNat 8 (air.cols.b_2 row 0), BitVec.ofNat 8 (air.cols.b_3 row 0)])
+        have range_c := U32b.toInt_range (#v[BitVec.ofNat 8 (air.cols.c_0 row 0), BitVec.ofNat 8 (air.cols.c_1 row 0), BitVec.ofNat 8 (air.cols.c_2 row 0), BitVec.ofNat 8 (air.cols.c_3 row 0)])
+        have range_q := U32b.toInt_range (#v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)])
+        have range_r := U32b.toInt_range (#v[BitVec.ofNat 8 (air.cols.remainder_0 row 0), BitVec.ofNat 8 (air.cols.remainder_1 row 0), BitVec.ofNat 8 (air.cols.remainder_2 row 0), BitVec.ofNat 8 (air.cols.remainder_3 row 0)])
         have range_tmod := Int.tmod_range_32 range_b range_c
         have range_tdiv := @Int.tdiv_range_32
-                             (c := U32.toInt #v[BitVec.ofNat 8 (air.cols.c_0 row 0), BitVec.ofNat 8 (air.cols.c_1 row 0), BitVec.ofNat 8 (air.cols.c_2 row 0), BitVec.ofNat 8 (air.cols.c_3 row 0)])
+                             (c := U32b.toInt #v[BitVec.ofNat 8 (air.cols.c_0 row 0), BitVec.ofNat 8 (air.cols.c_1 row 0), BitVec.ofNat 8 (air.cols.c_2 row 0), BitVec.ofNat 8 (air.cols.c_3 row 0)])
                              (range_b := range_b)
         specialize range_tdiv eq_is_c_0_int
         specialize range_tdiv
           (by
             clear *- ub_b0 ub_b1 ub_b2 ub_b3 ub_c0 ub_c1 ub_c2 ub_c3 h_overflow
             intro h_eq; apply h_overflow; clear h_overflow
-            simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide] at h_eq
+            simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide] at h_eq
             obtain ⟨ h_eq_b, h_eq_c ⟩ := h_eq
             split_ifs at h_eq_b with h_b
             . split_ifs at h_eq_c with h_c
-              . simp [U32.toNat] at h_eq_b h_eq_c
+              . simp [U32b.toNat] at h_eq_b h_eq_c
                 omega
-              . simp [U32.toNat] at h_eq_c
+              . simp [U32b.toNat] at h_eq_c
                 omega
-            . simp [U32.toNat] at h_eq_b
+            . simp [U32b.toNat] at h_eq_b
               omega
           )
         rw [Int.bmod_eq_of_le (by clear *- range_tdiv; tauto) (by clear *- range_tdiv; tauto)]
@@ -616,16 +616,16 @@ namespace DivRemAir.Spec
         rw [Int.tdiv_tmod_unique_full eq_is_c_0_int]
         -- First condition
         have cond_1 :
-          U32.toInt
+          U32b.toInt
             #v[BitVec.ofNat 8 ↑(air.cols.b_0 row 0), BitVec.ofNat 8 ↑(air.cols.b_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.b_2 row 0), BitVec.ofNat 8 ↑(air.cols.b_3 row 0)] =
-          U32.toInt
+          U32b.toInt
             #v[BitVec.ofNat 8 ↑(air.cols.quotient_0 row 0), BitVec.ofNat 8 ↑(air.cols.quotient_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.quotient_2 row 0), BitVec.ofNat 8 ↑(air.cols.quotient_3 row 0)] *
-          U32.toInt
+          U32b.toInt
             #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.c_2 row 0), BitVec.ofNat 8 ↑(air.cols.c_3 row 0)] +
-          U32.toInt
+          U32b.toInt
             #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)]
         := by
@@ -638,15 +638,15 @@ namespace DivRemAir.Spec
         conv => arg 1; simp [cond_1]
         -- Second condition
         have cond_2 :
-          |U32.toInt
+          |U32b.toInt
             #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)]| <
-            |U32.toInt
+            |U32b.toInt
               #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
                  BitVec.ofNat 8 ↑(air.cols.c_2 row 0), BitVec.ofNat 8 ↑(air.cols.c_3 row 0)]|
         := by
           by_cases h_r_max :
-            U32.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0),
+            U32b.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0),
                          BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)] = -2147483648
           . exfalso
             clear alu_sum alu_mul range_tmod range_tdiv range_r
@@ -664,17 +664,17 @@ namespace DivRemAir.Spec
             ] at relevant_constraints
             simp [ALUBus.Spec, relevant_constraints] at alu_rem alu_rem_mult
             obtain ⟨ ⟨ ub_ar0, ub_ar1, ub_ar2, ub_ar3 ⟩, alu_rem ⟩ := alu_rem
-            (conv at alu_rem_mult => lhs; simp [U32.toBV]); simp at alu_rem_mult
+            (conv at alu_rem_mult => lhs; simp [U32b.toBV]); simp at alu_rem_mult
             have eq_ar : air.cols.abs_remainder_0 row 0 = 0 ∧ air.cols.abs_remainder_1 row 0 = 0 ∧ air.cols.abs_remainder_2 row 0 = 0 ∧ air.cols.abs_remainder_3 row 0 = 128
             := by
               clear *- ub_ar0 ub_ar1 ub_ar2 ub_ar3 alu_rem
-              simp [← BitVec.toInt_inj, U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide] at alu_rem
-              simp [U32.toNat] at alu_rem
+              simp [← BitVec.toInt_inj, U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide] at alu_rem
+              simp [U32b.toNat] at alu_rem
               repeat rw [Int.emod_eq_of_lt (by omega) (by omega)] at alu_rem
               split_ifs at alu_rem <;> grind
             simp [eq_ar] at alu_rem_mult
             clear alu_rem h_r_max
-            conv at alu_rem_mult => arg 1; simp [U32.toNat]
+            conv at alu_rem_mult => arg 1; simp [U32b.toNat]
             have h_msb_c : 128 ≤ (air.cols.c_3 row 0).val
             := by
               split_ifs at eq_c_msb with h_eq_msb_c <;> [ skip; (clear *- h_eq_msb_c; omega) ]
@@ -686,12 +686,12 @@ namespace DivRemAir.Spec
                 constraint_and_interaction_simplification,
                 sub_eq_zero,
               ] at relevant_constraints
-              simp [U32.toNat] at alu_rem_mult
+              simp [U32b.toNat] at alu_rem_mult
               rw [if_pos (by omega)] at eq_c_neg
               omega
             have h_msb_ac : 128 ≤ (air.cols.abs_c_3 row 0).val
-              := by simp [U32.toNat] at alu_rem_mult; omega
-            simp [ALUBus.Spec, ← BitVec.toNat_inj, U32.toNat, ub_c0, ub_c1, ub_c2, ub_c3, h_msb_c] at alu_c
+              := by simp [U32b.toNat] at alu_rem_mult; omega
+            simp [ALUBus.Spec, ← BitVec.toNat_inj, U32b.toNat, ub_c0, ub_c1, ub_c2, ub_c3, h_msb_c] at alu_c
             obtain ⟨ ⟨ ub_ac0, ub_ac1, ub_ac2, ub_ac3 ⟩, alu_c ⟩ := alu_c
             repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)] at alu_c
             have eqs_c_ac :
@@ -700,27 +700,27 @@ namespace DivRemAir.Spec
             := by
               clear *- ub_c0 ub_c1 ub_c2 ub_c3 ub_ac0 ub_ac1 ub_ac2 ub_ac3 alu_c h_msb_c h_msb_ac
               omega
-            simp [eqs_c_ac, U32.toNat] at alu_rem_mult
+            simp [eqs_c_ac, U32b.toNat] at alu_rem_mult
           . by_cases h_c_max :
-              U32.toInt #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
+              U32b.toInt #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
                            BitVec.ofNat 8 ↑(air.cols.c_2 row 0), BitVec.ofNat 8 ↑(air.cols.c_3 row 0)] = -2147483648
             . rw [h_c_max]; simp; clear *- range_r h_r_max
-              obtain ⟨ r, eq_r ⟩ : ∃ r, r = U32.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)] := by simp
+              obtain ⟨ r, eq_r ⟩ : ∃ r, r = U32b.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)] := by simp
               rw [← eq_r] at range_r h_r_max ⊢; clear eq_r
               grind
             . simp [ALUBus.Spec] at alu_rem_mult
-              simp [U32.toBV] at alu_rem_mult
+              simp [U32b.toBV] at alu_rem_mult
               suffices :
-                ((U32.toNat
+                ((U32b.toNat
                   #v[BitVec.ofNat 8 ↑(air.cols.abs_remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.abs_remainder_1 row 0),
                      BitVec.ofNat 8 ↑(air.cols.abs_remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.abs_remainder_3 row 0)]) : ℤ) =
-                  |U32.toInt
+                  |U32b.toInt
                     #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0),
                        BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)]| ∧
-                ((U32.toNat
+                ((U32b.toNat
                   #v[BitVec.ofNat 8 ↑(air.cols.max_abs_c_or_1_0 row 0), BitVec.ofNat 8 ↑(air.cols.max_abs_c_or_1_1 row 0),
                      BitVec.ofNat 8 ↑(air.cols.max_abs_c_or_1_2 row 0), BitVec.ofNat 8 ↑(air.cols.max_abs_c_or_1_3 row 0)]) : ℤ) =
-                |U32.toInt
+                |U32b.toInt
                   #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
                      BitVec.ofNat 8 ↑(air.cols.c_2 row 0), BitVec.ofNat 8 ↑(air.cols.c_3 row 0)]|
               . simp [← this.1, ← this.2]
@@ -748,14 +748,14 @@ namespace DivRemAir.Spec
                   (air.cols.remainder_3 row 0).val % 256 = (air.cols.remainder_3 row 0).val
                   := by clear *- ub_c3 ub_r3; omega
                 simp [Int.abs_cases]
-                simp [← U32.not_negative_toInt, ← U32.msb_3_negative,
+                simp [← U32b.not_negative_toInt, ← U32b.msb_3_negative,
                       BitVec.msb_eq_decide, h_no_mod_c3, h_no_mod_r3]
                 replace alu_c :
                   128 ≤ (air.cols.c_3 row 0).val →
                     air.cols.abs_c_0 row 0 < 256 ∧ air.cols.abs_c_1 row 0 < 256 ∧ air.cols.abs_c_2 row 0 < 256 ∧ air.cols.abs_c_3 row 0 < 256 ∧
-                    U32.toInt #v[(air.cols.abs_c_0 row 0), (air.cols.abs_c_1 row 0), (air.cols.abs_c_2 row 0), (air.cols.abs_c_3 row 0)]
+                    U32b.toInt #v[(air.cols.abs_c_0 row 0), (air.cols.abs_c_1 row 0), (air.cols.abs_c_2 row 0), (air.cols.abs_c_3 row 0)]
                       =
-                    - U32.toInt #v[(air.cols.c_0 row 0), (air.cols.c_1 row 0), (air.cols.c_2 row 0), (air.cols.c_3 row 0)]
+                    - U32b.toInt #v[(air.cols.c_0 row 0), (air.cols.c_1 row 0), (air.cols.c_2 row 0), (air.cols.c_3 row 0)]
                 := by
                   intro h_c_is_neg
                   specialize alu_c h_c_is_neg
@@ -764,9 +764,9 @@ namespace DivRemAir.Spec
                   clear u0 u1 u2 u3; simp [ub_ac0, ub_ac1, ub_ac2, ub_ac3]
                   replace alu_c := alu_c.2
                   simp [← BitVec.toInt_inj] at alu_c; symm at alu_c
-                  conv at alu_c => rhs; simp [U32.toInt, U32.negative, U32.toNat]
+                  conv at alu_c => rhs; simp [U32b.toInt, U32b.negative, U32b.toNat]
                   have range_ac :=
-                    U32.toInt_range #v[BitVec.ofNat 8 (air.cols.abs_c_0 row 0), BitVec.ofNat 8 (air.cols.abs_c_1 row 0),
+                    U32b.toInt_range #v[BitVec.ofNat 8 (air.cols.abs_c_0 row 0), BitVec.ofNat 8 (air.cols.abs_c_1 row 0),
                                        BitVec.ofNat 8 (air.cols.abs_c_2 row 0), BitVec.ofNat 8 (air.cols.abs_c_3 row 0)]
                   clear *- alu_c range_c range_ac alu_sum alu_mul h_c_max alu_sum
                   rw [alu_mul] at alu_sum; clear alu_mul
@@ -779,9 +779,9 @@ namespace DivRemAir.Spec
                 replace alu_rem :
                   128 ≤ (air.cols.remainder_3 row 0).val →
                     air.cols.abs_remainder_0 row 0 < 256 ∧ air.cols.abs_remainder_1 row 0 < 256 ∧ air.cols.abs_remainder_2 row 0 < 256 ∧ air.cols.abs_remainder_3 row 0 < 256 ∧
-                    U32.toInt #v[(air.cols.abs_remainder_0 row 0), (air.cols.abs_remainder_1 row 0), (air.cols.abs_remainder_2 row 0), (air.cols.abs_remainder_3 row 0)]
+                    U32b.toInt #v[(air.cols.abs_remainder_0 row 0), (air.cols.abs_remainder_1 row 0), (air.cols.abs_remainder_2 row 0), (air.cols.abs_remainder_3 row 0)]
                       =
-                    - U32.toInt #v[(air.cols.remainder_0 row 0), (air.cols.remainder_1 row 0), (air.cols.remainder_2 row 0), (air.cols.remainder_3 row 0)]
+                    - U32b.toInt #v[(air.cols.remainder_0 row 0), (air.cols.remainder_1 row 0), (air.cols.remainder_2 row 0), (air.cols.remainder_3 row 0)]
                 := by
                   intro h_rem_is_neg
                   specialize alu_rem h_rem_is_neg
@@ -790,9 +790,9 @@ namespace DivRemAir.Spec
                   clear u0 u1 u2 u3; simp [ub_ar0, ub_ar1, ub_ar2, ub_ar3]
                   replace alu_rem := alu_rem.2
                   simp [← BitVec.toInt_inj] at alu_rem; symm at alu_rem
-                  conv at alu_rem => rhs; simp [U32.toInt, U32.negative, U32.toNat]
+                  conv at alu_rem => rhs; simp [U32b.toInt, U32b.negative, U32b.toNat]
                   have range_ar :=
-                    U32.toInt_range #v[BitVec.ofNat 8 (air.cols.abs_remainder_0 row 0), BitVec.ofNat 8 (air.cols.abs_remainder_1 row 0),
+                    U32b.toInt_range #v[BitVec.ofNat 8 (air.cols.abs_remainder_0 row 0), BitVec.ofNat 8 (air.cols.abs_remainder_1 row 0),
                                        BitVec.ofNat 8 (air.cols.abs_remainder_2 row 0), BitVec.ofNat 8 (air.cols.abs_remainder_3 row 0)]
                   clear *- alu_rem range_r range_ar alu_sum alu_mul h_r_max alu_sum
                   rw [alu_mul] at alu_sum; clear alu_mul
@@ -807,7 +807,7 @@ namespace DivRemAir.Spec
                   simp [h_c_is_neg] at eqp_ac0 eqp_ac1 eqp_ac2 eqp_ac3
                   simp [h_rem_is_neg] at eqp_ar0 eqp_ar1 eqp_ar2 eqp_ar3
                   simp [eqp_ac0, eqp_ac1, eqp_ac2, eqp_ac3, eqp_ar0, eqp_ar1, eqp_ar2, eqp_ar3]
-                  simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_c3, h_no_mod_r3]
+                  simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_c3, h_no_mod_r3]
                   rw [if_neg (by clear *- h_rem_is_neg; omega)]
                   rw [if_neg (by clear *- h_c_is_neg; omega)]
                   simp
@@ -816,56 +816,56 @@ namespace DivRemAir.Spec
                   simp [eqp_ar0, eqp_ar1, eqp_ar2, eqp_ar3]
                   conv =>
                     arg 1
-                    simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_r3]
+                    simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_r3]
                     rw [if_neg (by clear *- h_rem_is_neg; omega)]
                   simp
                   simp at h_c_is_neg; specialize alu_c h_c_is_neg
                   obtain ⟨ ub_ac0, ub_ac1, ub_ac2, ub_ac3, alu_c ⟩ := alu_c
                   simp [← alu_c]
-                  simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_c3, h_c_is_neg] at alu_c
+                  simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_c3, h_c_is_neg] at alu_c
                   split_ifs at alu_c with h_is_neg_ac
-                  . simp [U32.toNat] at alu_c
+                  . simp [U32b.toNat] at alu_c
                     repeat rw [Int.emod_eq_of_lt (b := 256) (by omega) (by omega)] at alu_c
                     omega
-                  . simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_is_neg_ac]
+                  . simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_is_neg_ac]
                 . simp [eq_max_0, eq_max_1, eq_max_2, eq_max_3]
                   simp [h_c_is_neg] at eqp_ac0 eqp_ac1 eqp_ac2 eqp_ac3
                   simp [eqp_ac0, eqp_ac1, eqp_ac2, eqp_ac3]
                   conv =>
                     arg 2
-                    simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_c3]
+                    simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_c3]
                     rw [if_neg (by clear *- h_c_is_neg; omega)]
                   simp
                   simp at h_rem_is_neg; specialize alu_rem h_rem_is_neg
                   obtain ⟨ ub_ar0, ub_ar1, ub_ar2, ub_ar3, alu_rem ⟩ := alu_rem
                   simp [← alu_rem]
-                  simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_r3, h_rem_is_neg] at alu_rem
+                  simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_r3, h_rem_is_neg] at alu_rem
                   split_ifs at alu_rem with h_is_neg_ar
-                  . simp [U32.toNat] at alu_rem
+                  . simp [U32b.toNat] at alu_rem
                     repeat rw [Int.emod_eq_of_lt (b := 256) (by omega) (by omega)] at alu_rem
                     omega
-                  . simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_is_neg_ar]
+                  . simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_is_neg_ar]
                 . simp [eq_max_0, eq_max_1, eq_max_2, eq_max_3]
                   simp at h_c_is_neg; specialize alu_c h_c_is_neg
                   obtain ⟨ ub_ac0, ub_ac1, ub_ac2, ub_ac3, alu_c ⟩ := alu_c
                   simp [← alu_c]
-                  simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_c3, h_c_is_neg] at alu_c
+                  simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_c3, h_c_is_neg] at alu_c
                   split_ifs at alu_c with h_is_neg_ac
-                  . simp [U32.toNat] at alu_c
+                  . simp [U32b.toNat] at alu_c
                     repeat rw [Int.emod_eq_of_lt (b := 256) (by omega) (by omega)] at alu_c
                     omega
                   . conv =>
                       arg 2
-                      simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_is_neg_ac]
+                      simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_is_neg_ac]
                     simp at h_rem_is_neg; specialize alu_rem h_rem_is_neg
                     obtain ⟨ ub_ar0, ub_ar1, ub_ar2, ub_ar3, alu_rem ⟩ := alu_rem
                     simp [← alu_rem]
-                    simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_r3, h_rem_is_neg] at alu_rem
+                    simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_no_mod_r3, h_rem_is_neg] at alu_rem
                     split_ifs at alu_rem with h_is_neg_ar
-                    . simp [U32.toNat] at alu_rem
+                    . simp [U32b.toNat] at alu_rem
                       repeat rw [Int.emod_eq_of_lt (b := 256) (by omega) (by omega)] at alu_rem
                       omega
-                    . simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide, h_is_neg_ar]
+                    . simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide, h_is_neg_ar]
         simp [cond_2]
         have relevant_constraints : constraint_68 air row ∧ constraint_69 air row
           := by simp [allHold_simplified] at h_constraints; clear *- h_constraints; aesop
@@ -876,37 +876,37 @@ namespace DivRemAir.Spec
         ] at relevant_constraints
         have eq_rem_neg_uint :
           air.cols.rem_neg row 0 =
-            if U32.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)] < 0 then 1 else 0
+            if U32b.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)] < 0 then 1 else 0
         := by
-          have h_neg := @U32.negative_toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)]
-          simp [← U32.msb_3_negative, BitVec.msb_eq_decide] at h_neg
+          have h_neg := @U32b.negative_toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)]
+          simp [← U32b.msb_3_negative, BitVec.msb_eq_decide] at h_neg
           simp [← h_neg]
           clear *- eq_rem_neg ub_r3; grind
         have eq_b_neg_uint :
           air.cols.b_neg row 0 =
-            if U32.toInt #v[BitVec.ofNat 8 ↑(air.cols.b_0 row 0), BitVec.ofNat 8 ↑(air.cols.b_1 row 0), BitVec.ofNat 8 ↑(air.cols.b_2 row 0), BitVec.ofNat 8 ↑(air.cols.b_3 row 0)] < 0 then 1 else 0
+            if U32b.toInt #v[BitVec.ofNat 8 ↑(air.cols.b_0 row 0), BitVec.ofNat 8 ↑(air.cols.b_1 row 0), BitVec.ofNat 8 ↑(air.cols.b_2 row 0), BitVec.ofNat 8 ↑(air.cols.b_3 row 0)] < 0 then 1 else 0
         := by
-          have h_neg := @U32.negative_toInt #v[BitVec.ofNat 8 ↑(air.cols.b_0 row 0), BitVec.ofNat 8 ↑(air.cols.b_1 row 0), BitVec.ofNat 8 ↑(air.cols.b_2 row 0), BitVec.ofNat 8 ↑(air.cols.b_3 row 0)]
-          simp [← U32.msb_3_negative, BitVec.msb_eq_decide] at h_neg
+          have h_neg := @U32b.negative_toInt #v[BitVec.ofNat 8 ↑(air.cols.b_0 row 0), BitVec.ofNat 8 ↑(air.cols.b_1 row 0), BitVec.ofNat 8 ↑(air.cols.b_2 row 0), BitVec.ofNat 8 ↑(air.cols.b_3 row 0)]
+          simp [← U32b.msb_3_negative, BitVec.msb_eq_decide] at h_neg
           simp [← h_neg]
           clear *- eq_b_neg ub_b3; grind
         obtain ⟨ h_negs, h_rem_0_or_neg_or ⟩ := relevant_constraints
         replace h_rem_0_or_neg_or :
           air.cols.remainder_0 row 0 + air.cols.remainder_1 row 0 + air.cols.remainder_2 row 0 + air.cols.remainder_3 row 0 = 0 ∨
-          (¬(U32.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)] = 0) ∧ (air.cols.rem_neg row 0 = 1 ∨ air.cols.b_neg row 0 = 0))
+          (¬(U32b.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)] = 0) ∧ (air.cols.rem_neg row 0 = 1 ∨ air.cols.b_neg row 0 = 0))
         := by
           clear *- h_negs h_rem_0_or_neg_or eq_b_neg eq_rem_neg ub_r0 ub_r1 ub_r2 ub_r3
           have :
             air.cols.remainder_0 row 0 + air.cols.remainder_1 row 0 + air.cols.remainder_2 row 0 + air.cols.remainder_3 row 0 = 0 ↔
-            U32.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)] = 0
+            U32b.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)] = 0
           := by
-            simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide]
-            split_ifs <;> simp [U32.toNat] <;> omega
+            simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide]
+            split_ifs <;> simp [U32b.toNat] <;> omega
           rw [← this]; tauto
         obtain h_rem_0 | ⟨ h_rem_n0, h_neg_or ⟩ := h_rem_0_or_neg_or <;> [ left; right ]
         . clear eq_b_neg eq_rem_neg h_negs
-          simp [U32.toInt, ← U32.msb_3_negative, BitVec.msb_eq_decide]
-          split_ifs <;> simp [U32.toNat] <;> omega
+          simp [U32b.toInt, ← U32b.msb_3_negative, BitVec.msb_eq_decide]
+          split_ifs <;> simp [U32b.toNat] <;> omega
         . simp [eq_rem_neg_uint, eq_b_neg_uint] at h_negs h_neg_or
           simp [Int.sign_cases]
           split_ifs with h_if_0 h_if_1 h_if_2 h_if_1 h_if_2 <;> try { simp }
@@ -919,12 +919,12 @@ namespace DivRemAir.Spec
                      cond_1 cond_2
             simp [h_if_2] at cond_1 h_negs h_neg_or h_if_1 h_if_2
             clear h_neg_or h_if_1 h_if_2
-            have lb_r : 0 < U32.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)] := by clear *- h_negs h_rem_n0; omega
+            have lb_r : 0 < U32b.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)] := by clear *- h_negs h_rem_n0; omega
             clear *- cond_1 cond_2 lb_r
             obtain ⟨ q, c, r, eq_q, eq_c, eq_r ⟩ :
-              ∃ q c r, q = U32.toInt #v[BitVec.ofNat 8 ↑(air.cols.quotient_0 row 0), BitVec.ofNat 8 ↑(air.cols.quotient_1 row 0), BitVec.ofNat 8 ↑(air.cols.quotient_2 row 0), BitVec.ofNat 8 ↑(air.cols.quotient_3 row 0)] ∧
-                       c = U32.toInt #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0), BitVec.ofNat 8 ↑(air.cols.c_2 row 0), BitVec.ofNat 8 ↑(air.cols.c_3 row 0)] ∧
-                       r = U32.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)]
+              ∃ q c r, q = U32b.toInt #v[BitVec.ofNat 8 ↑(air.cols.quotient_0 row 0), BitVec.ofNat 8 ↑(air.cols.quotient_1 row 0), BitVec.ofNat 8 ↑(air.cols.quotient_2 row 0), BitVec.ofNat 8 ↑(air.cols.quotient_3 row 0)] ∧
+                       c = U32b.toInt #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0), BitVec.ofNat 8 ↑(air.cols.c_2 row 0), BitVec.ofNat 8 ↑(air.cols.c_3 row 0)] ∧
+                       r = U32b.toInt #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)]
               := by simp
             simp [← eq_q, ← eq_c, ← eq_r] at cond_1 cond_2 lb_r
             clear eq_q eq_r eq_c
@@ -959,10 +959,10 @@ namespace DivRemAir.Spec
     (h_constraints : DivRemAir.Extraction.allHold air row)
     (h_divu_remu : air.cols.is_divu row 0 + air.cols.is_remu row 0 = 1)
   :
-    ⟨ U32.toBV #v[air.cols.quotient_0 row 0, air.cols.quotient_1 row 0, air.cols.quotient_2 row 0, air.cols.quotient_3 row 0],
-      U32.toBV #v[air.cols.remainder_0 row 0, air.cols.remainder_1 row 0, air.cols.remainder_2 row 0, air.cols.remainder_3 row 0]⟩ =
-    RV32IM.execute_DIV_REM_pure (U32.toBV #v[air.cols.b_0 row 0, air.cols.b_1 row 0, air.cols.b_2 row 0, air.cols.b_3 row 0])
-                                (U32.toBV #v[air.cols.c_0 row 0, air.cols.c_1 row 0, air.cols.c_2 row 0, air.cols.c_3 row 0]) .DRU
+    ⟨ U32b.toBV #v[air.cols.quotient_0 row 0, air.cols.quotient_1 row 0, air.cols.quotient_2 row 0, air.cols.quotient_3 row 0],
+      U32b.toBV #v[air.cols.remainder_0 row 0, air.cols.remainder_1 row 0, air.cols.remainder_2 row 0, air.cols.remainder_3 row 0]⟩ =
+    RV32IM.execute_DIV_REM_pure (U32b.toBV #v[air.cols.b_0 row 0, air.cols.b_1 row 0, air.cols.b_2 row 0, air.cols.b_3 row 0])
+                                (U32b.toBV #v[air.cols.c_0 row 0, air.cols.c_1 row 0, air.cols.c_2 row 0, air.cols.c_3 row 0]) .DRU
   := by
     obtain ⟨ eq_div, eq_rem ⟩ : air.cols.is_div row 0 = 0 ∧ air.cols.is_rem row 0 = 0
       := by
@@ -1001,7 +1001,7 @@ namespace DivRemAir.Spec
     -- Main proof
     simp [RV32IM.execute_DIV_REM_pure, RV32IM.execute_DIV_REM_pure_int]
     by_cases h_c_zero :
-      U32.toNat
+      U32b.toNat
         #v[BitVec.ofNat 8 (air.cols.c_0 row 0), BitVec.ofNat 8 (air.cols.c_1 row 0),
            BitVec.ofNat 8 (air.cols.c_2 row 0), BitVec.ofNat 8 (air.cols.c_3 row 0)] = 0 <;>
     simp [h_c_zero] <;>
@@ -1020,13 +1020,13 @@ namespace DivRemAir.Spec
           sub_eq_zero,
           *
         ] at relevant_q_constraints
-        simp [relevant_q_constraints, U32.toBV]
+        simp [relevant_q_constraints, U32b.toBV]
       . simp [eq_c0, eq_c1, eq_c2, eq_c3, RV32IM.execute_MUL_pure] at alu_mul_l
-        conv at alu_mul_l => rhs; simp [U32.toBV, BitVec.extend]
+        conv at alu_mul_l => rhs; simp [U32b.toBV, BitVec.extend]
         simp [← BitVec.toNat_inj, U32_nat_eq_0 ub_cq0 ub_cq1 ub_cq2 ub_cq3] at alu_mul_l
         obtain ⟨ eq_cq0, eq_cq1, eq_cq2, eq_cq3 ⟩ := alu_mul_l
         simp [← BitVec.toNat_inj]
-        have ub_b := U32.toNat_ub #v[BitVec.ofNat 8 (air.cols.b_0 row 0), BitVec.ofNat 8 (air.cols.b_1 row 0), BitVec.ofNat 8 (air.cols.b_2 row 0), BitVec.ofNat 8 (air.cols.b_3 row 0)]
+        have ub_b := U32b.toNat_ub #v[BitVec.ofNat 8 (air.cols.b_0 row 0), BitVec.ofNat 8 (air.cols.b_1 row 0), BitVec.ofNat 8 (air.cols.b_2 row 0), BitVec.ofNat 8 (air.cols.b_3 row 0)]
         rw [Nat.mod_eq_of_lt (by clear *- ub_b; omega)]
         have relevant_r_constraints :
           constraint_44 air row ∧ constraint_45 air row ∧ constraint_46 air row ∧ constraint_47 air row ∧
@@ -1060,10 +1060,10 @@ namespace DivRemAir.Spec
         ] at relevant_constraints
         obtain ⟨ eq_b_neg, eq_rem_neg, eq_overflow, relevant_constraints ⟩ := relevant_constraints
         simp [eq_b_neg, eq_rem_neg, eq_overflow] at relevant_constraints
-        set b_ext : FKB := ⟨ U32.ext #v[air.cols.b_0 row 0, air.cols.b_1 row 0, air.cols.b_2 row 0, air.cols.b_3 row 0] false, by clear *-; have := @U32.ext_le_255; grind⟩
-        have eq_b_ext : b_ext = 0 := by subst b_ext; simp [U32.ext]
-        set r_ext : FKB := ⟨ U32.ext #v[air.cols.remainder_0 row 0, air.cols.remainder_1 row 0, air.cols.remainder_2 row 0, air.cols.remainder_3 row 0] false, by clear *-; have := @U32.ext_le_255; grind⟩
-        have eq_r_ext : r_ext = 0 := by subst r_ext; simp [U32.ext]
+        set b_ext : FKB := ⟨ U32b.ext #v[air.cols.b_0 row 0, air.cols.b_1 row 0, air.cols.b_2 row 0, air.cols.b_3 row 0] false, by clear *-; have := @U32b.ext_le_255; grind⟩
+        have eq_b_ext : b_ext = 0 := by subst b_ext; simp [U32b.ext]
+        set r_ext : FKB := ⟨ U32b.ext #v[air.cols.remainder_0 row 0, air.cols.remainder_1 row 0, air.cols.remainder_2 row 0, air.cols.remainder_3 row 0] false, by clear *-; have := @U32b.ext_le_255; grind⟩
+        have eq_r_ext : r_ext = 0 := by subst r_ext; simp [U32b.ext]
         obtain ⟨ eq_p0, eq_p1, eq_p2, eq_p3, eq_p4', eq_p5', eq_p6', eq_p7' ⟩ := relevant_constraints
         symm at eq_p0 eq_p1 eq_p2 eq_p3
         have ⟨ eq_p4, eq_p5, eq_p6, eq_p7 ⟩ :
@@ -1073,7 +1073,7 @@ namespace DivRemAir.Spec
           air.cols.c_times_quotient_7 row 0 + r_ext - air.cols.carry_7 row 0 * 256 + air.cols.carry_6 row 0 = b_ext
         := by
           clear *- ub_b3 eq_p4' eq_p5' eq_p6' eq_p7'
-          subst b_ext; simp [U32.ext]
+          subst b_ext; simp [U32b.ext]
           grind
         clear eq_p4' eq_p5' eq_p6' eq_p7'
         have relevant_constraints :
@@ -1095,24 +1095,24 @@ namespace DivRemAir.Spec
         specialize alu_sum b_cr0 b_cr1 b_cr2 b_cr3 b_cr4 b_cr5 b_cr6 b_cr7
         clear b_cr0 b_cr1 b_cr2 b_cr3 b_cr4 b_cr5 b_cr6 b_cr7 eq_p0 eq_p1 eq_p2 eq_p3 eq_p4 eq_p5 eq_p6 eq_p7
         replace alu_sum :
-          (U32.extend
+          (U32b.extend
             #v[BitVec.ofNat 8 (air.cols.b_0 row 0), BitVec.ofNat 8 (air.cols.b_1 row 0),
                BitVec.ofNat 8 (air.cols.b_2 row 0), BitVec.ofNat 8 (air.cols.b_3 row 0)]
             false).toBV =
-            U64.toBV
+            U64b.toBV
               #v[BitVec.ofNat 8 (air.cols.c_times_quotient_0 row 0), BitVec.ofNat 8 (air.cols.c_times_quotient_1 row 0),
                  BitVec.ofNat 8 (air.cols.c_times_quotient_2 row 0), BitVec.ofNat 8 (air.cols.c_times_quotient_3 row 0),
                  BitVec.ofNat 8 (air.cols.c_times_quotient_4 row 0), BitVec.ofNat 8 (air.cols.c_times_quotient_5 row 0),
                  BitVec.ofNat 8 (air.cols.c_times_quotient_6 row 0), BitVec.ofNat 8 (air.cols.c_times_quotient_7 row 0)] +
-              (U32.extend
+              (U32b.extend
                  #v[BitVec.ofNat 8 (air.cols.remainder_0 row 0), BitVec.ofNat 8 (air.cols.remainder_1 row 0),
                     BitVec.ofNat 8 (air.cols.remainder_2 row 0), BitVec.ofNat 8 (air.cols.remainder_3 row 0)] false).toBV
-          := by clear *- alu_sum; subst b_ext r_ext; simpa [U32.extend]
+          := by clear *- alu_sum; subst b_ext r_ext; simpa [U32b.extend]
         clear eq_r_ext eq_b_ext b_ext r_ext
-        have ub_b := U32.toNat_ub (#v[BitVec.ofNat 8 (air.cols.b_0 row 0), BitVec.ofNat 8 (air.cols.b_1 row 0), BitVec.ofNat 8 (air.cols.b_2 row 0), BitVec.ofNat 8 (air.cols.b_3 row 0)])
-        have ub_c := U32.toNat_ub (#v[BitVec.ofNat 8 (air.cols.c_0 row 0), BitVec.ofNat 8 (air.cols.c_1 row 0), BitVec.ofNat 8 (air.cols.c_2 row 0), BitVec.ofNat 8 (air.cols.c_3 row 0)])
-        have ub_q := U32.toNat_ub (#v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)])
-        have ub_r := U32.toNat_ub (#v[BitVec.ofNat 8 (air.cols.remainder_0 row 0), BitVec.ofNat 8 (air.cols.remainder_1 row 0), BitVec.ofNat 8 (air.cols.remainder_2 row 0), BitVec.ofNat 8 (air.cols.remainder_3 row 0)])
+        have ub_b := U32b.toNat_ub (#v[BitVec.ofNat 8 (air.cols.b_0 row 0), BitVec.ofNat 8 (air.cols.b_1 row 0), BitVec.ofNat 8 (air.cols.b_2 row 0), BitVec.ofNat 8 (air.cols.b_3 row 0)])
+        have ub_c := U32b.toNat_ub (#v[BitVec.ofNat 8 (air.cols.c_0 row 0), BitVec.ofNat 8 (air.cols.c_1 row 0), BitVec.ofNat 8 (air.cols.c_2 row 0), BitVec.ofNat 8 (air.cols.c_3 row 0)])
+        have ub_q := U32b.toNat_ub (#v[BitVec.ofNat 8 (air.cols.quotient_0 row 0), BitVec.ofNat 8 (air.cols.quotient_1 row 0), BitVec.ofNat 8 (air.cols.quotient_2 row 0), BitVec.ofNat 8 (air.cols.quotient_3 row 0)])
+        have ub_r := U32b.toNat_ub (#v[BitVec.ofNat 8 (air.cols.remainder_0 row 0), BitVec.ofNat 8 (air.cols.remainder_1 row 0), BitVec.ofNat 8 (air.cols.remainder_2 row 0), BitVec.ofNat 8 (air.cols.remainder_3 row 0)])
         -- Moving to the two conditions
         simp [← BitVec.toNat_inj]
         rw [Nat.mod_eq_of_lt
@@ -1135,16 +1135,16 @@ namespace DivRemAir.Spec
         rw [Int.tdiv_tmod_unique_full_nat eq_is_c_0_nat]
         -- First condition
         have cond_1 :
-          U32.toNat
+          U32b.toNat
             #v[BitVec.ofNat 8 ↑(air.cols.b_0 row 0), BitVec.ofNat 8 ↑(air.cols.b_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.b_2 row 0), BitVec.ofNat 8 ↑(air.cols.b_3 row 0)] =
-          U32.toNat
+          U32b.toNat
             #v[BitVec.ofNat 8 ↑(air.cols.quotient_0 row 0), BitVec.ofNat 8 ↑(air.cols.quotient_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.quotient_2 row 0), BitVec.ofNat 8 ↑(air.cols.quotient_3 row 0)] *
-          U32.toNat
+          U32b.toNat
             #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.c_2 row 0), BitVec.ofNat 8 ↑(air.cols.c_3 row 0)] +
-          U32.toNat
+          U32b.toNat
             #v[BitVec.ofNat 8 ↑(air.cols.remainder_0 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_1 row 0),
                BitVec.ofNat 8 ↑(air.cols.remainder_2 row 0), BitVec.ofNat 8 ↑(air.cols.remainder_3 row 0)]
         := by
@@ -1158,7 +1158,7 @@ namespace DivRemAir.Spec
         -- Second condition
         clear *- cond_1 ub_r ub_c alu_rem_mult eq_rem_mult h_c_zero eq_is_c_0 eq_is_signed h_constraints
         simp [h_c_zero] at eq_rem_mult; simp [eq_rem_mult, ALUBus.Spec] at alu_rem_mult
-        conv at alu_rem_mult => lhs; simp [U32.toBV]
+        conv at alu_rem_mult => lhs; simp [U32b.toBV]
         have relevant_constraints :
           constraint_1 air row ∧ constraint_2 air row ∧
           constraint_93 air row ∧ constraint_94 air row ∧ constraint_95 air row ∧ constraint_96 air row ∧

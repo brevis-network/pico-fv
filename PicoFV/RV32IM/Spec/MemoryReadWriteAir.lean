@@ -74,10 +74,10 @@ namespace MemoryReadWriteAir.Spec
              h_awrc_decomp, h_eq_awrc_msbd_7, h_awrc_eq_upper, h_awrc_b_upper,
              h_awrc_all, h_awrc_def,
              h_constraints ⟩ := h_constraints
-    have ub_addr : U32.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
+    have ub_addr : U32b.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
     := by
       clear h_constraints
-      simp [U32.toNat]
+      simp [U32b.toNat]
       repeat rw [Nat.mod_eq_of_lt (by omega)]
       grind
     clear h_awrc_msbd_0 h_awrc_msbd_1 h_awrc_msbd_2 h_awrc_msbd_3
@@ -130,8 +130,8 @@ namespace MemoryReadWriteAir.Spec
           simp [h_eq_neg] at asm_neg_val
           simp [h_eq_pos] at h_eq_pos0 h_eq_pos1 h_eq_pos2 h_eq_pos3
           simp [← h_eq_pos0, ← h_eq_pos1, ← h_eq_pos2, ← h_eq_pos3]
-          simp [← BitVec.toInt_inj, BitVec.extend]; unfold U32.toInt
-          simp [U32.negative, U32.toNat, BitVec.toInt_signExtend_of_le]
+          simp [← BitVec.toInt_inj, BitVec.extend]; unfold U32b.toInt
+          simp [U32b.negative, U32b.toNat, BitVec.toInt_signExtend_of_le]
           simp [BitVec.toInt]
           rw [if_neg (by omega), if_pos (by omega)]
           omega
@@ -140,18 +140,18 @@ namespace MemoryReadWriteAir.Spec
           simp [h_eq_neg, ALUBus.Spec] at asm_neg_val
           obtain ⟨ ub_av, ub_umv, asm_neg_val⟩ := asm_neg_val
           simp [h_eq_uval1, h_eq_uval2, h_eq_uval3] at asm_neg_val
-          have h_sign_extend : forall x, U32.toBV #v[x, 0#8, 0#8, 0#8] - U32.toBV #v[0#8, 1#8, 0#8, 0#8] = U32.toBV #v[x, 255, 255, 255]
+          have h_sign_extend : forall x, U32b.toBV #v[x, 0#8, 0#8, 0#8] - U32b.toBV #v[0#8, 1#8, 0#8, 0#8] = U32b.toBV #v[x, 255, 255, 255]
           := by
             clear *-; intro x
-            simp [U32.toBV, -List.getElem_cons_succ]
+            simp [U32b.toBV, -List.getElem_cons_succ]
             repeat rw [List.getElem_cons_succ]
             repeat rw [List.getElem_cons_zero]
             simp
             bv_check "MemoryReadWriteAir.lean-sign_extend_sub_single.lrat"
           rw [h_sign_extend] at asm_neg_val
-          apply U32.toBV_inj at asm_neg_val
+          apply U32b.toBV_inj at asm_neg_val
           simp at asm_neg_val; simp [asm_neg_val]
-          simp [U32.toBV, -List.getElem_cons_succ]
+          simp [U32b.toBV, -List.getElem_cons_succ]
           repeat rw [List.getElem_cons_succ]
           repeat rw [List.getElem_cons_zero]
           simp [BitVec.extend, BitVec.signExtend_eq_append_extractLsb']
@@ -222,10 +222,10 @@ namespace MemoryReadWriteAir.Spec
              h_awrc_decomp, h_eq_awrc_msbd_7, h_awrc_eq_upper, h_awrc_b_upper,
              h_awrc_all, h_awrc_def,
              h_constraints ⟩ := h_constraints
-    have ub_addr : U32.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
+    have ub_addr : U32b.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
     := by
       clear h_constraints
-      simp [U32.toNat]
+      simp [U32b.toNat]
       repeat rw [Nat.mod_eq_of_lt (by omega)]
       grind
     clear h_awrc_msbd_0 h_awrc_msbd_1 h_awrc_msbd_2 h_awrc_msbd_3
@@ -266,7 +266,7 @@ namespace MemoryReadWriteAir.Spec
         omega
       . simp [h_eq_pos] at h_eq_pos0 h_eq_pos1 h_eq_pos2 h_eq_pos3
         simp [← h_eq_pos0, ← h_eq_pos1, ← h_eq_pos2, ← h_eq_pos3]
-        simp [← BitVec.toNat_inj, U32.toNat, BitVec.extend]
+        simp [← BitVec.toNat_inj, U32b.toNat, BitVec.extend]
         omega
 
   -- ========================================
@@ -331,10 +331,10 @@ namespace MemoryReadWriteAir.Spec
              h_awrc_decomp, h_eq_awrc_msbd_7, h_awrc_eq_upper, h_awrc_b_upper,
              h_awrc_all, h_awrc_def,
              h_constraints ⟩ := h_constraints
-    have ub_addr : U32.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
+    have ub_addr : U32b.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
     := by
       clear h_constraints
-      simp [U32.toNat]
+      simp [U32b.toNat]
       repeat rw [Nat.mod_eq_of_lt (by omega)]
       grind
     clear h_awrc_msbd_0 h_awrc_msbd_1 h_awrc_msbd_2 h_awrc_msbd_3
@@ -399,7 +399,7 @@ namespace MemoryReadWriteAir.Spec
         . simp [← BitVec.toNat_inj] at asm_addr
           rw [← asm_addr]; clear asm_addr
           suffices h_align : 2 ∣ (air.cols.addr_word_0 row 0).val
-          . simp [U32.toNat]; clear *- ub_aw0 ub_aw1 ub_aw2 ub_aw3 h_align; omega
+          . simp [U32b.toNat]; clear *- ub_aw0 ub_aw1 ub_aw2 ub_aw3 h_align; omega
           . have h_eq_addr_offset : air.cols.offset_is_one row 0 + 2 * air.cols.offset_is_two row 0 + 3 * air.cols.offset_is_three row 0 = air.cols.addr_offset row 0
             := by
               clear *- h_off_eq_o0 h_off_b_o1 h_off_b_o2 h_off_b_o3 h_off_eq_o1 h_off_eq_o2 h_off_eq_o3
@@ -438,8 +438,8 @@ namespace MemoryReadWriteAir.Spec
             simp [h_eq_pos] at h_eq_pos0 h_eq_pos1 h_eq_pos2 h_eq_pos3
             simp [h_eq_uval2, h_eq_uval3] at h_eq_pos1 h_eq_pos2 h_eq_pos3
             simp [← h_eq_pos0, ← h_eq_pos1, ← h_eq_pos2, ← h_eq_pos3]
-            simp [← BitVec.toInt_inj, BitVec.extend]; unfold U32.toInt
-            simp [U32.negative, U32.toNat, BitVec.toInt_signExtend_of_le]
+            simp [← BitVec.toInt_inj, BitVec.extend]; unfold U32b.toInt
+            simp [U32b.negative, U32b.toNat, BitVec.toInt_signExtend_of_le]
             simp [BitVec.toInt]
             rw [if_neg (by omega), BitVec.toNat_append]
             simp
@@ -452,18 +452,18 @@ namespace MemoryReadWriteAir.Spec
             simp [h_b_msb_d7] at h_eq_neg h_d7_eq_msb_uval1
             simp [ALUBus.Spec, *] at asm_neg_val
             obtain ⟨ ub_av, asm_neg_val⟩ := asm_neg_val
-            have h_sign_extend : forall x y, U32.toBV #v[x, y, 0#8, 0#8] - U32.toBV #v[0#8, 0#8, 1#8, 0#8] = U32.toBV #v[x, y, 255, 255]
+            have h_sign_extend : forall x y, U32b.toBV #v[x, y, 0#8, 0#8] - U32b.toBV #v[0#8, 0#8, 1#8, 0#8] = U32b.toBV #v[x, y, 255, 255]
             := by
               clear *-; intro x y
-              simp [U32.toBV, -List.getElem_cons_succ]
+              simp [U32b.toBV, -List.getElem_cons_succ]
               repeat rw [List.getElem_cons_succ]
               repeat rw [List.getElem_cons_zero]
               simp
               bv_check "MemoryReadWriteAir.lean-sign_extend_sub_double.lrat"
             rw [h_sign_extend] at asm_neg_val
-            apply U32.toBV_inj at asm_neg_val
+            apply U32b.toBV_inj at asm_neg_val
             simp at asm_neg_val; simp [asm_neg_val]
-            simp [U32.toBV, -List.getElem_cons_succ]
+            simp [U32b.toBV, -List.getElem_cons_succ]
             repeat rw [List.getElem_cons_succ]
             repeat rw [List.getElem_cons_zero]
             simp [BitVec.extend, BitVec.signExtend_eq_append_extractLsb']
@@ -536,10 +536,10 @@ namespace MemoryReadWriteAir.Spec
              h_awrc_decomp, h_eq_awrc_msbd_7, h_awrc_eq_upper, h_awrc_b_upper,
              h_awrc_all, h_awrc_def,
              h_constraints ⟩ := h_constraints
-    have ub_addr : U32.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
+    have ub_addr : U32b.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
     := by
       clear h_constraints
-      simp [U32.toNat]
+      simp [U32b.toNat]
       repeat rw [Nat.mod_eq_of_lt (by omega)]
       grind
     clear h_awrc_msbd_0 h_awrc_msbd_1 h_awrc_msbd_2 h_awrc_msbd_3
@@ -583,7 +583,7 @@ namespace MemoryReadWriteAir.Spec
         . simp [← BitVec.toNat_inj] at asm_addr
           rw [← asm_addr]; clear asm_addr
           suffices h_align : 2 ∣ (air.cols.addr_word_0 row 0).val
-          . simp [U32.toNat]; clear *- ub_aw0 ub_aw1 ub_aw2 ub_aw3 h_align; omega
+          . simp [U32b.toNat]; clear *- ub_aw0 ub_aw1 ub_aw2 ub_aw3 h_align; omega
           . have h_eq_addr_offset : air.cols.offset_is_one row 0 + 2 * air.cols.offset_is_two row 0 + 3 * air.cols.offset_is_three row 0 = air.cols.addr_offset row 0
             := by
               clear *- h_off_eq_o0 h_off_b_o1 h_off_b_o2 h_off_b_o3 h_off_eq_o1 h_off_eq_o2 h_off_eq_o3
@@ -619,7 +619,7 @@ namespace MemoryReadWriteAir.Spec
             . exfalso; grind
         . simp [h_eq_pos] at h_eq_pos0 h_eq_pos1 h_eq_pos2 h_eq_pos3
           simp [← h_eq_pos0, ← h_eq_pos1, ← h_eq_pos2, ← h_eq_pos3]
-          simp [← BitVec.toNat_inj, U32.toNat, BitVec.extend]
+          simp [← BitVec.toNat_inj, U32b.toNat, BitVec.extend]
           rw [BitVec.toNat_append]; simp
           repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)]
           rw [← Nat.shiftLeft_add_eq_or_of_lt (by omega)]
@@ -688,10 +688,10 @@ namespace MemoryReadWriteAir.Spec
              h_awrc_decomp, h_eq_awrc_msbd_7, h_awrc_eq_upper, h_awrc_b_upper,
              h_awrc_all, h_awrc_def,
              h_constraints ⟩ := h_constraints
-    have ub_addr : U32.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
+    have ub_addr : U32b.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
     := by
       clear h_constraints
-      simp [U32.toNat]
+      simp [U32b.toNat]
       repeat rw [Nat.mod_eq_of_lt (by omega)]
       grind
     clear h_awrc_msbd_0 h_awrc_msbd_1 h_awrc_msbd_2 h_awrc_msbd_3
@@ -727,7 +727,7 @@ namespace MemoryReadWriteAir.Spec
       . simp [← BitVec.toNat_inj] at asm_addr
         rw [← asm_addr]; clear asm_addr
         suffices h_align : 4 ∣ (air.cols.addr_word_0 row 0).val
-        . simp [U32.toNat]; clear *- ub_aw0 ub_aw1 ub_aw2 ub_aw3 h_align; omega
+        . simp [U32b.toNat]; clear *- ub_aw0 ub_aw1 ub_aw2 ub_aw3 h_align; omega
         . have h_eq_addr_offset : air.cols.offset_is_one row 0 + 2 * air.cols.offset_is_two row 0 + 3 * air.cols.offset_is_three row 0 = air.cols.addr_offset row 0
           := by
             clear *- h_off_eq_o0 h_off_b_o1 h_off_b_o2 h_off_b_o3 h_off_eq_o1 h_off_eq_o2 h_off_eq_o3
@@ -826,10 +826,10 @@ namespace MemoryReadWriteAir.Spec
              h_awrc_decomp, h_eq_awrc_msbd_7, h_awrc_eq_upper, h_awrc_b_upper,
              h_awrc_all, h_awrc_def,
              h_constraints ⟩ := h_constraints
-    have ub_addr : U32.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
+    have ub_addr : U32b.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
     := by
       clear h_constraints
-      simp [U32.toNat]
+      simp [U32b.toNat]
       repeat rw [Nat.mod_eq_of_lt (by omega)]
       grind
     simp [← BitVec.toNat_inj] at asm_addr
@@ -898,10 +898,10 @@ namespace MemoryReadWriteAir.Spec
              h_awrc_decomp, h_eq_awrc_msbd_7, h_awrc_eq_upper, h_awrc_b_upper,
              h_awrc_all, h_awrc_def,
              h_constraints ⟩ := h_constraints
-    have ub_addr : U32.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
+    have ub_addr : U32b.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
     := by
       clear h_constraints
-      simp [U32.toNat]
+      simp [U32b.toNat]
       repeat rw [Nat.mod_eq_of_lt (by omega)]
       grind
     split_ands
@@ -923,7 +923,7 @@ namespace MemoryReadWriteAir.Spec
       simp [← BitVec.toNat_inj] at asm_addr
       rw [← asm_addr]; clear asm_addr
       suffices h_align : 2 ∣ (air.cols.addr_word_0 row 0).val
-      . simp [U32.toNat]; clear *- ub_aw0 ub_aw1 ub_aw2 ub_aw3 h_align; omega
+      . simp [U32b.toNat]; clear *- ub_aw0 ub_aw1 ub_aw2 ub_aw3 h_align; omega
       . have h_eq_addr_offset : air.cols.offset_is_one row 0 + 2 * air.cols.offset_is_two row 0 + 3 * air.cols.offset_is_three row 0 = air.cols.addr_offset row 0
         := by
           clear *- h_off_eq_o0 h_off_b_o1 h_off_b_o2 h_off_b_o3 h_off_eq_o1 h_off_eq_o2 h_off_eq_o3
@@ -1020,10 +1020,10 @@ namespace MemoryReadWriteAir.Spec
              h_awrc_decomp, h_eq_awrc_msbd_7, h_awrc_eq_upper, h_awrc_b_upper,
              h_awrc_all, h_awrc_def,
              h_constraints ⟩ := h_constraints
-    have ub_addr : U32.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
+    have ub_addr : U32b.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
     := by
       clear h_constraints
-      simp [U32.toNat]
+      simp [U32b.toNat]
       repeat rw [Nat.mod_eq_of_lt (by omega)]
       grind
     split_ands
@@ -1045,7 +1045,7 @@ namespace MemoryReadWriteAir.Spec
       simp [← BitVec.toNat_inj] at asm_addr
       rw [← asm_addr]; clear asm_addr
       suffices h_align : 4 ∣ (air.cols.addr_word_0 row 0).val
-      . simp [U32.toNat]; clear *- ub_aw0 ub_aw1 ub_aw2 ub_aw3 h_align; omega
+      . simp [U32b.toNat]; clear *- ub_aw0 ub_aw1 ub_aw2 ub_aw3 h_align; omega
       . have h_eq_addr_offset : air.cols.offset_is_one row 0 + 2 * air.cols.offset_is_two row 0 + 3 * air.cols.offset_is_three row 0 = air.cols.addr_offset row 0
         := by
           clear *- h_off_eq_o0 h_off_b_o1 h_off_b_o2 h_off_b_o3 h_off_eq_o1 h_off_eq_o2 h_off_eq_o3
@@ -1156,10 +1156,10 @@ namespace MemoryReadWriteAir.Spec
                h_awrc_decomp, h_eq_awrc_msbd_7, h_awrc_eq_upper, h_awrc_b_upper,
                h_awrc_all, h_awrc_def,
                h_constraints ⟩ := h_constraints
-      have ub_addr : U32.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
+      have ub_addr : U32b.toNat #v[air.cols.addr_word_0 row 0, air.cols.addr_word_1 row 0, air.cols.addr_word_2 row 0, air.cols.addr_word_3 row 0] < KB_prime
       := by
         clear h_mul h_constraints asm_addr asm_neg_val
-        simp [U32.toNat]
+        simp [U32b.toNat]
         repeat rw [Nat.mod_eq_of_lt (by omega)]
         grind
       clear h_awrc_msbd_0 h_awrc_msbd_1 h_awrc_msbd_2 h_awrc_msbd_3
@@ -1213,7 +1213,7 @@ namespace MemoryReadWriteAir.Spec
         rw [Fin.sub_val_of_le (by omega)] at h_off_b_b3_decomp
         rw [h_off_b_b3_decomp]; clear h_off_b_b3_decomp
         omega
-      simp [U32.toNat] at ub_addr
+      simp [U32b.toNat] at ub_addr
       repeat rw [Nat.mod_eq_of_lt (by omega)] at ub_addr
       rw [← eq_sub_iff_add_eq] at h_off_aligned_addr
       simp [Fin.ext_iff] at h_off_aligned_addr
@@ -1237,11 +1237,11 @@ namespace MemoryReadWriteAir.Spec
         simp [RV32IM.operation_list_effect, RV32IM.operation_effect, RV32IM.bus_operations, bus_row, *]
         simp [List.filterMap_cons, List.filterMap_nil]
         have : ¬ (air.cols.addr_aligned row 0 < 32) := by omega
-        simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32.toBV]; clear this
+        simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32b.toBV]; clear this
         repeat rw [BitVec.extractLsb'_append_eq_ite]
         simp; intro h_mem_0 h_mem_1 h_mem_2 h_mem_3
         simp [← BitVec.toNat_inj] at asm_addr; rw [← asm_addr]; clear asm_addr
-        simp [U32.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
+        simp [U32b.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
         rw [mul_comm (b := 256), mul_comm (b := 65536), mul_comm (b := 16777216)]
         rw [h_off_aligned_addr]
         have ub_umv : (air.cols.unsigned_mem_val_0 row 0).val < 256
@@ -1255,7 +1255,7 @@ namespace MemoryReadWriteAir.Spec
           . obtain h_msb_d7 | h_msb_d7 := h_msb_d7 <;> simp_all
             simp [ALUBus.Spec] at asm_neg_val
             obtain ⟨ ⟨ ub_a0, ub_a1, ub_a2, ub_a3 ⟩, asm_neg_val ⟩ := asm_neg_val
-            simp [← BitVec.toNat_inj, U32.toNat] at asm_neg_val
+            simp [← BitVec.toNat_inj, U32b.toNat] at asm_neg_val
             repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at asm_neg_val
             rw [Nat.mod_eq_of_lt (by omega)] at asm_neg_val
             congr; omega
@@ -1263,7 +1263,7 @@ namespace MemoryReadWriteAir.Spec
             . obtain h_msb_d7 | h_msb_d7 := h_msb_d7 <;> simp_all
               simp [ALUBus.Spec] at asm_neg_val
               obtain ⟨ ⟨ ub_a0, ub_a1, ub_a2, ub_a3 ⟩, asm_neg_val ⟩ := asm_neg_val
-              simp [← BitVec.toNat_inj, U32.toNat] at asm_neg_val
+              simp [← BitVec.toNat_inj, U32b.toNat] at asm_neg_val
               repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at asm_neg_val
               rw [Nat.mod_eq_of_lt (by omega)] at asm_neg_val
               congr; omega
@@ -1271,14 +1271,14 @@ namespace MemoryReadWriteAir.Spec
               . obtain h_msb_d7 | h_msb_d7 := h_msb_d7 <;> simp_all
                 simp [ALUBus.Spec] at asm_neg_val
                 obtain ⟨ ⟨ ub_a0, ub_a1, ub_a2, ub_a3 ⟩, asm_neg_val ⟩ := asm_neg_val
-                simp [← BitVec.toNat_inj, U32.toNat] at asm_neg_val
+                simp [← BitVec.toNat_inj, U32b.toNat] at asm_neg_val
                 repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at asm_neg_val
                 rw [Nat.mod_eq_of_lt (by omega)] at asm_neg_val
                 congr; omega
               . obtain h_msb_d7 | h_msb_d7 := h_msb_d7 <;> simp_all
                 simp [ALUBus.Spec] at asm_neg_val
                 obtain ⟨ ⟨ ub_a0, ub_a1, ub_a2, ub_a3 ⟩, asm_neg_val ⟩ := asm_neg_val
-                simp [← BitVec.toNat_inj, U32.toNat] at asm_neg_val
+                simp [← BitVec.toNat_inj, U32b.toNat] at asm_neg_val
                 repeat rw [Nat.mod_eq_of_lt (by omega)] at asm_neg_val
                 congr; omega
         . clear *- h_mem_0 h_mem_1 h_mem_2 h_mem_3 h_eqp_mav0 h_eqp_mav1 h_eqp_mav2 h_eqp_mav3
@@ -1294,11 +1294,11 @@ namespace MemoryReadWriteAir.Spec
           simp [RV32IM.operation_list_effect, RV32IM.operation_effect, RV32IM.bus_operations, bus_row, *]
           simp [List.filterMap_cons, List.filterMap_nil]
           have : ¬ (air.cols.addr_aligned row 0 < 32) := by omega
-          simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32.toBV]; clear this
+          simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32b.toBV]; clear this
           repeat rw [BitVec.extractLsb'_append_eq_ite]
           simp; intro h_mem_0 h_mem_1 h_mem_2 h_mem_3
           simp [← BitVec.toNat_inj] at asm_addr; rw [← asm_addr]; clear asm_addr
-          simp [U32.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
+          simp [U32b.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
           rw [mul_comm (b := 256), mul_comm (b := 65536), mul_comm (b := 16777216)]
           rw [h_off_aligned_addr]
           split_ands
@@ -1322,11 +1322,11 @@ namespace MemoryReadWriteAir.Spec
             simp [RV32IM.operation_list_effect, RV32IM.operation_effect, RV32IM.bus_operations, bus_row, *]
             simp [List.filterMap_cons, List.filterMap_nil]
             have : ¬ (air.cols.addr_aligned row 0 < 32) := by omega
-            simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32.toBV]; clear this
+            simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32b.toBV]; clear this
             repeat rw [BitVec.extractLsb'_append_eq_ite]
             simp; intro h_mem_0 h_mem_1 h_mem_2 h_mem_3
             simp [← BitVec.toNat_inj] at asm_addr; rw [← asm_addr]; clear asm_addr
-            simp [U32.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
+            simp [U32b.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
             rw [mul_comm (b := 256), mul_comm (b := 65536), mul_comm (b := 16777216)]
             rw [h_off_aligned_addr]
             have ub_umv0 : (air.cols.unsigned_mem_val_0 row 0).val < 256
@@ -1346,7 +1346,7 @@ namespace MemoryReadWriteAir.Spec
                 . obtain h_msb_d7 | h_msb_d7 := h_msb_d7 <;> simp_all
                   simp [ALUBus.Spec] at asm_neg_val
                   obtain ⟨ ⟨ ub_a0, ub_a1, ub_a2, ub_a3 ⟩, asm_neg_val ⟩ := asm_neg_val
-                  simp [← BitVec.toNat_inj, U32.toNat] at asm_neg_val
+                  simp [← BitVec.toNat_inj, U32b.toNat] at asm_neg_val
                   repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at asm_neg_val
                   rw [Nat.mod_eq_of_lt (by omega)] at asm_neg_val
                   congr; omega
@@ -1355,7 +1355,7 @@ namespace MemoryReadWriteAir.Spec
                   . obtain h_msb_d7 | h_msb_d7 := h_msb_d7 <;> simp_all
                     simp [ALUBus.Spec] at asm_neg_val
                     obtain ⟨ ⟨ ub_a0, ub_a1, ub_a2, ub_a3 ⟩, asm_neg_val ⟩ := asm_neg_val
-                    simp [← BitVec.toNat_inj, U32.toNat] at asm_neg_val
+                    simp [← BitVec.toNat_inj, U32b.toNat] at asm_neg_val
                     repeat rw [Nat.mod_eq_of_lt (by omega)] at asm_neg_val
                     congr; omega
             . clear h_div_4_aw0_diff h_pos_eq2 h_pos_eq3
@@ -1366,7 +1366,7 @@ namespace MemoryReadWriteAir.Spec
                 . obtain h_msb_d7 | h_msb_d7 := h_msb_d7 <;> simp_all
                   simp [ALUBus.Spec] at asm_neg_val
                   obtain ⟨ ⟨ ub_a0, ub_a1, ub_a2, ub_a3 ⟩, asm_neg_val ⟩ := asm_neg_val
-                  simp [← BitVec.toNat_inj, U32.toNat] at asm_neg_val
+                  simp [← BitVec.toNat_inj, U32b.toNat] at asm_neg_val
                   repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)] at asm_neg_val
                   rw [Nat.mod_eq_of_lt (by omega)] at asm_neg_val
                   congr; omega
@@ -1375,7 +1375,7 @@ namespace MemoryReadWriteAir.Spec
                   . obtain h_msb_d7 | h_msb_d7 := h_msb_d7 <;> simp_all
                     simp [ALUBus.Spec] at asm_neg_val
                     obtain ⟨ ⟨ ub_a0, ub_a1, ub_a2, ub_a3 ⟩, asm_neg_val ⟩ := asm_neg_val
-                    simp [← BitVec.toNat_inj, U32.toNat] at asm_neg_val
+                    simp [← BitVec.toNat_inj, U32b.toNat] at asm_neg_val
                     repeat rw [Nat.mod_eq_of_lt (by omega)] at asm_neg_val
                     congr; omega
             . clear *- h_mem_0 h_mem_1 h_mem_2 h_mem_3 h_eqp_mav0 h_eqp_mav1 h_eqp_mav2 h_eqp_mav3
@@ -1391,11 +1391,11 @@ namespace MemoryReadWriteAir.Spec
               simp [RV32IM.operation_list_effect, RV32IM.operation_effect, RV32IM.bus_operations, bus_row, *]
               simp [List.filterMap_cons, List.filterMap_nil]
               have : ¬ (air.cols.addr_aligned row 0 < 32) := by omega
-              simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32.toBV]; clear this
+              simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32b.toBV]; clear this
               repeat rw [BitVec.extractLsb'_append_eq_ite]
               simp; intro h_mem_0 h_mem_1 h_mem_2 h_mem_3
               simp [← BitVec.toNat_inj] at asm_addr; rw [← asm_addr]; clear asm_addr
-              simp [U32.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
+              simp [U32b.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
               rw [mul_comm (b := 256), mul_comm (b := 65536), mul_comm (b := 16777216)]
               rw [h_off_aligned_addr]
               split_ands
@@ -1427,11 +1427,11 @@ namespace MemoryReadWriteAir.Spec
                 simp [RV32IM.operation_list_effect, RV32IM.operation_effect, RV32IM.bus_operations, bus_row, *]
                 simp [List.filterMap_cons, List.filterMap_nil]
                 have : ¬ (air.cols.addr_aligned row 0 < 32) := by omega
-                simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32.toBV]; clear this
+                simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32b.toBV]; clear this
                 repeat rw [BitVec.extractLsb'_append_eq_ite]
                 simp; intro h_mem_0 h_mem_1 h_mem_2 h_mem_3
                 simp [← BitVec.toNat_inj] at asm_addr; rw [← asm_addr]; clear asm_addr
-                simp [U32.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
+                simp [U32b.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
                 rw [mul_comm (b := 256), mul_comm (b := 65536), mul_comm (b := 16777216)]
                 rw [h_off_aligned_addr]
                 clear h_div_4_aw0_diff
@@ -1455,11 +1455,11 @@ namespace MemoryReadWriteAir.Spec
                   simp [RV32IM.operation_list_effect, RV32IM.operation_effect, RV32IM.bus_operations, bus_row, *]
                   simp [List.filterMap_cons, List.filterMap_nil]
                   have : ¬ (air.cols.addr_aligned row 0 < 32) := by omega
-                  simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32.toBV]; clear this
+                  simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32b.toBV]; clear this
                   repeat rw [BitVec.extractLsb'_append_eq_ite]
                   simp; intro h_mem_0 h_mem_1 h_mem_2 h_mem_3
                   simp [← BitVec.toNat_inj] at asm_addr; rw [← asm_addr]; clear asm_addr
-                  simp [U32.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
+                  simp [U32b.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
                   rw [mul_comm (b := 256), mul_comm (b := 65536), mul_comm (b := 16777216)]
                   rw [h_off_aligned_addr]
                   clear h_div_4_aw0_diff
@@ -1489,11 +1489,11 @@ namespace MemoryReadWriteAir.Spec
                     simp [RV32IM.operation_list_effect, RV32IM.operation_effect, RV32IM.bus_operations, bus_row, *]
                     simp [List.filterMap_cons, List.filterMap_nil]
                     have : ¬ (air.cols.addr_aligned row 0 < 32) := by omega
-                    simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32.toBV]; clear this
+                    simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32b.toBV]; clear this
                     repeat rw [BitVec.extractLsb'_append_eq_ite]
                     simp; intro h_mem_0 h_mem_1 h_mem_2 h_mem_3
                     simp [← BitVec.toNat_inj] at asm_addr; rw [← asm_addr]; clear asm_addr
-                    simp [U32.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
+                    simp [U32b.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
                     rw [mul_comm (b := 256), mul_comm (b := 65536), mul_comm (b := 16777216)]
                     rw [h_off_aligned_addr]
                     clear h_div_4_aw0_diff
@@ -1515,11 +1515,11 @@ namespace MemoryReadWriteAir.Spec
                       simp [RV32IM.operation_list_effect, RV32IM.operation_effect, RV32IM.bus_operations, bus_row, *]
                       simp [List.filterMap_cons, List.filterMap_nil]
                       have : ¬ (air.cols.addr_aligned row 0 < 32) := by omega
-                      simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32.toBV]; clear this
+                      simp [this, RV32IM.operation_effect, BitVec.extractLsb, U32b.toBV]; clear this
                       repeat rw [BitVec.extractLsb'_append_eq_ite]
                       simp; intro h_mem_0 h_mem_1 h_mem_2 h_mem_3
                       simp [← BitVec.toNat_inj] at asm_addr; rw [← asm_addr]; clear asm_addr
-                      simp [U32.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
+                      simp [U32b.toNat]; repeat rw [Nat.mod_eq_of_lt (b := 256) (by assumption)]
                       rw [mul_comm (b := 256), mul_comm (b := 65536), mul_comm (b := 16777216)]
                       rw [h_off_aligned_addr]
                       clear h_div_4_aw0_diff

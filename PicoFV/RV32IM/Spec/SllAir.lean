@@ -92,13 +92,13 @@ namespace SllAir.Spec
     clear h_sr0 h_sr1 h_sr2 h_sr3
 
     have h_mod_32:
-      U32.toNat #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
+      U32b.toNat #v[BitVec.ofNat 8 ↑(air.cols.c_0 row 0), BitVec.ofNat 8 ↑(air.cols.c_1 row 0),
                    BitVec.ofNat 8 ↑(air.cols.c_2 row 0), BitVec.ofNat 8 ↑(air.cols.c_3 row 0)] % 32
         =
       air.cols.c_lsb_0 row 0 + 2 * air.cols.c_lsb_1 row 0 +
       4 * air.cols.c_lsb_2 row 0 + 8 * air.cols.c_lsb_3 row 0 + 16 * air.cols.c_lsb_4 row 0
     := by
-      simp [U32.toNat, ← h_c0_decomp]
+      simp [U32b.toNat, ← h_c0_decomp]
       clear *- hc0 hc1 hc2 hc3 h_lsb0 h_lsb1 h_lsb2 h_lsb3 h_lsb4 h_lsb5 h_lsb6 h_lsb7
       grind
     rw [h_mod_32]
@@ -130,7 +130,7 @@ namespace SllAir.Spec
       clear h_bsm0 h_bsm1 h_bsm2 h_bsm3 h_bsm4 h_bsm5 h_bsm6 h_bsm7
       simp_all
       apply BitVec.eq_of_toNat_eq
-      simp [U32.toBV_toNat, U32.toNat, BitVec.toNat_ofNat, BitVec.toNat_shiftLeft]
+      simp [U32b.toBV_toNat, U32b.toNat, BitVec.toNat_ofNat, BitVec.toNat_shiftLeft]
       omega
 
   -- =======================================================

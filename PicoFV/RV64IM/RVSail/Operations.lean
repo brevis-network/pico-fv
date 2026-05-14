@@ -1,4 +1,5 @@
 import PicoFV.RV64IM.RVSail.Auxiliaries
+import PicoFV.RV64IM.RVSail.Buses
 
 namespace RV64IM
 
@@ -391,5 +392,80 @@ namespace RV64IM
           cases width <;> simp <;> apply ih
 
   end OperationEffect
+
+  section BusOperations
+
+    open RV64IM_Interactions
+
+    def bus_operations (row : BusRow) : List Operation :=
+      let program : List Operation :=
+        List.map (fun program_row =>
+          .ReadPC (BitVec.ofNatLT (w := 64)
+            (program_row.pc_0.val + 65536 * program_row.pc_1.val
+              + 65536 * 65536 * program_row.pc_2.val)
+            (by omega))
+        ) row.Program
+      let state : List Operation :=
+        List.filterMap (
+          fun state_row =>
+            let value := U64w.toBV
+              #v[state_row.x_0, state_row.x_1, state_row.x_2, state_row.x_3]
+            let addr := state_row.ptr_0.val + 65536 * state_row.ptr_1.val
+                      + 65536 * 65536 * state_row.ptr_2.val
+            if _ : addr < 32 then
+              let register : regidx := .Regidx (BitVec.ofNatLT (w := 5) addr (by omega))
+              if (state_row.multiplicity = -1) then
+                .some (.ReadReg register value)
+              else if (state_row.multiplicity = 1) then
+                .some (.WriteReg register value)
+              else .none
+            else
+              if (state_row.multiplicity = -1) then
+                .some (.ReadMem addr .Double value)
+              else if (state_row.multiplicity = 1) then
+                .some (.WriteMem addr .Double value)
+              else .none
+        ) row.State
+      let memory : List Operation :=
+        List.filterMap (
+          fun (memory_row : MemoryBusEntry FKB) =>
+            let width : Option MemoryWidth :=
+              if (memory_row.is_ld = 1 ∨ memory_row.is_sd = 1) then .some .Double
+              else if (memory_row.is_lw = 1 ∨ memory_row.is_lwu = 1 ∨ memory_row.is_sw = 1) then .some .Word
+              else if (memory_row.is_lh = 1 ∨ memory_row.is_lhu = 1 ∨ memory_row.is_sh = 1) then .some .Half
+              else if (memory_row.is_lb = 1 ∨ memory_row.is_lbu = 1 ∨ memory_row.is_sb = 1) then .some .Byte
+              else .none
+            match width with
+            | .none => .none
+            | .some width =>
+              let address :=
+                (U64w.toBV #v[memory_row.b_0, memory_row.b_1, memory_row.b_2, memory_row.b_3]
+                  + U64w.toBV #v[memory_row.c_0, memory_row.c_1, memory_row.c_2, memory_row.c_3]).toNat
+              let is_store : Bool :=
+                memory_row.is_sb == 1 ∨ memory_row.is_sh == 1
+                  ∨ memory_row.is_sw == 1 ∨ memory_row.is_sd == 1
+              match is_store with
+              | true =>
+                match width with
+                | .Byte   => .some (.WriteMem address .Byte   (BitVec.ofNat 8  (memory_row.a_0).val))
+                | .Half   => .some (.WriteMem address .Half   (BitVec.ofNat 16 (memory_row.a_0).val))
+                | .Word   => .some (.WriteMem address .Word
+                                     ((BitVec.ofNat 16 (memory_row.a_1).val)
+                                     ++ (BitVec.ofNat 16 (memory_row.a_0).val)))
+                | .Double => .some (.WriteMem address .Double
+                                     (U64w.toBV #v[memory_row.a_0, memory_row.a_1, memory_row.a_2, memory_row.a_3]))
+              | false =>
+                match width with
+                | .Byte   => .some (.ReadMem address .Byte   (BitVec.ofNat 8  (memory_row.a_0).val))
+                | .Half   => .some (.ReadMem address .Half   (BitVec.ofNat 16 (memory_row.a_0).val))
+                | .Word   => .some (.ReadMem address .Word
+                                     ((BitVec.ofNat 16 (memory_row.a_1).val)
+                                     ++ (BitVec.ofNat 16 (memory_row.a_0).val)))
+                | .Double => .some (.ReadMem address .Double
+                                     (U64w.toBV #v[memory_row.a_0, memory_row.a_1, memory_row.a_2, memory_row.a_3]))
+        ) row.Memory
+      program ++ state ++ memory
+
+  end BusOperations
 
 end RV64IM

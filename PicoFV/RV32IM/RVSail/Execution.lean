@@ -1,6 +1,6 @@
 import LeanRV32D
 import PicoFV.Fundamentals.Core
-import PicoFV.Fundamentals.U32
+import PicoFV.Fundamentals.Word
 
 open PreSail
 open LeanRV32D.Functions
@@ -308,13 +308,13 @@ namespace RV32IM
         rw [Int.toNat_mul (by simp) (by simp)]
         simp
 
-  lemma combine_MUL_MULH {pl ph op1 op2 : U32}
+  lemma combine_MUL_MULH {pl ph op1 op2 : U32b}
   :
     pl.toBV = execute_MUL_pure op1.toBV op2.toBV .MUL →
     ph.toBV = execute_MUL_pure op1.toBV op2.toBV .MULH →
-      U64.toBV #v[pl[0], pl[1], pl[2], pl[3], ph[0], ph[1], ph[2], ph[3]] = (op1.extend true).toBV * (op2.extend true).toBV
+      U64b.toBV #v[pl[0], pl[1], pl[2], pl[3], ph[0], ph[1], ph[2], ph[3]] = (op1.extend true).toBV * (op2.extend true).toBV
   := by
-    simp [U32.extend_BitVec_extend, BitVec.extend]
+    simp [U32b.extend_BitVec_extend, BitVec.extend]
     simp [execute_MUL_pure, -BitVec.extractLsb]
     intro lo hi
     have : BitVec.extractLsb 31 0 (op1.toBV.extend 64 false * op2.toBV.extend 64 false) = BitVec.extractLsb 31 0 (op1.toBV.extend 64 true * op2.toBV.extend 64 true) := by simp [BitVec.extend, -BitVec.extractLsb]; bv_decide
@@ -324,19 +324,19 @@ namespace RV32IM
     trans BitVec.extractLsb 31 0 x + (BitVec.setWidth 64 (BitVec.extractLsb 63 32 x) <<< 32)
     . rw [← lo, ← hi]
       simp [← BitVec.toNat_inj]
-      simp [U64.toNat, U32.toNat]
+      simp [U64b.toNat, U32b.toNat]
       simp [Nat.shiftLeft_eq]
       iterate 2 rw [Nat.mod_eq_of_lt (b := 18446744073709551616) (by omega)]
       ring_nf
     . bv_decide
 
-  lemma combine_MUL_MULHU {pl ph op1 op2 : U32}
+  lemma combine_MUL_MULHU {pl ph op1 op2 : U32b}
   :
     pl.toBV = execute_MUL_pure op1.toBV op2.toBV .MUL →
     ph.toBV = execute_MUL_pure op1.toBV op2.toBV .MULHU →
-      U64.toBV #v[pl[0], pl[1], pl[2], pl[3], ph[0], ph[1], ph[2], ph[3]] = (op1.extend false).toBV * (op2.extend false).toBV
+      U64b.toBV #v[pl[0], pl[1], pl[2], pl[3], ph[0], ph[1], ph[2], ph[3]] = (op1.extend false).toBV * (op2.extend false).toBV
   := by
-    simp [U32.extend_BitVec_extend, BitVec.extend]
+    simp [U32b.extend_BitVec_extend, BitVec.extend]
     simp [execute_MUL_pure, -BitVec.extractLsb]
     intro lo hi
     simp [BitVec.extend, -BitVec.extractLsb] at *
@@ -344,7 +344,7 @@ namespace RV32IM
     trans BitVec.extractLsb 31 0 x + (BitVec.setWidth 64 (BitVec.extractLsb 63 32 x) <<< 32)
     . rw [← lo, ← hi]
       simp [← BitVec.toNat_inj]
-      simp [U64.toNat, U32.toNat]
+      simp [U64b.toNat, U32b.toNat]
       simp [Nat.shiftLeft_eq]
       iterate 2 rw [Nat.mod_eq_of_lt (b := 18446744073709551616) (by omega)]
       ring_nf

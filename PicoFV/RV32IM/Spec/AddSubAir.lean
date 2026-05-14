@@ -38,7 +38,7 @@ namespace AddSubAir.Spec
   --
 
   -- ================================================================
-  -- ADD (opcode 0): proves add_value = operand_1 + operand_2 as U32.
+  -- ADD (opcode 0): proves add_value = operand_1 + operand_2 as U32b.
   -- Case-splits on 3 carry bits (8 cases), closes with omega.
   -- ================================================================
 
@@ -82,7 +82,7 @@ namespace AddSubAir.Spec
     refine ⟨h_av0, h_av1, h_av2, h_av3, h_op1_0, h_op1_1, h_op1_2, h_op1_3, h_op2_0, h_op2_1, h_op2_2, h_op2_3, ?_⟩
     -- Convert BitVec equation to Nat equation
     apply BitVec.eq_of_toNat_eq
-    simp [BitVec.toNat_add, U32.toBV_toNat, U32.toNat, BitVec.toNat_ofNat]
+    simp [BitVec.toNat_add, U32b.toBV_toNat, U32b.toNat, BitVec.toNat_ofNat]
     -- Case split on carries and close each case
     rcases hc10 <;> simp_all <;>
     rcases hc11 <;> simp_all <;>
@@ -134,7 +134,7 @@ namespace AddSubAir.Spec
     refine ⟨h_op1_0, h_op1_1, h_op1_2, h_op1_3, h_av0, h_av1, h_av2, h_av3, h_op2_0, h_op2_1, h_op2_2, h_op2_3, ?_⟩
     -- Convert BitVec equation to Nat equation
     apply BitVec.eq_of_toNat_eq
-    simp [BitVec.toNat_sub, U32.toBV_toNat, U32.toNat, BitVec.toNat_ofNat]
+    simp [BitVec.toNat_sub, U32b.toBV_toNat, U32b.toNat, BitVec.toNat_ofNat]
     -- Case split on carries and close each case
     rcases hc10 <;> simp_all <;>
     rcases hc11 <;> simp_all <;>

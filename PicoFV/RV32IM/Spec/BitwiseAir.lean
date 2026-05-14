@@ -83,8 +83,8 @@ namespace BitwiseAir.Spec
             ⟨h_eq2, h_a2, h_b2, h_c2⟩, h_eq3, h_a3, h_b3, h_c3⟩ := h_wf
     -- Provide byte bounds
     refine ⟨h_a0, h_a1, h_a2, h_a3, ?_⟩
-    -- Prove U32.toBV a = U32.toBV b ^^^ U32.toBV c from byte-level XOR facts
-    simp [U32.toBV, *]
+    -- Prove U32b.toBV a = U32b.toBV b ^^^ U32b.toBV c from byte-level XOR facts
+    simp [U32b.toBV, *]
     rw [FKB.ofNat_xor_eq _ _ h_b3 h_c3, FKB.ofNat_xor_eq _ _ h_b2 h_c2,
         FKB.ofNat_xor_eq _ _ h_b1 h_c1, FKB.ofNat_xor_eq _ _ h_b0 h_c0,
         BitVec.xor_append, BitVec.xor_append, BitVec.xor_append]
@@ -119,8 +119,8 @@ namespace BitwiseAir.Spec
             ⟨h_eq2, h_a2, h_b2, h_c2⟩, h_eq3, h_a3, h_b3, h_c3⟩ := h_wf
     -- Provide byte bounds
     refine ⟨h_a0, h_a1, h_a2, h_a3, ?_⟩
-    -- Prove U32.toBV a = U32.toBV b ||| U32.toBV c from byte-level OR facts
-    simp [U32.toBV, *]
+    -- Prove U32b.toBV a = U32b.toBV b ||| U32b.toBV c from byte-level OR facts
+    simp [U32b.toBV, *]
     rw [FKB.ofNat_or_eq _ _ h_b3 h_c3, FKB.ofNat_or_eq _ _ h_b2 h_c2,
         FKB.ofNat_or_eq _ _ h_b1 h_c1, FKB.ofNat_or_eq _ _ h_b0 h_c0,
         BitVec.or_append, BitVec.or_append, BitVec.or_append]
@@ -155,8 +155,8 @@ namespace BitwiseAir.Spec
             ⟨h_eq2, h_a2, h_b2, h_c2⟩, h_eq3, h_a3, h_b3, h_c3⟩ := h_wf
     -- Provide byte bounds
     refine ⟨h_a0, h_a1, h_a2, h_a3, ?_⟩
-    -- Prove U32.toBV a = U32.toBV b &&& U32.toBV c from byte-level AND facts
-    simp [U32.toBV, *]
+    -- Prove U32b.toBV a = U32b.toBV b &&& U32b.toBV c from byte-level AND facts
+    simp [U32b.toBV, *]
     rw [BitVec.and_append, BitVec.and_append, BitVec.and_append]
 
   -- ================================================================================

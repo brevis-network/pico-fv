@@ -43,23 +43,23 @@ namespace LtAir.Spec
       exact_mod_cast Fin.ext this
 
   -- ===============================================
-  -- Helper: byte < 128 implies U32 is non-negative.
+  -- Helper: byte < 128 implies U32b is non-negative.
   -- ===============================================
 
   private lemma not_negative_of_msb_lt
       (b0 b1 b2 b3 : FKB) (_h0 : b0 < 256) (_h1 : b1 < 256) (_h2 : b2 < 256) (h3 : (b3 : ℕ) < 128) :
-      ¬ U32.negative #v[(b0 : BitVec 8), (b1 : BitVec 8), (b2 : BitVec 8), (b3 : BitVec 8)] := by
-    simp [U32.negative, U32.toNat]; omega
+      ¬ U32b.negative #v[(b0 : BitVec 8), (b1 : BitVec 8), (b2 : BitVec 8), (b3 : BitVec 8)] := by
+    simp [U32b.negative, U32b.toNat]; omega
 
   -- ============================================
-  -- Helper: byte >= 128 implies U32 is negative.
+  -- Helper: byte >= 128 implies U32b is negative.
   -- ============================================
 
   private lemma negative_of_msb_ge
       (b0 b1 b2 b3 : FKB) (_h0 : b0 < 256) (_h1 : b1 < 256) (h2 : b2 < 256) (h3 : 128 ≤ (b3 : ℕ))
       (h4 : b3 < 256) :
-      U32.negative #v[(b0 : BitVec 8), (b1 : BitVec 8), (b2 : BitVec 8), (b3 : BitVec 8)] := by
-    simp [U32.negative, U32.toNat]; omega
+      U32b.negative #v[(b0 : BitVec 8), (b1 : BitVec 8), (b2 : BitVec 8), (b3 : BitVec 8)] := by
+    simp [U32b.negative, U32b.toNat]; omega
 
   --
   -- Externals
@@ -158,7 +158,7 @@ namespace LtAir.Spec
     have h_a0_lt : air.cols.a_0 row 0 < 256 := by
       rw [h_a0]; rcases h_bb_bool with hb | hb <;> rcases h_bc_bool with hc | hc <;>
       simp [hb, hc, h_sltu_eq] <;> split_ifs <;> clear *- h_same_bit_binary <;> omega
-    simp [h_a0_lt, ← BitVec.toNat_inj, U32.toNat]
+    simp [h_a0_lt, ← BitVec.toNat_inj, U32b.toNat]
     repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)]
     -- Simplify the outer if-then-else .toNat and convert toInt
     simp only [apply_ite BitVec.toNat]
@@ -168,7 +168,7 @@ namespace LtAir.Spec
     · -- bit_b = 0, bit_c = 0 (both positive → toInt = toNat)
       have hbn := not_negative_of_msb_lt _ _ _ _ hb0 hb1 hb2 (h_b3_lt' hbb)
       have hcn := not_negative_of_msb_lt _ _ _ _ hc0 hc1 hc2 (h_c3_lt' hbc)
-      simp only [U32.toInt, hbn, hcn, ↓reduceIte, U32.toNat]
+      simp only [U32b.toInt, hbn, hcn, ↓reduceIte, U32b.toNat]
       -- Now goal is about toNat < toNat, same as SLTU
       simp [hbb, hbc] at h_a0 h_ssb_or
       simp [h_a0, h_ssb_or, apply_ite Fin.val, h_sltu_eq, h_cb0_eq, h_cb1_eq]
@@ -187,7 +187,7 @@ namespace LtAir.Spec
       have hcn := negative_of_msb_ge _ _ _ _ hc0 hc1 hc2 (h_c3_ge hbc) hc3
       have h_ssb_zero : air.cols.is_sign_bit_same row 0 = 0 := by
         rcases h_ssb_zero_or_eq with h | h; exact h; simp [hbb, hbc] at h
-      simp only [U32.toInt, hbn, hcn, ↓reduceIte, U32.toNat]
+      simp only [U32b.toInt, hbn, hcn, ↓reduceIte, U32b.toNat]
       simp [hbb, hbc, h_ssb_zero] at h_a0
       simp [h_a0]; omega
     · -- bit_b = 1, bit_c = 0 (b negative, c positive → b.toInt < c.toInt → result = 1)
@@ -195,13 +195,13 @@ namespace LtAir.Spec
       have hcn := not_negative_of_msb_lt _ _ _ _ hc0 hc1 hc2 (h_c3_lt' hbc)
       have h_ssb_zero : air.cols.is_sign_bit_same row 0 = 0 := by
         rcases h_ssb_zero_or_eq with h | h; exact h; simp [hbb, hbc] at h
-      simp only [U32.toInt, hbn, hcn, ↓reduceIte, U32.toNat]
+      simp only [U32b.toInt, hbn, hcn, ↓reduceIte, U32b.toNat]
       simp [hbb, hbc, h_ssb_zero] at h_a0
       simp [h_a0]; omega
     · -- bit_b = 1, bit_c = 1 (both negative → toInt comparison = toNat comparison)
       have hbn := negative_of_msb_ge _ _ _ _ hb0 hb1 hb2 (h_b3_ge hbb) hb3
       have hcn := negative_of_msb_ge _ _ _ _ hc0 hc1 hc2 (h_c3_ge hbc) hc3
-      simp only [U32.toInt, hbn, hcn, ↓reduceIte, U32.toNat]
+      simp only [U32b.toInt, hbn, hcn, ↓reduceIte, U32b.toNat]
       -- Now goal is about toNat < toNat (offset cancels)
       simp [hbb, hbc] at h_a0 h_ssb_or
       simp [h_a0, h_ssb_or, apply_ite Fin.val, h_sltu_eq, h_cb0_eq, h_cb1_eq]
@@ -264,10 +264,10 @@ namespace LtAir.Spec
     obtain ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩ := h_ext
     -- Rewrite goal with constraint equalities
     simp [h_a0, h_a1, h_a2, h_a3]
-    -- result_range and U32 comparison
+    -- result_range and U32b comparison
     have h_slt : air.cols.slt_u row 0 < 256
       := by simp [h_sltu_eq]; split_ifs <;> omega
-    simp [h_slt, ← BitVec.toNat_inj, U32.toNat]
+    simp [h_slt, ← BitVec.toNat_inj, U32b.toNat]
     repeat rw [Nat.mod_eq_of_lt (b := 256) (by omega)]
     -- Relate slt_u to byte comparison, then to word comparison
     simp [apply_ite BitVec.toNat, h_sltu_eq, apply_ite Fin.val, h_cb0_eq, h_cb1_eq]

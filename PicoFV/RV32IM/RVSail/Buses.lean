@@ -1,5 +1,6 @@
-import PicoFV.RV32IM.Fundamentals.Interaction
+import PicoFV.Fundamentals.Interaction
 
+import PicoFV.RV32IM.Transpiler.Transpiler
 import PicoFV.RV32IM.RVSail.Execution
 
 set_option maxHeartbeats 1_000_000_000
@@ -486,24 +487,24 @@ namespace RV32IM_Interactions
         let result_range := a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256
         let operand_range := b_0 < 256 ∧ b_1 < 256 ∧ b_2 < 256 ∧ b_3 < 256 ∧ c_0 < 256 ∧ c_1 < 256 ∧ c_2 < 256 ∧ c_3 < 256
         match ALU_opcode with
-        | 0 => result_range ∧ operand_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 1 => result_range ∧ operand_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] - U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 2 => result_range ∧ operand_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ^^^ U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 3 => result_range ∧ operand_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] ||| U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 4 => result_range ∧ operand_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] &&& U32.toBV #v[c_0, c_1, c_2, c_3]
-        | 5 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] <<< (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
-        | 6 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = U32.toBV #v[b_0, b_1, b_2, b_3] >>> (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
-        | 7 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (U32.toBV #v[b_0, b_1, b_2, b_3]).sshiftRight (U32.toNat #v[c_0, c_1, c_2, c_3] % 32)
-        | 8 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = if (U32.toBV #v[b_0, b_1, b_2, b_3]).toInt < (U32.toBV #v[c_0, c_1, c_2, c_3]).toInt then 1#32 else 0#32
-        | 9 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = if (U32.toBV #v[b_0, b_1, b_2, b_3]).toNat < (U32.toBV #v[c_0, c_1, c_2, c_3]).toNat then 1#32 else 0#32
-        | 30 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MUL
-        | 31 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULH
-        | 32 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULHU
-        | 33 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .MULHSU
-        | 34 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRS).1
-        | 35 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRU).1
-        | 36 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRS).2
-        | 37 => result_range ∧ U32.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32.toBV #v[b_0, b_1, b_2, b_3]) (U32.toBV #v[c_0, c_1, c_2, c_3]) .DRU).2
+        | 0 => result_range ∧ operand_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = U32b.toBV #v[b_0, b_1, b_2, b_3] + U32b.toBV #v[c_0, c_1, c_2, c_3]
+        | 1 => result_range ∧ operand_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = U32b.toBV #v[b_0, b_1, b_2, b_3] - U32b.toBV #v[c_0, c_1, c_2, c_3]
+        | 2 => result_range ∧ operand_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = U32b.toBV #v[b_0, b_1, b_2, b_3] ^^^ U32b.toBV #v[c_0, c_1, c_2, c_3]
+        | 3 => result_range ∧ operand_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = U32b.toBV #v[b_0, b_1, b_2, b_3] ||| U32b.toBV #v[c_0, c_1, c_2, c_3]
+        | 4 => result_range ∧ operand_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = U32b.toBV #v[b_0, b_1, b_2, b_3] &&& U32b.toBV #v[c_0, c_1, c_2, c_3]
+        | 5 => result_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = U32b.toBV #v[b_0, b_1, b_2, b_3] <<< (U32b.toNat #v[c_0, c_1, c_2, c_3] % 32)
+        | 6 => result_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = U32b.toBV #v[b_0, b_1, b_2, b_3] >>> (U32b.toNat #v[c_0, c_1, c_2, c_3] % 32)
+        | 7 => result_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = (U32b.toBV #v[b_0, b_1, b_2, b_3]).sshiftRight (U32b.toNat #v[c_0, c_1, c_2, c_3] % 32)
+        | 8 => result_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = if (U32b.toBV #v[b_0, b_1, b_2, b_3]).toInt < (U32b.toBV #v[c_0, c_1, c_2, c_3]).toInt then 1#32 else 0#32
+        | 9 => result_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = if (U32b.toBV #v[b_0, b_1, b_2, b_3]).toNat < (U32b.toBV #v[c_0, c_1, c_2, c_3]).toNat then 1#32 else 0#32
+        | 30 => result_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32b.toBV #v[b_0, b_1, b_2, b_3]) (U32b.toBV #v[c_0, c_1, c_2, c_3]) .MUL
+        | 31 => result_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32b.toBV #v[b_0, b_1, b_2, b_3]) (U32b.toBV #v[c_0, c_1, c_2, c_3]) .MULH
+        | 32 => result_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32b.toBV #v[b_0, b_1, b_2, b_3]) (U32b.toBV #v[c_0, c_1, c_2, c_3]) .MULHU
+        | 33 => result_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = RV32IM.execute_MUL_pure (U32b.toBV #v[b_0, b_1, b_2, b_3]) (U32b.toBV #v[c_0, c_1, c_2, c_3]) .MULHSU
+        | 34 => result_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32b.toBV #v[b_0, b_1, b_2, b_3]) (U32b.toBV #v[c_0, c_1, c_2, c_3]) .DRS).1
+        | 35 => result_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32b.toBV #v[b_0, b_1, b_2, b_3]) (U32b.toBV #v[c_0, c_1, c_2, c_3]) .DRU).1
+        | 36 => result_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32b.toBV #v[b_0, b_1, b_2, b_3]) (U32b.toBV #v[c_0, c_1, c_2, c_3]) .DRS).2
+        | 37 => result_range ∧ U32b.toBV #v[a_0, a_1, a_2, a_3] = (RV32IM.execute_DIV_REM_pure (U32b.toBV #v[b_0, b_1, b_2, b_3]) (U32b.toBV #v[c_0, c_1, c_2, c_3]) .DRU).2
         | _ => True
 
       /-- ALU bus entry instance -/
@@ -740,13 +741,13 @@ namespace RV32IM_Interactions
       /-- Memory bus pure specification -/
       def MemoryBus.Spec (mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 : FKB) : Prop :=
         (mem_opcode < 15 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256) ∧
-        (U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]).toNat < Pico_address_space_size_32 ∧
-        (mem_opcode = 11 ∨ mem_opcode = 14 ∨ mem_opcode = 16 → 2 ∣ (U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]).toNat) ∧
-        (mem_opcode = 12 ∨ mem_opcode = 17 → 4 ∣ (U32.toBV #v[b_0, b_1, b_2, b_3] + U32.toBV #v[c_0, c_1, c_2, c_3]).toNat) ∧
-        (mem_opcode = 10 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 true) ∧
-        (mem_opcode = 11 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 true) ∧
-        (mem_opcode = 13 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 false) ∧
-        (mem_opcode = 14 → U32.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 false)
+        (U32b.toBV #v[b_0, b_1, b_2, b_3] + U32b.toBV #v[c_0, c_1, c_2, c_3]).toNat < Pico_address_space_size_32 ∧
+        (mem_opcode = 11 ∨ mem_opcode = 14 ∨ mem_opcode = 16 → 2 ∣ (U32b.toBV #v[b_0, b_1, b_2, b_3] + U32b.toBV #v[c_0, c_1, c_2, c_3]).toNat) ∧
+        (mem_opcode = 12 ∨ mem_opcode = 17 → 4 ∣ (U32b.toBV #v[b_0, b_1, b_2, b_3] + U32b.toBV #v[c_0, c_1, c_2, c_3]).toNat) ∧
+        (mem_opcode = 10 → U32b.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 true) ∧
+        (mem_opcode = 11 → U32b.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 true) ∧
+        (mem_opcode = 13 → U32b.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 false) ∧
+        (mem_opcode = 14 → U32b.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 false)
 
       /-- Memory bus entry instance -/
       @[simp, grind]
