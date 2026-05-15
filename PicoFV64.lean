@@ -59,3 +59,10 @@ import PicoFV.RV64IM.Airs.ShiftRightChip
 import PicoFV.RV64IM.Airs.DivRemChip
 import PicoFV.RV64IM.Airs.MemoryReadWriteChip
 import PicoFV.RV64IM.Airs.CpuChip
+
+-- Constraints (human-readable + identification lemmas)
+import PicoFV.RV64IM.Constraints.AddGadget
+import PicoFV.RV64IM.Constraints.AddChip
+
+-- Spec (semantic specifications)
+import PicoFV.RV64IM.Spec.AddGadget

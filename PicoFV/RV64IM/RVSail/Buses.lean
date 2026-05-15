@@ -721,74 +721,117 @@ namespace RV64IM_Interactions
           c_3 := entry.2[12],
         }
 
-      /-- ALU bus pure specification.
+      /-- Set of ALU bus opcodes whose backing chip / gadget enforces
+          u16 operand limb bounds *internally*. For these opcodes the
+          chip can prove `operand_range` from its own constraints, so
+          `operand_range` lives in `wf_properties` and *not* in
+          `externals`.
 
-          The result and the operand limbs are u16 (in RV32 they were u8);
-          ALU opcodes occupy the same numerical slots as on the program bus.
-          Bound granularity:
+          From inspection of the Pico Rust sources & extracted Lean
+          chips:
+          - `BitwiseChip` (2, 3, 4): byte-bus AND/OR/XOR lookups require
+            `x_2 < 256 ∧ x_3 < 256` on the operand bytes after the
+            u16→u8 split, giving full u16 bounds.
+          - `MulChip` / `MulwChip` (30..33, 48): `MulGadget` emits
+            `[byte_op = 7] (low_byte, (limb − low_byte)·inv(256))` pairs
+            for each operand limb. -/
+      def ALUBus.operandsInternal (ALU_opcode : FKB) : Prop :=
+        ALU_opcode ∈ Finset.Icc 2 4 ∨
+        ALU_opcode ∈ Finset.Icc 30 33 ∨
+        ALU_opcode = 48
 
-          * **Always range-checked operands** (chip computes per-limb so it
-            *needs* u16-bounded operands): `0..4` and `40, 41` — the
-            byte/word integer ALU ops.
-          * **Externally range-checked operands** (chip works bit-level and
-            relies on a caller-side guarantee, surfaced as `externals`):
-            shifts (`5..7`, `42..44`), `SLT/SLTU` (`8, 9`), MUL family
-            (`30..33`, `48`), DIV/REM (`34..37`, `49..52`).                  -/
+      /-- Set of all valid ALU bus opcodes. -/
+      def ALUBus.validOpcode (ALU_opcode : FKB) : Prop :=
+        ALU_opcode ∈ Finset.Icc 0 9 ∨
+        ALU_opcode ∈ Finset.Icc 30 37 ∨
+        ALU_opcode ∈ Finset.Icc 40 44 ∨
+        ALU_opcode ∈ Finset.Icc 48 52
+
+      /-- Per-entry operand u16 range (all 8 limbs). -/
+      def ALUBus.operandRange
+        (b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 : FKB) : Prop :=
+        b_0.val < 65536 ∧ b_1.val < 65536 ∧ b_2.val < 65536 ∧ b_3.val < 65536 ∧
+        c_0.val < 65536 ∧ c_1.val < 65536 ∧ c_2.val < 65536 ∧ c_3.val < 65536
+
+      /-- ALU bus pure specification (the `wf_properties` payload).
+
+          For every valid opcode the spec asserts `result_range` (all
+          four result limbs are u16) — factored to the top — and then a
+          per-opcode arithmetic relation `a = <pure execute function>`.
+          The relation additionally is guarded by `operand_range` *iff*
+          the corresponding chip enforces operand u16 bounds itself
+          (`ALUBus.operandsInternal`): that's `2..4` (Bitwise) and
+          `30..33, 48` (Mul family). For every other opcode the operand
+          bounds come in through `ALUBus.externals` (asserted by the
+          receiving `CpuChip` via its state-bus reads).
+
+          The arithmetic relations reuse the `_pure` execute functions
+          from `RV64IM.RVSail.Execution`:
+          - `execute_RTYPE_pure` for 64-bit R-type ALU ops `0..9`
+          - `execute_RTYPEW_pure` for W-variants `40..44`
+          - `execute_MUL_pure` / `execute_MULW_pure` for MUL family
+          - `execute_DIV_REM_pure` / `execute_DIVW_REMW_pure` for DIV/REM. -/
       def ALUBus.Spec
         (ALU_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 : FKB) :=
         let a := U64w.toBV #v[a_0, a_1, a_2, a_3]
         let b := U64w.toBV #v[b_0, b_1, b_2, b_3]
         let c := U64w.toBV #v[c_0, c_1, c_2, c_3]
-        let result_range := a_0.val < 65536 ∧ a_1.val < 65536 ∧ a_2.val < 65536 ∧ a_3.val < 65536
-        let operand_range := b_0.val < 65536 ∧ b_1.val < 65536 ∧ b_2.val < 65536 ∧ b_3.val < 65536
-                           ∧ c_0.val < 65536 ∧ c_1.val < 65536 ∧ c_2.val < 65536 ∧ c_3.val < 65536
+        let result_range :=
+          a_0.val < 65536 ∧ a_1.val < 65536 ∧ a_2.val < 65536 ∧ a_3.val < 65536
+        let operand_range :=
+          ALUBus.operandRange b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3
+        result_range ∧
         match ALU_opcode with
-        -- 64-bit integer ALU
-        | 0 => result_range ∧ operand_range ∧ a = b + c
-        | 1 => result_range ∧ operand_range ∧ a = b - c
-        | 2 => result_range ∧ operand_range ∧ a = b ^^^ c
-        | 3 => result_range ∧ operand_range ∧ a = b ||| c
-        | 4 => result_range ∧ operand_range ∧ a = b &&& c
-        | 5 => result_range ∧ a = b <<< ((U64w.toNat #v[c_0, c_1, c_2, c_3]) % 64)
-        | 6 => result_range ∧ a = b >>> ((U64w.toNat #v[c_0, c_1, c_2, c_3]) % 64)
-        | 7 => result_range ∧ a = b.sshiftRight ((U64w.toNat #v[c_0, c_1, c_2, c_3]) % 64)
-        | 8 => result_range ∧ a = if b.toInt < c.toInt then 1#64 else 0#64
-        | 9 => result_range ∧ a = if b.toNat < c.toNat then 1#64 else 0#64
-        -- MUL family (64-bit)
-        | 30 => result_range ∧ a = RV64IM.execute_MUL_pure b c .MUL
-        | 31 => result_range ∧ a = RV64IM.execute_MUL_pure b c .MULH
-        | 32 => result_range ∧ a = RV64IM.execute_MUL_pure b c .MULHU
-        | 33 => result_range ∧ a = RV64IM.execute_MUL_pure b c .MULHSU
+        -- 64-bit R-type ALU (chips: AddChip, SubChip, BitwiseChip,
+        -- SLLChip, ShiftRightChip, LtChip).
+        | 0 => a = RV64IM.execute_RTYPE_pure b c .ADD
+        | 1 => a = RV64IM.execute_RTYPE_pure b c .SUB
+        -- Bitwise: operand_range in spec; chip enforces internally.
+        | 2 => operand_range ∧ a = RV64IM.execute_RTYPE_pure b c .XOR
+        | 3 => operand_range ∧ a = RV64IM.execute_RTYPE_pure b c .OR
+        | 4 => operand_range ∧ a = RV64IM.execute_RTYPE_pure b c .AND
+        | 5 => a = RV64IM.execute_RTYPE_pure b c .SLL
+        | 6 => a = RV64IM.execute_RTYPE_pure b c .SRL
+        | 7 => a = RV64IM.execute_RTYPE_pure b c .SRA
+        | 8 => a = RV64IM.execute_RTYPE_pure b c .SLT
+        | 9 => a = RV64IM.execute_RTYPE_pure b c .SLTU
+        -- MUL family 64-bit (operand_range in spec; chip enforces).
+        | 30 => operand_range ∧ a = RV64IM.execute_MUL_pure b c .MUL
+        | 31 => operand_range ∧ a = RV64IM.execute_MUL_pure b c .MULH
+        | 32 => operand_range ∧ a = RV64IM.execute_MUL_pure b c .MULHU
+        | 33 => operand_range ∧ a = RV64IM.execute_MUL_pure b c .MULHSU
         -- DIV/REM (64-bit)
-        | 34 => result_range ∧ a = (RV64IM.execute_DIV_REM_pure b c .DRS).1
-        | 35 => result_range ∧ a = (RV64IM.execute_DIV_REM_pure b c .DRU).1
-        | 36 => result_range ∧ a = (RV64IM.execute_DIV_REM_pure b c .DRS).2
-        | 37 => result_range ∧ a = (RV64IM.execute_DIV_REM_pure b c .DRU).2
-        -- W-variants — 32-bit ALU on the low halves, sign-extended to 64 bits
-        | 40 => result_range ∧ operand_range ∧
-                  a = BitVec.signExtend 64 (b.truncate 32 + c.truncate 32)
-        | 41 => result_range ∧ operand_range ∧
-                  a = BitVec.signExtend 64 (b.truncate 32 - c.truncate 32)
-        | 42 => result_range ∧
-                  a = BitVec.signExtend 64
-                        ((b.truncate 32) <<< ((U64w.toNat #v[c_0, c_1, c_2, c_3]) % 32))
-        | 43 => result_range ∧
-                  a = BitVec.signExtend 64
-                        ((b.truncate 32) >>> ((U64w.toNat #v[c_0, c_1, c_2, c_3]) % 32))
-        | 44 => result_range ∧
-                  a = BitVec.signExtend 64
-                        ((b.truncate 32).sshiftRight ((U64w.toNat #v[c_0, c_1, c_2, c_3]) % 32))
-        -- W-variants of MUL/DIV/REM (32-bit)
-        | 48 => result_range ∧ a = RV64IM.execute_MULW_pure (b.truncate 32) (c.truncate 32)
-        | 49 => result_range ∧
-                  a = (RV64IM.execute_DIVW_REMW_pure (b.truncate 32) (c.truncate 32) .DRS).1
-        | 50 => result_range ∧
-                  a = (RV64IM.execute_DIVW_REMW_pure (b.truncate 32) (c.truncate 32) .DRU).1
-        | 51 => result_range ∧
-                  a = (RV64IM.execute_DIVW_REMW_pure (b.truncate 32) (c.truncate 32) .DRS).2
-        | 52 => result_range ∧
-                  a = (RV64IM.execute_DIVW_REMW_pure (b.truncate 32) (c.truncate 32) .DRU).2
+        | 34 => a = (RV64IM.execute_DIV_REM_pure b c .DRS).1
+        | 35 => a = (RV64IM.execute_DIV_REM_pure b c .DRU).1
+        | 36 => a = (RV64IM.execute_DIV_REM_pure b c .DRS).2
+        | 37 => a = (RV64IM.execute_DIV_REM_pure b c .DRU).2
+        -- W-variants — 32-bit RTYPEW ops, sign-extended to 64 bits.
+        | 40 => a = RV64IM.execute_RTYPEW_pure (b.setWidth 32) (c.setWidth 32) .ADDW
+        | 41 => a = RV64IM.execute_RTYPEW_pure (b.setWidth 32) (c.setWidth 32) .SUBW
+        | 42 => a = RV64IM.execute_RTYPEW_pure (b.setWidth 32) (c.setWidth 32) .SLLW
+        | 43 => a = RV64IM.execute_RTYPEW_pure (b.setWidth 32) (c.setWidth 32) .SRLW
+        | 44 => a = RV64IM.execute_RTYPEW_pure (b.setWidth 32) (c.setWidth 32) .SRAW
+        -- MULW (operand_range in spec; chip enforces internally).
+        | 48 => operand_range ∧
+                  a = RV64IM.execute_MULW_pure (b.setWidth 32) (c.setWidth 32)
+        -- DIVW/REMW family (32-bit)
+        | 49 => a = (RV64IM.execute_DIVW_REMW_pure (b.setWidth 32) (c.setWidth 32) .DRS).1
+        | 50 => a = (RV64IM.execute_DIVW_REMW_pure (b.setWidth 32) (c.setWidth 32) .DRU).1
+        | 51 => a = (RV64IM.execute_DIVW_REMW_pure (b.setWidth 32) (c.setWidth 32) .DRS).2
+        | 52 => a = (RV64IM.execute_DIVW_REMW_pure (b.setWidth 32) (c.setWidth 32) .DRU).2
         | _ => True
+
+      /-- ALU bus externals for one entry. Active when multiplicity ≠ 0:
+          asserts the opcode is in the valid ALU set, and asserts
+          `operand_range` for every opcode whose backing chip does *not*
+          enforce u16 operand bounds internally (everything outside
+          `ALUBus.operandsInternal`). -/
+      def ALUBus.externals (entry : ALUBusEntry FKB) : Prop :=
+        ¬(entry.multiplicity = 0) →
+          ALUBus.validOpcode entry.ALU_opcode ∧
+          (¬ ALUBus.operandsInternal entry.ALU_opcode →
+            ALUBus.operandRange entry.b_0 entry.b_1 entry.b_2 entry.b_3
+                                entry.c_0 entry.c_1 entry.c_2 entry.c_3)
 
       /-- ALU bus entry instance. -/
       @[simp, grind]
@@ -803,20 +846,7 @@ namespace RV64IM_Interactions
 
           axioms := fun _ => True
 
-          -- Opcode is in the RV64 ALU range; operands are u16-bounded for
-          -- shifts / SLT / MUL / DIV / REM and their W-variants (the
-          -- always-bounded ops have their operand range in `wf_properties`).
-          externals := fun entry =>
-            ¬(entry.multiplicity = 0) →
-              (entry.ALU_opcode ∈ Finset.Icc 0 9 ∨
-               entry.ALU_opcode ∈ Finset.Icc 30 37 ∨
-               entry.ALU_opcode ∈ Finset.Icc 40 44 ∨
-               entry.ALU_opcode ∈ Finset.Icc 48 52) ∧
-              ((entry.ALU_opcode > 4 ∧ ¬ entry.ALU_opcode = 40 ∧ ¬ entry.ALU_opcode = 41) →
-                 entry.b_0.val < 65536 ∧ entry.b_1.val < 65536 ∧
-                 entry.b_2.val < 65536 ∧ entry.b_3.val < 65536 ∧
-                 entry.c_0.val < 65536 ∧ entry.c_1.val < 65536 ∧
-                 entry.c_2.val < 65536 ∧ entry.c_3.val < 65536)
+          externals := ALUBus.externals
 
           wf_properties :=
             fun ⟨ _, ALU_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3 ⟩ =>
@@ -1177,6 +1207,35 @@ namespace RV64IM_Interactions
         State   := br.State.filter   (fun e => e.multiplicity = -1)
         Memory  := br.Memory.filter  (fun e => e.multiplicity = -1) }
 
+    /-- Concatenate two `BusRow`s pointwise on each of the five lists. -/
+    def BusRow.append (r1 r2 : BusRow) : BusRow :=
+      { Program := r1.Program ++ r2.Program
+        ALU     := r1.ALU     ++ r2.ALU
+        Byte    := r1.Byte    ++ r2.Byte
+        State   := r1.State   ++ r2.State
+        Memory  := r1.Memory  ++ r2.Memory }
+
+    instance : Append BusRow := ⟨BusRow.append⟩
+
+    lemma BusRow.append_eq (r1 r2 : BusRow) :
+      r1 ++ r2 =
+        { Program := r1.Program ++ r2.Program
+          ALU     := r1.ALU     ++ r2.ALU
+          Byte    := r1.Byte    ++ r2.Byte
+          State   := r1.State   ++ r2.State
+          Memory  := r1.Memory  ++ r2.Memory } := rfl
+
+    @[simp] lemma BusRow.append_Program (r1 r2 : BusRow) :
+      (r1 ++ r2).Program = r1.Program ++ r2.Program := rfl
+    @[simp] lemma BusRow.append_ALU (r1 r2 : BusRow) :
+      (r1 ++ r2).ALU = r1.ALU ++ r2.ALU := rfl
+    @[simp] lemma BusRow.append_Byte (r1 r2 : BusRow) :
+      (r1 ++ r2).Byte = r1.Byte ++ r2.Byte := rfl
+    @[simp] lemma BusRow.append_State (r1 r2 : BusRow) :
+      (r1 ++ r2).State = r1.State ++ r2.State := rfl
+    @[simp] lemma BusRow.append_Memory (r1 r2 : BusRow) :
+      (r1 ++ r2).Memory = r1.Memory ++ r2.Memory := rfl
+
     def bus_row_axioms (row : BusRow) : Prop :=
       List.Forall id
         (row.Program.map (BusEntry.axioms FKB) ++
@@ -1216,6 +1275,45 @@ namespace RV64IM_Interactions
          row.Byte.map (BusEntry.wf_assert FKB) ++
          row.State.map (BusEntry.wf_assert FKB) ++
          row.Memory.map (BusEntry.wf_assert FKB))
+
+    -- =====================================================================
+    -- Decomposition over `++` on `BusRow`. Each of the four bus-side
+    -- assumption/assertion predicates distributes pointwise over
+    -- concatenation. Lets a chip that embeds a gadget reduce its own
+    -- bus-side hypothesis to the gadget's contribution + chip extras.
+    -- =====================================================================
+
+    @[simp]
+    lemma bus_row_ext_asm_append (b1 b2 : BusRow) :
+      bus_row_ext_asm (b1 ++ b2) ↔ bus_row_ext_asm b1 ∧ bus_row_ext_asm b2
+    := by
+      simp only [bus_row_ext_asm, BusRow.append_eq, List.map_append,
+                 List.forall_append]
+      tauto
+
+    @[simp]
+    lemma bus_row_ext_asrt_append (b1 b2 : BusRow) :
+      bus_row_ext_asrt (b1 ++ b2) ↔ bus_row_ext_asrt b1 ∧ bus_row_ext_asrt b2
+    := by
+      simp only [bus_row_ext_asrt, BusRow.append_eq, List.map_append,
+                 List.forall_append]
+      tauto
+
+    @[simp]
+    lemma bus_row_wf_asm_append (b1 b2 : BusRow) :
+      bus_row_wf_asm (b1 ++ b2) ↔ bus_row_wf_asm b1 ∧ bus_row_wf_asm b2
+    := by
+      simp only [bus_row_wf_asm, BusRow.append_eq, List.map_append,
+                 List.forall_append]
+      tauto
+
+    @[simp]
+    lemma bus_row_wf_asrt_append (b1 b2 : BusRow) :
+      bus_row_wf_asrt (b1 ++ b2) ↔ bus_row_wf_asrt b1 ∧ bus_row_wf_asrt b2
+    := by
+      simp only [bus_row_wf_asrt, BusRow.append_eq, List.map_append,
+                 List.forall_append]
+      tauto
 
     /-- Deserialise a raw bus row (list of (multiplicity, [bus_id, ...data])
         tuples) into a typed `BusRow`. Bus tag layout matches RV32 exactly;

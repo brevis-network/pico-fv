@@ -1,6 +1,7 @@
 import PicoFV.RV64IM.RVSail.Operations
 import PicoFV.RV64IM.Extraction.AddChip
 import PicoFV.RV64IM.Airs.AddChip
+import PicoFV.RV64IM.Constraints.AddGadget
 
 open Plonky3
 
@@ -39,6 +40,41 @@ The bus interactions are:
 - 1 ALU entry (opcode 3, sub-op 0 = `Opcode::ADD`) — issued only when
   `is_add = 1` and carries `(value, operand_1, operand_2)`.
 -/
+
+namespace AddChip
+
+  open RV64IM_Interactions
+
+  /-- The bus entries the chip contributes per row, packaged as a typed
+      `BusRow`. Built compositionally from `AddGadget.AbsBuses` (the four
+      `ByteBus` u16-range entries on `value_i`) concatenated with the
+      chip-specific `ALUBus` entry for `Opcode::ADD`.
+
+      For any chip that embeds the gadget, the analogous `<chip>.AbsBuses`
+      will be `AddGadget.AbsBuses ... ++ <chip extras>`. -/
+  def AbsBuses
+    (is_add
+     operand_1_0 operand_1_1 operand_1_2 operand_1_3
+     operand_2_0 operand_2_1 operand_2_2 operand_2_3
+     value_0 value_1 value_2 value_3 : FKB)
+  : BusRow :=
+    AddGadget.AbsBuses is_add value_0 value_1 value_2 value_3
+    ++
+    ({
+      Program := [],
+      ALU := List.map ALUBusEntry.deserialise [
+        (is_add,
+          #v[ 0,
+              value_0, value_1, value_2, value_3,
+              operand_1_0, operand_1_1, operand_1_2, operand_1_3,
+              operand_2_0, operand_2_1, operand_2_2, operand_2_3 ])
+      ],
+      Byte := [],
+      State := [],
+      Memory := []
+    } : BusRow)
+
+end AddChip
 
 namespace AddChip.ConstraintsAndBuses
 
@@ -203,6 +239,36 @@ namespace AddChip.ConstraintsAndBuses
 
     end row_buses
 
+    -- =====================================================================
+    -- Identification: constraints 0..4 conjoin to `AddGadget.AbsConstraints`
+    -- instantiated at the chip's accessors, with the substitution
+    -- `is_real ↦ is_add`, `b_i ↦ operand_1_i`, `c_i ↦ operand_2_i`,
+    -- `value_i ↦ add_operation.value_i`. Constraint 5 (the chip-level
+    -- duplicate `assert_bool(is_add)`) is *not* part of the gadget.
+    -- =====================================================================
+
+    omit [Field ExtF] in
+    @[simp]
+    lemma constraint_subset_iff_gadget_00 (air : Valid_AddChip F ExtF) (row : ℕ)
+    : (constraint_0 air row ∧ constraint_1 air row ∧ constraint_2 air row
+        ∧ constraint_3 air row ∧ constraint_4 air row)
+      ↔
+      AddGadget.AbsConstraints
+        (air.cols.values.is_add row 0)
+        (air.cols.values.operand_1_0 row 0) (air.cols.values.operand_1_1 row 0)
+        (air.cols.values.operand_1_2 row 0) (air.cols.values.operand_1_3 row 0)
+        (air.cols.values.operand_2_0 row 0) (air.cols.values.operand_2_1 row 0)
+        (air.cols.values.operand_2_2 row 0) (air.cols.values.operand_2_3 row 0)
+        (air.cols.values.add_operation.value_0 row 0)
+        (air.cols.values.add_operation.value_1 row 0)
+        (air.cols.values.add_operation.value_2 row 0)
+        (air.cols.values.add_operation.value_3 row 0)
+    := by
+      simp [
+        AddGadget.AbsConstraints,
+        constraint_and_interaction_simplification
+      ]
+
     @[constraint_and_interaction_simplification]
     def allHold_simplified
       (air : Valid_AddChip FKB ExtF)
@@ -219,18 +285,7 @@ namespace AddChip.ConstraintsAndBuses
     :
       AddChip.Extraction.allHold air row ↔ allHold_simplified air row
     := by
-      have equiv_constraints
-      :
-        List.Forall (fun x ↦ x) (Extraction.constraint_list air row) ↔ List.Forall (·) (row_constraint_list air row)
-      := by
-        simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
-      have equiv_interactions
-      :
-        AddChip.Extraction.constrain_interactions air ↔ constrain_interactions air
-      := by
-        simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
-      unfold AddChip.Extraction.allHold allHold_simplified
-      simp only [*]
+      simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
   end constraint_simplification
 
@@ -240,37 +295,20 @@ namespace AddChip.Interactions
 
   open RV64IM_Interactions
 
-  /-- The four `ByteBus` and one `ALUBus` rows emitted per `AddChip` row,
-      packaged as a typed `BusRow`. Mirrors `raw_bus_row` but typed through
-      the bus-entry deserialisers. -/
+  /-- The typed `BusRow` per `AddChip` row. Defined directly as
+      `AddChip.AbsBuses` applied to the chip's accessors, making
+      `bus_row_abs` definitionally true. -/
   def bus_row (air : Valid_AddChip FKB ExtF) (row : ℕ) : BusRow :=
-    {
-      Program := [],
-      ALU := List.map ALUBusEntry.deserialise [
-        ((air.cols.values.is_add row 0),
-          #v[ 0,
-              (air.cols.values.add_operation.value_0 row 0),
-              (air.cols.values.add_operation.value_1 row 0),
-              (air.cols.values.add_operation.value_2 row 0),
-              (air.cols.values.add_operation.value_3 row 0),
-              (air.cols.values.operand_1_0 row 0),
-              (air.cols.values.operand_1_1 row 0),
-              (air.cols.values.operand_1_2 row 0),
-              (air.cols.values.operand_1_3 row 0),
-              (air.cols.values.operand_2_0 row 0),
-              (air.cols.values.operand_2_1 row 0),
-              (air.cols.values.operand_2_2 row 0),
-              (air.cols.values.operand_2_3 row 0) ])
-      ],
-      Byte := List.map ByteBusEntry.deserialise [
-        (-(air.cols.values.is_add row 0), #v[8, (air.cols.values.add_operation.value_0 row 0), 0, 0, 0]),
-        (-(air.cols.values.is_add row 0), #v[8, (air.cols.values.add_operation.value_1 row 0), 0, 0, 0]),
-        (-(air.cols.values.is_add row 0), #v[8, (air.cols.values.add_operation.value_2 row 0), 0, 0, 0]),
-        (-(air.cols.values.is_add row 0), #v[8, (air.cols.values.add_operation.value_3 row 0), 0, 0, 0])
-      ],
-      State := [],
-      Memory := []
-    }
+    AddChip.AbsBuses
+      (air.cols.values.is_add row 0)
+      (air.cols.values.operand_1_0 row 0) (air.cols.values.operand_1_1 row 0)
+      (air.cols.values.operand_1_2 row 0) (air.cols.values.operand_1_3 row 0)
+      (air.cols.values.operand_2_0 row 0) (air.cols.values.operand_2_1 row 0)
+      (air.cols.values.operand_2_2 row 0) (air.cols.values.operand_2_3 row 0)
+      (air.cols.values.add_operation.value_0 row 0)
+      (air.cols.values.add_operation.value_1 row 0)
+      (air.cols.values.add_operation.value_2 row 0)
+      (air.cols.values.add_operation.value_3 row 0)
 
   @[simp]
   lemma bus_row_equiv (air : Valid_AddChip FKB ExtF) (row : ℕ) :
@@ -281,6 +319,9 @@ namespace AddChip.Interactions
       deserialise_bus_row,
       constraint_and_interaction_simplification,
       bus_row,
+      BusRow.append_eq,
+      AddChip.AbsBuses,
+      AddGadget.AbsBuses,
       pico_encapsulation,
     ]
 
@@ -308,5 +349,63 @@ namespace AddChip.Interpretations
   := by
     simp [constraint_and_interaction_simplification, sub_eq_zero] at h_constraints
     grind
+
+  /-- Abstracting the gadget used. Follows the template
+      `allHold → preceding ∧ AbsConstraints ∧ following`:
+
+      * Preceding (chip-specific constraints emitted *before* the
+        gadget's contribution): none for `AddChip`.
+      * `AddGadget.AbsConstraints` instantiated at the chip's accessors
+        (`is_real ↦ is_add`, `b_i ↦ operand_1_i`, `c_i ↦ operand_2_i`,
+        `value_i ↦ add_operation.value_i`) — covers constraints 0..4.
+      * Following (chip-specific constraints emitted *after* the
+        gadget's contribution): the chip's `constraint_5`, which is
+        `AddChip::eval`'s separate `assert_bool(is_add)` on top of the
+        gadget's own boolean check on `is_real`. -/
+  lemma allHold_abs
+    [Field ExtF]
+    (air : Valid_AddChip FKB ExtF)
+    (row : ℕ)
+    (h_constraints : AddChip.Extraction.allHold air row)
+  :
+    AddGadget.AbsConstraints
+      (air.cols.values.is_add row 0)
+      (air.cols.values.operand_1_0 row 0) (air.cols.values.operand_1_1 row 0)
+      (air.cols.values.operand_1_2 row 0) (air.cols.values.operand_1_3 row 0)
+      (air.cols.values.operand_2_0 row 0) (air.cols.values.operand_2_1 row 0)
+      (air.cols.values.operand_2_2 row 0) (air.cols.values.operand_2_3 row 0)
+      (air.cols.values.add_operation.value_0 row 0)
+      (air.cols.values.add_operation.value_1 row 0)
+      (air.cols.values.add_operation.value_2 row 0)
+      (air.cols.values.add_operation.value_3 row 0)
+    ∧ constraint_5 air row
+  := by
+    simp [
+      AddGadget.AbsConstraints,
+      constraint_and_interaction_simplification
+    ] at h_constraints ⊢
+    aesop
+
+  /-- The chip's per-row `BusRow` is exactly `AddChip.AbsBuses` instantiated
+      at the chip's accessors. By `AddChip.AbsBuses`'s definition this in
+      turn decomposes as `AddGadget.AbsBuses (...) ++ <chip ALU entry>`,
+      making the gadget's contribution explicit. -/
+  lemma bus_row_abs
+    [Field ExtF]
+    (air : Valid_AddChip FKB ExtF)
+    (row : ℕ)
+  :
+    AddChip.Interactions.bus_row air row =
+    AddChip.AbsBuses
+      (air.cols.values.is_add row 0)
+      (air.cols.values.operand_1_0 row 0) (air.cols.values.operand_1_1 row 0)
+      (air.cols.values.operand_1_2 row 0) (air.cols.values.operand_1_3 row 0)
+      (air.cols.values.operand_2_0 row 0) (air.cols.values.operand_2_1 row 0)
+      (air.cols.values.operand_2_2 row 0) (air.cols.values.operand_2_3 row 0)
+      (air.cols.values.add_operation.value_0 row 0)
+      (air.cols.values.add_operation.value_1 row 0)
+      (air.cols.values.add_operation.value_2 row 0)
+      (air.cols.values.add_operation.value_3 row 0)
+  := by rfl
 
 end AddChip.Interpretations
