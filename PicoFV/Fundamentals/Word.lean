@@ -2,6 +2,7 @@ import PicoFV.Fundamentals.Core
 
 @[reducible] def U32b := Vector (BitVec 8) 4
 @[reducible] def U64b := Vector (BitVec 8) 8
+@[reducible] def U32w := Vector (BitVec 16) 2
 @[reducible] def U64w := Vector (BitVec 16) 4
 @[reducible] def U128w := Vector (BitVec 16) 8
 
@@ -552,6 +553,189 @@ namespace U32b
   end extend
 
 end U32b
+
+namespace U32w
+
+  /-- `U32w` as a vector of its constituents -/
+  lemma destruct (x : U32w) : x = #v[x[0], x[1]] :=
+    Vector.ext fun | 0, _ | 1, _ => by simp | n + 2, _ => by omega
+
+  section toBV
+
+    /-- From `U32w` to `BitVec 32` -/
+    @[grind →]
+    def toBV (x : U32w) : BitVec 32 := x[1] ++ x[0]
+
+    /-- Injectivity of `toBV` -/
+    @[simp, grind →]
+    lemma toBV_inj {x y : U32w} : x.toBV = y.toBV → x = y := by
+      intro h_eq_bv
+      . simp [toBV] at h_eq_bv
+        rw [destruct x, destruct y]
+        grind
+
+  end toBV
+
+  section toNat_fromNat
+
+    /-- From `U32w` to `ℕ` -/
+    def toNat (x : U32w) : ℕ :=
+      x[0].toNat + x[1].toNat * 65536
+
+    /-- `toNat` compatibility with `toBV` -/
+    @[simp]
+    lemma toBV_toNat {x : U32w} : x.toBV.toNat = x.toNat := by
+      simp [toNat, toBV]
+      rw [BitVec.toNat_append,
+          ← Nat.shiftLeft_add_eq_or_of_lt (by omega),
+          Nat.shiftLeft_eq]
+      omega
+
+    /-- Upper bound of `toNat` -/
+    lemma toNat_ub (x : U32w) : x.toNat < 4294967296 := by simp [toNat]; omega
+
+    grind_pattern toBV_toNat => x.toBV.toNat
+    grind_pattern toNat_ub => x.toNat
+
+    /-- Injectivity of `toNat` -/
+    @[simp, grind →]
+    lemma toNat_inj {x y : U32w} : x.toNat = y.toNat → x = y := by
+      rw [← toBV_toNat, ← toBV_toNat, BitVec.toNat_inj]
+      exact toBV_inj
+
+    /-- Reconstructing a `U32w` from a `ℕ` -/
+    def fromNat (n : ℕ) : U32w :=
+      #v[
+        ⟨n % 65536, by omega⟩,
+        ⟨n / 65536 % 65536, by omega⟩
+      ]
+
+    /-- `fromNat`-`toNat` invertibility -/
+    lemma fromNat_toNat {x : U32w} : fromNat x.toNat = x := by
+      rw [destruct x]; simp [fromNat, toNat]
+      iterate 2 rw [← BitVec.toNat_inj]
+      split_ands
+      all_goals
+        rw [BitVec.toNat_ofFin]; simp; omega
+
+    /-- `toNat`-`fromNat` invertibility -/
+    lemma toNat_fromNat {n : ℕ} (_ : n < 4294967296) : (fromNat n).toNat = n := by
+      simp [fromNat, toNat]; omega
+
+  end toNat_fromNat
+
+  section negative
+
+    /-- Negativity -/
+    @[grind →]
+    def negative (x : U32w) := ¬ (2 * x.toNat < 4294967296)
+    instance : Decidable (negative x) := by unfold negative; infer_instance
+
+    /-- `msb` is `negative` -/
+    @[simp]
+    lemma toBV_msb_negative {x : U32w} : x.toBV.msb = x.negative := by grind
+
+    /-- `msb` of top limb is the same as `negative` -/
+    @[simp] lemma msb_1_negative {x : U32w} : x[1].msb = x.negative := by
+      simp [← toBV_msb_negative]; grind
+
+    grind_pattern toBV_msb_negative => x.toBV.msb
+    grind_pattern msb_1_negative => x[1].msb
+
+  end negative
+
+  section toInt_fromInt
+
+    attribute [local grind →] BitVec.toInt
+
+    /-- From `U32w` to `ℤ` -/
+    @[grind →]
+    def toInt (x : U32w) : ℤ := x.toNat - (if x.negative then 4294967296 else 0)
+
+    /-- `toBV` compatibility with `toInt` -/
+    @[simp]
+    lemma toBV_toInt {x : U32w} : x.toBV.toInt = x.toInt := by
+      simp [toInt]; split_ifs <;> grind
+
+    /-- Range of `toInt` -/
+    lemma toInt_range (x : U32w) : -2147483648 ≤ x.toInt ∧ x.toInt < 2147483648 := by
+      simp [toInt]; split_ifs <;> grind
+
+    lemma toInt_bmod_eq {x : U32w} :
+      x.toInt.bmod 4294967296 = x.toInt
+    := by
+      have := toInt_range x
+      rw [Int.bmod_eq_of_le this.1 this.2]
+
+    grind_pattern toBV_toInt => x.toBV.toInt
+    grind_pattern toInt_range => x.toInt
+
+    /-- Injectivity of `toInt` -/
+    @[simp, grind →]
+    lemma toInt_inj {x y : U32w} : x.toInt = y.toInt → x = y := by
+      rw [← toBV_toInt, ← toBV_toInt, BitVec.toInt_inj]
+      exact toBV_inj
+
+    /-- `negative` in terms of `toInt` -/
+    lemma negative_toInt {x : U32w} : negative x ↔ ¬ 0 ≤ x.toInt := by
+      simp [toInt]; split_ifs <;> grind
+
+    /-- not `negative` in terms of `toInt` -/
+    lemma not_negative_toInt {x : U32w} : ¬ negative x ↔ 0 ≤ x.toInt := by
+      simp [toInt]; split_ifs <;> grind
+
+    /-- Reconstructing a `U32w` from an `ℤ` -/
+    def fromInt (z : ℤ) : U32w :=
+      let y := (z + if z < 0 then 4294967296 else 0).toNat
+      #v[
+        ⟨y % 65536, by omega⟩,
+        ⟨y / 65536 % 65536, by omega⟩
+      ]
+
+    /-- `fromInt`-`toInt` invertibility -/
+    @[simp]
+    lemma fromInt_toInt {x : U32w} : fromInt x.toInt = x := by
+      rw [toInt]; simp [negative]; split_ifs with neg_x
+      all_goals
+        simp [fromInt]; simp [toNat] at *
+        split_ifs with neg <;> try omega
+        conv => rhs; rw [destruct x]
+        simp; iterate 2 rw [← BitVec.toNat_inj]
+        split_ands
+        all_goals
+          rw [BitVec.toNat_ofFin]; simp
+          repeat rw [Int.toNat_add (by positivity) (by positivity)]
+          repeat rw [Int.toNat_mul (by positivity) (by positivity)]
+          simp; omega
+
+    /-- `toInt`-`fromInt` invertibility -/
+    lemma toInt_fromInt {z : ℤ} (_ : -2147483648 ≤ z) (_ : z < 2147483647) : (fromInt z).toInt = z := by
+      simp [fromInt, toInt, toNat]; split_ifs with neg_z
+      . rw [if_pos] <;> [ skip; simp [negative, toNat] ] <;> omega
+      . rw [if_neg] <;> [ skip; simp [negative, toNat] ] <;> omega
+
+  end toInt_fromInt
+
+  section isolation
+
+    @[simp]
+    lemma isolate_limb_0
+    :
+      ((U32w.toNat #v[a, b] &&& 0xFFFF) : BitVec 16) = a
+    := by
+      simp [toNat]; bv_decide
+
+    @[simp]
+    lemma isolate_limb_1
+    :
+      ((U32w.toNat #v[a, b] >>> 16) : BitVec 16) = b
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      omega
+
+  end isolation
+
+end U32w
 
 namespace U64w
 
@@ -1111,5 +1295,101 @@ namespace U64w
       split_ifs <;> simp_all <;> omega
 
   end extend
+
+end U64w
+
+namespace U32w
+
+  section extend
+
+    /-- Sign-extender u16 limb -/
+    @[grind]
+    def ext (w : U32w) (with_sign : Bool) := if with_sign && w.negative then 65535 else 0
+
+    lemma zero_le_ext w with_sign : 0 ≤ ext w with_sign := by grind
+    lemma ext_le_65535 w with_sign : ext w with_sign ≤ 65535 := by grind
+
+    /-- Sign-extension to 64 bits -/
+    def extend (w : U32w) (with_sign : Bool) : U64w :=
+      let ext := ext w with_sign
+      #v[w[0], w[1], ext, ext]
+
+    /-- Compatibility of extensions -/
+    lemma extend_BitVec_extend {w : U32w} {with_sign : Bool}
+    :
+      (w.extend with_sign).toBV = BitVec.extend w.toBV 64 with_sign
+    := by
+      rcases with_sign <;> simp [extend, BitVec.extend, ext, ← BitVec.toNat_inj]
+      . simp [U64w.toNat, U32w.toNat]
+        omega
+      . rw [BitVec.toNat_signExtend]
+        simp [U32w.toBV_msb_negative]
+        by_cases w.negative
+        all_goals
+          simp_all
+          simp only [toNat, U64w.toNat, Vector.getElem_mk,
+                     List.getElem_toArray, List.getElem_cons_zero, List.getElem_cons_succ,
+                     BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+          omega
+
+    @[simp]
+    lemma extend_toNat {w : U32w}
+    :
+      (w.extend false).toNat = w.toNat
+    := by
+      simp [extend, ext, U32w.toNat, toNat, U64w.toNat, toNat]
+
+    @[simp]
+    lemma extend_toInt {w : U32w}
+    :
+      (w.extend true).toInt = w.toInt
+    := by
+      simp [extend, ext, U64w.toInt, toInt, U64w.negative, negative, U64w.toNat, toNat]
+      split_ifs <;> simp_all <;> omega
+
+  end extend
+
+end U32w
+
+namespace U64w
+
+  section contract
+
+    /-- Contraction of a `U64w` to a `U32w` by keeping the low 2 × u16
+        limbs (the bottom 32 bits). The high two limbs are discarded.
+        This is the `BitVec.setWidth 32` operation lifted to the `U64w` /
+        `U32w` representations. -/
+    def contract (w : U64w) : U32w := #v[w[0], w[1]]
+
+    /-- Compatibility with `BitVec.setWidth`: contraction is precisely
+        the `setWidth 32` operation on the `BitVec 64` representation. -/
+    @[simp]
+    lemma contract_toBV {w : U64w} :
+      (contract w).toBV = w.toBV.setWidth 32
+    := by
+      rw [← BitVec.toNat_inj, BitVec.toNat_setWidth,
+          U32w.toBV_toNat, U64w.toBV_toNat]
+      simp [contract, U32w.toNat, U64w.toNat]
+      omega
+
+    /-- `toNat` compatibility: contraction takes the value mod `2^32`. -/
+    @[simp]
+    lemma contract_toNat {w : U64w} :
+      (contract w).toNat = w.toNat % 4294967296
+    := by
+      simp [contract, U32w.toNat, U64w.toNat]
+      omega
+
+    /-- Round-trip: contracting an extension recovers the original
+        (independent of sign-extension flag — `contract` discards exactly
+        the bits `extend` populates). -/
+    @[simp]
+    lemma contract_extend {w : U32w} {with_sign : Bool} :
+      U64w.contract (w.extend with_sign) = w
+    := by
+      rw [U32w.destruct w]
+      rfl
+
+  end contract
 
 end U64w

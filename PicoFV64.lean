@@ -63,6 +63,19 @@ import PicoFV.RV64IM.Airs.CpuChip
 -- Constraints (human-readable + identification lemmas)
 import PicoFV.RV64IM.Constraints.AddGadget
 import PicoFV.RV64IM.Constraints.AddChip
+import PicoFV.RV64IM.Constraints.SubGadget
+import PicoFV.RV64IM.Constraints.SubChip
+import PicoFV.RV64IM.Constraints.AddwGadget
+import PicoFV.RV64IM.Constraints.AddwChip
+import PicoFV.RV64IM.Constraints.SubwGadget
+import PicoFV.RV64IM.Constraints.SubwChip
 
 -- Spec (semantic specifications)
 import PicoFV.RV64IM.Spec.AddGadget
+import PicoFV.RV64IM.Spec.AddChip
+import PicoFV.RV64IM.Spec.SubGadget
+import PicoFV.RV64IM.Spec.SubChip
+import PicoFV.RV64IM.Spec.AddwGadget
+import PicoFV.RV64IM.Spec.AddwChip
+import PicoFV.RV64IM.Spec.SubwGadget
+import PicoFV.RV64IM.Spec.SubwChip
