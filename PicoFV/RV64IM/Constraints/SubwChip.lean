@@ -289,6 +289,7 @@ namespace SubwChip.ConstraintsAndBuses
     := by
       simp [
         SubwGadget.AbsConstraints,
+        U16MSBGadget.AbsConstraints,
         constraint_and_interaction_simplification
       ]
 
@@ -337,13 +338,14 @@ namespace SubwChip.Interactions
     RV64IM_Interactions.deserialise_bus_row
       (SubwChip.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
   := by
-    simp [
+    dsimp [
       deserialise_bus_row,
       constraint_and_interaction_simplification,
       bus_row,
       BusRow.append_eq,
       SubwChip.AbsBuses,
       SubwGadget.AbsBuses,
+      U16MSBGadget.AbsBuses,
       pico_encapsulation,
     ]
 
@@ -400,6 +402,7 @@ namespace SubwChip.Interpretations
   := by
     simp [
       SubwGadget.AbsConstraints,
+      U16MSBGadget.AbsConstraints,
       constraint_and_interaction_simplification
     ] at h_constraints ⊢
     aesop

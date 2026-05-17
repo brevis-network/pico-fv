@@ -1,4 +1,5 @@
 import PicoFV.RV64IM.Constraints.AddwGadget
+import PicoFV.RV64IM.Spec.U16MSBGadget
 
 open Plonky3
 
@@ -52,7 +53,7 @@ namespace AddwGadget.Spec
      b_0 b_1 b_2 b_3
      c_0 c_1 c_2 c_3
      value_0 value_1 msb : FKB)
-    (_h_gadget_ext_asm :
+    (h_gadget_ext_asm :
       bus_row_ext_asm
         (AddwGadget.AbsBuses is_real value_0 value_1 msb))
     (h_gadget_wf_asm :
@@ -77,10 +78,14 @@ namespace AddwGadget.Spec
       ((U64w.toBV #v[c_0, c_1, c_2, c_3]).setWidth 32)
       .ADDW
   := by
-    simp [bus_row_wf_asm, AbsBuses, h_is_real, ByteBus.Spec] at h_gadget_wf_asm
+    simp [AbsBuses] at h_gadget_wf_asm h_gadget_ext_asm
+    obtain ⟨ h_gadget_wf_asm, h_wf_msb ⟩ := h_gadget_wf_asm
+    obtain ⟨ h_gadget_ext_asm, h_ext_msb ⟩ := h_gadget_ext_asm; clear h_gadget_ext_asm
+    simp [bus_row_wf_asm, h_is_real, ByteBus.Spec] at h_gadget_wf_asm
+    simp [AbsConstraints, sub_eq_zero, h_is_real] at h_gadget_constraints
+    have msb_spec := U16MSBGadget.Spec.gadget_spec is_real _ _ h_ext_msb h_wf_msb (by grind) h_is_real (by tauto)
+    obtain ⟨ h0, h1, h2, h_cstr_msb ⟩ := h_gadget_constraints
     simp [h_gadget_wf_asm]
-    simp [AbsConstraints, h_is_real, sub_eq_zero (b := (1 : FKB))] at h_gadget_constraints
-    obtain ⟨ h0, h1, h2 ⟩ := h_gadget_constraints
     split_ands
     . omega
     . trans (U32w.extend (#v[value_0, value_1]) true).toBV
@@ -90,7 +95,7 @@ namespace AddwGadget.Spec
             if U32w.negative #v[BitVec.ofNat 16 ↑value_0, BitVec.ofNat 16 ↑value_1] then 65535#16 else 0#16
         . congr
         . simp [← U32w.msb_1_negative, BitVec.msb_eq_decide]
-          grind
+          clear *- h_gadget_wf_asm msb_spec; grind
       . simp [RV64IM.execute_RTYPEW_pure]
         simp [← U64w.contract_toBV, U64w.contract]
         simp [U32w.extend_BitVec_extend, BitVec.extend]

@@ -69,7 +69,8 @@ namespace AddwChip.Spec
     bus_row_ext_asrt (bus_row air row)
   := by
     have selectors := selector_breakdown air row h_constraints
-    simp [bus_row_ext_asrt, bus_row, AddwChip.AbsBuses, AddwGadget.AbsBuses]
+    simp [bus_row_ext_asrt, bus_row, AddwChip.AbsBuses, AddwGadget.AbsBuses,
+          U16MSBGadget.AbsBuses]
     intro h; exfalso; grind
 
   --
@@ -176,7 +177,8 @@ namespace AddwChip.Spec
     bus_row_wf_asrt (bus_row air row)
   := by
     have selectors := selector_breakdown air row h_constraints
-    simp [bus_row_wf_asrt, bus_row, AddwChip.AbsBuses, AddwGadget.AbsBuses]
+    simp [bus_row_wf_asrt, bus_row, AddwChip.AbsBuses, AddwGadget.AbsBuses,
+          U16MSBGadget.AbsBuses]
     refine ⟨?_, ?_⟩
     -- ALU entry: apply spec when is_addw = 1
     . intro h_is_addw

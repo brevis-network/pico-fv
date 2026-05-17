@@ -1,6 +1,7 @@
 import PicoFV.RV64IM.RVSail.Operations
 import PicoFV.RV64IM.Extraction.SubwGadget
 import PicoFV.RV64IM.Airs.SubwGadget
+import PicoFV.RV64IM.Constraints.U16MSBGadget
 
 open Plonky3
 
@@ -47,7 +48,8 @@ namespace SubwGadget
   /-- The conjunction of algebraic facts the Pico `SubwGadget` asserts
       on a row, expressed parametrically in the 8 column values that
       flow through the gadget. Only the low 32 bits of `b` and `c` are
-      consumed (limbs 0..1). -/
+      consumed (limbs 0..1). The msb-related part is factored into
+      `U16MSBGadget.AbsConstraints` (the embedded MSB sub-gadget). -/
   def AbsConstraints
     {F : Type} [Field F]
     (is_real
@@ -61,28 +63,26 @@ namespace SubwGadget
     (is_real * (is_real - 1) = 0) ∧
     (is_real * (borrow_0 * (borrow_0 - 1)) = 0) ∧
     (is_real * (borrow_1 * (borrow_1 - 1)) = 0) ∧
-    (is_real * (is_real - 1) = 0) ∧
-    (msb * (msb - 1) = 0)
+    U16MSBGadget.AbsConstraints is_real msb
 
-  /-- The bus entries the Pico `SubwGadget` contributes per row.
-      3 byte-bus entries gated by `-is_real`:
-      - U16Range on `value_0`,
-      - U16Range on `value_1`,
-      - U16Range on `2 * value_1 - msb * 65536` (pins `msb` to the actual
-        high bit of `value_1`). -/
+  /-- The bus entries the Pico `SubwGadget` contributes per row. The
+      gadget itself emits 2 byte-bus `U16Range`s (on `value_0` and
+      `value_1`); the third entry — `U16Range` on `2*value_1 -
+      msb*65536`, pinning `msb` to bit-15 of `value_1` — is
+      contributed by the embedded `U16MSBGadget`. -/
   def AbsBuses
     (is_real value_0 value_1 msb : FKB)
   : BusRow :=
-    {
+    ({
       Program := [],
       ALU := [],
       Byte := List.map ByteBusEntry.deserialise [
         (-(is_real), #v[8, value_0, 0, 0, 0]),
-        (-(is_real), #v[8, value_1, 0, 0, 0]),
-        (-(is_real), #v[8, 2 * value_1 - msb * 65536, 0, 0, 0])
+        (-(is_real), #v[8, value_1, 0, 0, 0])
       ],
       State := [],
       Memory := []
-    }
+    } : BusRow)
+    ++ U16MSBGadget.AbsBuses is_real value_1 msb
 
 end SubwGadget

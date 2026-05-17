@@ -86,37 +86,18 @@ namespace BitwiseChip.Spec
       b.val < 65536 ∧
       BitVec.ofNat 16 b.val =
         BitVec.ofNat 8 ((b - bL) * 2122383361 : FKB).val ++ BitVec.ofNat 8 bL.val := by
-    -- Step 1: in FKB, b = bL + ((b - bL) * inv(256)) * 256
-    have h_inv : (2122383361 : FKB) * 256 = 1 := by decide
-    have h_b_eq : b = bL + ((b - bL) * 2122383361) * 256 := by
-      linear_combination -(b - bL) * h_inv
-    -- Step 2: convert to a Nat equation. With bL.val < 256 and bH.val < 256,
+    -- Step 1: convert to a Nat equation. With bL.val < 256 and bH.val < 256,
     -- the sum bL.val + bH.val * 256 < 65536 < KB_prime, so no F-wraparound.
     set bH : FKB := (b - bL) * 2122383361 with h_bH_def
-    have h_bH256_val : (bH * 256 : FKB).val = bH.val * 256 := by
-      rw [Fin.val_mul]
-      show (bH.val * (256 : FKB).val) % 2130706433 = bH.val * 256
-      have : (256 : FKB).val = 256 := by decide
-      rw [this]; omega
-    have h_sum_val : (bL + bH * 256 : FKB).val = bL.val + bH.val * 256 := by
-      rw [Fin.val_add]
-      rw [h_bH256_val]
-      omega
-    have h_b_val : b.val = bL.val + bH.val * 256 := by
-      conv_lhs => rw [h_b_eq]
-      exact h_sum_val
+    have h_b_val : b.val = bL.val + bH.val * 256 := by grind
     refine ⟨ by omega, ?_ ⟩
-    -- Step 3: BitVec equality via toNat. Convert `<<<` / `|||` to
+    -- Step 2: BitVec equality via toNat. Convert `<<<` / `|||` to
     -- plain `*` / `+` via the `shiftLeft_add_eq_or_of_lt` idiom from
     -- `U32b.toBV_toNat`, then close with omega using `h_b_val`.
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_append]; simp
-    rw [Nat.mod_eq_of_lt h_bH, Nat.mod_eq_of_lt h_bL]
-    rw [Nat.mod_eq_of_lt (b := 65536) (by omega),
-        ← Nat.shiftLeft_add_eq_or_of_lt (by omega),
-        Nat.shiftLeft_eq]
+    rw [← Nat.shiftLeft_add_eq_or_of_lt (by omega), Nat.shiftLeft_eq]
     omega
-
 
   /-- Compose two u8-ranged field elements into a `BitVec 16` via
       `low + high * 256`. Simpler sibling of `limb_decomp` — no
@@ -126,21 +107,31 @@ namespace BitwiseChip.Spec
       (h_low : low.val < 256) (h_high : high.val < 256) :
       BitVec.ofNat 16 (low + high * 256 : FKB).val =
         BitVec.ofNat 8 high.val ++ BitVec.ofNat 8 low.val := by
-    have h_high256 : (high * 256 : FKB).val = high.val * 256 := by
-      rw [Fin.val_mul]
-      show (high.val * (256 : FKB).val) % 2130706433 = high.val * 256
-      have : (256 : FKB).val = 256 := by decide
-      rw [this]; omega
-    have h_sum : (low + high * 256 : FKB).val = low.val + high.val * 256 := by
-      rw [Fin.val_add, h_high256]; omega
+    have h_high256 : (high * 256 : FKB).val = high.val * 256 := by grind
+    have h_sum : (low + high * 256 : FKB).val = low.val + high.val * 256 := by grind
     rw [h_sum]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_append]; simp
-    rw [Nat.mod_eq_of_lt h_high, Nat.mod_eq_of_lt h_low,
-        Nat.mod_eq_of_lt (b := 65536) (by omega),
-        ← Nat.shiftLeft_add_eq_or_of_lt (by omega),
-        Nat.shiftLeft_eq]
+    rw [← Nat.shiftLeft_add_eq_or_of_lt (by omega), Nat.shiftLeft_eq]
     omega
+
+  /-- Bridge `U64w.toBV` to `U64b.toBV` via per-limb byte splits. Each
+      u16 limb `b_i` factors as `bH_i ++ bL_i` (BitVec 8 ++ BitVec 8),
+      and the resulting `U64b` byte view has the same `BitVec 64`. -/
+  private lemma U64w_toBV_eq_U64b_toBV
+    (b_0 b_1 b_2 b_3 : BitVec 16)
+    (bL_0 bH_0 bL_1 bH_1 bL_2 bH_2 bL_3 bH_3 : BitVec 8)
+    (h_0 : b_0 = bH_0 ++ bL_0)
+    (h_1 : b_1 = bH_1 ++ bL_1)
+    (h_2 : b_2 = bH_2 ++ bL_2)
+    (h_3 : b_3 = bH_3 ++ bL_3)
+  :
+    U64w.toBV #v[b_0, b_1, b_2, b_3]
+    = U64b.toBV #v[bL_0, bH_0, bL_1, bH_1, bL_2, bH_2, bL_3, bH_3]
+  := by
+    subst h_0; subst h_1; subst h_2; subst h_3
+    simp [U64w.toBV, U64b.toBV]
+    bv_decide
 
   --
   -- Externals (vacuous for byte; ALU entry's externals only fire when
@@ -226,60 +217,18 @@ namespace BitwiseChip.Spec
     rw [← h_x4] at h_byte_4; rw [← h_x5] at h_byte_5
     rw [← h_x6] at h_byte_6; rw [← h_x7] at h_byte_7
     -- Discharge ALUBus.Spec 2: result_range ∧ operand_range ∧ XOR equation
-    simp only [ALUBus.Spec, ALUBus.operandRange]
-    refine ⟨ ⟨?_, ?_, ?_, ?_⟩, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_ ⟩
-    -- result_range (4 limbs)
-    · have h_a0_eq : ((air.cols.values.bitwise.bitwise.result_0 row 0)
-                    + (air.cols.values.bitwise.bitwise.result_1 row 0) * 256 : FKB).val
-                  = (air.cols.values.bitwise.bitwise.result_0 row 0).val
-                  + (air.cols.values.bitwise.bitwise.result_1 row 0).val * 256 := by
-        rw [Fin.val_add, Fin.val_mul]
-        have : (256 : FKB).val = 256 := by decide
-        rw [this]; omega
-      omega
-    · have : ((air.cols.values.bitwise.bitwise.result_2 row 0)
-            + (air.cols.values.bitwise.bitwise.result_3 row 0) * 256 : FKB).val
-          = (air.cols.values.bitwise.bitwise.result_2 row 0).val
-          + (air.cols.values.bitwise.bitwise.result_3 row 0).val * 256 := by
-        rw [Fin.val_add, Fin.val_mul]
-        have : (256 : FKB).val = 256 := by decide
-        rw [this]; omega
-      omega
-    · have : ((air.cols.values.bitwise.bitwise.result_4 row 0)
-            + (air.cols.values.bitwise.bitwise.result_5 row 0) * 256 : FKB).val
-          = (air.cols.values.bitwise.bitwise.result_4 row 0).val
-          + (air.cols.values.bitwise.bitwise.result_5 row 0).val * 256 := by
-        rw [Fin.val_add, Fin.val_mul]
-        have : (256 : FKB).val = 256 := by decide
-        rw [this]; omega
-      omega
-    · have : ((air.cols.values.bitwise.bitwise.result_6 row 0)
-            + (air.cols.values.bitwise.bitwise.result_7 row 0) * 256 : FKB).val
-          = (air.cols.values.bitwise.bitwise.result_6 row 0).val
-          + (air.cols.values.bitwise.bitwise.result_7 row 0).val * 256 := by
-        rw [Fin.val_add, Fin.val_mul]
-        have : (256 : FKB).val = 256 := by decide
-        rw [this]; omega
-      omega
-    -- operand_range (b_0..3, c_0..3)
-    · exact h_b0_range
-    · exact h_b1_range
-    · exact h_b2_range
-    · exact h_b3_range
-    · exact h_c0_range
-    · exact h_c1_range
-    · exact h_c2_range
-    · exact h_c3_range
-    -- XOR equation: each limb's `(bH^^^cH)++(bL^^^cL) = (bH++bL) ^^^ (cH++cL)`
-    -- by `BitVec.xor_append`, composed into a `BitVec 64` tautology that
-    -- `bv_decide` closes once `U64w.toBV` is unfolded.
-    . simp [h_a0_split, h_a1_split, h_a2_split, h_a3_split,
-            h_b0_split, h_b1_split, h_b2_split, h_b3_split,
-            h_c0_split, h_c1_split, h_c2_split, h_c3_split,
-            h_byte_0, h_byte_1, h_byte_2, h_byte_3,
-            h_byte_4, h_byte_5, h_byte_6, h_byte_7,
-            RV64IM.execute_RTYPE_pure, U64w.toBV]
-      bv_decide
+    refine ⟨ ⟨by grind, by grind, by grind, by grind⟩,
+             ⟨by assumption, by assumption, by assumption, by assumption, by assumption, by assumption, by assumption, by assumption⟩,
+             ?_ ⟩
+    -- Move to U64b and solve
+    iterate 4 rw [bv16_from_bytes _ _ (by omega) (by omega)]
+    rw [← U64w.toU64b_toBV, U64w.toU64b_from_split]
+    simp [h_b0_split, h_b1_split, h_b2_split, h_b3_split,
+          h_c0_split, h_c1_split, h_c2_split, h_c3_split]
+    iterate 2 rw [← U64w.toU64b_toBV, U64w.toU64b_from_split]
+    simp [RV64IM.execute_RTYPE_pure, U64b.toBV]
+    repeat rw [BitVec.xor_append]
+    simp [h_byte_0, h_byte_1, h_byte_2, h_byte_3, h_byte_4, h_byte_5, h_byte_6, h_byte_7]
 
   --
   -- spec_OR — opcode 3
@@ -343,55 +292,18 @@ namespace BitwiseChip.Spec
     rw [← h_x2] at h_byte_2; rw [← h_x3] at h_byte_3
     rw [← h_x4] at h_byte_4; rw [← h_x5] at h_byte_5
     rw [← h_x6] at h_byte_6; rw [← h_x7] at h_byte_7
-    simp only [ALUBus.Spec, ALUBus.operandRange]
-    refine ⟨ ⟨?_, ?_, ?_, ?_⟩, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_ ⟩
-    · have : ((air.cols.values.bitwise.bitwise.result_0 row 0)
-            + (air.cols.values.bitwise.bitwise.result_1 row 0) * 256 : FKB).val
-          = (air.cols.values.bitwise.bitwise.result_0 row 0).val
-          + (air.cols.values.bitwise.bitwise.result_1 row 0).val * 256 := by
-        rw [Fin.val_add, Fin.val_mul]
-        have : (256 : FKB).val = 256 := by decide
-        rw [this]; omega
-      omega
-    · have : ((air.cols.values.bitwise.bitwise.result_2 row 0)
-            + (air.cols.values.bitwise.bitwise.result_3 row 0) * 256 : FKB).val
-          = (air.cols.values.bitwise.bitwise.result_2 row 0).val
-          + (air.cols.values.bitwise.bitwise.result_3 row 0).val * 256 := by
-        rw [Fin.val_add, Fin.val_mul]
-        have : (256 : FKB).val = 256 := by decide
-        rw [this]; omega
-      omega
-    · have : ((air.cols.values.bitwise.bitwise.result_4 row 0)
-            + (air.cols.values.bitwise.bitwise.result_5 row 0) * 256 : FKB).val
-          = (air.cols.values.bitwise.bitwise.result_4 row 0).val
-          + (air.cols.values.bitwise.bitwise.result_5 row 0).val * 256 := by
-        rw [Fin.val_add, Fin.val_mul]
-        have : (256 : FKB).val = 256 := by decide
-        rw [this]; omega
-      omega
-    · have : ((air.cols.values.bitwise.bitwise.result_6 row 0)
-            + (air.cols.values.bitwise.bitwise.result_7 row 0) * 256 : FKB).val
-          = (air.cols.values.bitwise.bitwise.result_6 row 0).val
-          + (air.cols.values.bitwise.bitwise.result_7 row 0).val * 256 := by
-        rw [Fin.val_add, Fin.val_mul]
-        have : (256 : FKB).val = 256 := by decide
-        rw [this]; omega
-      omega
-    · exact h_b0_range
-    · exact h_b1_range
-    · exact h_b2_range
-    · exact h_b3_range
-    · exact h_c0_range
-    · exact h_c1_range
-    · exact h_c2_range
-    · exact h_c3_range
-    . simp [h_a0_split, h_a1_split, h_a2_split, h_a3_split,
-            h_b0_split, h_b1_split, h_b2_split, h_b3_split,
-            h_c0_split, h_c1_split, h_c2_split, h_c3_split,
-            h_byte_0, h_byte_1, h_byte_2, h_byte_3,
-            h_byte_4, h_byte_5, h_byte_6, h_byte_7,
-            RV64IM.execute_RTYPE_pure, U64w.toBV]
-      bv_decide
+    refine ⟨ ⟨by grind, by grind, by grind, by grind⟩,
+             ⟨by assumption, by assumption, by assumption, by assumption, by assumption, by assumption, by assumption, by assumption⟩,
+             ?_ ⟩
+    -- Move to U64b and solve
+    iterate 4 rw [bv16_from_bytes _ _ (by omega) (by omega)]
+    rw [← U64w.toU64b_toBV, U64w.toU64b_from_split]
+    simp [h_b0_split, h_b1_split, h_b2_split, h_b3_split,
+          h_c0_split, h_c1_split, h_c2_split, h_c3_split]
+    iterate 2 rw [← U64w.toU64b_toBV, U64w.toU64b_from_split]
+    simp [RV64IM.execute_RTYPE_pure, U64b.toBV]
+    repeat rw [BitVec.or_append]
+    simp [h_byte_0, h_byte_1, h_byte_2, h_byte_3, h_byte_4, h_byte_5, h_byte_6, h_byte_7]
 
   --
   -- spec_AND — opcode 4
@@ -463,55 +375,18 @@ namespace BitwiseChip.Spec
     rw [← h_x2] at h_byte_2; rw [← h_x3] at h_byte_3
     rw [← h_x4] at h_byte_4; rw [← h_x5] at h_byte_5
     rw [← h_x6] at h_byte_6; rw [← h_x7] at h_byte_7
-    simp only [ALUBus.Spec, ALUBus.operandRange]
-    refine ⟨ ⟨?_, ?_, ?_, ?_⟩, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_ ⟩
-    · have : ((air.cols.values.bitwise.bitwise.result_0 row 0)
-            + (air.cols.values.bitwise.bitwise.result_1 row 0) * 256 : FKB).val
-          = (air.cols.values.bitwise.bitwise.result_0 row 0).val
-          + (air.cols.values.bitwise.bitwise.result_1 row 0).val * 256 := by
-        rw [Fin.val_add, Fin.val_mul]
-        have : (256 : FKB).val = 256 := by decide
-        rw [this]; omega
-      omega
-    · have : ((air.cols.values.bitwise.bitwise.result_2 row 0)
-            + (air.cols.values.bitwise.bitwise.result_3 row 0) * 256 : FKB).val
-          = (air.cols.values.bitwise.bitwise.result_2 row 0).val
-          + (air.cols.values.bitwise.bitwise.result_3 row 0).val * 256 := by
-        rw [Fin.val_add, Fin.val_mul]
-        have : (256 : FKB).val = 256 := by decide
-        rw [this]; omega
-      omega
-    · have : ((air.cols.values.bitwise.bitwise.result_4 row 0)
-            + (air.cols.values.bitwise.bitwise.result_5 row 0) * 256 : FKB).val
-          = (air.cols.values.bitwise.bitwise.result_4 row 0).val
-          + (air.cols.values.bitwise.bitwise.result_5 row 0).val * 256 := by
-        rw [Fin.val_add, Fin.val_mul]
-        have : (256 : FKB).val = 256 := by decide
-        rw [this]; omega
-      omega
-    · have : ((air.cols.values.bitwise.bitwise.result_6 row 0)
-            + (air.cols.values.bitwise.bitwise.result_7 row 0) * 256 : FKB).val
-          = (air.cols.values.bitwise.bitwise.result_6 row 0).val
-          + (air.cols.values.bitwise.bitwise.result_7 row 0).val * 256 := by
-        rw [Fin.val_add, Fin.val_mul]
-        have : (256 : FKB).val = 256 := by decide
-        rw [this]; omega
-      omega
-    · exact h_b0_range
-    · exact h_b1_range
-    · exact h_b2_range
-    · exact h_b3_range
-    · exact h_c0_range
-    · exact h_c1_range
-    · exact h_c2_range
-    · exact h_c3_range
-    . simp [h_a0_split, h_a1_split, h_a2_split, h_a3_split,
-            h_b0_split, h_b1_split, h_b2_split, h_b3_split,
-            h_c0_split, h_c1_split, h_c2_split, h_c3_split,
-            h_byte_0, h_byte_1, h_byte_2, h_byte_3,
-            h_byte_4, h_byte_5, h_byte_6, h_byte_7,
-            RV64IM.execute_RTYPE_pure, U64w.toBV]
-      bv_decide
+    refine ⟨ ⟨by grind, by grind, by grind, by grind⟩,
+             ⟨by assumption, by assumption, by assumption, by assumption, by assumption, by assumption, by assumption, by assumption⟩,
+             ?_ ⟩
+    -- Move to U64b and solve
+    iterate 4 rw [bv16_from_bytes _ _ (by omega) (by omega)]
+    rw [← U64w.toU64b_toBV, U64w.toU64b_from_split]
+    simp [h_b0_split, h_b1_split, h_b2_split, h_b3_split,
+          h_c0_split, h_c1_split, h_c2_split, h_c3_split]
+    iterate 2 rw [← U64w.toU64b_toBV, U64w.toU64b_from_split]
+    simp [RV64IM.execute_RTYPE_pure, U64b.toBV]
+    repeat rw [BitVec.and_append]
+    simp [h_byte_0, h_byte_1, h_byte_2, h_byte_3, h_byte_4, h_byte_5, h_byte_6, h_byte_7]
 
   --
   -- wf_asrt — dispatches to spec_XOR/OR/AND

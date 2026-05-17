@@ -1393,3 +1393,101 @@ namespace U64w
   end contract
 
 end U64w
+
+-- =========================================================================
+-- U64w ↔ U64b conversion (byte view of a u16-limb word)
+--
+-- Useful for chips that constrain operands at u16 limb level but emit
+-- byte-bus interactions on the constituent bytes (Bitwise, Mul). The
+-- conversion is value-preserving on `BitVec 64` and forms a round-trip.
+-- Byte ordering is little-endian within each limb:
+--   `(toU64b w)[2*i]`   = low byte of `w[i]`
+--   `(toU64b w)[2*i+1]` = high byte of `w[i]`
+-- =========================================================================
+
+namespace U64w
+
+  section toU64b
+
+    /-- Split each u16 limb into its low and high bytes, yielding a
+        `U64b` with the same underlying `BitVec 64`. -/
+    def toU64b (w : U64w) : U64b :=
+      #v[ w[0].setWidth 8, (w[0] >>> 8).setWidth 8,
+          w[1].setWidth 8, (w[1] >>> 8).setWidth 8,
+          w[2].setWidth 8, (w[2] >>> 8).setWidth 8,
+          w[3].setWidth 8, (w[3] >>> 8).setWidth 8 ]
+
+    /-- `toU64b` preserves the underlying `BitVec 64`. -/
+    @[simp]
+    lemma toU64b_toBV {w : U64w} : (toU64b w).toBV = w.toBV := by
+      apply BitVec.eq_of_toNat_eq
+      rw [U64b.toBV_toNat, U64w.toBV_toNat]
+      simp [toU64b, U64b.toNat, U64w.toNat,
+            BitVec.toNat_setWidth, BitVec.toNat_ushiftRight]
+      have h0 := (w[0]).isLt
+      have h1 := (w[1]).isLt
+      have h2 := (w[2]).isLt
+      have h3 := (w[3]).isLt
+      simp at h0 h1 h2 h3
+      omega
+
+    /-- `toU64b` preserves the underlying natural number. -/
+    @[simp]
+    lemma toU64b_toNat {w : U64w} : (toU64b w).toNat = w.toNat := by
+      rw [← U64b.toBV_toNat, toU64b_toBV, U64w.toBV_toNat]
+
+    lemma toU64b_from_split {b0 b1 b2 b3 b4 b5 b6 b7 : BitVec 8} :
+      (toU64b #v[b1 ++ b0, b3 ++ b2, b5 ++ b4, b7 ++ b6]).toBV =
+      U64b.toBV #v[b0, b1, b2, b3, b4, b5, b6, b7]
+    := by
+      unfold toU64b U64b.toBV; simp
+      bv_decide
+
+  end toU64b
+
+end U64w
+
+namespace U64b
+
+  section toU64w
+
+    /-- Combine pairs of bytes into u16 limbs, yielding a `U64w` with
+        the same underlying `BitVec 64`. Dual of `U64w.toU64b`. -/
+    def toU64w (b : U64b) : U64w :=
+      #v[ b[1] ++ b[0], b[3] ++ b[2], b[5] ++ b[4], b[7] ++ b[6] ]
+
+    /-- `toU64w` preserves the underlying `BitVec 64`. -/
+    @[simp]
+    lemma toU64w_toBV {b : U64b} : (toU64w b).toBV = b.toBV := by
+      apply BitVec.eq_of_toNat_eq
+      rw [U64w.toBV_toNat, U64b.toBV_toNat]
+      simp [toU64w, U64w.toNat, U64b.toNat]
+      iterate 4 rw [BitVec.toNat_append,
+                    ← Nat.shiftLeft_add_eq_or_of_lt (by omega),
+                    Nat.shiftLeft_eq]
+      omega
+
+    /-- `toU64w` preserves the underlying natural number. -/
+    @[simp]
+    lemma toU64w_toNat {b : U64b} : (toU64w b).toNat = b.toNat := by
+      rw [← U64w.toBV_toNat, toU64w_toBV, U64b.toBV_toNat]
+
+    /-- Round-trip: byte view → limb view → byte view recovers original. -/
+    @[simp]
+    lemma toU64w_toU64b {b : U64b} : U64w.toU64b (toU64w b) = b := by
+      apply U64b.toBV_inj
+      rw [U64w.toU64b_toBV, toU64w_toBV]
+
+  end toU64w
+
+end U64b
+
+namespace U64w
+
+  /-- Round-trip: limb view → byte view → limb view recovers original. -/
+  @[simp]
+  lemma toU64b_toU64w {w : U64w} : U64b.toU64w (toU64b w) = w := by
+    apply U64w.toBV_inj
+    rw [U64b.toU64w_toBV, toU64b_toBV]
+
+end U64w
