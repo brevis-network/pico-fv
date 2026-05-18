@@ -426,10 +426,7 @@ namespace RV64IM
 
     /-- Pure part of `execute_MULW` (RV64-only) -/
     def execute_MULW_pure (op1 : BitVec 32) (op2 : BitVec 32) : BitVec 64 :=
-      let rs1_int := BitVec.toInt op1
-      let rs2_int := BitVec.toInt op2
-      let result32 : BitVec 32 := to_bits_truncate (l := 32) (rs1_int * rs2_int)
-      sign_extend (m := 64) result32
+      (op1 * op2).signExtend 64
 
     /-- `execute_MULW` with isolated pure part -/
     def execute_MULW' (rs2 : regidx) (rs1 : regidx) (rd : regidx) : SailM ExecutionResult := do
@@ -449,6 +446,32 @@ namespace RV64IM
       refine bind_congr ?_; intro r1
       refine bind_congr ?_; intro r2
       simp [execute_MULW_pure]
+      suffices :
+        BitVec.signExtend 64 (to_bits_truncate ((r1.toNat : ℤ).bmod 4294967296 * (r2.toNat : ℤ).bmod 4294967296)) =
+        BitVec.signExtend 64 (BitVec.setWidth 32 r1 * BitVec.setWidth 32 r2)
+      . congr 1
+      . simp [← BitVec.toInt_inj, to_bits_truncate, Sail.get_slice_int]
+        simp [BitVec.toInt_signExtend_of_le]
+        simp [Int.bmod_def]
+        have eq_prod :
+          (r1.toNat : ℤ) * (r2.toNat : ℤ) % 4294967296 =
+            (((r1.toNat : ℤ) % 4294967296) * ((r2.toNat : ℤ) % 4294967296)) % 4294967296
+          := by apply Int.mul_emod
+        simp [eq_prod]
+        obtain ⟨ x, y, eq_x, eq_y ⟩ :
+          ∃ x y, (r1.toNat : ℤ) % 4294967296 = x ∧ (r2.toNat : ℤ) % 4294967296 = y
+          := by simp
+        simp [eq_x, eq_y]
+        by_cases hxz : x = 0
+        . simp_all
+        . by_cases hyz : y = 0
+          . simp_all
+          . obtain ⟨ lb_x, ub_x, lb_y, ub_y ⟩ :
+              0 < x ∧ x < 4294967296 ∧ 0 < y ∧ y < 4294967296
+              := by grind
+            clear eq_x eq_y eq_prod r1 r2 rs2 rs1 rd
+            simp [BitVec.ofNat]; rw [max_eq_left (by omega)]; simp [Int.bmod_def]
+            split_ifs <;> ring_nf at * <;> omega
 
   end MULW
 

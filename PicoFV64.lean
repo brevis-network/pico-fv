@@ -71,6 +71,14 @@ import PicoFV.RV64IM.Constraints.SubwGadget
 import PicoFV.RV64IM.Constraints.SubwChip
 import PicoFV.RV64IM.Constraints.BitwiseChip
 import PicoFV.RV64IM.Constraints.U16MSBGadget
+import PicoFV.RV64IM.Constraints.LtWordU16Gadget
+import PicoFV.RV64IM.Constraints.LtSignedGadget
+import PicoFV.RV64IM.Constraints.IsZeroGadget
+import PicoFV.RV64IM.Constraints.IsZeroWordGadget
+import PicoFV.RV64IM.Constraints.IsEqualWordGadget
+import PicoFV.RV64IM.Constraints.U16ToU8GadgetSafe
+import PicoFV.RV64IM.Constraints.MulGadget
+import PicoFV.RV64IM.Constraints.MulChip
 
 -- Spec (semantic specifications)
 import PicoFV.RV64IM.Spec.AddGadget
@@ -83,3 +91,12 @@ import PicoFV.RV64IM.Spec.SubwGadget
 import PicoFV.RV64IM.Spec.SubwChip
 import PicoFV.RV64IM.Spec.BitwiseChip
 import PicoFV.RV64IM.Spec.U16MSBGadget
+import PicoFV.RV64IM.Spec.LtWordU16Gadget
+import PicoFV.RV64IM.Spec.LtSignedGadget
+import PicoFV.RV64IM.Spec.IsZeroGadget
+import PicoFV.RV64IM.Spec.IsZeroWordGadget
+import PicoFV.RV64IM.Spec.IsEqualWordGadget
+import PicoFV.RV64IM.Spec.U16ToU8GadgetSafe
+import PicoFV.RV64IM.Spec.MulGadgetCore
+import PicoFV.RV64IM.Spec.MulGadget
+import PicoFV.RV64IM.Spec.MulChip

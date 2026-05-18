@@ -2,6 +2,7 @@ import PicoFV.Fundamentals.Core
 
 @[reducible] def U32b := Vector (BitVec 8) 4
 @[reducible] def U64b := Vector (BitVec 8) 8
+@[reducible] def U128b := Vector (BitVec 8) 16
 @[reducible] def U32w := Vector (BitVec 16) 2
 @[reducible] def U64w := Vector (BitVec 16) 4
 @[reducible] def U128w := Vector (BitVec 16) 8
@@ -1390,6 +1391,17 @@ namespace U64w
       rw [U32w.destruct w]
       rfl
 
+    /-- Reshape `(U64w.toBV w).setWidth 32` into the `U32w.toBV` of the
+        first two limbs — the reverse-direction sibling of `contract_toBV`.
+        Useful when a spec speaks of `b.setWidth 32` (e.g. the W-variant
+        opcodes in `ALUBus.Spec`) but the chip witnesses are exposed
+        as a u16-limb pair `#v[w[0], w[1]]`. -/
+    @[simp]
+    lemma setWidth_32_eq_low_U32w (w : U64w) :
+      (w.toBV).setWidth 32 = U32w.toBV #v[w[0], w[1]]
+    := by
+      rw [← contract_toBV]; rfl
+
   end contract
 
 end U64w
@@ -1436,6 +1448,11 @@ namespace U64w
     lemma toU64b_toNat {w : U64w} : (toU64b w).toNat = w.toNat := by
       rw [← U64b.toBV_toNat, toU64b_toBV, U64w.toBV_toNat]
 
+    /-- `toU64b` preserves the underlying signed integer. -/
+    @[simp]
+    lemma toU64b_toInt {w : U64w} : (toU64b w).toInt = w.toInt := by
+      rw [← U64b.toBV_toInt, toU64b_toBV, U64w.toBV_toInt]
+
     lemma toU64b_from_split {b0 b1 b2 b3 b4 b5 b6 b7 : BitVec 8} :
       (toU64b #v[b1 ++ b0, b3 ++ b2, b5 ++ b4, b7 ++ b6]).toBV =
       U64b.toBV #v[b0, b1, b2, b3, b4, b5, b6, b7]
@@ -1472,6 +1489,11 @@ namespace U64b
     lemma toU64w_toNat {b : U64b} : (toU64w b).toNat = b.toNat := by
       rw [← U64w.toBV_toNat, toU64w_toBV, U64b.toBV_toNat]
 
+    /-- `toU64w` preserves the underlying signed integer. -/
+    @[simp]
+    lemma toU64w_toInt {b : U64b} : (toU64w b).toInt = b.toInt := by
+      rw [← U64w.toBV_toInt, toU64w_toBV, U64b.toBV_toInt]
+
     /-- Round-trip: byte view → limb view → byte view recovers original. -/
     @[simp]
     lemma toU64w_toU64b {b : U64b} : U64w.toU64b (toU64w b) = b := by
@@ -1491,3 +1513,597 @@ namespace U64w
     rw [U64b.toU64w_toBV, toU64b_toBV]
 
 end U64w
+
+namespace U128b
+
+  /-- `U128b` as a vector of its constituents -/
+  lemma destruct (x : U128b)
+  : x = #v[ x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7],
+            x[8], x[9], x[10], x[11], x[12], x[13], x[14], x[15] ]
+  := Vector.ext fun
+      | 0, _  | 1, _  | 2, _  | 3, _  | 4, _  | 5, _  | 6, _  | 7, _
+      | 8, _  | 9, _  | 10, _ | 11, _ | 12, _ | 13, _ | 14, _ | 15, _ => by simp
+      | n + 16, _ => by omega
+
+  section toBV
+
+    /-- From `U128b` to `BitVec 128` -/
+    @[grind →]
+    def toBV (x : U128b) : BitVec 128 :=
+      x[15] ++ x[14] ++ x[13] ++ x[12] ++ x[11] ++ x[10] ++ x[9] ++ x[8] ++
+      x[7] ++ x[6] ++ x[5] ++ x[4] ++ x[3] ++ x[2] ++ x[1] ++ x[0]
+
+    /-- Injectivity of `toBV` -/
+    @[simp, grind →]
+    lemma toBV_inj {x y : U128b} : x.toBV = y.toBV → x = y := by
+      intro h_eq_bv
+      simp [toBV] at h_eq_bv
+      rw [destruct x, destruct y]
+      grind
+
+  end toBV
+
+  section toNat_fromNat
+
+    /-- From `U128b` to `ℕ`. -/
+    def toNat (x : U128b) : ℕ :=
+      x[0].toNat
+      + x[1].toNat  * 256
+      + x[2].toNat  * 65536
+      + x[3].toNat  * 16777216
+      + x[4].toNat  * 4294967296
+      + x[5].toNat  * 1099511627776
+      + x[6].toNat  * 281474976710656
+      + x[7].toNat  * 72057594037927936
+      + x[8].toNat  * 18446744073709551616
+      + x[9].toNat  * 4722366482869645213696
+      + x[10].toNat * 1208925819614629174706176
+      + x[11].toNat * 309485009821345068724781056
+      + x[12].toNat * 79228162514264337593543950336
+      + x[13].toNat * 20282409603651670423947251286016
+      + x[14].toNat * 5192296858534827628530496329220096
+      + x[15].toNat * 1329227995784915872903807060280344576
+
+    /-- `toNat` compatibility with `toBV` -/
+    @[simp]
+    lemma toBV_toNat {x : U128b} : x.toBV.toNat = x.toNat := by
+      simp [toNat, toBV]
+      iterate 15 rw [BitVec.toNat_append,
+                     ← Nat.shiftLeft_add_eq_or_of_lt (by omega),
+                     Nat.shiftLeft_eq]
+      omega
+
+    /-- Upper bound of `toNat` -/
+    lemma toNat_ub (x : U128b)
+    : x.toNat < 340282366920938463463374607431768211456 := by
+      simp [toNat]; omega
+
+    grind_pattern toBV_toNat => x.toBV.toNat
+    grind_pattern toNat_ub => x.toNat
+
+    /-- Injectivity of `toNat` -/
+    @[simp, grind →]
+    lemma toNat_inj {x y : U128b} : x.toNat = y.toNat → x = y := by
+      rw [← toBV_toNat, ← toBV_toNat, BitVec.toNat_inj]
+      exact toBV_inj
+
+    /-- Reconstructing a `U128b` from a `ℕ` -/
+    def fromNat (n : ℕ) : U128b :=
+      #v[
+        ⟨n % 256, by omega⟩,
+        ⟨n / 256 % 256, by omega⟩,
+        ⟨n / 65536 % 256, by omega⟩,
+        ⟨n / 16777216 % 256, by omega⟩,
+        ⟨n / 4294967296 % 256, by omega⟩,
+        ⟨n / 1099511627776 % 256, by omega⟩,
+        ⟨n / 281474976710656 % 256, by omega⟩,
+        ⟨n / 72057594037927936 % 256, by omega⟩,
+        ⟨n / 18446744073709551616 % 256, by omega⟩,
+        ⟨n / 4722366482869645213696 % 256, by omega⟩,
+        ⟨n / 1208925819614629174706176 % 256, by omega⟩,
+        ⟨n / 309485009821345068724781056 % 256, by omega⟩,
+        ⟨n / 79228162514264337593543950336 % 256, by omega⟩,
+        ⟨n / 20282409603651670423947251286016 % 256, by omega⟩,
+        ⟨n / 5192296858534827628530496329220096 % 256, by omega⟩,
+        ⟨n / 1329227995784915872903807060280344576 % 256, by omega⟩
+      ]
+
+    /-- `fromNat`-`toNat` invertibility -/
+    lemma fromNat_toNat {x : U128b} : fromNat x.toNat = x := by
+      rw [destruct x]; simp [fromNat, toNat]
+      iterate 16 rw [← BitVec.toNat_inj]
+      split_ands
+      all_goals
+        rw [BitVec.toNat_ofFin]; simp; omega
+
+    /-- `toNat`-`fromNat` invertibility -/
+    lemma toNat_fromNat {n : ℕ}
+        (_ : n < 340282366920938463463374607431768211456) :
+        (fromNat n).toNat = n := by
+      simp [fromNat, toNat]; omega
+
+  end toNat_fromNat
+
+  section negative
+
+    /-- Negativity -/
+    @[grind →]
+    def negative (x : U128b) :=
+      ¬ (2 * x.toNat < 340282366920938463463374607431768211456)
+    instance : Decidable (negative x) := by unfold negative; infer_instance
+
+    /-- `msb` is `negative` -/
+    @[simp]
+    lemma toBV_msb_negative {x : U128b} : x.toBV.msb = x.negative := by grind
+
+    /-- `msb` of top byte is the same as `negative` -/
+    @[simp] lemma msb_15_negative {x : U128b} : x[15].msb = x.negative := by
+      simp [← toBV_msb_negative, U128b.toBV]
+      repeat (rw [BitVec.msb_append]; simp)
+
+    grind_pattern toBV_msb_negative => x.toBV.msb
+    grind_pattern msb_15_negative => x[15].msb
+
+  end negative
+
+  section toInt_fromInt
+
+    attribute [local grind →] BitVec.toInt
+
+    /-- From `U128b` to `ℤ` -/
+    @[grind →]
+    def toInt (x : U128b) : ℤ :=
+      x.toNat - (if x.negative then 340282366920938463463374607431768211456 else 0)
+
+    /-- `toBV` compatibility with `toInt` -/
+    @[simp]
+    lemma toBV_toInt {x : U128b} : x.toBV.toInt = x.toInt := by
+      simp [toInt]; split_ifs <;> grind
+
+    /-- Range of `toInt` -/
+    lemma toInt_range (x : U128b) :
+      -170141183460469231731687303715884105728 ≤ x.toInt ∧
+      x.toInt < 170141183460469231731687303715884105728 := by
+      simp [toInt]; split_ifs <;> grind
+
+    lemma toInt_bmod_eq {x : U128b} :
+      x.toInt.bmod 340282366920938463463374607431768211456 = x.toInt
+    := by
+      have := toInt_range x
+      rw [Int.bmod_eq_of_le this.1 this.2]
+
+    grind_pattern toBV_toInt => x.toBV.toInt
+    grind_pattern toInt_range => x.toInt
+
+    /-- Injectivity of `toInt` -/
+    @[simp, grind →]
+    lemma toInt_inj {x y : U128b} : x.toInt = y.toInt → x = y := by
+      rw [← toBV_toInt, ← toBV_toInt, BitVec.toInt_inj]
+      exact toBV_inj
+
+    /-- `negative` in terms of `toInt` -/
+    lemma negative_toInt {x : U128b} : negative x ↔ ¬ 0 ≤ x.toInt := by
+      simp [toInt]; split_ifs <;> grind
+
+    /-- not `negative` in terms of `toInt` -/
+    lemma not_negative_toInt {x : U128b} : ¬ negative x ↔ 0 ≤ x.toInt := by
+      simp [toInt]; split_ifs <;> grind
+
+    /-- Reconstructing a `U128b` from an `ℤ` -/
+    def fromInt (z : ℤ) : U128b :=
+      let y := (z + if z < 0 then 340282366920938463463374607431768211456 else 0).toNat
+      #v[
+        ⟨y % 256, by omega⟩,
+        ⟨y / 256 % 256, by omega⟩,
+        ⟨y / 65536 % 256, by omega⟩,
+        ⟨y / 16777216 % 256, by omega⟩,
+        ⟨y / 4294967296 % 256, by omega⟩,
+        ⟨y / 1099511627776 % 256, by omega⟩,
+        ⟨y / 281474976710656 % 256, by omega⟩,
+        ⟨y / 72057594037927936 % 256, by omega⟩,
+        ⟨y / 18446744073709551616 % 256, by omega⟩,
+        ⟨y / 4722366482869645213696 % 256, by omega⟩,
+        ⟨y / 1208925819614629174706176 % 256, by omega⟩,
+        ⟨y / 309485009821345068724781056 % 256, by omega⟩,
+        ⟨y / 79228162514264337593543950336 % 256, by omega⟩,
+        ⟨y / 20282409603651670423947251286016 % 256, by omega⟩,
+        ⟨y / 5192296858534827628530496329220096 % 256, by omega⟩,
+        ⟨y / 1329227995784915872903807060280344576 % 256, by omega⟩
+      ]
+
+    /-- `fromInt`-`toInt` invertibility -/
+    @[simp]
+    lemma fromInt_toInt {x : U128b} : fromInt x.toInt = x := by
+      rw [toInt]; simp [negative]; split_ifs with neg_x
+      all_goals
+        simp [fromInt]; simp [toNat] at *
+        split_ifs with neg <;> try omega
+        conv => rhs; rw [destruct x]
+        simp; iterate 16 rw [← BitVec.toNat_inj]
+        split_ands
+        all_goals
+          rw [BitVec.toNat_ofFin]; simp
+          repeat rw [Int.toNat_add (by positivity) (by positivity)]
+          repeat rw [Int.toNat_mul (by positivity) (by positivity)]
+          simp; omega
+
+    /-- `toInt`-`fromInt` invertibility -/
+    lemma toInt_fromInt {z : ℤ}
+        (_ : -170141183460469231731687303715884105728 ≤ z)
+        (_ : z < 170141183460469231731687303715884105727) :
+        (fromInt z).toInt = z := by
+      simp [fromInt, toInt, toNat]; split_ifs with neg_z
+      . rw [if_pos] <;> [ skip; simp [negative, toNat] ] <;> omega
+      . rw [if_neg] <;> [ skip; simp [negative, toNat] ] <;> omega
+
+  end toInt_fromInt
+
+  section extractLsb
+
+    /-- Low 64 bits of a 16-byte `U128b` are the first 8 bytes (as a `U64b`). -/
+    @[simp]
+    lemma extractLsb_low_64 (x : U128b)
+    : BitVec.extractLsb 63 0 x.toBV =
+        U64b.toBV #v[x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]]
+    := by
+      simp [← BitVec.toNat_inj, toNat, U64b.toNat]
+      have := U64b.toNat_ub #v[x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]]
+      simp [U64b.toNat] at this
+      omega
+
+    /-- High 64 bits of a 16-byte `U128b` are the last 8 bytes (as a `U64b`). -/
+    @[simp]
+    lemma extractLsb_high_64 (x : U128b)
+    : BitVec.extractLsb 127 64 x.toBV =
+        U64b.toBV #v[x[8], x[9], x[10], x[11], x[12], x[13], x[14], x[15]]
+    := by
+      simp [← BitVec.toNat_inj, toNat, U64b.toNat]
+      omega
+
+    /-- Low 32 bits of a 16-byte `U128b` are the first 4 bytes (as a `U32b`). -/
+    @[simp]
+    lemma extractLsb_low_32 (x : U128b)
+    : BitVec.extractLsb 31 0 x.toBV =
+        U32b.toBV #v[x[0], x[1], x[2], x[3]]
+    := by
+      simp [← BitVec.toNat_inj, toNat, U32b.toNat]
+      have := U32b.toNat_ub #v[x[0], x[1], x[2], x[3]]
+      simp [U32b.toNat] at this
+      omega
+
+  end extractLsb
+
+  section isolation
+
+    @[simp]
+    lemma isolate_byte_0
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] &&& 0xFF) : BitVec 8) = a
+    := by
+      simp [toNat]; bv_decide
+
+    @[simp]
+    lemma isolate_byte_1
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 8 &&& 0xFF) : BitVec 8) = b
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (b.toNat + c.toNat * 256 + d.toNat * 65536 + e.toNat * 16777216
+              + f.toNat * 4294967296 + g.toNat * 1099511627776
+              + h.toNat * 281474976710656 + i.toNat * 72057594037927936
+              + j.toNat * 18446744073709551616
+              + k.toNat * 4722366482869645213696
+              + l.toNat * 1208925819614629174706176
+              + m.toNat * 309485009821345068724781056
+              + n.toNat * 79228162514264337593543950336
+              + o.toNat * 20282409603651670423947251286016
+              + p.toNat * 5192296858534827628530496329220096) % 256 &&& 255
+      . congr; omega
+      . trans b.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_2
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 16 &&& 0xFF) : BitVec 8) = c
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (c.toNat + d.toNat * 256 + e.toNat * 65536 + f.toNat * 16777216
+              + g.toNat * 4294967296 + h.toNat * 1099511627776
+              + i.toNat * 281474976710656 + j.toNat * 72057594037927936
+              + k.toNat * 18446744073709551616
+              + l.toNat * 4722366482869645213696
+              + m.toNat * 1208925819614629174706176
+              + n.toNat * 309485009821345068724781056
+              + o.toNat * 79228162514264337593543950336
+              + p.toNat * 20282409603651670423947251286016) % 256 &&& 255
+      . congr; omega
+      . trans c.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_3
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 24 &&& 0xFF) : BitVec 8) = d
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (d.toNat + e.toNat * 256 + f.toNat * 65536 + g.toNat * 16777216
+              + h.toNat * 4294967296 + i.toNat * 1099511627776
+              + j.toNat * 281474976710656 + k.toNat * 72057594037927936
+              + l.toNat * 18446744073709551616
+              + m.toNat * 4722366482869645213696
+              + n.toNat * 1208925819614629174706176
+              + o.toNat * 309485009821345068724781056
+              + p.toNat * 79228162514264337593543950336) % 256 &&& 255
+      . congr; omega
+      . trans d.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_4
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 32 &&& 0xFF) : BitVec 8) = e
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (e.toNat + f.toNat * 256 + g.toNat * 65536 + h.toNat * 16777216
+              + i.toNat * 4294967296 + j.toNat * 1099511627776
+              + k.toNat * 281474976710656 + l.toNat * 72057594037927936
+              + m.toNat * 18446744073709551616
+              + n.toNat * 4722366482869645213696
+              + o.toNat * 1208925819614629174706176
+              + p.toNat * 309485009821345068724781056) % 256 &&& 255
+      . congr; omega
+      . trans e.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_5
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 40 &&& 0xFF) : BitVec 8) = f
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (f.toNat + g.toNat * 256 + h.toNat * 65536 + i.toNat * 16777216
+              + j.toNat * 4294967296 + k.toNat * 1099511627776
+              + l.toNat * 281474976710656 + m.toNat * 72057594037927936
+              + n.toNat * 18446744073709551616
+              + o.toNat * 4722366482869645213696
+              + p.toNat * 1208925819614629174706176) % 256 &&& 255
+      . congr; omega
+      . trans f.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_6
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 48 &&& 0xFF) : BitVec 8) = g
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (g.toNat + h.toNat * 256 + i.toNat * 65536 + j.toNat * 16777216
+              + k.toNat * 4294967296 + l.toNat * 1099511627776
+              + m.toNat * 281474976710656 + n.toNat * 72057594037927936
+              + o.toNat * 18446744073709551616
+              + p.toNat * 4722366482869645213696) % 256 &&& 255
+      . congr; omega
+      . trans g.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_7
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 56 &&& 0xFF) : BitVec 8) = h
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (h.toNat + i.toNat * 256 + j.toNat * 65536 + k.toNat * 16777216
+              + l.toNat * 4294967296 + m.toNat * 1099511627776
+              + n.toNat * 281474976710656 + o.toNat * 72057594037927936
+              + p.toNat * 18446744073709551616) % 256 &&& 255
+      . congr; omega
+      . trans h.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_8
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 64 &&& 0xFF) : BitVec 8) = i
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (i.toNat + j.toNat * 256 + k.toNat * 65536 + l.toNat * 16777216
+              + m.toNat * 4294967296 + n.toNat * 1099511627776
+              + o.toNat * 281474976710656 + p.toNat * 72057594037927936) % 256 &&& 255
+      . congr; omega
+      . trans i.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_9
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 72 &&& 0xFF) : BitVec 8) = j
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (j.toNat + k.toNat * 256 + l.toNat * 65536 + m.toNat * 16777216
+              + n.toNat * 4294967296 + o.toNat * 1099511627776
+              + p.toNat * 281474976710656) % 256 &&& 255
+      . congr; omega
+      . trans j.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_10
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 80 &&& 0xFF) : BitVec 8) = k
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (k.toNat + l.toNat * 256 + m.toNat * 65536 + n.toNat * 16777216
+              + o.toNat * 4294967296 + p.toNat * 1099511627776) % 256 &&& 255
+      . congr; omega
+      . trans k.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_11
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 88 &&& 0xFF) : BitVec 8) = l
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (l.toNat + m.toNat * 256 + n.toNat * 65536 + o.toNat * 16777216
+              + p.toNat * 4294967296) % 256 &&& 255
+      . congr; omega
+      . trans l.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_12
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 96 &&& 0xFF) : BitVec 8) = m
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (m.toNat + n.toNat * 256 + o.toNat * 65536 + p.toNat * 16777216) % 256 &&& 255
+      . congr; omega
+      . trans m.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_13
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 104 &&& 0xFF) : BitVec 8) = n
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (n.toNat + o.toNat * 256 + p.toNat * 65536) % 256 &&& 255
+      . congr; omega
+      . trans n.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_14
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 112 &&& 0xFF) : BitVec 8) = o
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      simp [Nat.shiftRight_eq_div_pow]
+      trans (o.toNat + p.toNat * 256) % 256 &&& 255
+      . congr; omega
+      . trans o.toNat &&& (255 : BitVec 8).toNat
+        . congr; omega
+        . rw [← BitVec.toNat_and, BitVec.toNat_inj]
+          bv_decide
+
+    @[simp]
+    lemma isolate_byte_15
+    :
+      ((U128b.toNat #v[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] >>> 120) : BitVec 8) = p
+    := by
+      simp [toNat, ← BitVec.toNat_inj]
+      omega
+
+  end isolation
+
+end U128b
+
+namespace U64b
+
+  section extend
+
+    /-- Sign-extender byte for `U64b`. Returns `255` if `with_sign` is on
+        and the value is negative; `0` otherwise. -/
+    @[grind]
+    def ext (w : U64b) (with_sign : Bool) :=
+      if with_sign && w.negative then 255 else 0
+
+    lemma zero_le_ext w with_sign : 0 ≤ ext w with_sign := by grind
+    lemma ext_le_255 w with_sign : ext w with_sign ≤ 255 := by grind
+
+    /-- Extension of an 8-byte word to a 16-byte word. With `with_sign`
+        true, the upper 8 bytes are filled with `255` when the value is
+        negative (and `0` otherwise); with `with_sign` false, the upper
+        bytes are all `0`. This corresponds to MulGadget's effective
+        operand after the `b_sign_extend` / `c_sign_extend` filling. -/
+    def extend (w : U64b) (with_sign : Bool) : U128b :=
+      let e := ext w with_sign
+      #v[ w[0], w[1], w[2], w[3], w[4], w[5], w[6], w[7],
+          e, e, e, e, e, e, e, e ]
+
+    /-- The extension yields the same numeric value as the BitVec
+        extension primitive. -/
+    lemma extend_BitVec_extend {w : U64b} {with_sign : Bool}
+    :
+      (w.extend with_sign).toBV = BitVec.extend w.toBV 128 with_sign
+    := by
+      rcases with_sign <;>
+        simp [extend, BitVec.extend, ext, ← BitVec.toNat_inj]
+      · simp [U128b.toNat, U64b.toNat]
+        omega
+      · rw [BitVec.toNat_signExtend]
+        simp [U64b.toBV_msb_negative]
+        by_cases w.negative
+        all_goals
+          simp_all
+          simp only [toNat, U128b.toNat, Vector.getElem_mk,
+                     List.getElem_toArray, List.getElem_cons_zero,
+                     List.getElem_cons_succ,
+                     BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+          omega
+
+    /-- Zero-extension preserves the natural number. -/
+    @[simp]
+    lemma extend_toNat {w : U64b} : (w.extend false).toNat = w.toNat := by
+      simp [extend, ext, U64b.toNat, U128b.toNat]
+
+    /-- Sign-extension preserves the (signed) integer. -/
+    @[simp]
+    lemma extend_toInt {w : U64b}
+    :
+      (w.extend true).toInt = w.toInt
+    := by
+      simp [extend, ext, U128b.toInt, toInt, U128b.negative, negative,
+            U128b.toNat, toNat]
+      split_ifs <;> simp_all <;> omega
+
+    /-- `toU64b` preserves `extend` -/
+    @[simp]
+    lemma toU64b_extend {w : U64w} : (extend (U64w.toU64b w) sgn).toBV = (U64w.extend w sgn).toBV := by
+      cases sgn
+      . simp [← BitVec.toNat_inj]
+      . simp [← BitVec.toInt_inj]
+
+  end extend
+
+end U64b
