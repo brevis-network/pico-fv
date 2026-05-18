@@ -983,7 +983,6 @@ namespace MulGadget.Spec
                 -- `BitVec.setWidth 32` on `b` / `c` into the u16-limb
                 -- pair `U32w.toBV #v[b_0, b_1]` (resp. `c`) so the
                 -- proof speaks exclusively in chip-native u16 limbs.
-                simp only [U64w.setWidth_32_eq_low_U32w]
                 trans ((U32w.extend #v[BitVec.ofNat 16 ↑(product_0 + product_1 * 256), BitVec.ofNat 16 ↑(product_2 + product_3 * 256)]) true).toBV
                 . -- Chip side: rewrite the chip's 4-limb output
                   --   `U64w.toBV #v[low_0, low_1, msb·65535, msb·65535]`
