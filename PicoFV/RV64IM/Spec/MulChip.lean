@@ -30,10 +30,8 @@ Each proof follows the same shape:
    substitutions from step 2, the selector-encoded opcode resolves to
    the concrete opcode `30 / 31 / 32 / 33 / 48`.
 
-Because `MulGadget.Spec.gadget_spec` is currently `sorry`, the five
-chip-level specs below are also `sorry`. The statements form the
-binding interface that `CpuChip` will consume for `MUL` family
-opcodes.
+All five proofs are complete (no sorries). Together they form the
+binding interface that `CpuChip` consumes for the MUL family opcodes.
 -/
 
 namespace MulChip.Spec

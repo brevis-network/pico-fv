@@ -97,7 +97,6 @@ namespace AddwGadget.Spec
         . simp [← U32w.msb_1_negative, BitVec.msb_eq_decide]
           clear *- h_gadget_wf_asm msb_spec; grind
       . simp [RV64IM.execute_RTYPEW_pure]
-        simp [← U64w.contract_toBV, U64w.contract]
         simp [U32w.extend_BitVec_extend, BitVec.extend]
         congr
         apply BitVec.eq_of_toNat_eq
