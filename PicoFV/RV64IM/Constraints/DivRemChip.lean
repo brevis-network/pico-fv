@@ -179,7 +179,7 @@ namespace DivRemChip.ConstraintsAndBuses
     let b_msb     := air.cols.values.b_msb.msb     row 0
     let rem_msb   := air.cols.values.rem_msb.msb   row 0
     let c_msb     := air.cols.values.c_msb.msb     row 0
-    let _quot_msb := air.cols.values.quot_msb.msb  row 0
+    let q_msb     := air.cols.values.quot_msb.msb  row 0
     let b_neg     := air.cols.values.b_neg     row 0
     let b_neg_not_overflow     := air.cols.values.b_neg_not_overflow     row 0
     let b_not_neg_not_overflow := air.cols.values.b_not_neg_not_overflow row 0
@@ -220,14 +220,14 @@ namespace DivRemChip.ConstraintsAndBuses
     -- ---------------------------------------------------------------------
     (qc_0 - q_0 = 0) ∧
     (qc_1 - q_1 = 0) ∧
-    (is_unsigned_word_operation * (qc_2 - 0)                 = 0) ∧
-    (is_signed_word_operation   * (qc_2 - _quot_msb * 65535) = 0) ∧
-    (is_word_operation          * (q_2  - _quot_msb * 65535) = 0) ∧
-    (is_not_word_operation      * (qc_2 - q_2)               = 0) ∧
-    (is_unsigned_word_operation * (qc_3 - 0)                 = 0) ∧
-    (is_signed_word_operation   * (qc_3 - _quot_msb * 65535) = 0) ∧
-    (is_word_operation          * (q_3  - _quot_msb * 65535) = 0) ∧
-    (is_not_word_operation      * (qc_3 - q_3)               = 0) ∧
+    (is_unsigned_word_operation * (qc_2 - 0)             = 0) ∧
+    (is_signed_word_operation   * (qc_2 - q_msb * 65535) = 0) ∧
+    (is_word_operation          * (q_2  - q_msb * 65535) = 0) ∧
+    (is_not_word_operation      * (qc_2 - q_2)           = 0) ∧
+    (is_unsigned_word_operation * (qc_3 - 0)             = 0) ∧
+    (is_signed_word_operation   * (qc_3 - q_msb * 65535) = 0) ∧
+    (is_word_operation          * (q_3  - q_msb * 65535) = 0) ∧
+    (is_not_word_operation      * (qc_3 - q_3)           = 0) ∧
     -- ---------------------------------------------------------------------
     -- (4) `remainder_comp` setup — mirror of (3) but with `rem_msb` /
     --     `remainder_comp` / `remainder`.

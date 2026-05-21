@@ -12,19 +12,35 @@ import PicoFV.RV64IM.RVSail.Operations
 import PicoFV.RV64IM.RVSail.Opcodes.Opcodes
 
 -- Extracted constraint definitions (from Pico Rust source)
+import PicoFV.RV64IM.Extraction.AddChip
 import PicoFV.RV64IM.Extraction.AddGadget
+import PicoFV.RV64IM.Extraction.AddwChip
+import PicoFV.RV64IM.Extraction.AddwGadget
 import PicoFV.RV64IM.Extraction.Attributes
 import PicoFV.RV64IM.Extraction.BitwiseChip
+import PicoFV.RV64IM.Extraction.BitwiseGadget
+import PicoFV.RV64IM.Extraction.BitwiseU16Gadget
 import PicoFV.RV64IM.Extraction.CpuChip
 import PicoFV.RV64IM.Extraction.DivRemChip
 import PicoFV.RV64IM.Extraction.IsEqualWordGadget
 import PicoFV.RV64IM.Extraction.IsZeroGadget
 import PicoFV.RV64IM.Extraction.IsZeroWordGadget
 import PicoFV.RV64IM.Extraction.LtChip
+import PicoFV.RV64IM.Extraction.LtSignedGadget
+import PicoFV.RV64IM.Extraction.LtUnsignedGadget
+import PicoFV.RV64IM.Extraction.LtWordU16Gadget
 import PicoFV.RV64IM.Extraction.MemoryReadWriteChip
 import PicoFV.RV64IM.Extraction.MulChip
+import PicoFV.RV64IM.Extraction.MulGadget
 import PicoFV.RV64IM.Extraction.SLLChip
 import PicoFV.RV64IM.Extraction.ShiftRightChip
+import PicoFV.RV64IM.Extraction.SubChip
+import PicoFV.RV64IM.Extraction.SubGadget
+import PicoFV.RV64IM.Extraction.SubwChip
+import PicoFV.RV64IM.Extraction.SubwGadget
+import PicoFV.RV64IM.Extraction.U16MSBGadget
+import PicoFV.RV64IM.Extraction.U16ToU8GadgetSafe
+import PicoFV.RV64IM.Extraction.U16ToU8GadgetUnsafe
 
 -- Air wrappers (gadgets)
 import PicoFV.RV64IM.Airs.Attributes
@@ -79,6 +95,7 @@ import PicoFV.RV64IM.Constraints.IsEqualWordGadget
 import PicoFV.RV64IM.Constraints.U16ToU8GadgetSafe
 import PicoFV.RV64IM.Constraints.MulGadget
 import PicoFV.RV64IM.Constraints.MulChip
+import PicoFV.RV64IM.Constraints.DivRemChip
 
 -- Spec (semantic specifications)
 import PicoFV.RV64IM.Spec.AddGadget
@@ -100,3 +117,4 @@ import PicoFV.RV64IM.Spec.U16ToU8GadgetSafe
 import PicoFV.RV64IM.Spec.MulGadgetCore
 import PicoFV.RV64IM.Spec.MulGadget
 import PicoFV.RV64IM.Spec.MulChip
+import PicoFV.RV64IM.Spec.DivRemChip

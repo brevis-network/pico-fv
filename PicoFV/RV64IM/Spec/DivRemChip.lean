@@ -607,6 +607,216 @@ namespace DivRemChip.Spec
                   grind
         exact h_sign
 
+  lemma spec_DIVU_REMU
+    [Field ExtF]
+    (air : Valid_DivRemChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.values.is_real row 0 = 1)
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : AbsConstraints air row)
+    (h_is_divu_remu :
+      air.cols.values.is_divu row 0 + air.cols.values.is_remu row 0 = 1)
+  :
+    ⟨ U64w.toBV #v[air.cols.values.quotient_0  row 0,
+                   air.cols.values.quotient_1  row 0,
+                   air.cols.values.quotient_2  row 0,
+                   air.cols.values.quotient_3  row 0],
+      U64w.toBV #v[air.cols.values.remainder_0 row 0,
+                   air.cols.values.remainder_1 row 0,
+                   air.cols.values.remainder_2 row 0,
+                   air.cols.values.remainder_3 row 0] ⟩ =
+    RV64IM.execute_DIV_REM_pure
+      (U64w.toBV #v[air.cols.values.b_0 row 0, air.cols.values.b_1 row 0,
+                    air.cols.values.b_2 row 0, air.cols.values.b_3 row 0])
+      (U64w.toBV #v[air.cols.values.c_0 row 0, air.cols.values.c_1 row 0,
+                    air.cols.values.c_2 row 0, air.cols.values.c_3 row 0])
+      .DRU
+  := by
+    -- Step 1: Selector exclusivity. The chip's at-most-one constraint
+    -- plus `is_div + is_rem = 1` forces the other six selectors to 0.
+    obtain ⟨b_div, b_divu, b_rem, b_remu, b_divw, b_remw, b_divuw, b_remuw, h_sum⟩
+      := selector_breakdown air row h_constraints
+    have eq_div   : air.cols.values.is_div   row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divu_remu; grind
+    have eq_rem   : air.cols.values.is_rem   row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divu_remu; grind
+    have eq_divw  : air.cols.values.is_divw  row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divu_remu; grind
+    have eq_remw  : air.cols.values.is_remw  row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divu_remu; grind
+    have eq_divuw : air.cols.values.is_divuw row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divu_remu; grind
+    have eq_remuw : air.cols.values.is_remuw row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divu_remu; grind
+    clear b_div b_rem b_divw b_remw b_divuw b_remuw h_sum
+    -- Move to gadget specs
+    have := gadget_specs_pack air row
+    simp only [h_ext, h_wf, h_constraints, h_is_real] at this
+    simp [*] at this; clear h_ext h_wf h_constraints
+    obtain ⟨ h_ext, h_wf, h_constraints, gadget_specs ⟩ := this
+    -- Stabilise h_ext
+    obtain ⟨ ub_b_0, ub_b_1, ub_b_2, ub_b_3, ub_c_0, ub_c_1, ub_c_2, ub_c_3 ⟩ :
+      (air.cols.values.b_0 row 0).val < 65536 ∧ (air.cols.values.b_1 row 0).val < 65536 ∧ (air.cols.values.b_2 row 0).val < 65536 ∧ (air.cols.values.b_3 row 0).val < 65536 ∧
+      (air.cols.values.c_0 row 0).val < 65536 ∧ (air.cols.values.c_1 row 0).val < 65536 ∧ (air.cols.values.c_2 row 0).val < 65536 ∧ (air.cols.values.c_3 row 0).val < 65536
+    := by
+      clear h_wf h_constraints gadget_specs
+      simp [bus_row_ext_asm, ChipExtraBuses] at h_ext; replace h_ext := h_ext.2.2
+      simp [ALUBus.externals, ALUBus.validOpcode, ALUBus.operandsInternal, ALUBus.operandRange, *] at h_ext
+      apply h_ext.2 <;> clear h_ext <;> grind
+    clear h_ext
+    -- Get various upper bounds and equalities
+    obtain ⟨ ub_q_0, ub_q_1, ub_q_2, ub_q_3, ub_r_0, ub_r_1, ub_r_2, ub_r_3,
+             ub_ac_0, ub_ac_1, ub_ac_2, ub_ac_3, ub_ar_0, ub_ar_1, ub_ar_2, ub_ar_3 ⟩ :
+      (air.cols.values.quotient_0 row 0).val < 65536 ∧ (air.cols.values.quotient_1 row 0).val < 65536 ∧ (air.cols.values.quotient_2 row 0).val < 65536 ∧ (air.cols.values.quotient_3 row 0).val < 65536 ∧
+      (air.cols.values.remainder_0 row 0).val < 65536 ∧ (air.cols.values.remainder_1 row 0).val < 65536 ∧ (air.cols.values.remainder_2 row 0).val < 65536 ∧ (air.cols.values.remainder_3 row 0).val < 65536 ∧
+      (air.cols.values.abs_c_0 row 0).val < 65536 ∧ (air.cols.values.abs_c_1 row 0).val < 65536 ∧ (air.cols.values.abs_c_2 row 0).val < 65536 ∧ (air.cols.values.abs_c_3 row 0).val < 65536 ∧
+      (air.cols.values.abs_remainder_0 row 0).val < 65536 ∧ (air.cols.values.abs_remainder_1 row 0).val < 65536 ∧ (air.cols.values.abs_remainder_2 row 0).val < 65536 ∧ (air.cols.values.abs_remainder_3 row 0).val < 65536
+    := by
+      clear gadget_specs
+      simp [bus_row_wf_asm, ChipExtraBuses, ByteBus.Spec, *] at h_wf
+      simp [h_wf]
+    obtain ⟨ eq_rnw, eq_qc_0, eq_qc_1, eq_qc_2, eq_qc_3, eq_rc_0, eq_rc_1, eq_rc_2, eq_rc_3 ⟩ :
+      air.cols.values.is_real_not_word row 0 = 1 ∧
+      air.cols.values.quotient_comp_0 row 0 = air.cols.values.quotient_0 row 0 ∧ air.cols.values.quotient_comp_1 row 0 = air.cols.values.quotient_1 row 0 ∧
+      air.cols.values.quotient_comp_2 row 0 = air.cols.values.quotient_2 row 0 ∧ air.cols.values.quotient_comp_3 row 0 = air.cols.values.quotient_3 row 0 ∧
+      air.cols.values.remainder_comp_0 row 0 = air.cols.values.remainder_0 row 0 ∧ air.cols.values.remainder_comp_1 row 0 = air.cols.values.remainder_1 row 0 ∧
+      air.cols.values.remainder_comp_2 row 0 = air.cols.values.remainder_2 row 0 ∧ air.cols.values.remainder_comp_3 row 0 = air.cols.values.remainder_3 row 0
+    := by
+      clear gadget_specs
+      simp [AbsConstraints_NoGadgets, *] at h_constraints
+      simp [h_constraints]
+    -- Stabilise gadget specifications
+    simp [*] at gadget_specs
+    obtain ⟨ h_mul_lo, h_mul_hi,
+             ⟨ b_b_overflow, h_b_overflow ⟩, ⟨ b_c_overflow, h_c_overflow ⟩, ⟨ b_c_zero, h_c_zero ⟩,
+             h_abs_c, h_abs_rem, h_rem_check, h_b_msb, h_c_msb, h_rem_msb ⟩ := gadget_specs
+    simp [ALUBus.Spec] at h_mul_lo h_mul_hi
+    obtain ⟨ ⟨ ub_cq_0, ub_cq_1, ub_cq_2, ub_cq_3 ⟩, h_op_range, h_mul_lo ⟩ := h_mul_lo; clear h_op_range
+    obtain ⟨ ⟨ ub_cq_4, ub_cq_5, ub_cq_6, ub_cq_7 ⟩, h_op_range, h_mul_hi ⟩ := h_mul_hi; clear h_op_range
+    have mul_spec := RV64IM.combine_MUL_MULHU h_mul_lo h_mul_hi; simp at mul_spec; clear h_mul_lo h_mul_hi
+    clear h_abs_rem h_abs_c
+    -- Case : c = 0
+    obtain eq_cz | eq_cz := b_c_zero <;> simp [eq_cz] at h_c_zero; rotate_left
+    . have h_eqz : U64w.toInt #v[0#16, 0#16, 0#16, 0#16] = 0 := by clear *-; decide
+      simp [AbsConstraints_NoGadgets, *] at h_constraints
+      simp [execute_DIV_REM_pure, execute_DIV_REM_pure_int, ← BitVec.toNat_inj]
+      simp [U64w.toNat, *]
+      clear *- ub_b_0 ub_b_1 ub_b_2 ub_b_3
+      omega
+    -- Case: ¬ (c == 0)
+    . set c_BV : U64w := #v[
+        BitVec.ofNat 16 ↑(air.cols.values.c_0 row 0),
+        BitVec.ofNat 16 ↑(air.cols.values.c_1 row 0),
+        BitVec.ofNat 16 ↑(air.cols.values.c_2 row 0),
+        BitVec.ofNat 16 ↑(air.cols.values.c_3 row 0)] with eq_c_BV
+      have h_c_neq_0_bv : ¬ (c_BV.toBV = 0)
+      := by
+        clear *- h_c_zero ub_c_0 ub_c_1 ub_c_2 ub_c_3
+        subst c_BV; intro h_c_bv_zero; apply h_c_zero; clear h_c_zero
+        simp [← BitVec.toNat_inj, U64w.toNat] at h_c_bv_zero
+        grind
+      clear h_c_zero
+      have b_overflow : air.cols.values.is_overflow row 0 = 0 ∨ air.cols.values.is_overflow row 0 = 1
+      := by
+        simp [AbsConstraints_NoGadgets, sub_eq_zero, *] at h_constraints
+        clear *- h_constraints; grind
+      have h_overflow := h_constraints.2.2.2.2.2.2.2.2.2.2.2.2.1
+      simp [*] at h_overflow
+      . set b_BV : U64w := #v[
+          BitVec.ofNat 16 ↑(air.cols.values.b_0 row 0),
+          BitVec.ofNat 16 ↑(air.cols.values.b_1 row 0),
+          BitVec.ofNat 16 ↑(air.cols.values.b_2 row 0),
+          BitVec.ofNat 16 ↑(air.cols.values.b_3 row 0)] with eq_b_BV
+        simp [execute_DIV_REM_pure, execute_DIV_REM_pure_int]
+        set q_BV : U64w := #v[
+          BitVec.ofNat 16 ↑(air.cols.values.quotient_0 row 0),
+          BitVec.ofNat 16 ↑(air.cols.values.quotient_1 row 0),
+          BitVec.ofNat 16 ↑(air.cols.values.quotient_2 row 0),
+          BitVec.ofNat 16 ↑(air.cols.values.quotient_3 row 0)] with eq_q_BV
+        set r_BV : U64w := #v[
+          BitVec.ofNat 16 ↑(air.cols.values.remainder_0 row 0),
+          BitVec.ofNat 16 ↑(air.cols.values.remainder_1 row 0),
+          BitVec.ofNat 16 ↑(air.cols.values.remainder_2 row 0),
+          BitVec.ofNat 16 ↑(air.cols.values.remainder_3 row 0)] with eq_r_BV
+        rw [if_neg (by simp [← BitVec.toNat_inj] at h_c_neq_0_bv; exact h_c_neq_0_bv)]
+        simp [← BitVec.toNat_inj, Int.tdiv_eq_ediv_of_nonneg, Int.tmod_eq_emod_of_nonneg]
+        suffices h_div_mod :
+          b_BV.toNat / c_BV.toNat = q_BV.toNat ∧
+          b_BV.toNat % ↑c_BV.toNat = r_BV.toNat
+        . clear *- h_div_mod
+          rw [Nat.mod_eq_of_lt (b := 18446744073709551616)]
+          . rw [Nat.mod_eq_of_lt (b := 18446744073709551616)]
+            . omega
+            . apply lt_of_eq_of_lt (b := b_BV.toNat % c_BV.toNat)
+              . omega
+              . rw [← U64w.toBV_toNat, ← U64w.toBV_toNat]
+                grind
+          . rw [← U64w.toBV_toNat, ← U64w.toBV_toNat]
+            grind
+        . rw [Nat.div_mod_unique (by clear *- h_c_neq_0_bv; simp [← BitVec.toNat_inj] at h_c_neq_0_bv; omega), eq_comm]
+          obtain ⟨ h_rnw, h_b_neg, h_rem_neg, h_c_neg, h_constraints ⟩ := h_constraints
+          simp [h_is_real, eq_div, eq_rem, eq_divw, eq_remw, eq_divuw, eq_remuw] at h_rnw h_b_neg h_rem_neg h_c_neg
+          have cond_b_eq_qc_plus_r : b_BV.toNat = q_BV.toNat * c_BV.toNat + r_BV.toNat
+          := by
+            have cond_bv :
+              U128w.toBV
+                #v[air.cols.values.b_0 row 0, air.cols.values.b_1 row 0,
+                   air.cols.values.b_2 row 0, air.cols.values.b_3 row 0,
+                   0, 0, 0, 0] =
+              U128w.toBV
+                  #v[air.cols.values.c_times_quotient_0 row 0,
+                     air.cols.values.c_times_quotient_1 row 0,
+                     air.cols.values.c_times_quotient_2 row 0,
+                     air.cols.values.c_times_quotient_3 row 0,
+                     air.cols.values.c_times_quotient_4 row 0,
+                     air.cols.values.c_times_quotient_5 row 0,
+                     air.cols.values.c_times_quotient_6 row 0,
+                     air.cols.values.c_times_quotient_7 row 0] +
+                U128w.toBV
+                  #v[air.cols.values.remainder_0 row 0, air.cols.values.remainder_1 row 0,
+                     air.cols.values.remainder_2 row 0, air.cols.values.remainder_3 row 0,
+                     0, 0, 0, 0]
+            := by
+              replace h_constraints := h_constraints.2.2.2.2.2.2.2.2.2.2.2.2
+              have carries := h_constraints.1
+              simp [h_overflow, h_b_neg, h_rem_neg, eq_rc_0, eq_rc_1, eq_rc_2, eq_rc_3] at carries
+              obtain ⟨ eq_cry_0, eq_cry_1, eq_cry_2, eq_cry_3, eq_cry_4, eq_cry_5, eq_cry_6, eq_cry_7 ⟩ := carries
+              replace h_constraints := h_constraints.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+              obtain ⟨ b_cry_0, b_cry_1, b_cry_2, b_cry_3, b_cry_4, b_cry_5, b_cry_6, b_cry_7, rest ⟩ := h_constraints; clear rest
+              simp [sub_eq_zero] at b_cry_0 b_cry_1 b_cry_2 b_cry_3 b_cry_4 b_cry_5 b_cry_6 b_cry_7
+              have cond_bv :=
+                FKB_add_128 (a4 := 0) (a5 := 0) (a6 := 0) (a7 := 0) (c4 := 0) (c5 := 0) (c6 := 0) (c7 := 0)
+                  ub_b_0 ub_b_1 ub_b_2 ub_b_3 (by simp) (by simp) (by simp) (by simp)
+                  ub_cq_0 ub_cq_1 ub_cq_2 ub_cq_3 ub_cq_4 ub_cq_5 ub_cq_6 ub_cq_7
+                  ub_r_0 ub_r_1 ub_r_2 ub_r_3 (by simp) (by simp) (by simp) (by simp)
+                  (by clear *- eq_cry_0; omega) (by clear *- eq_cry_1; omega) (by clear *- eq_cry_2; omega) (by clear *- eq_cry_3; omega)
+                  (by clear *- eq_cry_4; omega) (by clear *- eq_cry_5; omega) (by clear *- eq_cry_6; omega) (by clear *- eq_cry_7; omega)
+                  b_cry_0 b_cry_1 b_cry_2 b_cry_3 b_cry_4 b_cry_5 b_cry_6 b_cry_7
+              simp at cond_bv; exact cond_bv
+            clear h_constraints
+            have h_b_ext :
+              (#v[air.cols.values.b_0 row 0, air.cols.values.b_1 row 0,
+                  air.cols.values.b_2 row 0, air.cols.values.b_3 row 0,
+                  0, 0, 0, 0] : U128w) = b_BV.extend false
+              := by subst b_BV; simp [U64w.extend, U64w.ext]
+            have h_r_ext :
+              (#v[air.cols.values.remainder_0 row 0, air.cols.values.remainder_1 row 0,
+                  air.cols.values.remainder_2 row 0, air.cols.values.remainder_3 row 0,
+                  0, 0, 0, 0] : U128w) = r_BV.extend false
+              := by subst r_BV; simp [U64w.extend, U64w.ext]
+            rw [h_b_ext, mul_spec, h_r_ext] at cond_bv; clear h_b_ext h_r_ext mul_spec
+            simp [← BitVec.toNat_inj] at cond_bv; rw [cond_bv]
+            apply Nat.mod_eq_of_lt
+            have ub_q : q_BV.toNat < 18446744073709551616 := by clear *-; simp [U64w.toNat]; omega
+            have ub_r : r_BV.toNat < 18446744073709551616 := by clear *-; simp [U64w.toNat]; omega
+            have ub_c : c_BV.toNat < 18446744073709551616 := by clear *-; simp [U64w.toNat]; omega
+            clear *- ub_q ub_r ub_c; nlinarith
+          have cond_lt : r_BV.toNat < c_BV.toNat
+          := by
+            replace h_constraints := h_constraints.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+            simp [*] at h_constraints
+            obtain ⟨ eq_abs_c, eq_abs_rem, eq_m_0, eq_m_1, eq_m_2, eq_m_3, eq_rem_check, h_constraints ⟩ := h_constraints
+            replace h_constraints := h_constraints.2.2.2.2.1
+            simp [eq_rem_check] at h_constraints
+            simp [*] at h_rem_check
+            clear *- h_rem_check; subst r_BV c_BV; exact h_rem_check
+          clear *- cond_b_eq_qc_plus_r cond_lt
+          grind
+
   -- ========================================================================
   -- spec_DIV  (ALU opcode 34): signed 64-bit quotient.
   -- ========================================================================
@@ -628,30 +838,38 @@ namespace DivRemChip.Spec
       (air.cols.values.c_0 row 0) (air.cols.values.c_1 row 0)
       (air.cols.values.c_2 row 0) (air.cols.values.c_3 row 0)
   := by
-    sorry
-
-  -- ========================================================================
-  -- spec_DIVU  (ALU opcode 35): unsigned 64-bit quotient.
-  -- ========================================================================
-
-  lemma spec_DIVU
-    [Field ExtF]
-    (air : Valid_DivRemChip FKB ExtF) (row : ℕ)
-    (h_ext : bus_row_ext_asm (bus_row air row))
-    (h_wf : bus_row_wf_asm (bus_row air row))
-    (h_constraints : AbsConstraints air row)
-    (h_is_real : air.cols.values.is_real row 0 = 1)
-    (h_is_divu : air.cols.values.is_divu row 0 = 1)
-  :
-    ALUBus.Spec 35
-      (air.cols.values.a_0 row 0) (air.cols.values.a_1 row 0)
-      (air.cols.values.a_2 row 0) (air.cols.values.a_3 row 0)
-      (air.cols.values.b_0 row 0) (air.cols.values.b_1 row 0)
-      (air.cols.values.b_2 row 0) (air.cols.values.b_3 row 0)
-      (air.cols.values.c_0 row 0) (air.cols.values.c_1 row 0)
-      (air.cols.values.c_2 row 0) (air.cols.values.c_3 row 0)
-  := by
-    sorry
+    obtain ⟨eq_divu, eq_rem, eq_remu, eq_divw, eq_remw, eq_divuw, eq_remuw⟩
+      := (selector_exclusivity air row h_constraints).1 h_is_div
+    have h_is_div_rem :
+      air.cols.values.is_div row 0 + air.cols.values.is_rem row 0 = 1
+      := by rw [h_is_div, eq_rem]; ring
+    have h_pair := @spec_DIV_REM _ _ air row h_is_real
+    set ext := bus_row_ext_asm (bus_row air row)
+    set wf := bus_row_wf_asm (bus_row air row)
+    simp [h_ext, h_wf, h_constraints, h_is_div_rem] at h_pair
+    have h_aq :
+      air.cols.values.a_0 row 0 = air.cols.values.quotient_0 row 0 ∧
+      air.cols.values.a_1 row 0 = air.cols.values.quotient_1 row 0 ∧
+      air.cols.values.a_2 row 0 = air.cols.values.quotient_2 row 0 ∧
+      air.cols.values.a_3 row 0 = air.cols.values.quotient_3 row 0
+    := by
+      simp [AbsConstraints, h_is_div, eq_divu, eq_rem, eq_remu, eq_divw,
+            eq_remw, eq_divuw, eq_remuw, sub_eq_zero] at h_constraints
+      clear *- h_constraints; aesop
+    have h_q_range :
+      (air.cols.values.quotient_0 row 0).val < 65536 ∧
+      (air.cols.values.quotient_1 row 0).val < 65536 ∧
+      (air.cols.values.quotient_2 row 0).val < 65536 ∧
+      (air.cols.values.quotient_3 row 0).val < 65536
+    := by
+      subst wf
+      simp [bus_row, AbsBuses, ChipExtraBuses, bus_row_wf_asm,
+            ByteBus.Spec, h_is_real, h_is_div, eq_divu, eq_rem,
+            eq_remu, eq_divw, eq_remw, eq_divuw, eq_remuw]
+        at h_wf
+      clear *- h_wf; aesop
+    simp [ALUBus.Spec]
+    grind
 
   -- ========================================================================
   -- spec_REM  (ALU opcode 36): signed 64-bit remainder.
@@ -674,7 +892,92 @@ namespace DivRemChip.Spec
       (air.cols.values.c_0 row 0) (air.cols.values.c_1 row 0)
       (air.cols.values.c_2 row 0) (air.cols.values.c_3 row 0)
   := by
-    sorry
+    obtain ⟨eq_div, eq_divu, eq_remu, eq_divw, eq_remw, eq_divuw, eq_remuw⟩
+      := (selector_exclusivity air row h_constraints).2.2.1 h_is_rem
+    have h_is_div_rem :
+      air.cols.values.is_div row 0 + air.cols.values.is_rem row 0 = 1
+      := by rw [h_is_rem, eq_div]; ring
+    have h_pair := @spec_DIV_REM _ _ air row h_is_real
+    set ext := bus_row_ext_asm (bus_row air row)
+    set wf := bus_row_wf_asm (bus_row air row)
+    simp [h_ext, h_wf, h_constraints, h_is_div_rem] at h_pair
+    have h_ar :
+      air.cols.values.a_0 row 0 = air.cols.values.remainder_0 row 0 ∧
+      air.cols.values.a_1 row 0 = air.cols.values.remainder_1 row 0 ∧
+      air.cols.values.a_2 row 0 = air.cols.values.remainder_2 row 0 ∧
+      air.cols.values.a_3 row 0 = air.cols.values.remainder_3 row 0
+    := by
+      simp [AbsConstraints, h_is_rem, eq_div, eq_divu, eq_remu, eq_divw,
+            eq_remw, eq_divuw, eq_remuw, sub_eq_zero] at h_constraints
+      clear *- h_constraints; aesop
+    have h_r_range :
+      (air.cols.values.remainder_0 row 0).val < 65536 ∧
+      (air.cols.values.remainder_1 row 0).val < 65536 ∧
+      (air.cols.values.remainder_2 row 0).val < 65536 ∧
+      (air.cols.values.remainder_3 row 0).val < 65536
+    := by
+      subst wf
+      simp [bus_row, AbsBuses, ChipExtraBuses, bus_row_wf_asm,
+            ByteBus.Spec, h_is_real, h_is_rem, eq_div, eq_divu,
+            eq_remu, eq_divw, eq_remw, eq_divuw, eq_remuw]
+        at h_wf
+      clear *- h_wf; aesop
+    simp [ALUBus.Spec]
+    grind
+
+  -- ========================================================================
+  -- spec_DIVU  (ALU opcode 35): unsigned 64-bit quotient.
+  -- ========================================================================
+
+  lemma spec_DIVU
+    [Field ExtF]
+    (air : Valid_DivRemChip FKB ExtF) (row : ℕ)
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : AbsConstraints air row)
+    (h_is_real : air.cols.values.is_real row 0 = 1)
+    (h_is_divu : air.cols.values.is_divu row 0 = 1)
+  :
+    ALUBus.Spec 35
+      (air.cols.values.a_0 row 0) (air.cols.values.a_1 row 0)
+      (air.cols.values.a_2 row 0) (air.cols.values.a_3 row 0)
+      (air.cols.values.b_0 row 0) (air.cols.values.b_1 row 0)
+      (air.cols.values.b_2 row 0) (air.cols.values.b_3 row 0)
+      (air.cols.values.c_0 row 0) (air.cols.values.c_1 row 0)
+      (air.cols.values.c_2 row 0) (air.cols.values.c_3 row 0)
+  := by
+    obtain ⟨eq_div, eq_rem, eq_remu, eq_divw, eq_remw, eq_divuw, eq_remuw⟩
+      := (selector_exclusivity air row h_constraints).2.1 h_is_divu
+    have h_is_divu_remu :
+      air.cols.values.is_divu row 0 + air.cols.values.is_remu row 0 = 1
+      := by rw [h_is_divu, eq_remu]; ring
+    have h_pair := @spec_DIVU_REMU _ _ air row h_is_real
+    set ext := bus_row_ext_asm (bus_row air row)
+    set wf := bus_row_wf_asm (bus_row air row)
+    simp [h_ext, h_wf, h_constraints, h_is_divu_remu] at h_pair
+    have h_aq :
+      air.cols.values.a_0 row 0 = air.cols.values.quotient_0 row 0 ∧
+      air.cols.values.a_1 row 0 = air.cols.values.quotient_1 row 0 ∧
+      air.cols.values.a_2 row 0 = air.cols.values.quotient_2 row 0 ∧
+      air.cols.values.a_3 row 0 = air.cols.values.quotient_3 row 0
+    := by
+      simp [AbsConstraints, h_is_divu, eq_div, eq_rem, eq_remu, eq_divw,
+            eq_remw, eq_divuw, eq_remuw, sub_eq_zero] at h_constraints
+      clear *- h_constraints; aesop
+    have h_q_range :
+      (air.cols.values.quotient_0 row 0).val < 65536 ∧
+      (air.cols.values.quotient_1 row 0).val < 65536 ∧
+      (air.cols.values.quotient_2 row 0).val < 65536 ∧
+      (air.cols.values.quotient_3 row 0).val < 65536
+    := by
+      subst wf
+      simp [bus_row, AbsBuses, ChipExtraBuses, bus_row_wf_asm,
+            ByteBus.Spec, h_is_real, h_is_divu, eq_div, eq_rem,
+            eq_remu, eq_divw, eq_remw, eq_divuw, eq_remuw]
+        at h_wf
+      clear *- h_wf; aesop
+    simp [ALUBus.Spec]
+    grind
 
   -- ========================================================================
   -- spec_REMU  (ALU opcode 37): unsigned 64-bit remainder.
@@ -697,8 +1000,38 @@ namespace DivRemChip.Spec
       (air.cols.values.c_0 row 0) (air.cols.values.c_1 row 0)
       (air.cols.values.c_2 row 0) (air.cols.values.c_3 row 0)
   := by
-    -- Same shape as spec_DIVU, projection to the remainder component.
-    sorry
+    obtain ⟨eq_div, eq_divu, eq_rem, eq_divw, eq_remw, eq_divuw, eq_remuw⟩
+      := (selector_exclusivity air row h_constraints).2.2.2.1 h_is_remu
+    have h_is_divu_remu :
+      air.cols.values.is_divu row 0 + air.cols.values.is_remu row 0 = 1
+      := by rw [h_is_remu, eq_divu]; ring
+    have h_pair := @spec_DIVU_REMU _ _ air row h_is_real
+    set ext := bus_row_ext_asm (bus_row air row)
+    set wf := bus_row_wf_asm (bus_row air row)
+    simp [h_ext, h_wf, h_constraints, h_is_divu_remu] at h_pair
+    have h_ar :
+      air.cols.values.a_0 row 0 = air.cols.values.remainder_0 row 0 ∧
+      air.cols.values.a_1 row 0 = air.cols.values.remainder_1 row 0 ∧
+      air.cols.values.a_2 row 0 = air.cols.values.remainder_2 row 0 ∧
+      air.cols.values.a_3 row 0 = air.cols.values.remainder_3 row 0
+    := by
+      simp [AbsConstraints, h_is_remu, eq_div, eq_divu, eq_rem, eq_divw,
+            eq_remw, eq_divuw, eq_remuw, sub_eq_zero] at h_constraints
+      clear *- h_constraints; aesop
+    have h_r_range :
+      (air.cols.values.remainder_0 row 0).val < 65536 ∧
+      (air.cols.values.remainder_1 row 0).val < 65536 ∧
+      (air.cols.values.remainder_2 row 0).val < 65536 ∧
+      (air.cols.values.remainder_3 row 0).val < 65536
+    := by
+      subst wf
+      simp [bus_row, AbsBuses, ChipExtraBuses, bus_row_wf_asm,
+            ByteBus.Spec, h_is_real, h_is_remu, eq_div, eq_divu,
+            eq_rem, eq_divw, eq_remw, eq_divuw, eq_remuw]
+        at h_wf
+      clear *- h_wf; aesop
+    simp [ALUBus.Spec]
+    grind
 
   -- ========================================================================
   -- spec_DIVW  (ALU opcode 49): signed 32-bit quotient, sign-extended.
@@ -724,29 +1057,6 @@ namespace DivRemChip.Spec
     sorry
 
   -- ========================================================================
-  -- spec_DIVUW  (ALU opcode 50): unsigned 32-bit quotient, zero-extended.
-  -- ========================================================================
-
-  lemma spec_DIVUW
-    [Field ExtF]
-    (air : Valid_DivRemChip FKB ExtF) (row : ℕ)
-    (h_ext : bus_row_ext_asm (bus_row air row))
-    (h_wf : bus_row_wf_asm (bus_row air row))
-    (h_constraints : AbsConstraints air row)
-    (h_is_real  : air.cols.values.is_real  row 0 = 1)
-    (h_is_divuw : air.cols.values.is_divuw row 0 = 1)
-  :
-    ALUBus.Spec 50
-      (air.cols.values.a_0 row 0) (air.cols.values.a_1 row 0)
-      (air.cols.values.a_2 row 0) (air.cols.values.a_3 row 0)
-      (air.cols.values.b_0 row 0) (air.cols.values.b_1 row 0)
-      (air.cols.values.b_2 row 0) (air.cols.values.b_3 row 0)
-      (air.cols.values.c_0 row 0) (air.cols.values.c_1 row 0)
-      (air.cols.values.c_2 row 0) (air.cols.values.c_3 row 0)
-  := by
-    sorry
-
-  -- ========================================================================
   -- spec_REMW  (ALU opcode 51): signed 32-bit remainder, sign-extended.
   -- ========================================================================
 
@@ -760,6 +1070,29 @@ namespace DivRemChip.Spec
     (h_is_remw : air.cols.values.is_remw row 0 = 1)
   :
     ALUBus.Spec 51
+      (air.cols.values.a_0 row 0) (air.cols.values.a_1 row 0)
+      (air.cols.values.a_2 row 0) (air.cols.values.a_3 row 0)
+      (air.cols.values.b_0 row 0) (air.cols.values.b_1 row 0)
+      (air.cols.values.b_2 row 0) (air.cols.values.b_3 row 0)
+      (air.cols.values.c_0 row 0) (air.cols.values.c_1 row 0)
+      (air.cols.values.c_2 row 0) (air.cols.values.c_3 row 0)
+  := by
+    sorry
+
+  -- ========================================================================
+  -- spec_DIVUW  (ALU opcode 50): unsigned 32-bit quotient, zero-extended.
+  -- ========================================================================
+
+  lemma spec_DIVUW
+    [Field ExtF]
+    (air : Valid_DivRemChip FKB ExtF) (row : ℕ)
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : AbsConstraints air row)
+    (h_is_real  : air.cols.values.is_real  row 0 = 1)
+    (h_is_divuw : air.cols.values.is_divuw row 0 = 1)
+  :
+    ALUBus.Spec 50
       (air.cols.values.a_0 row 0) (air.cols.values.a_1 row 0)
       (air.cols.values.a_2 row 0) (air.cols.values.a_3 row 0)
       (air.cols.values.b_0 row 0) (air.cols.values.b_1 row 0)
@@ -887,6 +1220,7 @@ namespace DivRemChip.Spec
   :
     bus_row_wf_asrt (bus_row air row)
   := by
+    simp [bus_row_wf_asrt, AbsBuses]
     sorry
 
 end DivRemChip.Spec
