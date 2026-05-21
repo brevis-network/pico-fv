@@ -83,7 +83,7 @@ namespace AddwGadget.Spec
     obtain ⟨ h_gadget_ext_asm, h_ext_msb ⟩ := h_gadget_ext_asm; clear h_gadget_ext_asm
     simp [bus_row_wf_asm, h_is_real, ByteBus.Spec] at h_gadget_wf_asm
     simp [AbsConstraints, sub_eq_zero, h_is_real] at h_gadget_constraints
-    have msb_spec := U16MSBGadget.Spec.gadget_spec is_real _ _ h_ext_msb h_wf_msb (by grind) h_is_real (by tauto)
+    have msb_spec := U16MSBGadget.Spec.gadget_spec is_real _ _ h_wf_msb (by grind) h_is_real (by tauto)
     obtain ⟨ h0, h1, h2, h_cstr_msb ⟩ := h_gadget_constraints
     simp [h_gadget_wf_asm]
     split_ands

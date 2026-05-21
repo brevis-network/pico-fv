@@ -47,34 +47,6 @@ namespace SubwChip.Spec
   set_option maxHeartbeats 1_000_000_000
 
   --
-  -- Externals
-  --
-
-  -- =====================================================================
-  -- Externality assertions for the SubwChip bus row.
-  -- The chip emits only `ByteBus` and `ALUBus` entries. `ByteBus` has no
-  -- chip-external constraints; for `ALUBus`, the externals (opcode-range
-  -- + conditional operand-range for shifts/MUL/DIV/W-variants) don't
-  -- apply when the chip asserts an entry (multiplicity = +is_subw), so
-  -- `ext_assert` is trivially `True`.
-  -- =====================================================================
-
-  lemma ext_asrt
-    [Field ExtF]
-    (air : Valid_SubwChip FKB ExtF)
-    (row : ℕ)
-    (_h_ext_asm : bus_row_ext_asm (bus_row air row))
-    (_h_wf : bus_row_wf_asm (bus_row air row))
-    (h_constraints : SubwChip.Extraction.allHold air row)
-  :
-    bus_row_ext_asrt (bus_row air row)
-  := by
-    have selectors := selector_breakdown air row h_constraints
-    simp [bus_row_ext_asrt, bus_row, SubwChip.AbsBuses, SubwGadget.AbsBuses,
-          U16MSBGadget.AbsBuses]
-    intro h; exfalso; grind
-
-  --
   -- Semantic specification — reuses SubwGadget.Spec.gadget_spec
   --
 
@@ -153,6 +125,34 @@ namespace SubwChip.Spec
     -- For opcode 41, `ALUBus.Spec` reduces to `result_range ∧ a = SUBW`.
     refine ⟨ ⟨ h_v0, h_v1, h_v_ext, h_v_ext ⟩, ?_ ⟩
     exact h_eq
+
+  --
+  -- Externals
+  --
+
+  -- =====================================================================
+  -- Externality assertions for the SubwChip bus row.
+  -- The chip emits only `ByteBus` and `ALUBus` entries. `ByteBus` has no
+  -- chip-external constraints; for `ALUBus`, the externals (opcode-range
+  -- + conditional operand-range for shifts/MUL/DIV/W-variants) don't
+  -- apply when the chip asserts an entry (multiplicity = +is_subw), so
+  -- `ext_assert` is trivially `True`.
+  -- =====================================================================
+
+  lemma ext_asrt
+    [Field ExtF]
+    (air : Valid_SubwChip FKB ExtF)
+    (row : ℕ)
+    (_h_ext_asm : bus_row_ext_asm (bus_row air row))
+    (_h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : SubwChip.Extraction.allHold air row)
+  :
+    bus_row_ext_asrt (bus_row air row)
+  := by
+    have selectors := selector_breakdown air row h_constraints
+    simp [bus_row_ext_asrt, bus_row, SubwChip.AbsBuses, SubwGadget.AbsBuses,
+          U16MSBGadget.AbsBuses]
+    intro h; exfalso; grind
 
   --
   -- Well-formedness — dispatches to `spec` for the single ALU entry

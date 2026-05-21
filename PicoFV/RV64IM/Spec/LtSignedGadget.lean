@@ -97,7 +97,7 @@ namespace LtSignedGadget.Spec
         b_0 b_1 b_2 (b_3 + 0 * 32768 - 65536 * c_msb)
         u16_flags_0 u16_flags_1 u16_flags_2 u16_flags_3
         not_eq_inv comparison_limbs_0 comparison_limbs_1 bit
-        h_ext_lt h_wf_lt h_lt h_is_real
+        h_wf_lt h_lt h_is_real
         ⟨h_a_range.1, h_a_range.2.1, h_a_range.2.2.1, by rw [hb_msb]; simp; exact h_a_range.2.2.2⟩
         ⟨h_b_range.1, h_b_range.2.1, h_b_range.2.2.1, by rw [hc_msb]; simp; exact h_b_range.2.2.2⟩
       obtain ⟨_, h_iff⟩ := h_lt_spec
@@ -110,9 +110,9 @@ namespace LtSignedGadget.Spec
       have h_a3_lt : a_3.val < 65536 := h_a_range.2.2.2
       have h_b3_lt : b_3.val < 65536 := h_b_range.2.2.2
       have h_b_msb_part := U16MSBGadget.Spec.gadget_spec
-        1 a_3 b_msb h_ext_msb1 h_wf_msb1 h_msb1 rfl h_a3_lt
+        1 a_3 b_msb h_wf_msb1 h_msb1 rfl h_a3_lt
       have h_c_msb_part := U16MSBGadget.Spec.gadget_spec
-        1 b_3 c_msb h_ext_msb2 h_wf_msb2 h_msb2 rfl h_b3_lt
+        1 b_3 c_msb h_wf_msb2 h_msb2 rfl h_b3_lt
       -- Range hypotheses for the shifted top limbs
       have h_shifted_a3 : (a_3 + 1 * 32768 - 65536 * b_msb : FKB).val < 65536 := by
         rcases h_b_msb_part with ⟨h, _⟩ | ⟨h, _⟩ <;> subst h <;> grind
@@ -124,7 +124,7 @@ namespace LtSignedGadget.Spec
         b_0 b_1 b_2 (b_3 + 1 * 32768 - 65536 * c_msb)
         u16_flags_0 u16_flags_1 u16_flags_2 u16_flags_3
         not_eq_inv comparison_limbs_0 comparison_limbs_1 bit
-        h_ext_lt h_wf_lt h_lt h_is_real
+        h_wf_lt h_lt h_is_real
         ⟨h_a_range.1, h_a_range.2.1, h_a_range.2.2.1, h_shifted_a3⟩
         ⟨h_b_range.1, h_b_range.2.1, h_b_range.2.2.1, h_shifted_b3⟩
       obtain ⟨_, h_iff⟩ := h_lt_spec

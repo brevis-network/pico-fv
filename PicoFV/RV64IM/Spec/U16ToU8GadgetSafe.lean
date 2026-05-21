@@ -49,10 +49,6 @@ namespace U16ToU8GadgetSafe.Spec
     (is_real
      a_0 a_1 a_2 a_3
      low_bytes_0 low_bytes_1 low_bytes_2 low_bytes_3 : FKB)
-    (_h_gadget_ext_asm :
-      bus_row_ext_asm
-        (U16ToU8GadgetSafe.AbsBuses is_real a_0 a_1 a_2 a_3
-          low_bytes_0 low_bytes_1 low_bytes_2 low_bytes_3))
     (h_gadget_wf_asm :
       bus_row_wf_asm
         (U16ToU8GadgetSafe.AbsBuses is_real a_0 a_1 a_2 a_3

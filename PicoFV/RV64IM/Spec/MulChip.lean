@@ -489,4 +489,75 @@ namespace MulChip.Spec
       at h_gadget_spec
     exact h_gadget_spec
 
+  --
+  -- Externals
+  --
+
+  -- =====================================================================
+  -- Externality assertions for the MulChip bus row.
+  -- The chip emits MulGadget byte-bus entries (all looking, multiplicity
+  -- ≤ 0) plus one chip-own looked ALU entry. Byte bus has no externals
+  -- (`ByteBus`'s `externals := True`); the ALU entry's externals require
+  -- `validOpcode` for the opcode `is_mul·30 + is_mulh·31 + is_mulhu·32 +
+  -- is_mulhsu·33 + is_mulw·48` and (since 30..33 / 48 are all in
+  -- `ALUBus.operandsInternal`) no operand-range obligation.
+  -- =====================================================================
+
+  lemma ext_asrt
+    [Field ExtF]
+    (air : Valid_MulChip FKB ExtF) (row : ℕ)
+    (_h_ext_asm : bus_row_ext_asm (bus_row air row))
+    (_h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : MulChip.Extraction.allHold air row)
+  :
+    bus_row_ext_asrt (bus_row air row)
+  := by
+    have selectors := selector_breakdown air row h_constraints
+    simp [bus_row_ext_asrt, bus_row, MulChip.AbsBuses, MulGadget.AbsBuses,
+          U16ToU8GadgetSafe.AbsBuses]
+    intro h; exfalso; grind
+
+  --
+  -- Well-formedness — dispatches to the active spec_* for the ALU entry
+  --
+
+  -- =====================================================================
+  -- All ByteBus entries have multiplicity `-is_real` or `-is_mulw` ∈
+  -- {0, -1}, never triggering `wf_assert_cond` (= multiplicity 1).
+  -- The single ALU entry has multiplicity `is_real ∈ {0, 1}`; when
+  -- `is_real = 1` exactly one selector is `1` and we dispatch to the
+  -- matching `spec_*`.
+  -- =====================================================================
+
+  lemma wf_asrt
+    [Field ExtF]
+    (air : Valid_MulChip FKB ExtF) (row : ℕ)
+    (h_ext_asm : bus_row_ext_asm (bus_row air row))
+    (h_wf_asm : bus_row_wf_asm (bus_row air row))
+    (h_constraints : MulChip.Extraction.allHold air row)
+  :
+    bus_row_wf_asrt (bus_row air row)
+  := by
+    have selectors := selector_breakdown air row h_constraints
+    simp [bus_row_wf_asrt, bus_row, MulChip.AbsBuses, MulGadget.AbsBuses,
+          U16ToU8GadgetSafe.AbsBuses]
+    refine ⟨?_, ?_⟩
+    -- ALU entry: dispatch to the active spec_*
+    . intro h_sum
+      obtain ⟨hm, hh, hhu, hhsu, hw, _⟩ := selectors
+      rcases hm with hm | hm <;>
+      rcases hh with hh | hh <;>
+      rcases hhu with hhu | hhu <;>
+      rcases hhsu with hhsu | hhsu <;>
+      rcases hw with hw | hw <;>
+      simp [hm, hh, hhu, hhsu, hw] at h_sum ⊢ <;>
+      first
+        | (exact spec_MUL    air row h_ext_asm h_wf_asm h_constraints hm)
+        | (exact spec_MULH   air row h_ext_asm h_wf_asm h_constraints hh)
+        | (exact spec_MULHU  air row h_ext_asm h_wf_asm h_constraints hhu)
+        | (exact spec_MULHSU air row h_ext_asm h_wf_asm h_constraints hhsu)
+        | (exact spec_MULW   air row h_ext_asm h_wf_asm h_constraints hw)
+    -- All ByteBus entries: vacuous (multiplicity ≤ 0 never equals 1)
+    . split_ands <;> intro h <;> exfalso <;> grind
+
 end MulChip.Spec

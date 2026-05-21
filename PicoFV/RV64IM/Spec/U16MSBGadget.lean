@@ -37,8 +37,6 @@ namespace U16MSBGadget.Spec
       exactly bit-15 of `value`. -/
   lemma gadget_spec
     (is_real value msb : FKB)
-    (_h_gadget_ext_asm :
-      bus_row_ext_asm (U16MSBGadget.AbsBuses is_real value msb))
     (h_gadget_wf_asm :
       bus_row_wf_asm (U16MSBGadget.AbsBuses is_real value msb))
     (h_gadget_constraints :

@@ -44,9 +44,6 @@ namespace LtWordU16Gadget.Spec
      not_eq_inv
      comparison_limbs_0 comparison_limbs_1
      bit : FKB)
-    (_h_gadget_ext_asm :
-      bus_row_ext_asm
-        (LtWordU16Gadget.AbsBuses is_real comparison_limbs_0 comparison_limbs_1 bit))
     (h_gadget_wf_asm :
       bus_row_wf_asm
         (LtWordU16Gadget.AbsBuses is_real comparison_limbs_0 comparison_limbs_1 bit))

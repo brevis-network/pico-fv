@@ -15,7 +15,7 @@ set_option linter.unusedVariables false
 
 Common column structures from
 `vm/src/chips/chips/riscv_memory/read_write/columns.rs` at commit
-`1d13964da22c7cf660eb6ee312c9c08ab6f76126`. These are reused across chips
+`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`. These are reused across chips
 (`CpuChip`, `MemoryReadWriteChip`, …).
 
 ```rust

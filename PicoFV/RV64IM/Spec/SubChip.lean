@@ -45,33 +45,6 @@ namespace SubChip.Spec
   set_option maxHeartbeats 1_000_000_000
 
   --
-  -- Externals
-  --
-
-  -- =====================================================================
-  -- Externality assertions for the SubChip bus row.
-  -- The chip emits only `ByteBus` and `ALUBus` entries. `ByteBus` has no
-  -- chip-external constraints; for `ALUBus`, the externals (opcode-range
-  -- + conditional operand-range for shifts/MUL/DIV/W-variants) don't
-  -- apply when the chip asserts an entry (multiplicity = +is_sub), so
-  -- `ext_assert` is trivially `True`.
-  -- =====================================================================
-
-  lemma ext_asrt
-    [Field ExtF]
-    (air : Valid_SubChip FKB ExtF)
-    (row : ℕ)
-    (_h_ext_asm : bus_row_ext_asm (bus_row air row))
-    (_h_wf : bus_row_wf_asm (bus_row air row))
-    (h_constraints : SubChip.Extraction.allHold air row)
-  :
-    bus_row_ext_asrt (bus_row air row)
-  := by
-    have selectors := selector_breakdown air row h_constraints
-    simp [bus_row_ext_asrt, bus_row, SubChip.AbsBuses, SubGadget.AbsBuses]
-    intro h; exfalso; grind
-
-  --
   -- Semantic specification — reuses SubGadget.Spec.gadget_spec
   --
 
@@ -143,7 +116,7 @@ namespace SubChip.Spec
       (air.cols.values.sub_operation.value_1 row 0)
       (air.cols.values.sub_operation.value_2 row 0)
       (air.cols.values.sub_operation.value_3 row 0)
-      h_gadget_ext_asm h_gadget_wf_asm h_gadget_constraints
+      h_gadget_wf_asm h_gadget_constraints
       h_is_sub
       ⟨ h_b0, h_b1, h_b2, h_b3 ⟩
       ⟨ h_c0, h_c1, h_c2, h_c3 ⟩
@@ -153,6 +126,33 @@ namespace SubChip.Spec
     refine ⟨ ⟨ h_v0, h_v1, h_v2, h_v3 ⟩, ?_ ⟩
     simp [RV64IM.execute_RTYPE_pure]
     exact h_eq
+
+  --
+  -- Externals
+  --
+
+  -- =====================================================================
+  -- Externality assertions for the SubChip bus row.
+  -- The chip emits only `ByteBus` and `ALUBus` entries. `ByteBus` has no
+  -- chip-external constraints; for `ALUBus`, the externals (opcode-range
+  -- + conditional operand-range for shifts/MUL/DIV/W-variants) don't
+  -- apply when the chip asserts an entry (multiplicity = +is_sub), so
+  -- `ext_assert` is trivially `True`.
+  -- =====================================================================
+
+  lemma ext_asrt
+    [Field ExtF]
+    (air : Valid_SubChip FKB ExtF)
+    (row : ℕ)
+    (_h_ext_asm : bus_row_ext_asm (bus_row air row))
+    (_h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : SubChip.Extraction.allHold air row)
+  :
+    bus_row_ext_asrt (bus_row air row)
+  := by
+    have selectors := selector_breakdown air row h_constraints
+    simp [bus_row_ext_asrt, bus_row, SubChip.AbsBuses, SubGadget.AbsBuses]
+    intro h; exfalso; grind
 
   --
   -- Well-formedness — dispatches to `spec` for the single ALU entry

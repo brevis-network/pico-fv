@@ -37,9 +37,6 @@ namespace SubGadget.Spec
      b_0 b_1 b_2 b_3
      c_0 c_1 c_2 c_3
      value_0 value_1 value_2 value_3 : FKB)
-    (_h_gadget_ext_asm :
-      bus_row_ext_asm
-        (SubGadget.AbsBuses is_real value_0 value_1 value_2 value_3))
     (h_gadget_wf_asm :
       bus_row_wf_asm
         (SubGadget.AbsBuses is_real value_0 value_1 value_2 value_3))

@@ -1,5 +1,6 @@
 import LeanRV64D
 import PicoFV.Fundamentals.Core
+import PicoFV.Fundamentals.Word
 
 open PreSail
 open LeanRV64D.Functions
@@ -23,6 +24,8 @@ attribute [simp]
 attribute [local simp]
   BitVec.extractLsb
   BitVec.extractLsb'
+
+set_option maxHeartbeats 1_000_000_000
 
 namespace RV64IM
 
@@ -420,6 +423,48 @@ namespace RV64IM
         rw [Int.toNat_mul (by simp) (by simp)]
         simp
 
+  lemma combine_MUL_MULH {pl ph op1 op2 : U64w}
+  :
+    pl.toBV = execute_MUL_pure op1.toBV op2.toBV .MUL →
+    ph.toBV = execute_MUL_pure op1.toBV op2.toBV .MULH →
+      U128w.toBV #v[pl[0], pl[1], pl[2], pl[3], ph[0], ph[1], ph[2], ph[3]] = (op1.extend true).toBV * (op2.extend true).toBV
+  := by
+    simp [U64w.extend_BitVec_extend, BitVec.extend]
+    simp [execute_MUL_pure, -BitVec.extractLsb]
+    intro lo hi
+    have : BitVec.extractLsb 63 0 (op1.toBV.extend 128 false * op2.toBV.extend 128 false) = BitVec.extractLsb 63 0 (op1.toBV.extend 128 true * op2.toBV.extend 128 true) := by simp [BitVec.extend, -BitVec.extractLsb]; bv_decide
+    rw [this] at lo; clear this
+    simp [BitVec.extend, -BitVec.extractLsb] at *
+    set x := BitVec.signExtend 128 op1.toBV * BitVec.signExtend 128 op2.toBV
+    trans BitVec.extractLsb 63 0 x + (BitVec.setWidth 128 (BitVec.extractLsb 127 64 x) <<< 64)
+    . rw [← lo, ← hi]
+      simp [← BitVec.toNat_inj]
+      simp [U128w.toNat, U64w.toNat]
+      simp [Nat.shiftLeft_eq]
+      iterate 2 rw [Nat.mod_eq_of_lt (b := 340282366920938463463374607431768211456) (by omega)]
+      ring_nf
+    . bv_decide
+
+  lemma combine_MUL_MULHU {pl ph op1 op2 : U64w}
+  :
+    pl.toBV = execute_MUL_pure op1.toBV op2.toBV .MUL →
+    ph.toBV = execute_MUL_pure op1.toBV op2.toBV .MULHU →
+      U128w.toBV #v[pl[0], pl[1], pl[2], pl[3], ph[0], ph[1], ph[2], ph[3]] = (op1.extend false).toBV * (op2.extend false).toBV
+  := by
+    simp [U64w.extend_BitVec_extend, BitVec.extend]
+    simp [execute_MUL_pure, -BitVec.extractLsb]
+    intro lo hi
+    simp [BitVec.extend, -BitVec.extractLsb] at *
+    set x := BitVec.setWidth 128 op1.toBV * BitVec.setWidth 128 op2.toBV
+    trans BitVec.extractLsb 63 0 x + (BitVec.setWidth 128 (BitVec.extractLsb 127 64 x) <<< 64)
+    . rw [← lo, ← hi]
+      simp [← BitVec.toNat_inj]
+      simp [U128w.toNat, U64w.toNat]
+      simp [Nat.shiftLeft_eq]
+      iterate 2 rw [Nat.mod_eq_of_lt (b := 340282366920938463463374607431768211456) (by omega)]
+      ring_nf
+    . bv_decide
+
   end MUL
 
   section MULW
@@ -635,29 +680,6 @@ namespace RV64IM
       let ⟨ _, result ⟩ := execute_DIVW_REMW_pure rs1_val rs2_val (if is_unsigned then .DRU else .DRS)
       (wX_bits rd result)
       (pure RETIRE_SUCCESS)
-
-  -- /-- Type quantifiers: k_ex893701_ : Bool -/
-  -- def execute_DIVW (rs2 : regidx) (rs1 : regidx) (rd : regidx) (is_unsigned : Bool) : SailM ExecutionResult := do
-  --   let rs1_bits ← do (pure (Sail.BitVec.extractLsb (← (rX_bits rs1)) 31 0))
-  --   let rs2_bits ← do (pure (Sail.BitVec.extractLsb (← (rX_bits rs2)) 31 0))
-  --   let rs1_int :=
-  --     if (is_unsigned : Bool)
-  --     then (BitVec.toNatInt rs1_bits)
-  --     else (BitVec.toInt rs1_bits)
-  --   let rs2_int :=
-  --     if (is_unsigned : Bool)
-  --     then (BitVec.toNatInt rs2_bits)
-  --     else (BitVec.toInt rs2_bits)
-  --   let quotient :=
-  --     if ((rs2_int == 0) : Bool)
-  --     then (Neg.neg 1)
-  --     else (Int.tdiv rs1_int rs2_int)
-  --   let quotient :=
-  --     if (((not is_unsigned) && (quotient ≥b (2 ^i 31))) : Bool)
-  --     then (Neg.neg (2 ^i 31))
-  --     else quotient
-  --   (wX_bits rd (sign_extend (m := 64) (to_bits_truncate (l := 32) quotient)))
-  --   (pure RETIRE_SUCCESS)
 
     attribute [-simp]
       EuclideanDomain.mod_eq_zero

@@ -448,11 +448,11 @@ namespace MulGadget.Spec
     have h_b_split := U16ToU8GadgetSafe.Spec.gadget_spec
       is_real b_0 b_1 b_2 b_3
       b_lower_byte_0 b_lower_byte_1 b_lower_byte_2 b_lower_byte_3
-      h_b_ext h_b_wf h_is_real
+      h_b_wf h_is_real
     have h_c_split := U16ToU8GadgetSafe.Spec.gadget_spec
       is_real c_0 c_1 c_2 c_3
       c_lower_byte_0 c_lower_byte_1 c_lower_byte_2 c_lower_byte_3
-      h_c_ext h_c_wf h_is_real
+      h_c_wf h_is_real
     -- Decompose the residual byte-bus portion (2 MSB lookups, 1
     -- `product_msb` consistency, 16 × u16 carry-range, 8 × u8-pair
     -- on product bytes) by unfolding `ByteBus.Spec`.

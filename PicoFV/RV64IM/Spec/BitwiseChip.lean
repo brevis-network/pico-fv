@@ -134,25 +134,6 @@ namespace BitwiseChip.Spec
     bv_decide
 
   --
-  -- Externals (vacuous for byte; ALU entry's externals only fire when
-  -- the chip *consumes* an entry — chip emits, so no assertion needed)
-  --
-
-  lemma ext_asrt
-    [Field ExtF]
-    (air : Valid_BitwiseChip FKB ExtF)
-    (row : ℕ)
-    (_h_ext_asm : bus_row_ext_asm (bus_row air row))
-    (_h_wf : bus_row_wf_asm (bus_row air row))
-    (h_constraints : BitwiseChip.Extraction.allHold air row)
-  :
-    bus_row_ext_asrt (bus_row air row)
-  := by
-    have selectors := selector_breakdown air row h_constraints
-    simp [bus_row_ext_asrt, bus_row, Valid_BitwiseValueCols.is_real]
-    intro h; exfalso; grind
-
-  --
   -- spec_XOR — opcode 2 (XOR)
   --
 
@@ -387,6 +368,25 @@ namespace BitwiseChip.Spec
     simp [RV64IM.execute_RTYPE_pure, U64b.toBV]
     repeat rw [BitVec.and_append]
     simp [h_byte_0, h_byte_1, h_byte_2, h_byte_3, h_byte_4, h_byte_5, h_byte_6, h_byte_7]
+
+  --
+  -- Externals (vacuous for byte; ALU entry's externals only fire when
+  -- the chip *consumes* an entry — chip emits, so no assertion needed)
+  --
+
+  lemma ext_asrt
+    [Field ExtF]
+    (air : Valid_BitwiseChip FKB ExtF)
+    (row : ℕ)
+    (_h_ext_asm : bus_row_ext_asm (bus_row air row))
+    (_h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : BitwiseChip.Extraction.allHold air row)
+  :
+    bus_row_ext_asrt (bus_row air row)
+  := by
+    have selectors := selector_breakdown air row h_constraints
+    simp [bus_row_ext_asrt, bus_row, Valid_BitwiseValueCols.is_real]
+    intro h; exfalso; grind
 
   --
   -- wf_asrt — dispatches to spec_XOR/OR/AND

@@ -50,9 +50,6 @@ namespace AddGadget.Spec
     [Field ExtF]
     (air : Valid_AddGadgetAir FKB ExtF)
     (row : ℕ)
-    (_h_ext_asm : bus_row_ext_asm (bus_row air row))
-    (_h_wf : bus_row_wf_asm (bus_row air row))
-    (_h_constraints : AddGadget.Extraction.allHold air row)
   :
     bus_row_ext_asrt (bus_row air row)
   := by
@@ -92,9 +89,6 @@ namespace AddGadget.Spec
      b_0 b_1 b_2 b_3
      c_0 c_1 c_2 c_3
      value_0 value_1 value_2 value_3 : FKB)
-    (_h_gadget_ext_asm :
-      bus_row_ext_asm
-        (AddGadget.AbsBuses is_real value_0 value_1 value_2 value_3))
     (h_gadget_wf_asm :
       bus_row_wf_asm
         (AddGadget.AbsBuses is_real value_0 value_1 value_2 value_3))
@@ -144,7 +138,6 @@ namespace AddGadget.Spec
     [Field ExtF]
     (air : Valid_AddGadgetAir FKB ExtF)
     (row : ℕ)
-    (h_ext_asm : bus_row_ext_asm (bus_row air row))
     (h_wf_asm : bus_row_wf_asm (bus_row air row))
     (h_constraints : AddGadget.Extraction.allHold air row)
     (h_is_real : air.cols.is_real row 0 = 1)
@@ -178,7 +171,7 @@ namespace AddGadget.Spec
           air.cols.c_2 row 0, air.cols.c_3 row 0 ]
   := by
     have h_gadget_constraints := allHold_abs air row h_constraints
-    rw [bus_row_abs] at h_ext_asm h_wf_asm
+    rw [bus_row_abs] at h_wf_asm
     exact gadget_spec
       (air.cols.is_real row 0)
       (air.cols.b_0 row 0) (air.cols.b_1 row 0)
@@ -187,7 +180,7 @@ namespace AddGadget.Spec
       (air.cols.c_2 row 0) (air.cols.c_3 row 0)
       (air.cols.gadget.value_0 row 0) (air.cols.gadget.value_1 row 0)
       (air.cols.gadget.value_2 row 0) (air.cols.gadget.value_3 row 0)
-      h_ext_asm h_wf_asm h_gadget_constraints
+      h_wf_asm h_gadget_constraints
       h_is_real h_b_range h_c_range
 
   --
@@ -206,8 +199,6 @@ namespace AddGadget.Spec
     [Field ExtF]
     (air : Valid_AddGadgetAir FKB ExtF)
     (row : ℕ)
-    (_h_ext_asm : bus_row_ext_asm (bus_row air row))
-    (_h_wf : bus_row_wf_asm (bus_row air row))
     (h_constraints : AddGadget.Extraction.allHold air row)
   :
     bus_row_wf_asrt (bus_row air row)

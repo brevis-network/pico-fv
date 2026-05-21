@@ -46,34 +46,6 @@ namespace AddwChip.Spec
   set_option maxHeartbeats 1_000_000_000
 
   --
-  -- Externals
-  --
-
-  -- =====================================================================
-  -- Externality assertions for the AddwChip bus row.
-  -- The chip emits only `ByteBus` and `ALUBus` entries. `ByteBus` has no
-  -- chip-external constraints; for `ALUBus`, the externals (opcode-range
-  -- + conditional operand-range for shifts/MUL/DIV/W-variants) don't
-  -- apply when the chip asserts an entry (multiplicity = +is_addw), so
-  -- `ext_assert` is trivially `True`.
-  -- =====================================================================
-
-  lemma ext_asrt
-    [Field ExtF]
-    (air : Valid_AddwChip FKB ExtF)
-    (row : ℕ)
-    (_h_ext_asm : bus_row_ext_asm (bus_row air row))
-    (_h_wf : bus_row_wf_asm (bus_row air row))
-    (h_constraints : AddwChip.Extraction.allHold air row)
-  :
-    bus_row_ext_asrt (bus_row air row)
-  := by
-    have selectors := selector_breakdown air row h_constraints
-    simp [bus_row_ext_asrt, bus_row, AddwChip.AbsBuses, AddwGadget.AbsBuses,
-          U16MSBGadget.AbsBuses]
-    intro h; exfalso; grind
-
-  --
   -- Semantic specification — reuses AddwGadget.Spec.gadget_spec
   --
 
@@ -152,6 +124,34 @@ namespace AddwChip.Spec
     -- For opcode 40, `ALUBus.Spec` reduces to `result_range ∧ a = ADDW`.
     refine ⟨ ⟨ h_v0, h_v1, h_v_ext, h_v_ext ⟩, ?_ ⟩
     exact h_eq
+
+  --
+  -- Externals
+  --
+
+  -- =====================================================================
+  -- Externality assertions for the AddwChip bus row.
+  -- The chip emits only `ByteBus` and `ALUBus` entries. `ByteBus` has no
+  -- chip-external constraints; for `ALUBus`, the externals (opcode-range
+  -- + conditional operand-range for shifts/MUL/DIV/W-variants) don't
+  -- apply when the chip asserts an entry (multiplicity = +is_addw), so
+  -- `ext_assert` is trivially `True`.
+  -- =====================================================================
+
+  lemma ext_asrt
+    [Field ExtF]
+    (air : Valid_AddwChip FKB ExtF)
+    (row : ℕ)
+    (_h_ext_asm : bus_row_ext_asm (bus_row air row))
+    (_h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : AddwChip.Extraction.allHold air row)
+  :
+    bus_row_ext_asrt (bus_row air row)
+  := by
+    have selectors := selector_breakdown air row h_constraints
+    simp [bus_row_ext_asrt, bus_row, AddwChip.AbsBuses, AddwGadget.AbsBuses,
+          U16MSBGadget.AbsBuses]
+    intro h; exfalso; grind
 
   --
   -- Well-formedness — dispatches to `spec` for the single ALU entry

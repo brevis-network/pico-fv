@@ -18,7 +18,7 @@ set_option linter.unusedVariables false
 
 Lean formalisation of `BitWiseU16Gadget` from
 `vm/src/chips/gadgets/bitwise_u16.rs` at commit
-`1d13964da22c7cf660eb6ee312c9c08ab6f76126`.
+`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
 
 ```rust
 pub struct BitWiseU16Gadget<T> {
