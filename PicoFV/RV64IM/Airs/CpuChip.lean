@@ -52,7 +52,7 @@ pub struct OpcodeSelectorCols<T> {
 
 pub struct BranchCols<T> { a_eq_b: T, a_gt_b: T, a_lt_b: T }    //  3
 pub struct AuipcCols<T>(PhantomData<T>);                        //  0
-pub struct JumpCols<T>(PhantomData<T>);                         //  0
+pub struct JumpCols<T> { pub jalr_lsb: T }                       //  1
 pub struct EcallCols<T> {
     pub syscall_code_bytes: U16ToU8Gadget<T>,                 //  4
     pub is_enter_unconstrained: IsZeroGadget<T>,              //  2
@@ -156,10 +156,12 @@ This matches `Extraction/CpuChip.lean`.
 -- ============================================================================
 -- OpcodeSpecificCols (36 columns)
 --
--- This is a Rust `union` of BranchCols(3), JumpCols(0), AuipcCols(0),
+-- This is a Rust `union` of BranchCols(3), JumpCols(1), AuipcCols(0),
 -- EcallCols(36); the layout therefore mirrors `EcallCols` (the largest member).
 -- We expose it via 36 generic `specific_<i>` columns; per-variant lemmas in
--- the constraint helper files re-interpret the relevant prefix.
+-- the constraint helper files re-interpret the relevant prefix. For JALR,
+-- the union's first slot (`specific_0`) carries the `jalr_lsb` witness
+-- (bit 0 of `rs1 + imm`).
 -- ============================================================================
 
 #define_subair "OpcodeSpecificCols" using "pico_encapsulation" where

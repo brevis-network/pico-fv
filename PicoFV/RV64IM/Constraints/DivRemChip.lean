@@ -618,6 +618,15 @@ namespace DivRemChip.ConstraintsAndBuses
       (air.cols.values.remainder_lt_gadget.bit row 0)
     ∧
     -- ---------------------------------------------------------------------
+    -- (18b) `LtWordU16Gadget` only enforces `bit ↔ (|rem| < max(|c|, 1))`
+    --       (a consistency oracle); the chip separately pins
+    --       `bit = 1` whenever the gadget fires, which is what actually
+    --       enforces `|remainder| < |c|`. Added in Pico PR #101 at
+    --       commit `0786b8b` after the Lean-side soundness audit.
+    -- ---------------------------------------------------------------------
+    (remainder_check_multiplicity *
+       (air.cols.values.remainder_lt_gadget.bit row 0 - 1) = 0) ∧
+    -- ---------------------------------------------------------------------
     -- (19) `U16MSBGadget`s in two gated modes:
     --        • `is_real_not_word` ⇒ MSB of the top u16 limb (index 3)
     --        • `is_word_operation` ⇒ MSB of the middle u16 limb (index 1)
@@ -841,6 +850,10 @@ namespace DivRemChip.ConstraintsAndBuses
     (abs_rem_alu_event = 1 →
       air.cols.values.rem_neg_gadget.value_0 row 0 = 0 ∧ air.cols.values.rem_neg_gadget.value_1 row 0 = 0 ∧
       air.cols.values.rem_neg_gadget.value_2 row 0 = 0 ∧ air.cols.values.rem_neg_gadget.value_3 row 0 = 0) ∧
+    -- (18b) `bit = 1` pin from Pico PR #101 — closes the LtWordU16Gadget
+    --       soundness gap (gadget only enforces `bit ↔ (a < b)`).
+    (remainder_check_multiplicity = 1 →
+      air.cols.values.remainder_lt_gadget.bit row 0 = 1) ∧
     -- (20) Boolean checks on carry bits + selectors + flags.
     (cy_0 * (cy_0 - 1) = 0) ∧
     (cy_1 * (cy_1 - 1) = 0) ∧
@@ -1676,6 +1689,8 @@ namespace DivRemChip.Interpretations
           eq_arneg0, eq_arneg1, eq_arneg2, eq_arneg3,
           -- (18) LtWordU16Gadget
           h_lt,
+          -- (18b) Enforcing lt
+          h_is_lt,
           -- (19) U16MSBGadget × 6
           h_msb_b3, h_msb_c3, h_msb_rem3,
           h_msb_b1, h_msb_c1, h_msb_rem1,
@@ -1762,7 +1777,7 @@ namespace DivRemChip.Interpretations
               (h_gadget_wf_asm := h_wf_asm.1)
     simp at this
     constructor <;> [ (clear *- this; assumption); clear this]
-    replace h_constraints := h_constraints.2; replace h_ext_asm := h_ext_asm.2; replace h_wf_asm := h_wf_asm.2
+    replace h_constraints := h_constraints.2.2; replace h_ext_asm := h_ext_asm.2; replace h_wf_asm := h_wf_asm.2
     have := U16MSBGadget.Spec.gadget_spec
               (h_gadget_constraints := h_constraints.1)
               (h_gadget_wf_asm := h_wf_asm.1)

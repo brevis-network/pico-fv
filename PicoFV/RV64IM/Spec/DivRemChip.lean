@@ -430,7 +430,7 @@ namespace DivRemChip.Spec
               := by clear *- h_b_msb; grind
             have ub_rem_ext_b : (air.cols.values.rem_neg row 0 * 65535).val < 65536
               := by clear *- h_rem_msb; grind
-            replace h_constraints := h_constraints.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+            replace h_constraints := h_constraints.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
             obtain ⟨ b_cry_0, b_cry_1, b_cry_2, b_cry_3, b_cry_4, b_cry_5, b_cry_6, b_cry_7, rest ⟩ := h_constraints; clear rest
             simp [sub_eq_zero] at b_cry_0 b_cry_1 b_cry_2 b_cry_3 b_cry_4 b_cry_5 b_cry_6 b_cry_7
             exact
@@ -482,12 +482,11 @@ namespace DivRemChip.Spec
             BitVec.ofNat 16 ↑(air.cols.values.abs_remainder_1 row 0),
             BitVec.ofNat 16 ↑(air.cols.values.abs_remainder_2 row 0),
             BitVec.ofNat 16 ↑(air.cols.values.abs_remainder_3 row 0)] with eq_ar_BV
-          have MISSING_LINK : air.cols.values.remainder_lt_gadget.bit row 0 = 1 := by sorry
           have relevant_constraints := h_constraints.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
           simp [*, sub_eq_zero] at relevant_constraints
           obtain ⟨ h_eq_negs, h_rem_z, h_c_neg_abs, h_rem_neg_abs,
                    h_eq_max_0, h_eq_max_1, h_eq_max_2, h_eq_max_3, h_eq_rem_check,
-                   h_abs_c_alu, h_abs_rem_alu, h_c_neg_gadget, h_rem_neg_gadget, rest ⟩ := relevant_constraints; clear rest
+                   h_abs_c_alu, h_abs_rem_alu, h_c_neg_gadget, h_rem_neg_gadget, h_is_lt, rest ⟩ := relevant_constraints; clear rest
           rw [h_abs_c_alu] at h_abs_c h_c_neg_gadget; rw [h_abs_rem_alu] at h_abs_rem h_rem_neg_gadget
           simp [*] at h_rem_check
           suffices h_natAbs : r_BV.toInt.natAbs < c_BV.toInt.natAbs
@@ -607,8 +606,6 @@ namespace DivRemChip.Spec
                   specialize @h_lt |q| |c| (by grind) cond_abs
                   grind
         exact h_sign
-
-#exit
 
   -- ========================================================================
   -- spec_DIV  (ALU opcode 34): signed 64-bit quotient.

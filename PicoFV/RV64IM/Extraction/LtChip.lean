@@ -1,4 +1,4 @@
---Extracted on 2026-5-11 at 15:36:49.421826272 using git commit "22b0aae6321c1f63c72aafd0b506b5f45b91ffb1"
+--Extracted on 2026-5-11 at 15:36:49.421826272 using git commit "0786b8baab6b5f2f32744be1dfc77458fc21a8f2"
 import Mathlib.Data.List.Defs
 
 import LeanZKCircuit_Plonky3.Plonky3.Circuit
@@ -10,7 +10,7 @@ open Plonky3
 set_option linter.all false
 
 namespace LtChip.Extraction
---Num constraints: 30
+--Num constraints: 31
 --Constraints---
 @[extracted_constraint_definition] def constraint_0 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
   ((Circuit.main c (column := 0) (row := row) (rotation := 0)) * ((Circuit.main c (column := 0) (row := row) (rotation := 0)) - 1)) = 0
@@ -72,6 +72,8 @@ namespace LtChip.Extraction
   (Circuit.main c (column := 4) (row := row) (rotation := 0)) = 0
 @[extracted_constraint_definition] def constraint_29 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
   (Circuit.main c (column := 5) (row := row) (rotation := 0)) = 0
+@[extracted_constraint_definition] def constraint_30 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  (((Circuit.main c (column := 0) (row := row) (rotation := 0)) + (Circuit.main c (column := 1) (row := row) (rotation := 0))) * ((Circuit.main c (column := 2) (row := row) (rotation := 0)) - (Circuit.main c (column := 21) (row := row) (rotation := 0)))) = 0
 @[extracted_constraint_definition]
 def constrain_interactions {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) :=
   Circuit.bus c = (List.range (Circuit.last_row c + 1)).flatMap (λ row => [(-((Circuit.main c (column := 0) (row := row) (rotation := 0))), [4, 8, ((2 * (Circuit.main c (column := 9) (row := row) (rotation := 0))) - ((Circuit.main c (column := 22) (row := row) (rotation := 0)) * 65536)), 0, 0, 0]),
@@ -111,7 +113,8 @@ def constraint_list {C : Type → Type → Type} {F ExtF : Type} [Field F] [Fiel
     constraint_26 c row,
     constraint_27 c row,
     constraint_28 c row,
-    constraint_29 c row
+    constraint_29 c row,
+    constraint_30 c row
   ]
 @[constraint_and_interaction_simplification]
 def allHold {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ)
