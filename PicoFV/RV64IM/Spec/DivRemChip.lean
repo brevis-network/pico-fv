@@ -829,7 +829,7 @@ namespace DivRemChip.Spec
     replace h_ext := h_ext.1
     -- h_wf separation
     simp [AbsBuses] at h_wf; have h_rest := h_wf.2
-    simp [bus_row_wf_asm, ByteBus.Spec, h_is_real] at h_rest
+    simp [bus_row_wf_asm, ChipExtraBuses, ByteBus.Spec, h_is_real] at h_rest
     simp [and_assoc] at h_wf; replace h_wf := h_wf.1
     -- constraints separation
     simp [AbsConstraints] at h_constraints
@@ -850,7 +850,7 @@ namespace DivRemChip.Spec
       U16MSBGadget.AbsBuses,
       U16ToU8GadgetSafe.AbsBuses
     ]
-    simp [bus_row_ext_asrt, h_is_real]
+    simp [bus_row_ext_asrt, ChipExtraBuses, h_is_real]
     split_ands <;> intro h_alu <;>
       simp [
         ALUBus.externals,
