@@ -89,6 +89,7 @@ import PicoFV.RV64IM.Constraints.BitwiseChip
 import PicoFV.RV64IM.Constraints.U16MSBGadget
 import PicoFV.RV64IM.Constraints.LtWordU16Gadget
 import PicoFV.RV64IM.Constraints.LtSignedGadget
+import PicoFV.RV64IM.Constraints.LtChip
 import PicoFV.RV64IM.Constraints.IsZeroGadget
 import PicoFV.RV64IM.Constraints.IsZeroWordGadget
 import PicoFV.RV64IM.Constraints.IsEqualWordGadget
@@ -110,6 +111,7 @@ import PicoFV.RV64IM.Spec.BitwiseChip
 import PicoFV.RV64IM.Spec.U16MSBGadget
 import PicoFV.RV64IM.Spec.LtWordU16Gadget
 import PicoFV.RV64IM.Spec.LtSignedGadget
+import PicoFV.RV64IM.Spec.LtChip
 import PicoFV.RV64IM.Spec.IsZeroGadget
 import PicoFV.RV64IM.Spec.IsZeroWordGadget
 import PicoFV.RV64IM.Spec.IsEqualWordGadget
