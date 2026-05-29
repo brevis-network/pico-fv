@@ -370,7 +370,44 @@ namespace SLLChip.Spec
       have : (2^16 : ℕ) = 65536 := by decide
       omega
     -- Case-split on (c_bits_4, c_bits_5) to determine which `shift_u16_? = 1`.
-    sorry
+    rcases h_cb4_b with hcb4 | hcb4 <;> rcases h_cb5_b with hcb5 | hcb5
+    -- Case (0, 0): shift_u16_0 = 1, a_i = limb_result_i.
+    .
+      have hsu1 : air.cols.values.shift_u16_1 row 0 = 0 := by
+        rcases h_su1_sel with h | h
+        . exact h
+        . rw [hcb4, hcb5] at h; exact absurd h (by decide)
+      have hsu2 : air.cols.values.shift_u16_2 row 0 = 0 := by
+        rcases h_su2_sel with h | h
+        . exact h
+        . rw [hcb4, hcb5] at h; exact absurd h (by decide)
+      have hsu3 : air.cols.values.shift_u16_3 row 0 = 0 := by
+        rcases h_su3_sel with h | h
+        . exact h
+        . rw [hcb4, hcb5] at h; exact absurd h (by decide)
+      have hsu0 : air.cols.values.shift_u16_0 row 0 = 1 := by
+        rw [hsu1, hsu2, hsu3] at h_su_sum
+        linear_combination h_su_sum
+      have ha0 : air.cols.values.a_0 row 0 = air.cols.values.limb_result_0 row 0 := by
+        rcases h_su0_a0 with h | h
+        . rw [h] at hsu0; exact absurd hsu0 (by decide)
+        . exact h
+      have ha1 : air.cols.values.a_1 row 0 = air.cols.values.limb_result_1 row 0 := by
+        rcases h_su0_a1 with h | h
+        . rw [h] at hsu0; exact absurd hsu0 (by decide)
+        . exact h
+      have ha2 : air.cols.values.a_2 row 0 = air.cols.values.limb_result_2 row 0 := by
+        rcases h_su0_a2 with h | h
+        . rw [h] at hsu0; exact absurd hsu0 (by decide)
+        . exact h
+      have ha3 : air.cols.values.a_3 row 0 = air.cols.values.limb_result_3 row 0 := by
+        rcases h_su0_a3 with h | h
+        . rw [h] at hsu0; exact absurd hsu0 (by decide)
+        . exact h
+      sorry
+    . sorry
+    . sorry
+    . sorry
 
   --
   -- spec_SLLW — opcode 42 (32-bit left shift, sign-extended)
