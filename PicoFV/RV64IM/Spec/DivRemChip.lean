@@ -35,9 +35,16 @@ witness:
 | `is_rem  = 1`   | 36     | signed   64-bit remainder `b %ₛ c`                    |
 | `is_remu = 1`   | 37     | unsigned 64-bit remainder `b %ᵤ c`                    |
 | `is_divw = 1`   | 49     | signed   32-bit quotient,  sign-extended to 64        |
-| `is_divuw = 1`  | 50     | unsigned 32-bit quotient,  zero-extended to 64        |
+| `is_divuw = 1`  | 50     | unsigned 32-bit quotient,  sign-extended to 64        |
 | `is_remw = 1`   | 51     | signed   32-bit remainder, sign-extended to 64        |
-| `is_remuw = 1`  | 52     | unsigned 32-bit remainder, zero-extended to 64        |
+| `is_remuw = 1`  | 52     | unsigned 32-bit remainder, sign-extended to 64        |
+
+All W-form variants sign-extend their 32-bit result to 64 bits
+(RV64 ISA convention), even for the unsigned `DIVUW`/`REMUW`
+selectors. The chip encodes this via the `U16MSBGadget` on
+`quotient_1` / `remainder_1` (gated by `is_word_operation`,
+added in PR #101 commit `ddd0d96`): `quotient_2 = quotient_3 =
+quot_msb · 0xFFFF` (resp. `remainder_*`).
 
 ## Proof approach (signed grouped `spec_DIV_REM` — proved)
 
@@ -75,26 +82,36 @@ The grouped proof has six phases:
         8 carry-chain equations + `combine_MUL_MULH` lifted through
         `BitVec.toInt_inj`.
      b. **`|r| < |c|`** — uses `LtWordU16Gadget` spec; depends on
-        `remainder_lt_gadget.bit = 1` which is **not enforced by
-        Pico's constraints** (one `sorry`, fixed by adding
-        `builder.when(rem_check_mult).assert_one(bit)` to Pico Rust).
-        The bridge between `ar.toNat`/`ac.toNat` and `|r|.natAbs`/
-        `|c|.natAbs` goes through `U64w.msb_3_negative` +
-        constraint-13 abs-value identities.
+        `remainder_lt_gadget.bit = 1`, pinned by PR #101 commit
+        `0786b8b` (`builder.when(rem_check_mult).assert_one(bit)` in
+        Pico Rust). The bridge between `ar.toNat`/`ac.toNat` and
+        `|r|.natAbs` / `|c|.natAbs` goes through `U64w.msb_3_negative`
+        + constraint-13 abs-value identities.
      c. **`sign(r) = sign(b) ∨ r = 0`** — by-cases on `r = 0`; else
         `Int.split_nzp` (3-way `< 0 / = 0 / > 0`) + sign-consistency
         constraints + the algebraic equation to rule out `b = 0`
         when `r ≠ 0`.
 
-Each individual `spec_DIV` / `spec_REM` is a one-line projection from
-`spec_DIV_REM` (still `sorry`). The unsigned (`spec_DIVU_REMU`) and
-W-window (`spec_DIVW_REMW`, `spec_DIVUW_REMUW`) groupings will follow
-the same shape but with simpler case splits (no overflow for unsigned,
-`U64w.extend false`/`true` + `BitVec.setWidth 32` bridges for word
-variants).
+Each individual `spec_*` is a one-line projection from its
+corresponding paired lemma: `spec_DIV` / `spec_REM` ← `spec_DIV_REM`,
+`spec_DIVU` / `spec_REMU` ← `spec_DIVU_REMU`, `spec_DIVW` /
+`spec_REMW` ← `spec_DIVW_REMW`, `spec_DIVUW` / `spec_REMUW` ←
+`spec_DIVUW_REMUW`. The projection extracts `a = quotient`
+(`div_active = 1` branch) or `a = remainder` (`rem_active = 1`
+branch) from `AbsConstraints`, derives the u16 range on `q` / `r`
+from the byte-bus, and closes `ALUBus.Spec OPCODE` by `grind`.
 
-**Status:** `spec_DIV_REM` proven modulo the `bit = 1` sorry; other
-spec_* lemmas still scaffolded with `sorry`.
+**Status:**
+  * `spec_DIV_REM` — proven (the `bit = 1` Pico-soundness sorry
+    was closed by PR #101 commit `0786b8b`).
+  * `spec_DIVU_REMU` — proven.
+  * `spec_DIVUW_REMUW` — proven.
+  * `spec_DIVW_REMW` — proven.
+  * All eight individual `spec_*` projections (`spec_DIV`, `spec_REM`,
+    `spec_DIVU`, `spec_REMU`, `spec_DIVW`, `spec_REMW`, `spec_DIVUW`,
+    `spec_REMUW`) — proven.
+  * `ext_asrt` — proven.
+  * `wf_asrt` — `sorry` (TODO).
 -/
 
 namespace U32w
@@ -938,6 +955,753 @@ namespace DivRemChip.Spec
           grind
 
   -- ========================================================================
+  -- spec_DIVW_REMW  (paired): both signed 32-bit W selectors at once.
+  -- Result: the chip's `(quotient, remainder)` limbs (sign-extended to
+  -- 64 bits per `q_i = quot_msb · 0xFFFF`, `r_i = rem_msb · 0xFFFF`
+  -- for `i ∈ {2,3}`) equal the pair
+  -- `execute_DIVW_REMW_pure (b.setWidth 32) (c.setWidth 32) .DRS`.
+
+  -- Proof structure mirrors `spec_DIVUW_REMUW` (lower `MulGadget`
+  -- only, 32-bit carry-chain identity), with three substantive
+  -- additions from the signed 64-bit case:
+  --   * **Overflow clamp** — `INT_MIN_32 / -1` is identified via the
+  --     32-bit `IsEqualWordGadget` thunks (`is_overflow_b` /
+  --     `is_overflow_c` gated by `is_word_operation = 1`), and the
+  --     chip clamps `q = b.setWidth 32`, `r = 0` in that case.
+  --   * **Sign reasoning** — `is_signed_type = 1` so `b_neg`,
+  --     `c_neg`, `rem_neg` are nonzero in general; sign-consistency
+  --     (`rem_neg = 1 → b_neg = 1`) and `b_msb` / `r_msb` /
+  --     `c_msb` couplings via the `U16MSBGadget`s on `b_1` / `r_1` /
+  --     `c_1` (gated by `is_word_operation`).
+  --   * **Equation lifted is signed**: `Int.tdiv_tmod_unique_full`
+  --     applies to the 32-bit signed product `b32 = q32 · c32 + r32`
+  --     with `|r32| < |c32|` from the `LtWordU16Gadget` thunk.
+  -- ========================================================================
+
+  lemma spec_DIVW_REMW
+    [Field ExtF]
+    (air : Valid_DivRemChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.values.is_real row 0 = 1)
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : AbsConstraints air row)
+    (h_is_divw_remw :
+      air.cols.values.is_divw row 0 + air.cols.values.is_remw row 0 = 1)
+  :
+    ⟨ U64w.toBV #v[air.cols.values.quotient_0  row 0,
+                   air.cols.values.quotient_1  row 0,
+                   air.cols.values.quotient_2  row 0,
+                   air.cols.values.quotient_3  row 0],
+      U64w.toBV #v[air.cols.values.remainder_0 row 0,
+                   air.cols.values.remainder_1 row 0,
+                   air.cols.values.remainder_2 row 0,
+                   air.cols.values.remainder_3 row 0] ⟩ =
+    RV64IM.execute_DIVW_REMW_pure
+      ((U64w.toBV #v[air.cols.values.b_0 row 0, air.cols.values.b_1 row 0,
+                     air.cols.values.b_2 row 0, air.cols.values.b_3 row 0]).setWidth 32)
+      ((U64w.toBV #v[air.cols.values.c_0 row 0, air.cols.values.c_1 row 0,
+                     air.cols.values.c_2 row 0, air.cols.values.c_3 row 0]).setWidth 32)
+      .DRS
+  := by
+    -- Step 1: Selector cleanup. `is_divw + is_remw = 1` forces the other
+    -- six selectors to 0 via `selector_breakdown` + the exact-one constraint.
+    obtain ⟨b_div, b_divu, b_rem, b_remu, b_divw, b_remw, b_divuw, b_remuw, h_sum⟩
+      := selector_breakdown air row h_constraints
+    have eq_div   : air.cols.values.is_div   row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divw_remw; grind
+    have eq_divu  : air.cols.values.is_divu  row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divw_remw; grind
+    have eq_rem   : air.cols.values.is_rem   row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divw_remw; grind
+    have eq_remu  : air.cols.values.is_remu  row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divw_remw; grind
+    have eq_divuw : air.cols.values.is_divuw row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divw_remw; grind
+    have eq_remuw : air.cols.values.is_remuw row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divw_remw; grind
+    clear b_div b_divu b_rem b_remu b_divuw b_remuw h_sum
+    -- Step 2: Move to gadget specs via `gadget_specs_pack`.
+    have := gadget_specs_pack air row
+    simp only [h_ext, h_wf, h_constraints, h_is_real] at this
+    simp [*] at this; clear h_ext h_wf h_constraints
+    obtain ⟨ h_ext, h_wf, h_constraints, gadget_specs ⟩ := this
+    -- Step 3: Operand bounds on b, c from the chip's ALU bus externals
+    -- (opcodes 49 = DIVW and 51 = REMW are NOT in `operandsInternal`,
+    -- so externals supply the operand range).
+    obtain ⟨ ub_b_0, ub_b_1, ub_b_2, ub_b_3, ub_c_0, ub_c_1, ub_c_2, ub_c_3 ⟩ :
+      (air.cols.values.b_0 row 0).val < 65536 ∧ (air.cols.values.b_1 row 0).val < 65536 ∧ (air.cols.values.b_2 row 0).val < 65536 ∧ (air.cols.values.b_3 row 0).val < 65536 ∧
+      (air.cols.values.c_0 row 0).val < 65536 ∧ (air.cols.values.c_1 row 0).val < 65536 ∧ (air.cols.values.c_2 row 0).val < 65536 ∧ (air.cols.values.c_3 row 0).val < 65536
+    := by
+      clear h_wf h_constraints gadget_specs
+      simp [bus_row_ext_asm, ChipExtraBuses] at h_ext; replace h_ext := h_ext.2.2
+      simp [ALUBus.externals, ALUBus.validOpcode, ALUBus.operandsInternal, ALUBus.operandRange, *] at h_ext
+      apply h_ext.2 <;> clear h_ext <;> grind
+    clear h_ext
+    -- Step 4: u16 bounds on q, r, ac, ar via `ChipExtraBuses`' byte bus.
+    obtain ⟨ ub_q_0, ub_q_1, ub_q_2, ub_q_3, ub_r_0, ub_r_1, ub_r_2, ub_r_3,
+             ub_ac_0, ub_ac_1, ub_ac_2, ub_ac_3, ub_ar_0, ub_ar_1, ub_ar_2, ub_ar_3 ⟩ :
+      (air.cols.values.quotient_0 row 0).val < 65536 ∧ (air.cols.values.quotient_1 row 0).val < 65536 ∧ (air.cols.values.quotient_2 row 0).val < 65536 ∧ (air.cols.values.quotient_3 row 0).val < 65536 ∧
+      (air.cols.values.remainder_0 row 0).val < 65536 ∧ (air.cols.values.remainder_1 row 0).val < 65536 ∧ (air.cols.values.remainder_2 row 0).val < 65536 ∧ (air.cols.values.remainder_3 row 0).val < 65536 ∧
+      (air.cols.values.abs_c_0 row 0).val < 65536 ∧ (air.cols.values.abs_c_1 row 0).val < 65536 ∧ (air.cols.values.abs_c_2 row 0).val < 65536 ∧ (air.cols.values.abs_c_3 row 0).val < 65536 ∧
+      (air.cols.values.abs_remainder_0 row 0).val < 65536 ∧ (air.cols.values.abs_remainder_1 row 0).val < 65536 ∧ (air.cols.values.abs_remainder_2 row 0).val < 65536 ∧ (air.cols.values.abs_remainder_3 row 0).val < 65536
+    := by
+      clear gadget_specs
+      simp [bus_row_wf_asm, ChipExtraBuses, ByteBus.Spec, *] at h_wf
+      simp [h_wf]
+    -- Step 5: From `AbsConstraints_NoGadgets`, derive the signed-W identities.
+    -- Word-op branch fires (`is_word_operation = is_divw + is_remw = 1`),
+    -- signed-word branch fires too (`is_signed_word_operation = 1`,
+    -- `is_signed_type = 1`):
+    --   * `is_real_not_word = 0`,
+    --   * sign pairings collapse to `b_neg = b_msb`, `rem_neg = r_msb`,
+    --     `c_neg = c_msb`,
+    --   * `qc_0 = q_0`, `qc_1 = q_1`,
+    --     `qc_2 = qc_3 = quot_msb · 0xFFFF`,
+    --   * `rc_0 = r_0`, `rc_1 = r_1`,
+    --     `rc_2 = rc_3 = rem_msb · 0xFFFF`,
+    --   * `q_2 = q_3 = quot_msb · 0xFFFF`,
+    --     `r_2 = r_3 = rem_msb · 0xFFFF`,
+    --   * `b_2 = b_3 = b_neg · 0xFFFF` (new b-extension constraint),
+    --   * `c_2 = c_3 = c_neg · 0xFFFF` (c-extension constraint).
+    obtain ⟨ eq_rnw,
+             eq_b_neg_msb, eq_rem_neg_msb, eq_c_neg_msb,
+             eq_qc_0, eq_qc_1, eq_qc_2, eq_qc_3,
+             eq_rc_0, eq_rc_1, eq_rc_2, eq_rc_3,
+             eq_b_2, eq_b_3, eq_c_2, eq_c_3,
+             eq_q_msb_2, eq_q_msb_3, eq_r_msb_2, eq_r_msb_3 ⟩ :
+      air.cols.values.is_real_not_word row 0 = 0 ∧
+      air.cols.values.b_neg   row 0 = air.cols.values.b_msb.msb   row 0 ∧
+      air.cols.values.rem_neg row 0 = air.cols.values.rem_msb.msb row 0 ∧
+      air.cols.values.c_neg   row 0 = air.cols.values.c_msb.msb   row 0 ∧
+      air.cols.values.quotient_comp_0 row 0 = air.cols.values.quotient_0 row 0 ∧
+      air.cols.values.quotient_comp_1 row 0 = air.cols.values.quotient_1 row 0 ∧
+      air.cols.values.quotient_comp_2 row 0 = air.cols.values.quot_msb.msb row 0 * 65535 ∧
+      air.cols.values.quotient_comp_3 row 0 = air.cols.values.quot_msb.msb row 0 * 65535 ∧
+      air.cols.values.remainder_comp_0 row 0 = air.cols.values.remainder_0 row 0 ∧
+      air.cols.values.remainder_comp_1 row 0 = air.cols.values.remainder_1 row 0 ∧
+      air.cols.values.remainder_comp_2 row 0 = air.cols.values.rem_msb.msb row 0 * 65535 ∧
+      air.cols.values.remainder_comp_3 row 0 = air.cols.values.rem_msb.msb row 0 * 65535 ∧
+      air.cols.values.b_2 row 0 = air.cols.values.b_neg row 0 * 65535 ∧
+      air.cols.values.b_3 row 0 = air.cols.values.b_neg row 0 * 65535 ∧
+      air.cols.values.c_2 row 0 = air.cols.values.c_neg row 0 * 65535 ∧
+      air.cols.values.c_3 row 0 = air.cols.values.c_neg row 0 * 65535 ∧
+      air.cols.values.quotient_2  row 0 = air.cols.values.quot_msb.msb row 0 * 65535 ∧
+      air.cols.values.quotient_3  row 0 = air.cols.values.quot_msb.msb row 0 * 65535 ∧
+      air.cols.values.remainder_2 row 0 = air.cols.values.rem_msb.msb  row 0 * 65535 ∧
+      air.cols.values.remainder_3 row 0 = air.cols.values.rem_msb.msb  row 0 * 65535
+    := by
+      clear gadget_specs
+      simp [AbsConstraints_NoGadgets, *] at h_constraints
+      simp [h_constraints]
+    -- Step 6: Stabilise gadget specs. With `is_real = 1`, lower `MulGadget`
+    -- thunk fires. With `is_real_not_word = 0`, the upper `MulGadget`, the
+    -- two 64-bit `IsEqualWord` thunks, and the three 64-bit `U16MSB`
+    -- thunks collapse to `True`. The two 32-bit `IsEqualWord` thunks
+    -- (gated by `is_word_operation = 1`) and the four 32-bit `U16MSB`
+    -- thunks DO fire. The `AddGadget` × 2 and `LtWordU16` thunks remain
+    -- conditional (on `*_event` gates).
+    simp [*] at gadget_specs
+    obtain ⟨ h_mul_lo,
+             ⟨ b_b_overflow_w, h_b_overflow_w ⟩,
+             ⟨ b_c_overflow_w, h_c_overflow_w ⟩,
+             ⟨ b_c_zero, h_c_zero ⟩,
+             h_abs_c, h_abs_rem, h_rem_check,
+             h_b_msb_w, h_c_msb_w, h_rem_msb_w, h_quot_msb_w ⟩
+      := gadget_specs
+    -- Unpack `h_mul_lo : ALUBus.Spec 30 cq_low qc c` into its parts.
+    simp [ALUBus.Spec] at h_mul_lo
+    obtain ⟨ ⟨ ub_cq_0, ub_cq_1, ub_cq_2, ub_cq_3 ⟩, h_op_range, h_mul_lo ⟩
+      := h_mul_lo
+    clear h_op_range
+    -- Step 7: Sign-extension setup. Define `q_BV / r_BV / b_BV / c_BV :
+    -- U32w` as the low 32-bit halves; then prove each chip 64-bit
+    -- column equals the *signed* 64-bit extension of its `U32w`
+    -- counterpart. The U16MSB gadgets on `q_1` / `r_1` / `b_1` / `c_1`
+    -- pin the relevant high-bit, and the chip's `_2`/`_3` columns are
+    -- `*_msb · 0xFFFF` (q, r) or `*_neg · 0xFFFF` (b, c, with
+    -- `*_neg = *_msb` from `eq_*_neg_msb`).
+    set q_BV : U32w := #v[
+      BitVec.ofNat 16 ↑(air.cols.values.quotient_0 row 0),
+      BitVec.ofNat 16 ↑(air.cols.values.quotient_1 row 0)] with eq_q_BV
+    set r_BV : U32w := #v[
+      BitVec.ofNat 16 ↑(air.cols.values.remainder_0 row 0),
+      BitVec.ofNat 16 ↑(air.cols.values.remainder_1 row 0)] with eq_r_BV
+    set b_BV : U32w := #v[
+      BitVec.ofNat 16 ↑(air.cols.values.b_0 row 0),
+      BitVec.ofNat 16 ↑(air.cols.values.b_1 row 0)] with eq_b_BV
+    set c_BV : U32w := #v[
+      BitVec.ofNat 16 ↑(air.cols.values.c_0 row 0),
+      BitVec.ofNat 16 ↑(air.cols.values.c_1 row 0)] with eq_c_BV
+    have h_q_ext_t :
+      U64w.toBV #v[BitVec.ofNat 16 ↑(air.cols.values.quotient_0 row 0), BitVec.ofNat 16 ↑(air.cols.values.quotient_1 row 0),
+                   BitVec.ofNat 16 ↑(air.cols.values.quotient_2 row 0), BitVec.ofNat 16 ↑(air.cols.values.quotient_3 row 0)] =
+        (q_BV.extend true).toBV
+    := by
+      simp [eq_q_msb_2, eq_q_msb_3]
+      subst q_BV; clear *- h_quot_msb_w ub_q_1
+      simp [U32w.extend, U32w.ext]; congr 3; simp
+      simp [← U32w.msb_1_negative, BitVec.msb_eq_decide]
+      grind
+    have h_r_ext_t :
+      U64w.toBV #v[BitVec.ofNat 16 ↑(air.cols.values.remainder_0 row 0), BitVec.ofNat 16 ↑(air.cols.values.remainder_1 row 0),
+                   BitVec.ofNat 16 ↑(air.cols.values.remainder_2 row 0), BitVec.ofNat 16 ↑(air.cols.values.remainder_3 row 0)] =
+        (r_BV.extend true).toBV
+    := by
+      simp [eq_r_msb_2, eq_r_msb_3]
+      subst r_BV; clear *- h_rem_msb_w ub_r_1
+      simp [U32w.extend, U32w.ext]; congr 3; simp
+      simp [← U32w.msb_1_negative, BitVec.msb_eq_decide]
+      grind
+    have h_b_ext_t :
+      U64w.toBV #v[BitVec.ofNat 16 ↑(air.cols.values.b_0 row 0), BitVec.ofNat 16 ↑(air.cols.values.b_1 row 0),
+                   BitVec.ofNat 16 ↑(air.cols.values.b_2 row 0), BitVec.ofNat 16 ↑(air.cols.values.b_3 row 0)] =
+        (b_BV.extend true).toBV
+    := by
+      simp [eq_b_2, eq_b_3, eq_b_neg_msb]
+      subst b_BV; clear *- h_b_msb_w ub_b_1
+      simp [U32w.extend, U32w.ext]; congr 3; simp
+      simp [← U32w.msb_1_negative, BitVec.msb_eq_decide]
+      grind
+    have h_c_ext_t :
+      U64w.toBV #v[BitVec.ofNat 16 ↑(air.cols.values.c_0 row 0), BitVec.ofNat 16 ↑(air.cols.values.c_1 row 0),
+                   BitVec.ofNat 16 ↑(air.cols.values.c_2 row 0), BitVec.ofNat 16 ↑(air.cols.values.c_3 row 0)] =
+        (c_BV.extend true).toBV
+    := by
+      simp [eq_c_2, eq_c_3, eq_c_neg_msb]
+      subst c_BV; clear *- h_c_msb_w ub_c_1
+      simp [U32w.extend, U32w.ext]; congr 3; simp
+      simp [← U32w.msb_1_negative, BitVec.msb_eq_decide]
+      grind
+    -- Rewrite the goal in terms of the `U32w`-extended forms. The
+    -- executor's `BitVec.setWidth 32 (x.extend true).toBV = x.toBV`
+    -- (low 32 bits of a sign-extension is the original).
+    rw [h_q_ext_t, h_r_ext_t, h_b_ext_t, h_c_ext_t]
+    trans execute_DIVW_REMW_pure b_BV.toBV c_BV.toBV drop.DRS; rotate_left
+    . subst b_BV c_BV; simp [U32w.extend]
+    . simp [execute_DIVW_REMW_pure, U32w.extend_BitVec_extend, BitVec.extend]
+      suffices h_int_eq :
+        q_BV.toInt = (execute_DIVW_REMW_pure_int b_BV.toBV c_BV.toBV drop.DRS).1 ∧
+        r_BV.toInt = (execute_DIVW_REMW_pure_int b_BV.toBV c_BV.toBV drop.DRS).2
+      . clear *- h_int_eq
+        have q_range := U32w.toInt_range q_BV; have r_range := U32w.toInt_range r_BV
+        simp [← BitVec.toInt_inj, BitVec.toInt_signExtend_of_le]
+        iterate 2 rw [Int.bmod_eq_of_le (by omega) (by omega)]
+        assumption
+      -- Three-way case split on (c = 0) / overflow / normal.
+      . simp [execute_DIVW_REMW_pure_int]
+        -- Case 1: `is_c_0.result = 1` ⇒ c_lo = 0, DBZ clamp fires.
+        -- Case 2: `is_c_0.result = 0`, then case-split on `is_overflow`:
+        --   2a: `is_overflow = 1` ⇒ b_lo = INT_MIN_32, c_lo = -1, overflow clamp.
+        --   2b: `is_overflow = 0` ⇒ apply `Int.tdiv_tmod_unique_full`
+        --       at 32-bit width on the lower MulGadget identity + LtWordU16
+        --       + sign-consistency.
+        obtain eq_cz | eq_cz := b_c_zero <;> simp [eq_cz] at h_c_zero; rotate_left
+        . -- c = 0: `is_c_0.result = 1`.
+          obtain ⟨ eq_c_0, eq_c_1, eq_c_msb_0 ⟩ := h_c_zero
+          have h_c_zero_int : c_BV.toInt = 0
+          := by
+            subst c_BV
+            clear *- eq_c_0 eq_c_1
+            simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide, U32w.toNat, eq_c_0, eq_c_1]
+          rw [if_pos h_c_zero_int]
+          -- DBZ clamp from `AbsConstraints_NoGadgets` section 13.
+          simp [AbsConstraints_NoGadgets, *] at h_constraints
+          replace h_constraints := h_constraints.2.2.2.2.2.2.2.2.2.1
+          obtain ⟨ eq_q_0, eq_q_1, eq_q_msb, eq_b_0, eq_b_1 ⟩ := h_constraints
+          refine ⟨?_, ?_⟩
+          . -- q_BV.toInt = -1
+            subst q_BV
+            clear *- eq_q_0 eq_q_1
+            simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide,
+                  U32w.toNat, eq_q_0, eq_q_1]
+          . subst r_BV b_BV
+            simp [h_c_zero_int, eq_b_0, eq_b_1]
+        . -- c ≠ 0: case-split on overflow.
+          have h_c_nz : c_BV.toInt ≠ 0
+          := by
+            subst c_BV
+            clear *- h_c_zero ub_c_0 ub_c_1 h_c_msb_w
+            simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide, U32w.toNat]
+            grind
+          have b_overflow : air.cols.values.is_overflow row 0 = 0 ∨ air.cols.values.is_overflow row 0 = 1
+          := by
+            simp [AbsConstraints_NoGadgets, sub_eq_zero, *] at h_constraints
+            clear *- h_constraints; grind
+          obtain eq_overflow | eq_overflow := b_overflow; rotate_left
+          . -- 2a: Overflow case (is_overflow = 1).
+            -- From `is_overflow = is_overflow_b · is_overflow_c · is_signed_type`
+            -- (sec 8c) plus the booleans on the result columns:
+            --   is_overflow_b.result = 1 ∧ is_overflow_c.result = 1
+            -- which via `h_b_overflow_w` / `h_c_overflow_w` gives:
+            --   b_0 = 0, b_1 = 32768 (b_lo = INT_MIN_32)
+            --   c_0 = 65535, c_1 = 65535 (c_lo = -1_32)
+            -- The overflow clamp (sec 8d) then gives:
+            --   q_0 = b_0 = 0, q_1 = b_1 = 32768
+            --   r_0 = r_1 = 0
+            -- so q_BV.toInt = -2^31 and r_BV.toInt = 0, both of which
+            -- match the executor's overflow branch (q = -2^31, r = 0).
+            . simp [AbsConstraints_NoGadgets, *, sub_eq_zero] at h_constraints
+              have h_iof :
+                air.cols.values.is_overflow_b.is_diff_zero.result row 0 = 1 ∧
+                air.cols.values.is_overflow_c.is_diff_zero.result row 0 = 1
+              := by
+                clear *- h_constraints eq_overflow b_b_overflow_w b_c_overflow_w
+                grind
+              simp [h_iof.1, h_iof.2] at h_b_overflow_w h_c_overflow_w
+              obtain ⟨ eq_b_0, eq_b_1 ⟩ := h_b_overflow_w
+              obtain ⟨ eq_c_0, eq_c_1 ⟩ := h_c_overflow_w
+              have h_clamp :
+                air.cols.values.quotient_0 row 0 = air.cols.values.b_0 row 0 ∧
+                air.cols.values.quotient_1 row 0 = air.cols.values.b_1 row 0 ∧
+                air.cols.values.remainder_0 row 0 = 0 ∧
+                air.cols.values.remainder_1 row 0 = 0
+              := by
+                clear *- h_constraints eq_overflow
+                aesop
+              obtain ⟨ eq_q_0, eq_q_1, eq_r_0, eq_r_1 ⟩ := h_clamp
+              have h_b_int : b_BV.toInt = -2147483648
+              := by
+                subst b_BV
+                clear *- eq_b_0 eq_b_1
+                simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide,
+                      U32w.toNat, eq_b_0, eq_b_1]
+              have h_c_int : c_BV.toInt = -1
+              := by
+                subst c_BV
+                clear *- eq_c_0 eq_c_1
+                simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide,
+                      U32w.toNat, eq_c_0, eq_c_1]
+              rw [if_neg (by rw [h_c_int]; decide),
+                  if_pos ⟨h_b_int, h_c_int⟩]
+              simp [h_b_int, h_c_int]
+              refine ⟨?_, ?_⟩
+              . -- q_BV.toInt = -2^31
+                subst q_BV
+                clear *- eq_q_0 eq_q_1 eq_b_0 eq_b_1
+                simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide,
+                      U32w.toNat, eq_q_0, eq_q_1, eq_b_0, eq_b_1]
+              . -- r_BV.toInt = 0
+                subst r_BV
+                clear *- eq_r_0 eq_r_1
+                simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide,
+                      U32w.toNat, eq_r_0, eq_r_1]
+          . -- 2b: Normal case (c ≠ 0 and is_overflow = 0).
+            simp [AbsConstraints_NoGadgets, *, sub_eq_zero] at h_constraints
+            -- Step 1: discharge the executor's two `if`s.
+            --   (a) `c ≠ 0` via the outer-scope `h_c_nz`.
+            --   (b) `¬ (b = -2^31 ∧ c = -1)` from `eq_overflow = 0`
+            --       (sec 8c): if both held, `b_0 = 0 ∧ b_1 = 32768` and
+            --       `c_0 = 65535 ∧ c_1 = 65535`, which via
+            --       `h_b_overflow_w.mpr` / `h_c_overflow_w.mpr` force
+            --       `is_overflow_b.result = 1` and
+            --       `is_overflow_c.result = 1`. Combined with
+            --       `is_signed_type = is_divw + is_remw = 1` and the
+            --       sec 8c definition `is_overflow = is_signed_type ·
+            --       is_overflow_b.result · is_overflow_c.result`,
+            --       this gives `is_overflow = 1`, contradicting
+            --       `eq_overflow = 0`.
+            have h_not_ovf : ¬ (b_BV.toInt = -2147483648 ∧ c_BV.toInt = -1)
+            := by
+              intro ⟨h_b_int, h_c_int⟩
+              have eq_b : air.cols.values.b_0 row 0 = 0 ∧
+                          air.cols.values.b_1 row 0 = 32768
+              := by
+                subst b_BV
+                clear *- ub_b_0 ub_b_1 h_b_int
+                simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide,
+                      U32w.toNat] at h_b_int
+                split_ifs at h_b_int <;> grind
+              have eq_c : air.cols.values.c_0 row 0 = 65535 ∧
+                          air.cols.values.c_1 row 0 = 65535
+              := by
+                subst c_BV
+                clear *- ub_c_0 ub_c_1 h_c_int
+                simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide,
+                      U32w.toNat] at h_c_int
+                split_ifs at h_c_int <;> grind
+              have iob_result :
+                air.cols.values.is_overflow_b.is_diff_zero.result row 0 = 1
+                := h_b_overflow_w.mpr eq_b
+              have ioc_result :
+                air.cols.values.is_overflow_c.is_diff_zero.result row 0 = 1
+                := h_c_overflow_w.mpr eq_c
+              clear *- h_constraints eq_overflow iob_result ioc_result
+              grind
+            rw [if_neg h_c_nz, if_neg h_not_ovf]
+            -- Step 2: invoke `Int.tdiv_tmod_unique_full` to convert the
+            -- goal from `q = tdiv b c ∧ r = tmod b c` to the
+            -- three-condition form:
+            --   `b = q·c + r ∧ |r| < |c| ∧ (r = 0 ∨ sign r = sign b)`.
+            -- We prove the three conditions as separate `have`s rather
+            -- than via `refine ⟨?_, ?_, ?_⟩`, because cond_2 / cond_3
+            -- depend on cond_1 (the integer equation `b = q·c + r`).
+            rw [Int.tdiv_tmod_unique_full h_c_nz]
+            -- 3a: integer equation b_BV.toInt = q_BV.toInt · c_BV.toInt + r_BV.toInt.
+            --
+            -- Strategy (mirrors `spec_DIVUW_REMUW` and the signed RV32IM
+            -- proof):
+            --   (a) Extract the four lower carry equations (sec 9, branch
+            --       `is_overflow = 0`) and the four lower carry-bit
+            --       booleans (sec 22) from `h_constraints`.
+            --   (b) Apply `FKB_add_64` to get a U64w identity at column
+            --       level: `U64w[b_0..3] = U64w[cq_0..3] + U64w[r_0..3]`.
+            --   (c) Align `h_q_ext_t` / `h_c_ext_t` with the column form
+            --       used in `h_mul_lo` (which uses `quot_msb · 0xFFFF` /
+            --       `c_msb · 0xFFFF` in the upper limbs), then substitute
+            --       `h_mul_lo` to land at the BitVec-64 product form.
+            --   (d) Lift to integer equation via `BitVec.toInt_inj` +
+            --       `Int.bmod_eq_of_le` (bounds:
+            --       `|q.toInt · c.toInt + r.toInt| ≤ 2^62 + 2^31 < 2^63`).
+            --   (e) Use `U32w.extend_toInt` (sign-extension preserves
+            --       `toInt`) to collapse extended `toInt`s back to U32w.
+            have cond_1 :
+              b_BV.toInt = q_BV.toInt * c_BV.toInt + r_BV.toInt
+            := by
+              -- Step (a)+(b): U64w identity at column level via FKB_add_64.
+              have alu_sum :
+                U64w.toBV #v[BitVec.ofNat 16 ↑(air.cols.values.b_0 row 0),
+                             BitVec.ofNat 16 ↑(air.cols.values.b_1 row 0),
+                             BitVec.ofNat 16 ↑(air.cols.values.b_2 row 0),
+                             BitVec.ofNat 16 ↑(air.cols.values.b_3 row 0)] =
+                U64w.toBV #v[BitVec.ofNat 16 ↑(air.cols.values.c_times_quotient_0 row 0),
+                             BitVec.ofNat 16 ↑(air.cols.values.c_times_quotient_1 row 0),
+                             BitVec.ofNat 16 ↑(air.cols.values.c_times_quotient_2 row 0),
+                             BitVec.ofNat 16 ↑(air.cols.values.c_times_quotient_3 row 0)] +
+                U64w.toBV #v[BitVec.ofNat 16 ↑(air.cols.values.remainder_0 row 0),
+                             BitVec.ofNat 16 ↑(air.cols.values.remainder_1 row 0),
+                             BitVec.ofNat 16 ↑(air.cols.values.remainder_2 row 0),
+                             BitVec.ofNat 16 ↑(air.cols.values.remainder_3 row 0)]
+              := by
+                have ⟨ eq_p_0, eq_p_1, eq_p_2, eq_p_3,
+                       b_cry_0, b_cry_1, b_cry_2, b_cry_3 ⟩ :
+                  (air.cols.values.c_times_quotient_0 row 0 + air.cols.values.remainder_0 row 0
+                   - air.cols.values.carry_0 row 0 * 65536 = air.cols.values.b_0 row 0) ∧
+                  (air.cols.values.c_times_quotient_1 row 0 + air.cols.values.remainder_1 row 0
+                   - air.cols.values.carry_1 row 0 * 65536 + air.cols.values.carry_0 row 0
+                   = air.cols.values.b_1 row 0) ∧
+                  (air.cols.values.c_times_quotient_2 row 0 + air.cols.values.remainder_2 row 0
+                   - air.cols.values.carry_2 row 0 * 65536 + air.cols.values.carry_1 row 0
+                   = air.cols.values.b_2 row 0) ∧
+                  (air.cols.values.c_times_quotient_3 row 0 + air.cols.values.remainder_3 row 0
+                   - air.cols.values.carry_3 row 0 * 65536 + air.cols.values.carry_2 row 0
+                   = air.cols.values.b_3 row 0) ∧
+                  (air.cols.values.carry_0 row 0 = 0 ∨ air.cols.values.carry_0 row 0 = 1) ∧
+                  (air.cols.values.carry_1 row 0 = 0 ∨ air.cols.values.carry_1 row 0 = 1) ∧
+                  (air.cols.values.carry_2 row 0 = 0 ∨ air.cols.values.carry_2 row 0 = 1) ∧
+                  (air.cols.values.carry_3 row 0 = 0 ∨ air.cols.values.carry_3 row 0 = 1)
+                := by
+                  clear *- h_constraints eq_overflow
+                            eq_rc_0 eq_rc_1 eq_rc_2 eq_rc_3
+                            eq_r_msb_2 eq_r_msb_3 eq_b_2 eq_b_3
+                            eq_rem_neg_msb eq_b_neg_msb eq_c_neg_msb
+                  grind
+                exact FKB_add_64
+                  ub_b_0 ub_b_1 ub_b_2 ub_b_3
+                  ub_cq_0 ub_cq_1 ub_cq_2 ub_cq_3
+                  ub_r_0 ub_r_1 ub_r_2 ub_r_3
+                  eq_p_0 eq_p_1 eq_p_2 eq_p_3
+                  b_cry_0 b_cry_1 b_cry_2 b_cry_3
+              clear h_constraints
+              -- Step (c): align h_q_ext_t / h_c_ext_t with the inner U64w
+              -- forms of h_mul_lo (which use `quot_msb · 65535` and
+              -- `c_msb · 65535` in the upper limbs).
+              simp only [eq_q_msb_2, eq_q_msb_3] at h_q_ext_t
+              simp only [eq_c_2, eq_c_3, eq_c_neg_msb] at h_c_ext_t
+              -- Substitute h_mul_lo + h_q_ext_t + h_c_ext_t + h_b_ext_t +
+              -- h_r_ext_t into alu_sum.
+              rw [h_b_ext_t, h_r_ext_t, h_mul_lo, h_q_ext_t, h_c_ext_t] at alu_sum
+              -- Unfold execute_MUL_pure (.MUL = lower 64 bits of 128-bit product).
+              have h_eq_extract :
+                forall (x y : BitVec 64),
+                  BitVec.extractLsb 63 0 (BitVec.setWidth 128 x * BitVec.setWidth 128 y) = x * y
+                := by clear *-; intro x y; bv_decide
+              simp [execute_MUL_pure, BitVec.extend, ← BitVec.toInt_inj, h_eq_extract,-BitVec.toInt_extractLsb] at alu_sum
+              -- Step (d)+(e): lift the 64-bit BitVec equation to integers.
+              rw [alu_sum]
+              have q_range := U32w.toInt_range q_BV
+              have c_range := U32w.toInt_range c_BV
+              have r_range := U32w.toInt_range r_BV
+              clear *- q_range c_range r_range
+              exact Int.bmod_eq_of_le (by simp; nlinarith) (by simp; nlinarith)
+            -- 3b: |r_BV.toInt| < |c_BV.toInt|.
+            --
+            -- Strategy (mirrors the 64-bit signed `cond_abs` block of
+            -- `spec_DIV_REM`):
+            --   (a) Set up U64w-storage `ac_BV`, `ar_BV` from the chip's
+            --       `abs_c_*` and `abs_remainder_*` columns.
+            --   (b) Extract the relevant identities from `h_constraints`:
+            --       sec 14 abs identities (when not negative), sec 15
+            --       `max_abs_c_or_1_i = abs_c_i` (since `is_c_0 = 0`),
+            --       sec 16 `remainder_check_multiplicity = 1`, sec 16
+            --       alu-event tags, sec 18 `value = 0` clamp, sec 20
+            --       PR #101 `bit = 1` pin.
+            --   (c) Specialize `h_abs_c` / `h_abs_rem` (the AddGadget
+            --       thunks) with the alu events and `value = 0` to get
+            --       `U64w[c.ext_t] + U64w[abs_c] = 0` (and same for r).
+            --   (d) Specialize `h_rem_check` (LtWordU16Gadget thunk)
+            --       with `bit = 1` and `max = abs_c` to get
+            --       `ar_BV.toNat < ac_BV.toNat`.
+            --   (e) Prove `ar_BV.toNat = r_BV.toInt.natAbs` and
+            --       `ac_BV.toNat = c_BV.toInt.natAbs` by case-split on
+            --       `h_rem_msb_w` / `h_c_msb_w` (which give the sign of
+            --       r / c).
+            --   (f) Combine and convert `< natAbs` to `|.| < |.|`.
+            have cond_2 : |r_BV.toInt| < |c_BV.toInt|
+            := by
+              set ac_BV : U64w := #v[
+                BitVec.ofNat 16 ↑(air.cols.values.abs_c_0 row 0),
+                BitVec.ofNat 16 ↑(air.cols.values.abs_c_1 row 0),
+                BitVec.ofNat 16 ↑(air.cols.values.abs_c_2 row 0),
+                BitVec.ofNat 16 ↑(air.cols.values.abs_c_3 row 0)] with eq_ac_BV
+              set ar_BV : U64w := #v[
+                BitVec.ofNat 16 ↑(air.cols.values.abs_remainder_0 row 0),
+                BitVec.ofNat 16 ↑(air.cols.values.abs_remainder_1 row 0),
+                BitVec.ofNat 16 ↑(air.cols.values.abs_remainder_2 row 0),
+                BitVec.ofNat 16 ↑(air.cols.values.abs_remainder_3 row 0)] with eq_ar_BV
+              -- (b) Extract identities from h_constraints by direct
+              -- destructure. The top-level layout of h_constraints
+              -- (post the top-of-2b simp) is:
+              --   1. `iob.result = 0 ∨ ioc.result = 0`             (sec 8c)
+              --   2. `b_neg_not_overflow = b_msb.msb`              (sec 8c)
+              --   3. `b_not_neg_not_overflow = 1 - b_msb.msb`      (sec 8c)
+              --   4. carry-chain conjunction (8 limbs of cqr = b)  (sec 9)
+              --   5. `is_divw = 1 → ...`                            (sec 10)
+              --   6. `is_remw = 1 → ...`                            (sec 10)
+              --   7. `rem_msb.msb = 1 → b_msb.msb = 1`              (sec 11)
+              --   8. sec 11 disjunction
+              --      `(r_sum = 0 ∨ rem_msb = 1) ∨ b_msb = 0`
+              --   9. `c_msb.msb = 0 → abs_c = c …`                  (sec 14 c)
+              --   10. `rem_msb.msb = 0 → abs_r = r …`               (sec 14 r)
+              --   11-14. `max_abs_c_or_1_i = abs_c_i` for i=0..3    (sec 15)
+              --   15. `remainder_check_multiplicity = 1`            (sec 16)
+              --   16. `abs_c_alu_event = c_msb.msb`                 (sec 16)
+              --   17. `abs_rem_alu_event = rem_msb.msb`             (sec 16)
+              --   18. `abs_c_alu_event = 1 → c_neg_gadget.value_* = 0` (sec 18)
+              --   19. `abs_rem_alu_event = 1 → rem_neg_gadget.value_* = 0`
+              --   20. `remainder_check_multiplicity = 1 → bit = 1`  (sec 20)
+              --   …then the carry-bit booleans + selector booleans  (sec 22).
+              obtain ⟨ _, _, _, _, _, _, _, _,
+                       h_c_neg_abs, h_r_neg_abs,
+                       h_eq_max_0, h_eq_max_1, h_eq_max_2, h_eq_max_3,
+                       h_eq_rem_check,
+                       h_abs_c_alu, h_abs_rem_alu,
+                       h_c_neg_gadget_val, h_rem_neg_gadget_val,
+                       h_is_lt, _ ⟩ := h_constraints
+              -- (c) Specialize h_abs_c, h_abs_rem with the alu events.
+              rw [h_abs_c_alu] at h_abs_c h_c_neg_gadget_val
+              rw [h_abs_rem_alu] at h_abs_rem h_rem_neg_gadget_val
+              -- (d) Fire h_rem_check with rem_check_multiplicity = 1 + max = abs_c + bit = 1.
+              simp [h_eq_rem_check, h_is_lt, h_eq_max_0, h_eq_max_1, h_eq_max_2, h_eq_max_3,
+                    ub_ac_0, ub_ac_1, ub_ac_2, ub_ac_3] at h_rem_check
+              -- h_rem_check now: ar_BV.toNat < ac_BV.toNat.
+              -- (f) Convert |.| to natAbs and reduce to a natural comparison.
+              suffices h_natAbs : r_BV.toInt.natAbs < c_BV.toInt.natAbs
+              . clear *- h_natAbs; (iterate 2 rw [Int.abs_eq_natAbs]); omega
+              -- (e) Prove ar_BV.toNat = r_BV.toInt.natAbs.
+              have eq_ar : ar_BV.toNat = r_BV.toInt.natAbs
+              := by
+                clear *- ub_r_0 ub_r_1 ub_r_2 ub_r_3 ub_ar_0 ub_ar_1 ub_ar_2 ub_ar_3
+                         h_rem_msb_w eq_r_msb_2 eq_r_msb_3 eq_rem_neg_msb
+                         h_abs_rem h_r_neg_abs h_rem_neg_gadget_val
+                obtain ⟨ h_rem_zero, h_pos ⟩ | ⟨ h_rem_one, h_neg ⟩ := h_rem_msb_w
+                . -- rem_msb = 0 ⇒ r ≥ 0 ⇒ abs_r = r.
+                  -- The alu event branch is gated by `rem_neg = rem_msb = 0`,
+                  -- so abs_r is forced via sec 14 (alternative branch).
+                  -- But we used `abs_rem_alu_event = 1` (post sec 11
+                  -- specialization), which contradicts rem_msb = 0 only when
+                  -- r ≠ 0 — and when r = 0, ar_BV.toNat trivially equals 0.
+                  clear h_abs_rem; subst ar_BV r_BV
+                  simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide]
+                  rw [if_neg (by omega)]
+                  simp_all [U64w.toNat, U32w.toNat]
+                  omega
+                . -- rem_msb = 1 ⇒ r < 0 ⇒ abs_r = -r (mod 2^64).
+                  simp [h_rem_one] at h_rem_neg_gadget_val h_abs_rem
+                  obtain ⟨ rv0, rv1, rv2, rv3 ⟩ := h_rem_neg_gadget_val
+                  simp [rv0, rv1, rv2, rv3, ← BitVec.toNat_inj] at h_abs_rem
+                  -- h_abs_rem : U64w[0,0,0,0].toBV = U64w[r_0, r_1, 0xFFFF, 0xFFFF].toBV + ar_BV.toBV
+                  -- → ar_BV.toBV = -U64w[r_0, r_1, 0xFFFF, 0xFFFF].toBV (mod 2^64).
+                  have ar_range : ar_BV.toNat < 18446744073709551616
+                    := by clear *-; subst ar_BV; simp [U64w.toNat]; omega
+                  have r_range : r_BV.toNat < 4294967296
+                    := by clear *-; subst r_BV; simp [U32w.toNat]; omega
+                  conv at h_abs_rem => lhs; simp [U64w.toNat]
+                  suffices h_eq_abs_r : ar_BV.toNat = 4294967296 - r_BV.toNat
+                  . simp [h_eq_abs_r, U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide, U32w.toNat]
+                    rw [if_pos (by subst r_BV; simp; omega)]
+                    obtain ⟨ r, eq_r ⟩ : ∃ r, r = r_BV := by simp
+                    rw [← eq_r] at r_range ⊢
+                    clear *- r_range
+                    omega
+                  . clear h_r_neg_abs; symm at h_abs_rem
+                    suffices h_eq :
+                      U64w.toNat #v[BitVec.ofNat 16 ↑(air.cols.values.remainder_0 row 0), BitVec.ofNat 16 ↑(air.cols.values.remainder_1 row 0), 65535#16, 65535#16]
+                        + ar_BV.toNat = 18446744073709551616
+                    . subst r_BV ar_BV
+                      simp [U64w.toNat, U32w.toNat] at h_eq ⊢
+                      ring_nf at h_eq ⊢
+                      omega
+                    . subst r_BV ar_BV
+                      simp [U64w.toNat] at h_abs_rem ⊢
+                      ring_nf at h_abs_rem ⊢
+                      omega
+              -- Prove ac_BV.toNat = c_BV.toInt.natAbs.
+              have eq_ac : ac_BV.toNat = c_BV.toInt.natAbs
+              := by
+                clear *- ub_c_0 ub_c_1 ub_c_2 ub_c_3 ub_ac_0 ub_ac_1 ub_ac_2 ub_ac_3
+                         h_c_nz h_c_msb_w eq_c_2 eq_c_3 eq_c_neg_msb
+                         h_abs_c h_c_neg_abs h_c_neg_gadget_val
+                obtain ⟨ h_c_zero, h_pos ⟩ | ⟨ h_c_one, h_neg ⟩ := h_c_msb_w
+                . -- c_msb = 0 ⇒ c ≥ 0 ⇒ abs_c = c.
+                  clear h_abs_c; subst ac_BV c_BV
+                  simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide]
+                  rw [if_neg (by omega)]
+                  simp_all [U64w.toNat, U32w.toNat]
+                  omega
+                . -- c_msb = 1 ⇒ c < 0 ⇒ abs_c = -c (mod 2^64).
+                  simp [h_c_one] at h_c_neg_gadget_val h_abs_c
+                  obtain ⟨ cv0, cv1, cv2, cv3 ⟩ := h_c_neg_gadget_val
+                  simp [cv0, cv1, cv2, cv3, ← BitVec.toNat_inj] at h_abs_c
+                  have ac_range : ac_BV.toNat < 18446744073709551616
+                    := by clear *-; subst ac_BV; simp [U64w.toNat]; omega
+                  have c_range : c_BV.toNat < 4294967296
+                    := by clear *-; subst c_BV; simp [U32w.toNat]; omega
+                  conv at h_abs_c => lhs; simp [U64w.toNat]
+                  suffices h_eq_abs_c : ac_BV.toNat = 4294967296 - c_BV.toNat
+                  . simp [h_eq_abs_c, U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide, U32w.toNat]
+                    rw [if_pos (by subst c_BV; simp; omega)]
+                    obtain ⟨ c, eq_c ⟩ : ∃ c, c = c_BV := by simp
+                    rw [← eq_c] at c_range ⊢
+                    clear *- c_range
+                    omega
+                  . clear h_c_neg_abs; symm at h_abs_c
+                    suffices h_eq :
+                      U64w.toNat #v[BitVec.ofNat 16 ↑(air.cols.values.c_0 row 0), BitVec.ofNat 16 ↑(air.cols.values.c_1 row 0), 65535#16, 65535#16]
+                        + ac_BV.toNat = 18446744073709551616
+                    . subst c_BV ac_BV
+                      simp [U64w.toNat, U32w.toNat] at h_eq ⊢
+                      ring_nf at h_eq ⊢
+                      omega
+                    . subst c_BV ac_BV
+                      simp [U64w.toNat] at h_abs_c ⊢
+                      ring_nf at h_abs_c ⊢
+                      omega
+              -- (f) Combine: ar.toNat < ac.toNat gives natAbs comparison.
+              clear *- h_rem_check eq_ar eq_ac
+              grind
+            -- 3c: r_BV.toInt = 0 ∨ r_BV.toInt.sign = b_BV.toInt.sign.
+            --
+            -- Strategy (mirrors the 64-bit signed `h_sign` block):
+            --   * Case-split on `r_BV.toBV = 0`. If r = 0, take the left
+            --     disjunct.
+            --   * Otherwise, case-split on `h_rem_msb_w`:
+            --     - **rem_msb = 0** (r ≥ 0). With r ≠ 0, r > 0, so
+            --       sign(r) = 1. We need sign(b) = 1, i.e. b > 0.
+            --       From sec 11's disjunction
+            --       `(r_sum + rem_msb·0xFFFF + rem_msb·0xFFFF = 0 ∨
+            --         rem_msb = 1) ∨ b_msb = 0` with `rem_msb = 0` and
+            --       `r ≠ 0` (so the first two disjuncts fail), we get
+            --       `b_msb = 0`, i.e. b ≥ 0. We then rule out `b = 0`:
+            --       if `b = 0`, `cond_1` gives `r = -q · c`, and `cond_2`
+            --       `|r| < |c|` forces `|q| < 1`, so `q = 0`, hence
+            --       `r = 0` — contradiction.
+            --     - **rem_msb = 1** (r < 0). sign(r) = -1. From sec 11's
+            --       implication `rem_msb = 1 → b_msb = 1`, b_msb = 1,
+            --       so b < 0 and sign(b) = -1.
+            have cond_3 :
+              r_BV.toInt = 0 ∨ r_BV.toInt.sign = b_BV.toInt.sign
+            := by
+              by_cases h_r_zero : r_BV.toBV = 0
+              . left; rw [← U32w.toBV_toInt, h_r_zero]; rfl
+              right
+              obtain ⟨ h_rem_zero, h_pos ⟩ | ⟨ h_rem_one, h_neg ⟩ := h_rem_msb_w
+              . -- rem_msb = 0: r > 0 (r ≥ 0 from MSB + r ≠ 0).
+                have h_r_pos : 0 < r_BV.toInt
+                := by
+                  subst r_BV; clear *- h_rem_zero h_pos h_r_zero
+                  simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide, U32w.toNat]
+                  rw [if_neg (by omega)]
+                  simp [← BitVec.toNat_inj, U32w.toNat] at h_r_zero
+                  omega
+                -- Derive b_msb = 0 from h_constraints sec 11.
+                have h_b_msb_zero : air.cols.values.b_msb.msb row 0 = 0
+                := by
+                  clear *- h_constraints h_rem_zero h_r_zero ub_r_0 ub_r_1 ub_r_2 ub_r_3
+                  simp [h_rem_zero] at h_constraints
+                  have h_r_sum_nz :
+                    air.cols.values.remainder_0 row 0 + air.cols.values.remainder_1 row 0 ≠ 0
+                  := by
+                    clear h_constraints
+                    intro h_sum; apply h_r_zero
+                    simp [← BitVec.toNat_inj, U32w.toNat]
+                    subst r_BV; simp; grind
+                  grind
+                -- Derive b ≠ 0 from cond_1 + cond_2.
+                have h_b_nz : b_BV.toInt ≠ 0
+                := by
+                  intro h_b_zero
+                  rw [h_b_zero] at cond_1
+                  -- cond_1: 0 = q · c + r ⇒ r = -q · c
+                  -- cond_2: |r| < |c|
+                  -- h_r_pos: r > 0
+                  -- Hence |q · c| < |c| ⇒ |q| < 1 (since c ≠ 0) ⇒ q = 0
+                  -- Hence r = 0, contradicting h_r_pos.
+                  have h_r_eq : r_BV.toInt = -(q_BV.toInt * c_BV.toInt) := by linarith
+                  rw [h_r_eq] at cond_2 h_r_pos
+                  simp [abs_neg, abs_mul] at cond_2
+                  have h_c_pos : 0 < |c_BV.toInt|
+                    := by clear *- h_c_nz; positivity
+                  have h_q_zero : q_BV.toInt = 0
+                  := by
+                    clear h_constraints
+                    by_contra h_q_nz
+                    have h_q_pos : 0 < |q_BV.toInt| := by positivity
+                    have h_q_ge_one : 1 ≤ |q_BV.toInt|
+                      := by clear *- h_q_pos; omega
+                    have : |c_BV.toInt| ≤ |q_BV.toInt| * |c_BV.toInt|
+                      := by clear *- h_q_ge_one h_c_pos; nlinarith
+                    clear *- h_c_pos h_q_ge_one cond_2
+                    nlinarith
+                  apply h_r_zero
+                  rw [h_q_zero, zero_mul, neg_zero] at h_r_eq
+                  simpa [← BitVec.toInt_inj]
+                -- Now b_msb = 0 ⇒ b ≥ 0, plus b ≠ 0 ⇒ b > 0.
+                have h_b_pos : 0 < b_BV.toInt
+                := by
+                  have h_b1_low : (air.cols.values.b_1 row 0).val < 32768
+                  := by
+                    obtain ⟨ _, h_b1 ⟩ | ⟨ h_b0, _ ⟩ := h_b_msb_w
+                    . exact h_b1
+                    . simp [h_b0] at h_b_msb_zero
+                  have h_b_ge : 0 ≤ b_BV.toInt
+                  := by
+                    subst b_BV; clear *- ub_b_0 ub_b_1 h_b1_low
+                    simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide, U32w.toNat]
+                    rw [if_neg (by omega)]
+                    omega
+                  clear *- h_b_ge h_b_nz; omega
+                rw [Int.sign_eq_one_of_pos h_r_pos, Int.sign_eq_one_of_pos h_b_pos]
+              . -- rem_msb = 1: r < 0.
+                have h_r_neg : r_BV.toInt < 0
+                := by
+                  subst r_BV; clear *- h_rem_one h_neg ub_r_0 ub_r_1
+                  simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide, U32w.toNat]
+                  rw [if_pos (by omega)]
+                  omega
+                -- Derive b_msb = 1 from sec 11 implication.
+                have h_b_msb_one : air.cols.values.b_msb.msb row 0 = 1
+                := by
+                  clear *- h_constraints h_rem_one; grind
+                -- b_msb = 1 ⇒ b < 0.
+                have h_b_neg : b_BV.toInt < 0
+                := by
+                  have h_b1_high : 32768 ≤ (air.cols.values.b_1 row 0).val
+                  := by
+                    obtain ⟨ h_b0, _ ⟩ | ⟨ _, h_b1 ⟩ := h_b_msb_w
+                    . simp [h_b0] at h_b_msb_one
+                    . exact h_b1
+                  subst b_BV; clear *- ub_b_0 ub_b_1 h_b1_high
+                  simp [U32w.toInt, ← U32w.msb_1_negative, BitVec.msb_eq_decide, U32w.toNat]
+                  rw [if_pos (by omega)]
+                  omega
+                rw [Int.sign_eq_neg_one_of_neg h_r_neg, Int.sign_eq_neg_one_of_neg h_b_neg]
+            exact ⟨cond_1, cond_2, cond_3⟩
+
+  -- ========================================================================
   -- spec_DIVUW_REMUW  (paired): both unsigned 32-bit W selectors at once.
   -- Result: the chip's (`quotient`, `remainder`) limbs (sign-extended to
   -- 64 bits per `q_i = quot_msb * 65535` etc.) equal the pair
@@ -1242,52 +2006,9 @@ namespace DivRemChip.Spec
         grind
 
   -- ========================================================================
-  -- spec_DIVW_REMW  (paired): both signed 32-bit W selectors at once.
-  --
-  -- Returns the chip's `(quotient, remainder)` as the 64-bit lift of
-  -- `RV64IM.execute_DIVW_REMW_pure` on the low 32 bits of `b` and `c`
-  -- with the **signed** word mode `.DRS`. The chip stores the 32-bit
-  -- result in `quotient_0 / quotient_1` (resp. `remainder_0 /
-  -- remainder_1`), with `quotient_2 = quotient_3 = quot_msb · 0xFFFF`
-  -- and `remainder_2 = remainder_3 = rem_msb · 0xFFFF` providing the
-  -- 32→64 sign-extension via the `U16MSBGadget`s on `q_1` and `r_1`
-  -- (added in PR #101 commits `ddd0d96` and `f35b17d` /
-  -- `b6f2de0`).
-  --
-  -- Statement-only for now; the proof mirrors `spec_DIVUW_REMUW` but
-  -- with non-trivial sign handling (b_neg, rem_neg, c_neg, INT_MIN/-1
-  -- overflow clamp).
-  -- ========================================================================
-
-  lemma spec_DIVW_REMW
-    [Field ExtF]
-    (air : Valid_DivRemChip FKB ExtF) (row : ℕ)
-    (h_is_real : air.cols.values.is_real row 0 = 1)
-    (h_ext : bus_row_ext_asm (bus_row air row))
-    (h_wf : bus_row_wf_asm (bus_row air row))
-    (h_constraints : AbsConstraints air row)
-    (h_is_divw_remw :
-      air.cols.values.is_divw row 0 + air.cols.values.is_remw row 0 = 1)
-  :
-    ⟨ U64w.toBV #v[air.cols.values.quotient_0  row 0,
-                   air.cols.values.quotient_1  row 0,
-                   air.cols.values.quotient_2  row 0,
-                   air.cols.values.quotient_3  row 0],
-      U64w.toBV #v[air.cols.values.remainder_0 row 0,
-                   air.cols.values.remainder_1 row 0,
-                   air.cols.values.remainder_2 row 0,
-                   air.cols.values.remainder_3 row 0] ⟩ =
-    RV64IM.execute_DIVW_REMW_pure
-      ((U64w.toBV #v[air.cols.values.b_0 row 0, air.cols.values.b_1 row 0,
-                     air.cols.values.b_2 row 0, air.cols.values.b_3 row 0]).setWidth 32)
-      ((U64w.toBV #v[air.cols.values.c_0 row 0, air.cols.values.c_1 row 0,
-                     air.cols.values.c_2 row 0, air.cols.values.c_3 row 0]).setWidth 32)
-      .DRS
-  := by
-    sorry
-
-  -- ========================================================================
-  -- spec_DIV  (ALU opcode 34): signed 64-bit quotient.
+  -- spec_DIV  (ALU opcode 34): signed 64-bit quotient. One-line projection
+  -- from `spec_DIV_REM` via `a = quotient` (the `div_active = 1` branch
+  -- of `AbsConstraints` section 10).
   -- ========================================================================
 
   lemma spec_DIV
@@ -1341,7 +2062,9 @@ namespace DivRemChip.Spec
     grind
 
   -- ========================================================================
-  -- spec_REM  (ALU opcode 36): signed 64-bit remainder.
+  -- spec_REM  (ALU opcode 36): signed 64-bit remainder. One-line projection
+  -- from `spec_DIV_REM` via `a = remainder` (the `rem_active = 1` branch
+  -- of `AbsConstraints` section 10).
   -- ========================================================================
 
   lemma spec_REM
@@ -1395,7 +2118,9 @@ namespace DivRemChip.Spec
     grind
 
   -- ========================================================================
-  -- spec_DIVU  (ALU opcode 35): unsigned 64-bit quotient.
+  -- spec_DIVU  (ALU opcode 35): unsigned 64-bit quotient. One-line
+  -- projection from `spec_DIVU_REMU` via `a = quotient` (the
+  -- `div_active = 1` branch of `AbsConstraints` section 10).
   -- ========================================================================
 
   lemma spec_DIVU
@@ -1449,7 +2174,9 @@ namespace DivRemChip.Spec
     grind
 
   -- ========================================================================
-  -- spec_REMU  (ALU opcode 37): unsigned 64-bit remainder.
+  -- spec_REMU  (ALU opcode 37): unsigned 64-bit remainder. One-line
+  -- projection from `spec_DIVU_REMU` via `a = remainder` (the
+  -- `rem_active = 1` branch of `AbsConstraints` section 10).
   -- ========================================================================
 
   lemma spec_REMU
@@ -1503,7 +2230,10 @@ namespace DivRemChip.Spec
     grind
 
   -- ========================================================================
-  -- spec_DIVW  (ALU opcode 49): signed 32-bit quotient, sign-extended.
+  -- spec_DIVW  (ALU opcode 49): signed 32-bit quotient, sign-extended to
+  -- 64 bits. One-line projection from `spec_DIVW_REMW` via
+  -- `a = quotient` (the `div_active = 1` branch of `AbsConstraints`
+  -- section 10).
   -- ========================================================================
 
   lemma spec_DIVW
@@ -1557,7 +2287,10 @@ namespace DivRemChip.Spec
     grind
 
   -- ========================================================================
-  -- spec_REMW  (ALU opcode 51): signed 32-bit remainder, sign-extended.
+  -- spec_REMW  (ALU opcode 51): signed 32-bit remainder, sign-extended to
+  -- 64 bits. One-line projection from `spec_DIVW_REMW` via
+  -- `a = remainder` (the `rem_active = 1` branch of `AbsConstraints`
+  -- section 10).
   -- ========================================================================
 
   lemma spec_REMW
@@ -1611,7 +2344,10 @@ namespace DivRemChip.Spec
     grind
 
   -- ========================================================================
-  -- spec_DIVUW  (ALU opcode 50): unsigned 32-bit quotient, zero-extended.
+  -- spec_DIVUW  (ALU opcode 50): unsigned 32-bit quotient, sign-extended
+  -- to 64 bits (RV64 ISA convention). One-line projection from
+  -- `spec_DIVUW_REMUW` via `a = quotient` (the `div_active = 1` branch
+  -- of `AbsConstraints` section 10).
   -- ========================================================================
 
   lemma spec_DIVUW
@@ -1665,7 +2401,10 @@ namespace DivRemChip.Spec
     grind
 
   -- ========================================================================
-  -- spec_REMUW  (ALU opcode 52): unsigned 32-bit remainder, zero-extended.
+  -- spec_REMUW  (ALU opcode 52): unsigned 32-bit remainder, sign-extended
+  -- to 64 bits (RV64 ISA convention). One-line projection from
+  -- `spec_DIVUW_REMUW` via `a = remainder` (the `rem_active = 1` branch
+  -- of `AbsConstraints` section 10).
   -- ========================================================================
 
   lemma spec_REMUW
