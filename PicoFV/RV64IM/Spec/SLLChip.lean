@@ -370,7 +370,8 @@ namespace SLLChip.Spec
       have : (2^16 : ℕ) = 65536 := by decide
       omega
     -- Case-split on (c_bits_4, c_bits_5) to determine which `shift_u16_? = 1`.
-    rcases h_cb4_b with hcb4 | hcb4 <;> rcases h_cb5_b with hcb5 | hcb5
+    -- Order: (0,0), (1,0), (0,1), (1,1) — splitting `c_bits_5` first, then `c_bits_4`.
+    rcases h_cb5_b with hcb5 | hcb5 <;> rcases h_cb4_b with hcb4 | hcb4
     -- Case (0, 0): shift_u16_0 = 1, a_i = limb_result_i.
     . have hsu1 : air.cols.values.shift_u16_1 row 0 = 0 := by
         rcases h_su1_sel with h | h
@@ -440,30 +441,18 @@ namespace SLLChip.Spec
       simp [U64w.toBV_toNat, U64w.toNat, BitVec.toNat_shiftLeft,
             Sail.BitVec.extractLsb, BitVec.extractLsb,
             BitVec.toNat_ofNat]
-      have h_lr0_mod : (air.cols.values.limb_result_0 row 0).val % 65536
-                     = (air.cols.values.limb_result_0 row 0).val := Nat.mod_eq_of_lt h_lr0_lt
-      have h_lr1_mod : (air.cols.values.limb_result_1 row 0).val % 65536
-                     = (air.cols.values.limb_result_1 row 0).val := Nat.mod_eq_of_lt h_lr1_lt
-      have h_lr2_mod : (air.cols.values.limb_result_2 row 0).val % 65536
-                     = (air.cols.values.limb_result_2 row 0).val := Nat.mod_eq_of_lt h_lr2_lt
-      have h_lr3_mod : (air.cols.values.limb_result_3 row 0).val % 65536
-                     = (air.cols.values.limb_result_3 row 0).val := Nat.mod_eq_of_lt h_lr3_lt
-      have hb0_mod : (air.cols.values.b_0 row 0).val % 65536 = (air.cols.values.b_0 row 0).val
-        := Nat.mod_eq_of_lt hb0
-      have hb1_mod : (air.cols.values.b_1 row 0).val % 65536 = (air.cols.values.b_1 row 0).val
-        := Nat.mod_eq_of_lt hb1
-      have hb2_mod : (air.cols.values.b_2 row 0).val % 65536 = (air.cols.values.b_2 row 0).val
-        := Nat.mod_eq_of_lt hb2
-      have hb3_mod : (air.cols.values.b_3 row 0).val % 65536 = (air.cols.values.b_3 row 0).val
-        := Nat.mod_eq_of_lt hb3
-      have hc0_mod : (air.cols.values.c_0 row 0).val % 65536 = (air.cols.values.c_0 row 0).val
-        := Nat.mod_eq_of_lt hc0
-      have hc1_mod : (air.cols.values.c_1 row 0).val % 65536 = (air.cols.values.c_1 row 0).val
-        := Nat.mod_eq_of_lt hc1
-      have hc2_mod : (air.cols.values.c_2 row 0).val % 65536 = (air.cols.values.c_2 row 0).val
-        := Nat.mod_eq_of_lt hc2
-      have hc3_mod : (air.cols.values.c_3 row 0).val % 65536 = (air.cols.values.c_3 row 0).val
-        := Nat.mod_eq_of_lt hc3
+      have h_lr0_mod : (air.cols.values.limb_result_0 row 0).val % 65536 = (air.cols.values.limb_result_0 row 0).val := Nat.mod_eq_of_lt h_lr0_lt
+      have h_lr1_mod : (air.cols.values.limb_result_1 row 0).val % 65536 = (air.cols.values.limb_result_1 row 0).val := Nat.mod_eq_of_lt h_lr1_lt
+      have h_lr2_mod : (air.cols.values.limb_result_2 row 0).val % 65536 = (air.cols.values.limb_result_2 row 0).val := Nat.mod_eq_of_lt h_lr2_lt
+      have h_lr3_mod : (air.cols.values.limb_result_3 row 0).val % 65536 = (air.cols.values.limb_result_3 row 0).val := Nat.mod_eq_of_lt h_lr3_lt
+      have hb0_mod : (air.cols.values.b_0 row 0).val % 65536 = (air.cols.values.b_0 row 0).val := Nat.mod_eq_of_lt hb0
+      have hb1_mod : (air.cols.values.b_1 row 0).val % 65536 = (air.cols.values.b_1 row 0).val := Nat.mod_eq_of_lt hb1
+      have hb2_mod : (air.cols.values.b_2 row 0).val % 65536 = (air.cols.values.b_2 row 0).val := Nat.mod_eq_of_lt hb2
+      have hb3_mod : (air.cols.values.b_3 row 0).val % 65536 = (air.cols.values.b_3 row 0).val := Nat.mod_eq_of_lt hb3
+      have hc0_mod : (air.cols.values.c_0 row 0).val % 65536 = (air.cols.values.c_0 row 0).val := Nat.mod_eq_of_lt hc0
+      have hc1_mod : (air.cols.values.c_1 row 0).val % 65536 = (air.cols.values.c_1 row 0).val := Nat.mod_eq_of_lt hc1
+      have hc2_mod : (air.cols.values.c_2 row 0).val % 65536 = (air.cols.values.c_2 row 0).val := Nat.mod_eq_of_lt hc2
+      have hc3_mod : (air.cols.values.c_3 row 0).val % 65536 = (air.cols.values.c_3 row 0).val := Nat.mod_eq_of_lt hc3
       rw [hb0_mod, hb1_mod, hb2_mod, hb3_mod,
           h_lr0_mod, h_lr1_mod, h_lr2_mod, h_lr3_mod,
           hc0_mod, hc1_mod, hc2_mod, hc3_mod]
@@ -496,9 +485,342 @@ namespace SLLChip.Spec
       have hk_le' : k_nat ≤ 15 := hk_le
       have hk_ge' : 0 ≤ k_nat := Nat.zero_le _
       interval_cases k_nat <;> omega
-    . sorry
-    . sorry
-    . sorry
+    -- Case (1, 0): shift_u16_1 = 1; a_0 = 0, a_i (i≥1) = limb_result_{i-1}; total shift k+16.
+    . have hsu0 : air.cols.values.shift_u16_0 row 0 = 0 := by
+        rcases h_su0_sel with h | h
+        . exact h
+        . rw [hcb4, hcb5] at h; exact absurd h (by decide)
+      have hsu2 : air.cols.values.shift_u16_2 row 0 = 0 := by
+        rcases h_su2_sel with h | h
+        . exact h
+        . rw [hcb4, hcb5] at h; exact absurd h (by decide)
+      have hsu3 : air.cols.values.shift_u16_3 row 0 = 0 := by
+        rcases h_su3_sel with h | h
+        . exact h
+        . rw [hcb4, hcb5] at h; exact absurd h (by decide)
+      have hsu1 : air.cols.values.shift_u16_1 row 0 = 1 := by
+        rw [hsu0, hsu2, hsu3] at h_su_sum; linear_combination h_su_sum
+      have ha0 : air.cols.values.a_0 row 0 = 0 := by
+        rcases h_su1_a0 with h | h
+        . rw [h] at hsu1; exact absurd hsu1 (by decide)
+        . exact h
+      have ha1 : air.cols.values.a_1 row 0 = air.cols.values.limb_result_0 row 0 := by
+        rcases h_su1_a1 with h | h
+        . rw [h] at hsu1; exact absurd hsu1 (by decide)
+        . exact h
+      have ha2 : air.cols.values.a_2 row 0 = air.cols.values.limb_result_1 row 0 := by
+        rcases h_su1_a2 with h | h
+        . rw [h] at hsu1; exact absurd hsu1 (by decide)
+        . exact h
+      have ha3 : air.cols.values.a_3 row 0 = air.cols.values.limb_result_2 row 0 := by
+        rcases h_su1_a3 with h | h
+        . rw [h] at hsu1; exact absurd hsu1 (by decide)
+        . exact h
+      simp only [ALUBus.Spec, RV64IM.execute_RTYPE_pure, Sail.shift_bits_left,
+                 ha0, ha1, ha2, ha3]
+      refine ⟨⟨?_, h_lr0_lt, h_lr1_lt, h_lr2_lt⟩, ?_⟩
+      . simp
+      rw [hcb4, hcb5] at h_c_decomp
+      have hs5_lift :
+          (air.cols.values.c_bits_0 row 0
+              + air.cols.values.c_bits_1 row 0 * 2
+              + air.cols.values.c_bits_2 row 0 * 4
+              + air.cols.values.c_bits_3 row 0 * 8
+              + 1 * 16 + 0 * 32 : FKB).val = k_nat + 16 := by
+        have heq : (air.cols.values.c_bits_0 row 0
+              + air.cols.values.c_bits_1 row 0 * 2
+              + air.cols.values.c_bits_2 row 0 * 4
+              + air.cols.values.c_bits_3 row 0 * 8
+              + 1 * 16 + 0 * 32 : FKB)
+             = (air.cols.values.c_bits_0 row 0
+              + air.cols.values.c_bits_1 row 0 * 2
+              + air.cols.values.c_bits_2 row 0 * 4
+              + air.cols.values.c_bits_3 row 0 * 8 : FKB) + 16 := by ring
+        rw [heq, Fin.val_add, hs4_val]
+        have h16 : ((16 : FKB)).val = 16 := by decide
+        rw [h16]; apply Nat.mod_eq_of_lt; omega
+      have hs5_val : (air.cols.values.c_bits_0 row 0
+                    + air.cols.values.c_bits_1 row 0 * 2
+                    + air.cols.values.c_bits_2 row 0 * 4
+                    + air.cols.values.c_bits_3 row 0 * 8
+                    + 1 * 16 + 0 * 32 : FKB).val ≤ 63 := by rw [hs5_lift]; omega
+      have h_c0_mod64 := c0_mod64 _ _ hs5_val h_c_decomp
+      rw [hs5_lift] at h_c0_mod64
+      apply BitVec.eq_of_toNat_eq
+      simp only [U64w.toBV_toNat, U64w.toNat, Sail.BitVec.extractLsb, BitVec.extractLsb]
+      have h_lr0_mod : (air.cols.values.limb_result_0 row 0).val % 65536
+                     = (air.cols.values.limb_result_0 row 0).val := Nat.mod_eq_of_lt h_lr0_lt
+      have h_lr1_mod : (air.cols.values.limb_result_1 row 0).val % 65536
+                     = (air.cols.values.limb_result_1 row 0).val := Nat.mod_eq_of_lt h_lr1_lt
+      have h_lr2_mod : (air.cols.values.limb_result_2 row 0).val % 65536
+                     = (air.cols.values.limb_result_2 row 0).val := Nat.mod_eq_of_lt h_lr2_lt
+      have hb0_mod : (air.cols.values.b_0 row 0).val % 65536 = (air.cols.values.b_0 row 0).val
+        := Nat.mod_eq_of_lt hb0
+      have hb1_mod : (air.cols.values.b_1 row 0).val % 65536 = (air.cols.values.b_1 row 0).val
+        := Nat.mod_eq_of_lt hb1
+      have hb2_mod : (air.cols.values.b_2 row 0).val % 65536 = (air.cols.values.b_2 row 0).val
+        := Nat.mod_eq_of_lt hb2
+      have hb3_mod : (air.cols.values.b_3 row 0).val % 65536 = (air.cols.values.b_3 row 0).val
+        := Nat.mod_eq_of_lt hb3
+      have hc0_mod : (air.cols.values.c_0 row 0).val % 65536 = (air.cols.values.c_0 row 0).val
+        := Nat.mod_eq_of_lt hc0
+      have hc1_mod : (air.cols.values.c_1 row 0).val % 65536 = (air.cols.values.c_1 row 0).val
+        := Nat.mod_eq_of_lt hc1
+      have hc2_mod : (air.cols.values.c_2 row 0).val % 65536 = (air.cols.values.c_2 row 0).val
+        := Nat.mod_eq_of_lt hc2
+      have hc3_mod : (air.cols.values.c_3 row 0).val % 65536 = (air.cols.values.c_3 row 0).val
+        := Nat.mod_eq_of_lt hc3
+      simp [BitVec.toNat_ofNat, U64w.toNat,
+            hb0_mod, hb1_mod, hb2_mod, hb3_mod,
+            h_lr0_mod, h_lr1_mod, h_lr2_mod,
+            hc0_mod, hc1_mod, hc2_mod, hc3_mod]
+      have h_c_sum_mod_64 :
+          ((air.cols.values.c_0 row 0).val + (air.cols.values.c_1 row 0).val * 65536
+            + (air.cols.values.c_2 row 0).val * 4294967296
+            + (air.cols.values.c_3 row 0).val * 281474976710656) % 64 = k_nat + 16 := by
+        rw [← h_c0_mod64]; omega
+      rw [h_c_sum_mod_64, Nat.shiftLeft_eq,
+          h_decomp_0, h_decomp_1, h_decomp_2, h_decomp_3,
+          h_lr0_val, h_lr1_val, h_lr2_val]
+      clear h_c_decomp h_carry0 h_carry1 h_carry2 h_carry3
+            h_lr0 h_lr1 h_lr2 h_lr3 hv h_v01 h_v012 h_v0123
+            h_lr0_lt h_lr1_lt h_lr2_lt h_lr3_lt
+            h_lr0_mod h_lr1_mod h_lr2_mod
+            hb0_mod hb1_mod hb2_mod hb3_mod
+            hc0_mod hc1_mod hc2_mod hc3_mod
+            h_su0_sel h_su0_b h_su1_sel h_su1_b
+            h_su2_sel h_su2_b h_su3_sel h_su3_b
+            h_su0_a0 h_su0_a1 h_su0_a2 h_su0_a3
+            h_su1_a0 h_su1_a1 h_su1_a2 h_su1_a3
+            h_su2_a0 h_su2_a1 h_su2_a2 h_su2_a3
+            h_su3_a0 h_su3_a1 h_su3_a2 h_su3_a3
+            h_lr0_bnd h_lr1_bnd h_lr2_bnd h_lr3_bnd
+            h_c_sum_mod_64
+      have hk_le' : k_nat ≤ 15 := hk_le
+      interval_cases k_nat <;> omega
+    -- Case (0, 1): shift_u16_2 = 1; a_0 = a_1 = 0, a_2 = lr_0, a_3 = lr_1; shift k+32.
+    . have hsu0 : air.cols.values.shift_u16_0 row 0 = 0 := by
+        rcases h_su0_sel with h | h
+        . exact h
+        . rw [hcb4, hcb5] at h; exact absurd h (by decide)
+      have hsu1 : air.cols.values.shift_u16_1 row 0 = 0 := by
+        rcases h_su1_sel with h | h
+        . exact h
+        . rw [hcb4, hcb5] at h; exact absurd h (by decide)
+      have hsu3 : air.cols.values.shift_u16_3 row 0 = 0 := by
+        rcases h_su3_sel with h | h
+        . exact h
+        . rw [hcb4, hcb5] at h; exact absurd h (by decide)
+      have hsu2 : air.cols.values.shift_u16_2 row 0 = 1 := by
+        rw [hsu0, hsu1, hsu3] at h_su_sum; linear_combination h_su_sum
+      have ha0 : air.cols.values.a_0 row 0 = 0 := by
+        rcases h_su2_a0 with h | h
+        . rw [h] at hsu2; exact absurd hsu2 (by decide)
+        . exact h
+      have ha1 : air.cols.values.a_1 row 0 = 0 := by
+        rcases h_su2_a1 with h | h
+        . rw [h] at hsu2; exact absurd hsu2 (by decide)
+        . exact h
+      have ha2 : air.cols.values.a_2 row 0 = air.cols.values.limb_result_0 row 0 := by
+        rcases h_su2_a2 with h | h
+        . rw [h] at hsu2; exact absurd hsu2 (by decide)
+        . exact h
+      have ha3 : air.cols.values.a_3 row 0 = air.cols.values.limb_result_1 row 0 := by
+        rcases h_su2_a3 with h | h
+        . rw [h] at hsu2; exact absurd hsu2 (by decide)
+        . exact h
+      simp only [ALUBus.Spec, RV64IM.execute_RTYPE_pure, Sail.shift_bits_left,
+                 ha0, ha1, ha2, ha3]
+      refine ⟨⟨?_, ?_, h_lr0_lt, h_lr1_lt⟩, ?_⟩
+      . simp
+      . simp
+      rw [hcb4, hcb5] at h_c_decomp
+      have hs5_lift :
+          (air.cols.values.c_bits_0 row 0
+              + air.cols.values.c_bits_1 row 0 * 2
+              + air.cols.values.c_bits_2 row 0 * 4
+              + air.cols.values.c_bits_3 row 0 * 8
+              + 0 * 16 + 1 * 32 : FKB).val = k_nat + 32 := by
+        have heq : (air.cols.values.c_bits_0 row 0
+              + air.cols.values.c_bits_1 row 0 * 2
+              + air.cols.values.c_bits_2 row 0 * 4
+              + air.cols.values.c_bits_3 row 0 * 8
+              + 0 * 16 + 1 * 32 : FKB)
+             = (air.cols.values.c_bits_0 row 0
+              + air.cols.values.c_bits_1 row 0 * 2
+              + air.cols.values.c_bits_2 row 0 * 4
+              + air.cols.values.c_bits_3 row 0 * 8 : FKB) + 32 := by ring
+        rw [heq, Fin.val_add, hs4_val]
+        have h32 : ((32 : FKB)).val = 32 := by decide
+        rw [h32]; apply Nat.mod_eq_of_lt; omega
+      have hs5_val : (air.cols.values.c_bits_0 row 0
+                    + air.cols.values.c_bits_1 row 0 * 2
+                    + air.cols.values.c_bits_2 row 0 * 4
+                    + air.cols.values.c_bits_3 row 0 * 8
+                    + 0 * 16 + 1 * 32 : FKB).val ≤ 63 := by rw [hs5_lift]; omega
+      have h_c0_mod64 := c0_mod64 _ _ hs5_val h_c_decomp
+      rw [hs5_lift] at h_c0_mod64
+      apply BitVec.eq_of_toNat_eq
+      simp only [U64w.toBV_toNat, U64w.toNat, Sail.BitVec.extractLsb, BitVec.extractLsb]
+      have h_lr0_mod : (air.cols.values.limb_result_0 row 0).val % 65536
+                     = (air.cols.values.limb_result_0 row 0).val := Nat.mod_eq_of_lt h_lr0_lt
+      have h_lr1_mod : (air.cols.values.limb_result_1 row 0).val % 65536
+                     = (air.cols.values.limb_result_1 row 0).val := Nat.mod_eq_of_lt h_lr1_lt
+      have hb0_mod : (air.cols.values.b_0 row 0).val % 65536 = (air.cols.values.b_0 row 0).val
+        := Nat.mod_eq_of_lt hb0
+      have hb1_mod : (air.cols.values.b_1 row 0).val % 65536 = (air.cols.values.b_1 row 0).val
+        := Nat.mod_eq_of_lt hb1
+      have hb2_mod : (air.cols.values.b_2 row 0).val % 65536 = (air.cols.values.b_2 row 0).val
+        := Nat.mod_eq_of_lt hb2
+      have hb3_mod : (air.cols.values.b_3 row 0).val % 65536 = (air.cols.values.b_3 row 0).val
+        := Nat.mod_eq_of_lt hb3
+      have hc0_mod : (air.cols.values.c_0 row 0).val % 65536 = (air.cols.values.c_0 row 0).val
+        := Nat.mod_eq_of_lt hc0
+      have hc1_mod : (air.cols.values.c_1 row 0).val % 65536 = (air.cols.values.c_1 row 0).val
+        := Nat.mod_eq_of_lt hc1
+      have hc2_mod : (air.cols.values.c_2 row 0).val % 65536 = (air.cols.values.c_2 row 0).val
+        := Nat.mod_eq_of_lt hc2
+      have hc3_mod : (air.cols.values.c_3 row 0).val % 65536 = (air.cols.values.c_3 row 0).val
+        := Nat.mod_eq_of_lt hc3
+      simp [BitVec.toNat_ofNat, U64w.toNat,
+            hb0_mod, hb1_mod, hb2_mod, hb3_mod,
+            h_lr0_mod, h_lr1_mod,
+            hc0_mod, hc1_mod, hc2_mod, hc3_mod]
+      have h_c_sum_mod_64 :
+          ((air.cols.values.c_0 row 0).val + (air.cols.values.c_1 row 0).val * 65536
+            + (air.cols.values.c_2 row 0).val * 4294967296
+            + (air.cols.values.c_3 row 0).val * 281474976710656) % 64 = k_nat + 32 := by
+        rw [← h_c0_mod64]; omega
+      rw [h_c_sum_mod_64, Nat.shiftLeft_eq,
+          h_decomp_0, h_decomp_1, h_decomp_2, h_decomp_3,
+          h_lr0_val, h_lr1_val]
+      clear h_c_decomp h_carry0 h_carry1 h_carry2 h_carry3
+            h_lr0 h_lr1 h_lr2 h_lr3 hv h_v01 h_v012 h_v0123
+            h_lr0_lt h_lr1_lt h_lr2_lt h_lr3_lt
+            h_lr0_mod h_lr1_mod
+            hb0_mod hb1_mod hb2_mod hb3_mod
+            hc0_mod hc1_mod hc2_mod hc3_mod
+            h_su0_sel h_su0_b h_su1_sel h_su1_b
+            h_su2_sel h_su2_b h_su3_sel h_su3_b
+            h_su0_a0 h_su0_a1 h_su0_a2 h_su0_a3
+            h_su1_a0 h_su1_a1 h_su1_a2 h_su1_a3
+            h_su2_a0 h_su2_a1 h_su2_a2 h_su2_a3
+            h_su3_a0 h_su3_a1 h_su3_a2 h_su3_a3
+            h_lr0_bnd h_lr1_bnd h_lr2_bnd h_lr3_bnd
+            h_c_sum_mod_64
+      have hk_le' : k_nat ≤ 15 := hk_le
+      interval_cases k_nat <;> omega
+    -- Case (1, 1): shift_u16_3 = 1; a_0 = a_1 = a_2 = 0, a_3 = lr_0; shift k+48.
+    . have hsu0 : air.cols.values.shift_u16_0 row 0 = 0 := by
+        rcases h_su0_sel with h | h
+        . exact h
+        . rw [hcb4, hcb5] at h; exact absurd h (by decide)
+      have hsu1 : air.cols.values.shift_u16_1 row 0 = 0 := by
+        rcases h_su1_sel with h | h
+        . exact h
+        . rw [hcb4, hcb5] at h; exact absurd h (by decide)
+      have hsu2 : air.cols.values.shift_u16_2 row 0 = 0 := by
+        rcases h_su2_sel with h | h
+        . exact h
+        . rw [hcb4, hcb5] at h; exact absurd h (by decide)
+      have hsu3 : air.cols.values.shift_u16_3 row 0 = 1 := by
+        rw [hsu0, hsu1, hsu2] at h_su_sum; linear_combination h_su_sum
+      have ha0 : air.cols.values.a_0 row 0 = 0 := by
+        rcases h_su3_a0 with h | h
+        . rw [h] at hsu3; exact absurd hsu3 (by decide)
+        . exact h
+      have ha1 : air.cols.values.a_1 row 0 = 0 := by
+        rcases h_su3_a1 with h | h
+        . rw [h] at hsu3; exact absurd hsu3 (by decide)
+        . exact h
+      have ha2 : air.cols.values.a_2 row 0 = 0 := by
+        rcases h_su3_a2 with h | h
+        . rw [h] at hsu3; exact absurd hsu3 (by decide)
+        . exact h
+      have ha3 : air.cols.values.a_3 row 0 = air.cols.values.limb_result_0 row 0 := by
+        rcases h_su3_a3 with h | h
+        . rw [h] at hsu3; exact absurd hsu3 (by decide)
+        . exact h
+      simp only [ALUBus.Spec, RV64IM.execute_RTYPE_pure, Sail.shift_bits_left,
+                 ha0, ha1, ha2, ha3]
+      refine ⟨⟨?_, ?_, ?_, h_lr0_lt⟩, ?_⟩
+      . simp
+      . simp
+      . simp
+      rw [hcb4, hcb5] at h_c_decomp
+      have hs5_lift :
+          (air.cols.values.c_bits_0 row 0
+              + air.cols.values.c_bits_1 row 0 * 2
+              + air.cols.values.c_bits_2 row 0 * 4
+              + air.cols.values.c_bits_3 row 0 * 8
+              + 1 * 16 + 1 * 32 : FKB).val = k_nat + 48 := by
+        have heq : (air.cols.values.c_bits_0 row 0
+              + air.cols.values.c_bits_1 row 0 * 2
+              + air.cols.values.c_bits_2 row 0 * 4
+              + air.cols.values.c_bits_3 row 0 * 8
+              + 1 * 16 + 1 * 32 : FKB)
+             = (air.cols.values.c_bits_0 row 0
+              + air.cols.values.c_bits_1 row 0 * 2
+              + air.cols.values.c_bits_2 row 0 * 4
+              + air.cols.values.c_bits_3 row 0 * 8 : FKB) + 48 := by ring
+        rw [heq, Fin.val_add, hs4_val]
+        have h48 : ((48 : FKB)).val = 48 := by decide
+        rw [h48]; apply Nat.mod_eq_of_lt; omega
+      have hs5_val : (air.cols.values.c_bits_0 row 0
+                    + air.cols.values.c_bits_1 row 0 * 2
+                    + air.cols.values.c_bits_2 row 0 * 4
+                    + air.cols.values.c_bits_3 row 0 * 8
+                    + 1 * 16 + 1 * 32 : FKB).val ≤ 63 := by rw [hs5_lift]; omega
+      have h_c0_mod64 := c0_mod64 _ _ hs5_val h_c_decomp
+      rw [hs5_lift] at h_c0_mod64
+      apply BitVec.eq_of_toNat_eq
+      simp only [U64w.toBV_toNat, U64w.toNat, Sail.BitVec.extractLsb, BitVec.extractLsb]
+      have h_lr0_mod : (air.cols.values.limb_result_0 row 0).val % 65536
+                     = (air.cols.values.limb_result_0 row 0).val := Nat.mod_eq_of_lt h_lr0_lt
+      have hb0_mod : (air.cols.values.b_0 row 0).val % 65536 = (air.cols.values.b_0 row 0).val
+        := Nat.mod_eq_of_lt hb0
+      have hb1_mod : (air.cols.values.b_1 row 0).val % 65536 = (air.cols.values.b_1 row 0).val
+        := Nat.mod_eq_of_lt hb1
+      have hb2_mod : (air.cols.values.b_2 row 0).val % 65536 = (air.cols.values.b_2 row 0).val
+        := Nat.mod_eq_of_lt hb2
+      have hb3_mod : (air.cols.values.b_3 row 0).val % 65536 = (air.cols.values.b_3 row 0).val
+        := Nat.mod_eq_of_lt hb3
+      have hc0_mod : (air.cols.values.c_0 row 0).val % 65536 = (air.cols.values.c_0 row 0).val
+        := Nat.mod_eq_of_lt hc0
+      have hc1_mod : (air.cols.values.c_1 row 0).val % 65536 = (air.cols.values.c_1 row 0).val
+        := Nat.mod_eq_of_lt hc1
+      have hc2_mod : (air.cols.values.c_2 row 0).val % 65536 = (air.cols.values.c_2 row 0).val
+        := Nat.mod_eq_of_lt hc2
+      have hc3_mod : (air.cols.values.c_3 row 0).val % 65536 = (air.cols.values.c_3 row 0).val
+        := Nat.mod_eq_of_lt hc3
+      simp [BitVec.toNat_ofNat, U64w.toNat,
+            hb0_mod, hb1_mod, hb2_mod, hb3_mod,
+            h_lr0_mod,
+            hc0_mod, hc1_mod, hc2_mod, hc3_mod]
+      have h_c_sum_mod_64 :
+          ((air.cols.values.c_0 row 0).val + (air.cols.values.c_1 row 0).val * 65536
+            + (air.cols.values.c_2 row 0).val * 4294967296
+            + (air.cols.values.c_3 row 0).val * 281474976710656) % 64 = k_nat + 48 := by
+        rw [← h_c0_mod64]; omega
+      rw [h_c_sum_mod_64, Nat.shiftLeft_eq,
+          h_decomp_0, h_decomp_1, h_decomp_2, h_decomp_3,
+          h_lr0_val]
+      clear h_c_decomp h_carry0 h_carry1 h_carry2 h_carry3
+            h_lr0 h_lr1 h_lr2 h_lr3 hv h_v01 h_v012 h_v0123
+            h_lr0_lt h_lr1_lt h_lr2_lt h_lr3_lt
+            h_lr0_mod
+            hb0_mod hb1_mod hb2_mod hb3_mod
+            hc0_mod hc1_mod hc2_mod hc3_mod
+            h_su0_sel h_su0_b h_su1_sel h_su1_b
+            h_su2_sel h_su2_b h_su3_sel h_su3_b
+            h_su0_a0 h_su0_a1 h_su0_a2 h_su0_a3
+            h_su1_a0 h_su1_a1 h_su1_a2 h_su1_a3
+            h_su2_a0 h_su2_a1 h_su2_a2 h_su2_a3
+            h_su3_a0 h_su3_a1 h_su3_a2 h_su3_a3
+            h_lr0_bnd h_lr1_bnd h_lr2_bnd h_lr3_bnd
+            h_c_sum_mod_64
+      have hk_le' : k_nat ≤ 15 := hk_le
+      interval_cases k_nat <;> omega
 
   --
   -- spec_SLLW — opcode 42 (32-bit left shift, sign-extended)
@@ -522,7 +844,92 @@ namespace SLLChip.Spec
       (air.cols.values.c_0 row 0) (air.cols.values.c_1 row 0)
       (air.cols.values.c_2 row 0) (air.cols.values.c_3 row 0)
   := by
-    sorry
+    -- Step 1: Selector exclusivity ⇒ is_sll = 0, is_real = 1.
+    obtain ⟨_, h_excl_sllw⟩ := selector_exclusivity air row h_constraints
+    have h_is_sll : air.cols.values.is_sll row 0 = 0 := h_excl_sllw h_is_sllw
+    have h_is_real :
+      air.cols.values.is_sll row 0 + air.cols.values.is_sllw row 0 = 1
+      := by rw [h_is_sll, h_is_sllw]; ring
+    -- Step 2: Extract operand u16 bounds from h_ext.
+    simp [bus_row_ext_asm, bus_row, ALUBus.externals, ALUBus.operandsInternal,
+          ALUBus.validOpcode, ALUBus.operandRange, h_is_sll, h_is_sllw] at h_ext
+    obtain ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩ := h_ext
+    -- Step 3: Extract byte-bus assumptions from h_wf.
+    --   With is_sllw = 1, both BitRange entries and the U16MSB entry are active.
+    simp [bus_row_wf_asm, bus_row, ByteBus.Spec, h_is_sll, h_is_sllw] at h_wf
+    obtain ⟨h_c_decomp, ⟨_, h_lo0⟩, ⟨_, h_hi0⟩, ⟨_, h_lo1⟩, ⟨_, h_hi1⟩,
+            ⟨_, h_lo2⟩, ⟨_, h_hi2⟩, ⟨_, h_lo3⟩, ⟨_, h_hi3⟩, h_msb_range⟩ := h_wf
+    -- Step 4: Extract all 53 constraints.
+    simp [constraint_and_interaction_simplification, sub_eq_zero,
+          h_is_sll, h_is_sllw] at h_constraints
+    obtain ⟨_, h_cb0_b, h_cb1_b, h_cb2_b, h_cb3_b, h_cb4_b, h_cb5_b,
+            h_su0_sel, h_su0_b, h_su1_sel, h_su1_b, h_su2_sel, h_su2_b,
+            h_su3_sel, h_su3_b, h_su_sum,
+            h_v01, h_v012, h_v0123,
+            h_carry0, h_carry1, h_carry2, h_carry3,
+            h_lr0, h_lr1, h_lr2, h_lr3,
+            h_sllw_a0_lr0, h_sllw_a1_lr1, h_sllw_a0_zero, h_sllw_a1_lr0,
+            h_a2_msb, h_a3_msb, h_msb_b⟩ := h_constraints
+    -- Step 5: Derive `v_0123 = 2^k` and `k ≤ 15`.
+    set k_nat : ℕ := (air.cols.values.c_bits_0 row 0).val
+                   + 2 * (air.cols.values.c_bits_1 row 0).val
+                   + 4 * (air.cols.values.c_bits_2 row 0).val
+                   + 8 * (air.cols.values.c_bits_3 row 0).val with hk_def
+    obtain ⟨hk_le, hv⟩ := v0123_pow _ _ _ _ _ _ _
+      h_cb0_b h_cb1_b h_cb2_b h_cb3_b h_v01 h_v012 h_v0123
+    obtain ⟨hs4_val, h16s4_val⟩ := s4_FKB_val _ _ _ _ h_cb0_b h_cb1_b h_cb2_b h_cb3_b
+    -- Step 6: Convert byte-bus bounds to Nat form.
+    rw [h16s4_val] at h_lo0 h_lo1 h_lo2 h_lo3
+    rw [hs4_val] at h_hi0 h_hi1 h_hi2 h_hi3
+    change _ < 2^(16 - k_nat) at h_lo0 h_lo1 h_lo2 h_lo3
+    change _ < 2^(k_nat) at h_hi0 h_hi1 h_hi2 h_hi3
+    -- Step 7: Per-limb Nat decomposition.
+    rw [hv] at h_carry0 h_carry1 h_carry2 h_carry3
+    have h_decomp_0 := carry_lift _ _ _ k_nat hk_le hb0 h_lo0 h_hi0 h_carry0
+    have h_decomp_1 := carry_lift _ _ _ k_nat hk_le hb1 h_lo1 h_hi1 h_carry1
+    have h_decomp_2 := carry_lift _ _ _ k_nat hk_le hb2 h_lo2 h_hi2 h_carry2
+    have h_decomp_3 := carry_lift _ _ _ k_nat hk_le hb3 h_lo3 h_hi3 h_carry3
+    -- Step 8: Compute limb_result_i.val.
+    rw [hv] at h_lr0 h_lr1 h_lr2 h_lr3
+    have h_lr0_val := lr_val_first _ k_nat hk_le h_lo0
+    have h_lr1_val := lr_val_next _ _ k_nat hk_le h_lo1 h_hi0
+    rw [← h_lr0] at h_lr0_val
+    rw [← h_lr1] at h_lr1_val
+    -- Step 9: Bounds for limb_result_0, limb_result_1.
+    have hpow_prod : (2^(16-k_nat) : ℕ) * 2^k_nat = 2^16 := by
+      rw [← pow_add, Nat.sub_add_cancel (by omega : k_nat ≤ 16)]
+    have hpow_le15 : (2^k_nat : ℕ) ≤ 2^15 := Nat.pow_le_pow_right (by omega) hk_le
+    have h_lr0_lt : (air.cols.values.limb_result_0 row 0).val < 65536 := by
+      rw [h_lr0_val]
+      have : (air.cols.values.lower_limb_0 row 0).val * 2^k_nat
+           < 2^(16-k_nat) * 2^k_nat :=
+        Nat.mul_lt_mul_of_pos_right h_lo0 (Nat.two_pow_pos _)
+      rw [hpow_prod] at this; omega
+    have h_lr1_lt : (air.cols.values.limb_result_1 row 0).val < 65536 := by
+      rw [h_lr1_val]
+      have h1 : (air.cols.values.lower_limb_1 row 0).val * 2^k_nat
+              ≤ 2^16 - 2^k_nat := by
+        have hle : (air.cols.values.lower_limb_1 row 0).val ≤ 2^(16-k_nat) - 1
+          := by omega
+        have h2 : (air.cols.values.lower_limb_1 row 0).val * 2^k_nat
+                ≤ (2^(16-k_nat) - 1) * 2^k_nat := Nat.mul_le_mul_right _ hle
+        have h3 : (2^(16-k_nat) - 1) * 2^k_nat = 2^16 - 2^k_nat := by
+          rw [Nat.sub_mul, one_mul, hpow_prod]
+        omega
+      omega
+    -- Step 10: shift_u16_2 = shift_u16_3 = 0 always (c_bits_4 ∈ {0,1} can't equal 2 or 3).
+    have hsu2 : air.cols.values.shift_u16_2 row 0 = 0 := by
+      rcases h_su2_sel with h | h
+      . exact h
+      . rcases h_cb4_b with hcb | hcb <;> rw [hcb] at h <;> exact absurd h (by decide)
+    have hsu3 : air.cols.values.shift_u16_3 row 0 = 0 := by
+      rcases h_su3_sel with h | h
+      . exact h
+      . rcases h_cb4_b with hcb | hcb <;> rw [hcb] at h <;> exact absurd h (by decide)
+    -- Step 11: Case-split on (c_bits_4, c_bits_5). c_bits_5 doesn't affect a_i values
+    -- (only s5_FKB.val for c0_mod64), so its case-split is needed only to compute that.
+    rcases h_cb5_b with hcb5 | hcb5 <;> rcases h_cb4_b with hcb4 | hcb4
+    all_goals sorry
 
   --
   -- Externals — vacuous: byte entries have trivial externals; the
