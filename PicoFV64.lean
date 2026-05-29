@@ -115,6 +115,7 @@ import PicoFV.RV64IM.Spec.LtWordU16Gadget
 import PicoFV.RV64IM.Spec.LtSignedGadget
 import PicoFV.RV64IM.Spec.LtChip
 import PicoFV.RV64IM.Spec.SLLChip
+import PicoFV.RV64IM.Spec.ShiftRightChip
 import PicoFV.RV64IM.Spec.IsZeroGadget
 import PicoFV.RV64IM.Spec.IsZeroWordGadget
 import PicoFV.RV64IM.Spec.IsEqualWordGadget
