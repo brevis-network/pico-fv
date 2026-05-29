@@ -899,10 +899,10 @@ namespace RV64IM_Interactions
           (AND/OR/XOR/SLL/ShrCarry/LTU/MSB/U8Range/U16Range), and adds a
           new variant:
 
-          * `9 = BitRange` — verifies that the u16 value `x_2 * 256 + x_3`
-            (`x_2` = high byte, `x_3` = low byte) fits in `x_1` bits.
-            The chip emits `add_bit_range_check(a, num_bits)` as
-            `(BitRange, 0, num_bits, a >> 8, a & 0xff)`.                     -/
+          * `9 = BitRange` — verifies that the value `x_0` fits in `x_2`
+            bits, i.e. `x_0 < 2^x_2`. The chip emits
+            `add_bit_range_check(a, num_bits)` as
+            `(BitRange, a, 0, num_bits, 0)`. -/
       def ByteBus.Spec (byte_opcode x_0 x_1 x_2 x_3 : FKB) :=
         match byte_opcode with
         | 0 => x_0 = x_2 &&& x_3 ∧ x_0.val < 256 ∧ x_1 = 0 ∧ x_2.val < 256 ∧ x_3.val < 256
@@ -914,7 +914,7 @@ namespace RV64IM_Interactions
         | 6 => (x_0 = if x_2 < 128 then 0 else 1) ∧ x_0.val < 256 ∧ x_1 = 0 ∧ x_2.val < 256 ∧ x_3.val < 256
         | 7 => x_0 = 0 ∧ x_1 = 0 ∧ x_2.val < 256 ∧ x_3.val < 256
         | 8 => x_0.val < 65536 ∧ x_1 = 0 ∧ x_2 = 0 ∧ x_3 = 0
-        | 9 => x_0 = 0 ∧ x_1.val ≤ 16 ∧ x_2.val < 256 ∧ x_3.val < 256 ∧ x_2.val * 256 + x_3.val < 2 ^ x_1.val
+        | 9 => x_1 = 0 ∧ x_2.val ≤ 16 ∧ x_3 = 0 ∧ x_0.val < 2 ^ x_2.val
         | _ => True
 
       @[simp, grind]
