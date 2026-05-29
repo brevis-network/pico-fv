@@ -91,6 +91,7 @@ import PicoFV.RV64IM.Constraints.LtWordU16Gadget
 import PicoFV.RV64IM.Constraints.LtSignedGadget
 import PicoFV.RV64IM.Constraints.LtChip
 import PicoFV.RV64IM.Constraints.SLLChip
+import PicoFV.RV64IM.Constraints.ShiftRightChip
 import PicoFV.RV64IM.Constraints.IsZeroGadget
 import PicoFV.RV64IM.Constraints.IsZeroWordGadget
 import PicoFV.RV64IM.Constraints.IsEqualWordGadget
