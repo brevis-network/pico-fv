@@ -1035,9 +1035,309 @@ namespace SLLChip.Spec
               h_c_sum_mod_32
         have hk_le' : k_nat ≤ 15 := hk_le
         interval_cases k_nat <;> omega
-    . sorry
-    . sorry
-    . sorry
+    -- Case (c5=0, c4=1): shift_u16_1 = 1, a_0 = 0, a_1 = lr_0, shift = k_nat + 16.
+    . have hsu0 : air.cols.values.shift_u16_0 row 0 = 0 := by
+        rcases h_su0_sel with h | h
+        . exact h
+        . rw [hcb4] at h; exact absurd h (by decide)
+      have hsu1 : air.cols.values.shift_u16_1 row 0 = 1 := by
+        rw [hsu0, hsu2, hsu3] at h_su_sum; linear_combination h_su_sum
+      have ha0 : air.cols.values.a_0 row 0 = 0 := by
+        rcases h_sllw_a0_zero with h | h
+        . rw [h] at hsu1; exact absurd hsu1 (by decide)
+        . exact h
+      have ha1 : air.cols.values.a_1 row 0 = air.cols.values.limb_result_0 row 0 := by
+        rcases h_sllw_a1_lr0 with h | h
+        . rw [h] at hsu1; exact absurd hsu1 (by decide)
+        . exact h
+      have ha1_lt : (air.cols.values.a_1 row 0).val < 65536 := by rw [ha1]; exact h_lr0_lt
+      have h_gadget_wf :
+          bus_row_wf_asm (U16MSBGadget.AbsBuses 1 (air.cols.values.a_1 row 0)
+                          (air.cols.values.sllw_msb.msb row 0)) := by
+        simp [bus_row_wf_asm, U16MSBGadget.AbsBuses, ByteBus.Spec]
+        exact h_msb_range
+      have h_gadget_cstr :
+          U16MSBGadget.AbsConstraints 1 (air.cols.values.sllw_msb.msb row 0) := by
+        refine ⟨by ring, ?_⟩
+        rcases h_msb_b with h | h <;> rw [h] <;> ring
+      have h_msb_iff := U16MSBGadget.Spec.gadget_spec 1 _ _ h_gadget_wf h_gadget_cstr rfl ha1_lt
+      rw [hcb4, hcb5] at h_c_decomp
+      have hs5_lift :
+          (air.cols.values.c_bits_0 row 0 + air.cols.values.c_bits_1 row 0 * 2
+            + air.cols.values.c_bits_2 row 0 * 4 + air.cols.values.c_bits_3 row 0 * 8
+            + 1 * 16 + 0 * 32 : FKB).val = k_nat + 16 := by
+        have heq : (air.cols.values.c_bits_0 row 0 + air.cols.values.c_bits_1 row 0 * 2
+                  + air.cols.values.c_bits_2 row 0 * 4 + air.cols.values.c_bits_3 row 0 * 8
+                  + 1 * 16 + 0 * 32 : FKB)
+                 = (air.cols.values.c_bits_0 row 0 + air.cols.values.c_bits_1 row 0 * 2
+                  + air.cols.values.c_bits_2 row 0 * 4
+                  + air.cols.values.c_bits_3 row 0 * 8 : FKB) + 16 := by ring
+        rw [heq, Fin.val_add, hs4_val]
+        have h16 : ((16 : FKB)).val = 16 := by decide
+        rw [h16]; apply Nat.mod_eq_of_lt; omega
+      have hs5_le : (air.cols.values.c_bits_0 row 0 + air.cols.values.c_bits_1 row 0 * 2
+                  + air.cols.values.c_bits_2 row 0 * 4 + air.cols.values.c_bits_3 row 0 * 8
+                  + 1 * 16 + 0 * 32 : FKB).val ≤ 63 := by rw [hs5_lift]; omega
+      have h_c0_mod64 := c0_mod64 _ _ hs5_le h_c_decomp
+      rw [hs5_lift] at h_c0_mod64
+      simp only [ALUBus.Spec, RV64IM.execute_RTYPEW_pure, Sail.shift_bits_left,
+                 ha0, ha1, ← h_a2_msb, ← h_a3_msb]
+      refine ⟨⟨by simp, h_lr0_lt, ?_, ?_⟩, ?_⟩
+      . rcases h_msb_b with h | h <;> rw [h] <;> decide
+      . rcases h_msb_b with h | h <;> rw [h] <;> decide
+      trans (U32w.extend
+              #v[BitVec.ofNat 16 ↑(0 : FKB),
+                 BitVec.ofNat 16 ↑(air.cols.values.limb_result_0 row 0)] true).toBV
+      . simp [U32w.extend, U32w.ext]
+        suffices h_msb_eq :
+            BitVec.ofNat 16 ↑(air.cols.values.sllw_msb.msb row 0 * 65535) =
+              if U32w.negative
+                  #v[BitVec.ofNat 16 ↑(0 : FKB),
+                     BitVec.ofNat 16 ↑(air.cols.values.limb_result_0 row 0)]
+              then 65535#16 else 0#16 by
+          congr
+        simp [← U32w.msb_1_negative, BitVec.msb_eq_decide]
+        rcases h_msb_iff with ⟨hmsb, ha_lt⟩ | ⟨hmsb, ha_ge⟩
+        . rw [hmsb]; simp
+          rw [ha1] at ha_lt
+          have : (air.cols.values.limb_result_0 row 0).val < 32768 := ha_lt
+          omega
+        . rw [hmsb]; simp
+          rw [ha1] at ha_ge
+          have : 32768 ≤ (air.cols.values.limb_result_0 row 0).val := ha_ge
+          omega
+      . simp [U32w.extend_BitVec_extend, BitVec.extend]
+        congr
+        apply BitVec.eq_of_toNat_eq
+        simp [U32w.toNat]
+        rw [Nat.mod_eq_of_lt h_lr0_lt,
+            Nat.mod_eq_of_lt hb0, Nat.mod_eq_of_lt hb1,
+            Nat.mod_eq_of_lt hc0, Nat.mod_eq_of_lt hc1]
+        have h_c_sum_mod_32 :
+            ((air.cols.values.c_0 row 0).val + (air.cols.values.c_1 row 0).val * 65536) % 32
+              = k_nat + 16 := by
+          have heq : ((air.cols.values.c_0 row 0).val + (air.cols.values.c_1 row 0).val * 65536) % 32
+              = (air.cols.values.c_0 row 0).val % 32 := by omega
+          rw [heq]
+          have : (air.cols.values.c_0 row 0).val % 64 = k_nat + 16 := h_c0_mod64
+          omega
+        rw [h_c_sum_mod_32, Nat.shiftLeft_eq,
+            h_lr0_val, h_decomp_0, h_decomp_1]
+        clear h_c_decomp h_carry0 h_carry1 h_carry2 h_carry3
+              h_lr0 h_lr1 h_lr2 h_lr3 hv h_v01 h_v012 h_v0123
+              h_lr0_lt h_lr1_lt
+              h_msb_iff h_msb_b h_msb_range h_a2_msb h_a3_msb
+              h_su0_sel h_su0_b h_su1_sel h_su1_b
+              h_su2_sel h_su2_b h_su3_sel h_su3_b
+              h_sllw_a0_lr0 h_sllw_a1_lr1 h_sllw_a0_zero h_sllw_a1_lr0
+              ha0 ha1 ha1_lt
+              hsu0 hsu1 hsu2 hsu3
+              h_gadget_wf h_gadget_cstr
+              h_c_sum_mod_32
+        have hk_le' : k_nat ≤ 15 := hk_le
+        interval_cases k_nat <;> omega
+    -- Case (c5=1, c4=0): shift_u16_0 = 1, a_0 = lr_0, a_1 = lr_1, shift = k_nat.
+    . have hsu1 : air.cols.values.shift_u16_1 row 0 = 0 := by
+        rcases h_su1_sel with h | h
+        . exact h
+        . rw [hcb4] at h; exact absurd h (by decide)
+      have hsu0 : air.cols.values.shift_u16_0 row 0 = 1 := by
+        rw [hsu1, hsu2, hsu3] at h_su_sum; linear_combination h_su_sum
+      have ha0 : air.cols.values.a_0 row 0 = air.cols.values.limb_result_0 row 0 := by
+        rcases h_sllw_a0_lr0 with h | h
+        . rw [h] at hsu0; exact absurd hsu0 (by decide)
+        . exact h
+      have ha1 : air.cols.values.a_1 row 0 = air.cols.values.limb_result_1 row 0 := by
+        rcases h_sllw_a1_lr1 with h | h
+        . rw [h] at hsu0; exact absurd hsu0 (by decide)
+        . exact h
+      have ha1_lt : (air.cols.values.a_1 row 0).val < 65536 := by rw [ha1]; exact h_lr1_lt
+      have h_gadget_wf :
+          bus_row_wf_asm (U16MSBGadget.AbsBuses 1 (air.cols.values.a_1 row 0)
+                          (air.cols.values.sllw_msb.msb row 0)) := by
+        simp [bus_row_wf_asm, U16MSBGadget.AbsBuses, ByteBus.Spec]
+        exact h_msb_range
+      have h_gadget_cstr :
+          U16MSBGadget.AbsConstraints 1 (air.cols.values.sllw_msb.msb row 0) := by
+        refine ⟨by ring, ?_⟩
+        rcases h_msb_b with h | h <;> rw [h] <;> ring
+      have h_msb_iff := U16MSBGadget.Spec.gadget_spec 1 _ _ h_gadget_wf h_gadget_cstr rfl ha1_lt
+      rw [hcb4, hcb5] at h_c_decomp
+      have hs5_lift :
+          (air.cols.values.c_bits_0 row 0 + air.cols.values.c_bits_1 row 0 * 2
+            + air.cols.values.c_bits_2 row 0 * 4 + air.cols.values.c_bits_3 row 0 * 8
+            + 0 * 16 + 1 * 32 : FKB).val = k_nat + 32 := by
+        have heq : (air.cols.values.c_bits_0 row 0 + air.cols.values.c_bits_1 row 0 * 2
+                  + air.cols.values.c_bits_2 row 0 * 4 + air.cols.values.c_bits_3 row 0 * 8
+                  + 0 * 16 + 1 * 32 : FKB)
+                 = (air.cols.values.c_bits_0 row 0 + air.cols.values.c_bits_1 row 0 * 2
+                  + air.cols.values.c_bits_2 row 0 * 4
+                  + air.cols.values.c_bits_3 row 0 * 8 : FKB) + 32 := by ring
+        rw [heq, Fin.val_add, hs4_val]
+        have h32 : ((32 : FKB)).val = 32 := by decide
+        rw [h32]; apply Nat.mod_eq_of_lt; omega
+      have hs5_le : (air.cols.values.c_bits_0 row 0 + air.cols.values.c_bits_1 row 0 * 2
+                  + air.cols.values.c_bits_2 row 0 * 4 + air.cols.values.c_bits_3 row 0 * 8
+                  + 0 * 16 + 1 * 32 : FKB).val ≤ 63 := by rw [hs5_lift]; omega
+      have h_c0_mod64 := c0_mod64 _ _ hs5_le h_c_decomp
+      rw [hs5_lift] at h_c0_mod64
+      simp only [ALUBus.Spec, RV64IM.execute_RTYPEW_pure, Sail.shift_bits_left,
+                 ha0, ha1, ← h_a2_msb, ← h_a3_msb]
+      refine ⟨⟨h_lr0_lt, h_lr1_lt, ?_, ?_⟩, ?_⟩
+      . rcases h_msb_b with h | h <;> rw [h] <;> decide
+      . rcases h_msb_b with h | h <;> rw [h] <;> decide
+      trans (U32w.extend
+              #v[BitVec.ofNat 16 ↑(air.cols.values.limb_result_0 row 0),
+                 BitVec.ofNat 16 ↑(air.cols.values.limb_result_1 row 0)] true).toBV
+      . simp [U32w.extend, U32w.ext]
+        suffices h_msb_eq :
+            BitVec.ofNat 16 ↑(air.cols.values.sllw_msb.msb row 0 * 65535) =
+              if U32w.negative
+                  #v[BitVec.ofNat 16 ↑(air.cols.values.limb_result_0 row 0),
+                     BitVec.ofNat 16 ↑(air.cols.values.limb_result_1 row 0)]
+              then 65535#16 else 0#16 by
+          congr
+        simp [← U32w.msb_1_negative, BitVec.msb_eq_decide]
+        rcases h_msb_iff with ⟨hmsb, ha_lt⟩ | ⟨hmsb, ha_ge⟩
+        . rw [hmsb]; simp
+          rw [ha1] at ha_lt
+          have : (air.cols.values.limb_result_1 row 0).val < 32768 := ha_lt
+          omega
+        . rw [hmsb]; simp
+          rw [ha1] at ha_ge
+          have : 32768 ≤ (air.cols.values.limb_result_1 row 0).val := ha_ge
+          omega
+      . simp [U32w.extend_BitVec_extend, BitVec.extend]
+        congr
+        apply BitVec.eq_of_toNat_eq
+        simp [U32w.toNat]
+        rw [Nat.mod_eq_of_lt h_lr0_lt, Nat.mod_eq_of_lt h_lr1_lt,
+            Nat.mod_eq_of_lt hb0, Nat.mod_eq_of_lt hb1,
+            Nat.mod_eq_of_lt hc0, Nat.mod_eq_of_lt hc1]
+        have h_c_sum_mod_32 :
+            ((air.cols.values.c_0 row 0).val + (air.cols.values.c_1 row 0).val * 65536) % 32
+              = k_nat := by
+          have heq : ((air.cols.values.c_0 row 0).val + (air.cols.values.c_1 row 0).val * 65536) % 32
+              = (air.cols.values.c_0 row 0).val % 32 := by omega
+          rw [heq]
+          have : (air.cols.values.c_0 row 0).val % 64 = k_nat + 32 := h_c0_mod64
+          omega
+        rw [h_c_sum_mod_32, Nat.shiftLeft_eq,
+            h_lr0_val, h_lr1_val, h_decomp_0, h_decomp_1]
+        clear h_c_decomp h_carry0 h_carry1 h_carry2 h_carry3
+              h_lr0 h_lr1 h_lr2 h_lr3 hv h_v01 h_v012 h_v0123
+              h_lr0_lt h_lr1_lt
+              h_msb_iff h_msb_b h_msb_range h_a2_msb h_a3_msb
+              h_su0_sel h_su0_b h_su1_sel h_su1_b
+              h_su2_sel h_su2_b h_su3_sel h_su3_b
+              h_sllw_a0_lr0 h_sllw_a1_lr1 h_sllw_a0_zero h_sllw_a1_lr0
+              ha0 ha1 ha1_lt
+              hsu0 hsu1 hsu2 hsu3
+              h_gadget_wf h_gadget_cstr
+              h_c_sum_mod_32
+        have hk_le' : k_nat ≤ 15 := hk_le
+        interval_cases k_nat <;> omega
+    -- Case (c5=1, c4=1): shift_u16_1 = 1, a_0 = 0, a_1 = lr_0, shift = k_nat + 16.
+    . have hsu0 : air.cols.values.shift_u16_0 row 0 = 0 := by
+        rcases h_su0_sel with h | h
+        . exact h
+        . rw [hcb4] at h; exact absurd h (by decide)
+      have hsu1 : air.cols.values.shift_u16_1 row 0 = 1 := by
+        rw [hsu0, hsu2, hsu3] at h_su_sum; linear_combination h_su_sum
+      have ha0 : air.cols.values.a_0 row 0 = 0 := by
+        rcases h_sllw_a0_zero with h | h
+        . rw [h] at hsu1; exact absurd hsu1 (by decide)
+        . exact h
+      have ha1 : air.cols.values.a_1 row 0 = air.cols.values.limb_result_0 row 0 := by
+        rcases h_sllw_a1_lr0 with h | h
+        . rw [h] at hsu1; exact absurd hsu1 (by decide)
+        . exact h
+      have ha1_lt : (air.cols.values.a_1 row 0).val < 65536 := by rw [ha1]; exact h_lr0_lt
+      have h_gadget_wf :
+          bus_row_wf_asm (U16MSBGadget.AbsBuses 1 (air.cols.values.a_1 row 0)
+                          (air.cols.values.sllw_msb.msb row 0)) := by
+        simp [bus_row_wf_asm, U16MSBGadget.AbsBuses, ByteBus.Spec]
+        exact h_msb_range
+      have h_gadget_cstr :
+          U16MSBGadget.AbsConstraints 1 (air.cols.values.sllw_msb.msb row 0) := by
+        refine ⟨by ring, ?_⟩
+        rcases h_msb_b with h | h <;> rw [h] <;> ring
+      have h_msb_iff := U16MSBGadget.Spec.gadget_spec 1 _ _ h_gadget_wf h_gadget_cstr rfl ha1_lt
+      rw [hcb4, hcb5] at h_c_decomp
+      have hs5_lift :
+          (air.cols.values.c_bits_0 row 0 + air.cols.values.c_bits_1 row 0 * 2
+            + air.cols.values.c_bits_2 row 0 * 4 + air.cols.values.c_bits_3 row 0 * 8
+            + 1 * 16 + 1 * 32 : FKB).val = k_nat + 48 := by
+        have heq : (air.cols.values.c_bits_0 row 0 + air.cols.values.c_bits_1 row 0 * 2
+                  + air.cols.values.c_bits_2 row 0 * 4 + air.cols.values.c_bits_3 row 0 * 8
+                  + 1 * 16 + 1 * 32 : FKB)
+                 = (air.cols.values.c_bits_0 row 0 + air.cols.values.c_bits_1 row 0 * 2
+                  + air.cols.values.c_bits_2 row 0 * 4
+                  + air.cols.values.c_bits_3 row 0 * 8 : FKB) + 48 := by ring
+        rw [heq, Fin.val_add, hs4_val]
+        have h48 : ((48 : FKB)).val = 48 := by decide
+        rw [h48]; apply Nat.mod_eq_of_lt; omega
+      have hs5_le : (air.cols.values.c_bits_0 row 0 + air.cols.values.c_bits_1 row 0 * 2
+                  + air.cols.values.c_bits_2 row 0 * 4 + air.cols.values.c_bits_3 row 0 * 8
+                  + 1 * 16 + 1 * 32 : FKB).val ≤ 63 := by rw [hs5_lift]; omega
+      have h_c0_mod64 := c0_mod64 _ _ hs5_le h_c_decomp
+      rw [hs5_lift] at h_c0_mod64
+      simp only [ALUBus.Spec, RV64IM.execute_RTYPEW_pure, Sail.shift_bits_left,
+                 ha0, ha1, ← h_a2_msb, ← h_a3_msb]
+      refine ⟨⟨by simp, h_lr0_lt, ?_, ?_⟩, ?_⟩
+      . rcases h_msb_b with h | h <;> rw [h] <;> decide
+      . rcases h_msb_b with h | h <;> rw [h] <;> decide
+      trans (U32w.extend
+              #v[BitVec.ofNat 16 ↑(0 : FKB),
+                 BitVec.ofNat 16 ↑(air.cols.values.limb_result_0 row 0)] true).toBV
+      . simp [U32w.extend, U32w.ext]
+        suffices h_msb_eq :
+            BitVec.ofNat 16 ↑(air.cols.values.sllw_msb.msb row 0 * 65535) =
+              if U32w.negative
+                  #v[BitVec.ofNat 16 ↑(0 : FKB),
+                     BitVec.ofNat 16 ↑(air.cols.values.limb_result_0 row 0)]
+              then 65535#16 else 0#16 by
+          congr
+        simp [← U32w.msb_1_negative, BitVec.msb_eq_decide]
+        rcases h_msb_iff with ⟨hmsb, ha_lt⟩ | ⟨hmsb, ha_ge⟩
+        . rw [hmsb]; simp
+          rw [ha1] at ha_lt
+          have : (air.cols.values.limb_result_0 row 0).val < 32768 := ha_lt
+          omega
+        . rw [hmsb]; simp
+          rw [ha1] at ha_ge
+          have : 32768 ≤ (air.cols.values.limb_result_0 row 0).val := ha_ge
+          omega
+      . simp [U32w.extend_BitVec_extend, BitVec.extend]
+        congr
+        apply BitVec.eq_of_toNat_eq
+        simp [U32w.toNat]
+        rw [Nat.mod_eq_of_lt h_lr0_lt,
+            Nat.mod_eq_of_lt hb0, Nat.mod_eq_of_lt hb1,
+            Nat.mod_eq_of_lt hc0, Nat.mod_eq_of_lt hc1]
+        have h_c_sum_mod_32 :
+            ((air.cols.values.c_0 row 0).val + (air.cols.values.c_1 row 0).val * 65536) % 32
+              = k_nat + 16 := by
+          have heq : ((air.cols.values.c_0 row 0).val + (air.cols.values.c_1 row 0).val * 65536) % 32
+              = (air.cols.values.c_0 row 0).val % 32 := by omega
+          rw [heq]
+          have : (air.cols.values.c_0 row 0).val % 64 = k_nat + 48 := h_c0_mod64
+          omega
+        rw [h_c_sum_mod_32, Nat.shiftLeft_eq,
+            h_lr0_val, h_decomp_0, h_decomp_1]
+        clear h_c_decomp h_carry0 h_carry1 h_carry2 h_carry3
+              h_lr0 h_lr1 h_lr2 h_lr3 hv h_v01 h_v012 h_v0123
+              h_lr0_lt h_lr1_lt
+              h_msb_iff h_msb_b h_msb_range h_a2_msb h_a3_msb
+              h_su0_sel h_su0_b h_su1_sel h_su1_b
+              h_su2_sel h_su2_b h_su3_sel h_su3_b
+              h_sllw_a0_lr0 h_sllw_a1_lr1 h_sllw_a0_zero h_sllw_a1_lr0
+              ha0 ha1 ha1_lt
+              hsu0 hsu1 hsu2 hsu3
+              h_gadget_wf h_gadget_cstr
+              h_c_sum_mod_32
+        have hk_le' : k_nat ≤ 15 := hk_le
+        interval_cases k_nat <;> omega
 
   --
   -- Externals — vacuous: byte entries have trivial externals; the
