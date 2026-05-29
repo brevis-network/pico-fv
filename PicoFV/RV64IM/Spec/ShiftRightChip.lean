@@ -77,9 +77,9 @@ namespace ShiftRightChip.Spec
       (c0 c1 c2 c3 : FKB)
       (hc0 : c0 = 0 ∨ c0 = 1) (hc1 : c1 = 0 ∨ c1 = 1)
       (hc2 : c2 = 0 ∨ c2 = 1) (hc3 : c3 = 0 ∨ c3 = 1)
-    : (c0 * 1 + c1 * 2 + c2 * 4 + c3 * 8).val
+    : (c0 + c1 * 2 + c2 * 4 + c3 * 8).val
         = c0.val + 2*c1.val + 4*c2.val + 8*c3.val ∧
-      (16 - (c0 * 1 + c1 * 2 + c2 * 4 + c3 * 8) : FKB).val
+      (16 - (c0 + c1 * 2 + c2 * 4 + c3 * 8) : FKB).val
         = 16 - (c0.val + 2*c1.val + 4*c2.val + 8*c3.val) := by
     rcases hc0 with h0 | h0 <;> rcases hc1 with h1 | h1 <;>
     rcases hc2 with h2 | h2 <;> rcases hc3 with h3 | h3 <;>
@@ -201,6 +201,34 @@ namespace ShiftRightChip.Spec
             h_su1_a0, h_su1_a1, h_su1_a2, h_su1_a3,
             h_su2_a0, h_su2_a1, h_su2_a2, h_su2_a3,
             h_su3_a0, h_su3_a1, h_su3_a2, h_su3_a3⟩ := h_constraints
+    -- Step 5: Derive `v_0123 = 2^(16-k)` and `k ≤ 15` (where `k = c_bits sum`).
+    set k_nat : ℕ := (air.cols.values.c_bits_0 row 0).val
+                   + 2 * (air.cols.values.c_bits_1 row 0).val
+                   + 4 * (air.cols.values.c_bits_2 row 0).val
+                   + 8 * (air.cols.values.c_bits_3 row 0).val with hk_def
+    obtain ⟨hk_le, hv⟩ := v0123_pow_inv _ _ _ _ _ _ _
+      h_cb0_b h_cb1_b h_cb2_b h_cb3_b h_v01 h_v012 h_v0123
+    obtain ⟨hs4_val, h16s4_val⟩ := s4_FKB_val _ _ _ _ h_cb0_b h_cb1_b h_cb2_b h_cb3_b
+    -- Step 6: Convert byte-bus bounds to Nat form using s4_FKB_val.
+    rw [hs4_val] at h_lo0 h_lo1 h_lo2 h_lo3
+    rw [h16s4_val] at h_hi0 h_hi1 h_hi2 h_hi3
+    change _ < 2^(k_nat) at h_lo0 h_lo1 h_lo2 h_lo3
+    change _ < 2^(16 - k_nat) at h_hi0 h_hi1 h_hi2 h_hi3
+    -- Step 7: Use MISSING_b_decomp_i for per-limb identities (assumption).
+    -- (For SR these are axiomatic — see file header comment for the Pico gap.)
+    have h_decomp_0 : (air.cols.values.b_0 row 0).val
+        = (air.cols.values.higher_limb_0 row 0).val * 2^k_nat
+          + (air.cols.values.lower_limb_0 row 0).val := _MISSING_b_decomp_0
+    have h_decomp_1 : (air.cols.values.b_1 row 0).val
+        = (air.cols.values.higher_limb_1 row 0).val * 2^k_nat
+          + (air.cols.values.lower_limb_1 row 0).val := _MISSING_b_decomp_1
+    have h_decomp_2 : (air.cols.values.b_2 row 0).val
+        = (air.cols.values.higher_limb_2 row 0).val * 2^k_nat
+          + (air.cols.values.lower_limb_2 row 0).val := _MISSING_b_decomp_2
+    have h_decomp_3 : (air.cols.values.b_3 row 0).val
+        = (air.cols.values.higher_limb_3 row 0).val * 2^k_nat
+          + (air.cols.values.lower_limb_3 row 0).val := _MISSING_b_decomp_3
+    -- Step 8+: limb_result values, case-split, BitVec identity.
     sorry
 
   -- =====================================================================
