@@ -130,6 +130,9 @@ namespace ShiftRightChip.Spec
     (h_wf : bus_row_wf_asm (bus_row air row))
     (h_constraints : ShiftRightChip.Extraction.allHold air row)
     (h_is_srl : air.cols.values.is_srl row 0 = 1)
+    (h_is_sra : air.cols.values.is_sra row 0 = 0)
+    (h_is_srlw : air.cols.values.is_srlw row 0 = 0)
+    (h_is_sraw : air.cols.values.is_sraw row 0 = 0)
     -- MISSING (Pico soundness gap): `b_i = higher_limb_i · 2^s4 + lower_limb_i`
     (_MISSING_b_decomp_0 : (air.cols.values.b_0 row 0).val
       = (air.cols.values.higher_limb_0 row 0).val *
@@ -163,6 +166,41 @@ namespace ShiftRightChip.Spec
       (air.cols.values.c_for_lookup_0 row 0) (air.cols.values.c_for_lookup_1 row 0)
       (air.cols.values.c_for_lookup_2 row 0) (air.cols.values.c_for_lookup_3 row 0)
   := by
+    -- Step 1: `is_real = 1` from the 4 selector hypotheses.
+    have h_is_real :
+      air.cols.values.is_srl row 0 + air.cols.values.is_sra row 0 +
+      air.cols.values.is_srlw row 0 + air.cols.values.is_sraw row 0 = 1
+      := by rw [h_is_srl, h_is_sra, h_is_srlw, h_is_sraw]; ring
+    -- Step 2: Extract operand u16 bounds from h_ext.
+    simp [bus_row_ext_asm, bus_row, ALUBus.externals, ALUBus.operandsInternal,
+          ALUBus.validOpcode, ALUBus.operandRange, h_is_srl, h_is_sra, h_is_srlw, h_is_sraw]
+      at h_ext
+    obtain ⟨hb0, hb1, hb2, hb3, hc0, hc1, hc2, hc3⟩ := h_ext
+    -- Step 3: Extract byte-bus assumptions from h_wf.
+    --   With is_srl = 1, is_sra = is_srlw = is_sraw = 0, all U16MSB byte
+    --   entries (gated by is_sra, is_sraw, is_srlw + is_sraw) are
+    --   vacuous. Only the 9 BitRange (opcode 9) entries fire.
+    simp [bus_row_wf_asm, bus_row, ByteBus.Spec, h_is_srl, h_is_sra, h_is_srlw, h_is_sraw]
+      at h_wf
+    obtain ⟨h_c_decomp,
+            ⟨_, h_lo0⟩, ⟨_, h_hi0⟩, ⟨_, h_lo1⟩, ⟨_, h_hi1⟩,
+            ⟨_, h_lo2⟩, ⟨_, h_hi2⟩, ⟨_, h_lo3⟩, _, h_hi3⟩ := h_wf
+    -- Step 4: Extract all 59 constraints (post-simp with selectors).
+    simp [constraint_and_interaction_simplification, sub_eq_zero,
+          h_is_srl, h_is_sra, h_is_srlw, h_is_sraw] at h_constraints
+    obtain ⟨_, _h_imm_c_b, _h_w_imm,
+            h_cb0_b, h_cb1_b, h_cb2_b, h_cb3_b, h_cb4_b, h_cb5_b,
+            h_v01, h_v012, h_v0123,
+            h_su0_sel, h_su0_b, h_su1_sel, h_su1_b,
+            h_su2_sel, h_su2_b, h_su3_sel, h_su3_b,
+            h_su_sum,
+            h_lr0, h_lr1, h_lr2, h_lr3,
+            _h_b_msb_b, h_b_msb_zero, h_sra_msb_v0123,
+            _h_srw_msb_b, h_srw_msb_zero,
+            h_su0_a0, h_su0_a1, h_su0_a2, h_su0_a3,
+            h_su1_a0, h_su1_a1, h_su1_a2, h_su1_a3,
+            h_su2_a0, h_su2_a1, h_su2_a2, h_su2_a3,
+            h_su3_a0, h_su3_a1, h_su3_a2, h_su3_a3⟩ := h_constraints
     sorry
 
   -- =====================================================================
