@@ -1,4 +1,10 @@
 --Extracted on 2026-5-11 at 15:37:07.463846858 using git commit "b6f2de04bef696f0eb7f918a494b2ac3c841d0b0"
+--Manually extended on 2026-05-31 to incorporate Pico PR #101 commit
+--"0bacdaf030d4bdc812315ca2f0263410e7d6a522" (fix(alu): close two soundness gaps
+--in ShiftRight chip constraints): adds `c = c_for_lookup[0]` (constraint_59) and
+--per-limb `b[i] * v_0123 = higher_limb[i] * 65536 + lower_limb[i] * v_0123`
+--carry equations (constraints 60..63). These were previously documented as
+--Lean-level `MISSING_*` axioms and have now been promoted to real constraints.
 import Mathlib.Data.List.Defs
 
 import LeanZKCircuit_Plonky3.Plonky3.Circuit
@@ -10,7 +16,7 @@ open Plonky3
 set_option linter.all false
 
 namespace ShiftRightChip.Extraction
---Num constraints: 59
+--Num constraints: 64
 --Constraints---
 @[extracted_constraint_definition] def constraint_0 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
   ((Circuit.main c (column := 42) (row := row) (rotation := 0)) * ((Circuit.main c (column := 42) (row := row) (rotation := 0)) - 1)) = 0
@@ -130,6 +136,21 @@ namespace ShiftRightChip.Extraction
   (((Circuit.main c (column := 44) (row := row) (rotation := 0)) + (Circuit.main c (column := 45) (row := row) (rotation := 0))) * ((Circuit.main c (column := 2) (row := row) (rotation := 0)) - ((Circuit.main c (column := 13) (row := row) (rotation := 0)) * 65535))) = 0
 @[extracted_constraint_definition] def constraint_58 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
   (((Circuit.main c (column := 44) (row := row) (rotation := 0)) + (Circuit.main c (column := 45) (row := row) (rotation := 0))) * ((Circuit.main c (column := 3) (row := row) (rotation := 0)) - ((Circuit.main c (column := 13) (row := row) (rotation := 0)) * 65535))) = 0
+-- Constraint 59 (PR #101, commit 0bacdaf030): c = c_for_lookup_0
+-- assert_eq(c, c_for_lookup[0]) — binds scalar shift-amount column to Word's low limb.
+@[extracted_constraint_definition] def constraint_59 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  ((Circuit.main c (column := 20) (row := row) (rotation := 0)) - (Circuit.main c (column := 8) (row := row) (rotation := 0))) = 0
+-- Constraints 60..63 (PR #101, commit 0bacdaf030): per-limb b[i] carry equation
+-- b[i] * v_0123 = higher_limb[i] * 2^16 + lower_limb[i] * v_0123
+-- with v_0123 = 2^(16 - s4), this reduces to b[i] = lower_limb[i] + higher_limb[i] * 2^s4.
+@[extracted_constraint_definition] def constraint_60 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  (((Circuit.main c (column := 4) (row := row) (rotation := 0)) * (Circuit.main c (column := 23) (row := row) (rotation := 0))) - (((Circuit.main c (column := 30) (row := row) (rotation := 0)) * 65536) + ((Circuit.main c (column := 26) (row := row) (rotation := 0)) * (Circuit.main c (column := 23) (row := row) (rotation := 0))))) = 0
+@[extracted_constraint_definition] def constraint_61 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  (((Circuit.main c (column := 5) (row := row) (rotation := 0)) * (Circuit.main c (column := 23) (row := row) (rotation := 0))) - (((Circuit.main c (column := 31) (row := row) (rotation := 0)) * 65536) + ((Circuit.main c (column := 27) (row := row) (rotation := 0)) * (Circuit.main c (column := 23) (row := row) (rotation := 0))))) = 0
+@[extracted_constraint_definition] def constraint_62 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  (((Circuit.main c (column := 6) (row := row) (rotation := 0)) * (Circuit.main c (column := 23) (row := row) (rotation := 0))) - (((Circuit.main c (column := 32) (row := row) (rotation := 0)) * 65536) + ((Circuit.main c (column := 28) (row := row) (rotation := 0)) * (Circuit.main c (column := 23) (row := row) (rotation := 0))))) = 0
+@[extracted_constraint_definition] def constraint_63 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  (((Circuit.main c (column := 7) (row := row) (rotation := 0)) * (Circuit.main c (column := 23) (row := row) (rotation := 0))) - (((Circuit.main c (column := 33) (row := row) (rotation := 0)) * 65536) + ((Circuit.main c (column := 29) (row := row) (rotation := 0)) * (Circuit.main c (column := 23) (row := row) (rotation := 0))))) = 0
 @[extracted_constraint_definition]
 def constrain_interactions {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) :=
   Circuit.bus c = (List.range (Circuit.last_row c + 1)).flatMap (λ row => [(-(((((Circuit.main c (column := 42) (row := row) (rotation := 0)) + (Circuit.main c (column := 43) (row := row) (rotation := 0))) + (Circuit.main c (column := 44) (row := row) (rotation := 0))) + (Circuit.main c (column := 45) (row := row) (rotation := 0)))), [4, 9, (((Circuit.main c (column := 20) (row := row) (rotation := 0)) - ((((((0 + ((Circuit.main c (column := 14) (row := row) (rotation := 0)) * 1)) + ((Circuit.main c (column := 15) (row := row) (rotation := 0)) * 2)) + ((Circuit.main c (column := 16) (row := row) (rotation := 0)) * 4)) + ((Circuit.main c (column := 17) (row := row) (rotation := 0)) * 8)) + ((Circuit.main c (column := 18) (row := row) (rotation := 0)) * 16)) + ((Circuit.main c (column := 19) (row := row) (rotation := 0)) * 32))) * 2097414145), 0, 10, 0]),
@@ -207,7 +228,12 @@ def constraint_list {C : Type → Type → Type} {F ExtF : Type} [Field F] [Fiel
     constraint_55 c row,
     constraint_56 c row,
     constraint_57 c row,
-    constraint_58 c row
+    constraint_58 c row,
+    constraint_59 c row,
+    constraint_60 c row,
+    constraint_61 c row,
+    constraint_62 c row,
+    constraint_63 c row
   ]
 @[constraint_and_interaction_simplification]
 def allHold {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ)

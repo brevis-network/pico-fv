@@ -13,9 +13,10 @@ set_option maxHeartbeats 1_000_000_000
 The `ConstraintsAndBuses` namespace below restates each constraint and
 the list of bus interactions emitted by `ShiftRightChip::eval`
 (`vm/src/chips/chips/alu/sr/constraints.rs` at commit
-`b6f2de04bef696f0eb7f918a494b2ac3c841d0b0`) in terms of the
-`Valid_ShiftRightChip` air's named accessors, plus a `_equiv` lemma per
-constraint proving equality with the raw form in
+`0bacdaf030d4bdc812315ca2f0263410e7d6a522`, which includes Pico PR #101's
+fix(alu): close two soundness gaps in ShiftRight chip constraints) in
+terms of the `Valid_ShiftRightChip` air's named accessors, plus a
+`_equiv` lemma per constraint proving equality with the raw form in
 `PicoFV.RV64IM.Extraction.ShiftRightChip`.
 
 The chip layout (matching `ShiftRightValueCols<F>`) is:
@@ -46,7 +47,7 @@ The chip layout (matching `ShiftRightValueCols<F>`) is:
 
 `is_real = is_srl + is_sra + is_srlw + is_sraw`.
 
-Algebraic constraint breakdown (59 total):
+Algebraic constraint breakdown (64 total):
 - 0..3: `is_srl`, `is_sra`, `is_srlw`, `is_sraw` boolean checks.
 - 4: `imm_c` boolean.
 - 5: `is_w_imm = (is_srlw + is_sraw) · imm_c`.
@@ -70,6 +71,11 @@ Algebraic constraint breakdown (59 total):
   (the "boundary" limb), others get `limb_result_?` or `b_msb · 65535` (top sign-extension).
 - 53..56: `(is_srlw + is_sraw)`-gated u16-shift dispatch (2 selectors × 2 limbs).
 - 57..58: `(is_srlw + is_sraw)` × `a_2/a_3 = srw_msb · 65535` (sign-extend to 64).
+- 59 (Pico PR #101): `c = c_for_lookup_0` — binds scalar shift-amount
+  column 20 to Word low-limb column 8.
+- 60..63 (Pico PR #101): per-limb `b[i] · v_0123 = higher_limb[i] · 65536 +
+  lower_limb[i] · v_0123` carry equations (i = 0..3), tying `b[i]` to its
+  range-checked (lower_limb_i, higher_limb_i) decomposition.
 
 Bus interactions (12 entries):
 - 9 ByteBus opcode-9 (BitRange) entries:
@@ -816,7 +822,80 @@ namespace ShiftRightChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Aggregate list of all 59 row constraints.
+      -- Constraint 59 (Pico PR #101 / commit 0bacdaf030):
+      -- assert_eq(c, c_for_lookup_0). Binds the scalar shift-amount column
+      -- (used for the c_bits/v_0123 decomposition) to the Word low limb
+      -- (broadcast on the ALU bus to the CPU). Without this, the prover
+      -- could shift by `c` while telling the CPU it shifted by
+      -- `c_for_lookup_0`, writing a wrong result to the destination register.
+      -- =====================================================================
+
+      @[constraint_and_interaction_simplification]
+      def constraint_59 (air : Valid_ShiftRightChip F ExtF) (row : ℕ) : Prop :=
+        ((air.cols.values.c row 0) - (air.cols.values.c_for_lookup_0 row 0)) = 0
+
+      @[simp]
+      lemma constraint_59_equiv (air : Valid_ShiftRightChip F ExtF) (row : ℕ)
+      : ShiftRightChip.Extraction.constraint_59 air row ↔ constraint_59 air row
+      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- =====================================================================
+      -- Constraints 60..63 (Pico PR #101 / commit 0bacdaf030):
+      -- Per-limb b-decomposition carry equation
+      --   b[i] · v_0123 = higher_limb[i] · 65536 + lower_limb[i] · v_0123
+      -- (with v_0123 = 2^(16 - s4), this reduces to
+      --  b[i] = lower_limb[i] + higher_limb[i] · 2^s4).
+      -- Without these, the range-checked (lower_limb_i, higher_limb_i) pair
+      -- was free of b[i], letting a prover fabricate an arbitrary shift
+      -- result.
+      -- =====================================================================
+
+      @[constraint_and_interaction_simplification]
+      def constraint_60 (air : Valid_ShiftRightChip F ExtF) (row : ℕ) : Prop :=
+        ((air.cols.values.b_0 row 0) * (air.cols.values.v_0123 row 0) -
+          ((air.cols.values.higher_limb_0 row 0) * 65536 +
+           (air.cols.values.lower_limb_0 row 0) * (air.cols.values.v_0123 row 0))) = 0
+
+      @[simp]
+      lemma constraint_60_equiv (air : Valid_ShiftRightChip F ExtF) (row : ℕ)
+      : ShiftRightChip.Extraction.constraint_60 air row ↔ constraint_60 air row
+      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      @[constraint_and_interaction_simplification]
+      def constraint_61 (air : Valid_ShiftRightChip F ExtF) (row : ℕ) : Prop :=
+        ((air.cols.values.b_1 row 0) * (air.cols.values.v_0123 row 0) -
+          ((air.cols.values.higher_limb_1 row 0) * 65536 +
+           (air.cols.values.lower_limb_1 row 0) * (air.cols.values.v_0123 row 0))) = 0
+
+      @[simp]
+      lemma constraint_61_equiv (air : Valid_ShiftRightChip F ExtF) (row : ℕ)
+      : ShiftRightChip.Extraction.constraint_61 air row ↔ constraint_61 air row
+      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      @[constraint_and_interaction_simplification]
+      def constraint_62 (air : Valid_ShiftRightChip F ExtF) (row : ℕ) : Prop :=
+        ((air.cols.values.b_2 row 0) * (air.cols.values.v_0123 row 0) -
+          ((air.cols.values.higher_limb_2 row 0) * 65536 +
+           (air.cols.values.lower_limb_2 row 0) * (air.cols.values.v_0123 row 0))) = 0
+
+      @[simp]
+      lemma constraint_62_equiv (air : Valid_ShiftRightChip F ExtF) (row : ℕ)
+      : ShiftRightChip.Extraction.constraint_62 air row ↔ constraint_62 air row
+      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      @[constraint_and_interaction_simplification]
+      def constraint_63 (air : Valid_ShiftRightChip F ExtF) (row : ℕ) : Prop :=
+        ((air.cols.values.b_3 row 0) * (air.cols.values.v_0123 row 0) -
+          ((air.cols.values.higher_limb_3 row 0) * 65536 +
+           (air.cols.values.lower_limb_3 row 0) * (air.cols.values.v_0123 row 0))) = 0
+
+      @[simp]
+      lemma constraint_63_equiv (air : Valid_ShiftRightChip F ExtF) (row : ℕ)
+      : ShiftRightChip.Extraction.constraint_63 air row ↔ constraint_63 air row
+      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- =====================================================================
+      -- Aggregate list of all 64 row constraints.
       -- =====================================================================
 
       @[simp]
@@ -841,7 +920,9 @@ namespace ShiftRightChip.ConstraintsAndBuses
           constraint_48 air row, constraint_49 air row, constraint_50 air row,
           constraint_51 air row, constraint_52 air row, constraint_53 air row,
           constraint_54 air row, constraint_55 air row, constraint_56 air row,
-          constraint_57 air row, constraint_58 air row
+          constraint_57 air row, constraint_58 air row, constraint_59 air row,
+          constraint_60 air row, constraint_61 air row, constraint_62 air row,
+          constraint_63 air row
         ]
 
     end row_constraints
