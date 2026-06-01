@@ -111,7 +111,7 @@ from the byte-bus, and closes `ALUBus.Spec OPCODE` by `grind`.
     `spec_DIVU`, `spec_REMU`, `spec_DIVW`, `spec_REMW`, `spec_DIVUW`,
     `spec_REMUW`) — proven.
   * `ext_asrt` — proven.
-  * `wf_asrt` — `sorry` (TODO).
+  * `wf_asrt` — proven.
 -/
 
 namespace U32w
@@ -2526,20 +2526,30 @@ namespace DivRemChip.Spec
       ]
 
   --
-  -- Well-formedness — dispatches to the active `spec_*` for the main
-  -- ALU entry; sub-gadget bus entries discharged via their own specs
+  -- Well-formedness — every vacuously-gated bus entry is discharged
+  -- by refuting `-x = 1` for boolean `x`; the single live ALU
+  -- emission is dispatched to the active `spec_*` projection.
   --
 
   -- =====================================================================
-  -- All ByteBus entries have multiplicity `-is_real` (or `-is_mulw`,
-  -- `-abs_c_alu_event`, `-abs_rem_alu_event`) ∈ {0, -1}, never
-  -- triggering `wf_assert_cond`. The two `looking_alu(ADD)` entries
-  -- for the abs-value sub-events have multiplicities
-  -- `-abs_c_alu_event` / `-abs_rem_alu_event` ∈ {0, -1}, also vacuous.
-  -- The single looked ALU entry has multiplicity `is_real ∈ {0, 1}`;
-  -- when `is_real = 1` exactly one of the eight selectors is `1`
-  -- (`selector_breakdown` + the exact-one constraint) and we dispatch
-  -- to the matching `spec_DIV` / `spec_DIVU` / … / `spec_REMUW`.
+  -- Every bus entry whose multiplicity is the negation of a binary
+  -- selector (or a sum of negated booleans) is vacuous in FKB: `-0 = 0`
+  -- and `-1 = KB_prime - 1`, neither equals `1`. Five distinct LHS
+  -- shapes appear and are discharged by `h_neg_*` auxiliaries:
+  --   * `-abs_c_alu_event = 1` (`c_neg_gadget` ALU + 4 byte buses)
+  --   * `-abs_rem_alu_event = 1` (`rem_neg_gadget` ALU + 4 byte buses)
+  --   * `-is_real_not_word = 1` (the `c_times_quotient_upper`
+  --     MulGadget block ≈ 30 byte buses, plus 3 top-limb U16MSB buses)
+  --   * `-remainder_check_multiplicity = 1` (`remainder_lt_gadget`
+  --     byte-range check); derived via the defining equation
+  --     `rcm = (1 - is_c_0_result) · is_real` and IsZeroWordGadget's
+  --     `result ∈ {0, 1}` constraint
+  --   * `-is_remuw + -is_divuw + -is_remw + -is_divw = 1` (4 W-variant
+  --     U16MSB byte buses) — vacuous since each summand is `≤ 0`
+  -- The single non-vacuous entry is the chip's positive-multiplicity
+  -- ALU emission gated by `is_real = 1`; when active, the exact-one
+  -- selector constraint pins one of the eight selectors to `1` and we
+  -- dispatch to the matching `spec_DIV` / … / `spec_REMUW`.
   -- =====================================================================
 
   lemma wf_asrt
@@ -2553,6 +2563,139 @@ namespace DivRemChip.Spec
     bus_row_wf_asrt (bus_row air row)
   := by
     simp [bus_row_wf_asrt, AbsBuses]
-    sorry
+    obtain ⟨h_div_b, h_divu_b, h_rem_b, h_remu_b,
+            h_divw_b, h_remw_b, h_divuw_b, h_remuw_b, h_sum⟩ :=
+      selector_breakdown air row h_constraints
+    obtain ⟨h_excl_div, h_excl_divu, h_excl_rem, h_excl_remu,
+            h_excl_divw, h_excl_remw, h_excl_divuw, h_excl_remuw⟩ :=
+      selector_exclusivity air row h_constraints
+    simp [ChipExtraBuses, MulGadget.AbsBuses,
+          AddGadget.AbsBuses, LtWordU16Gadget.AbsBuses,
+          U16MSBGadget.AbsBuses, U16ToU8GadgetSafe.AbsBuses,
+          h_is_real]
+    -- =================================================================
+    -- Vacuous-LHS auxiliaries. Every conjunct of the form `-x = 1 → …`
+    -- where `x` is a boolean (or a sum of negated booleans) collapses
+    -- to `True` because the premise is unsatisfiable in FKB (`-0 = 0`,
+    -- `-1 = KB_prime - 1`, neither equals `1`). We carve out one
+    -- helper per distinct LHS shape.
+    -- =================================================================
+    have h_abs_c_b :
+        air.cols.values.abs_c_alu_event row 0 = 0 ∨
+        air.cols.values.abs_c_alu_event row 0 = 1 := by
+      have := h_constraints
+      simp [AbsConstraints, sub_eq_zero] at this
+      clear *- this; aesop
+    have h_neg_abs_c :
+        -air.cols.values.abs_c_alu_event row 0 ≠ (1 : FKB) := by
+      rcases h_abs_c_b with h | h <;> rw [h] <;> decide
+    have h_abs_rem_b :
+        air.cols.values.abs_rem_alu_event row 0 = 0 ∨
+        air.cols.values.abs_rem_alu_event row 0 = 1 := by
+      have := h_constraints
+      simp [AbsConstraints, sub_eq_zero] at this
+      clear *- this; aesop
+    have h_neg_abs_rem :
+        -air.cols.values.abs_rem_alu_event row 0 ≠ (1 : FKB) := by
+      rcases h_abs_rem_b with h | h <;> rw [h] <;> decide
+    have h_irnw_b :
+        air.cols.values.is_real_not_word row 0 = 0 ∨
+        air.cols.values.is_real_not_word row 0 = 1 := by
+      have := h_constraints
+      simp [AbsConstraints, sub_eq_zero] at this
+      clear *- this; aesop
+    have h_neg_irnw :
+        -air.cols.values.is_real_not_word row 0 ≠ (1 : FKB) := by
+      rcases h_irnw_b with h | h <;> rw [h] <;> decide
+    have h_neg_wsum :
+        -air.cols.values.is_remuw row 0 + (-air.cols.values.is_divuw row 0 +
+          (-air.cols.values.is_remw row 0 + -air.cols.values.is_divw row 0))
+            ≠ (1 : FKB) := by
+      clear *- h_divw_b h_remw_b h_divuw_b h_remuw_b
+      grind
+    -- `remainder_check_multiplicity = (1 - is_c_0_result) · is_real`
+    -- (constraint 16). With `is_real = 1`, this gives `rcm = 1 - is_c_0`,
+    -- so `rcm ∈ {0, 1}` and `-rcm` cannot equal `1` in FKB.
+    have h_rcm_eq :
+        air.cols.values.remainder_check_multiplicity row 0
+        = (1 - air.cols.values.is_c_0.result row 0)
+            * air.cols.values.is_real row 0 := by
+      have := h_constraints
+      simp [AbsConstraints, sub_eq_zero] at this
+      clear *- this; aesop
+    have h_is_c_0_b :
+        air.cols.values.is_c_0.result row 0 = 0 ∨
+        air.cols.values.is_c_0.result row 0 = 1 := by
+      have := h_constraints
+      simp [AbsConstraints, IsZeroWordGadget.AbsConstraints, h_is_real,
+            sub_eq_zero, mul_eq_zero] at this
+      clear *- this; aesop
+    have h_neg_rcm :
+        -air.cols.values.remainder_check_multiplicity row 0 ≠ (1 : FKB) := by
+      rw [h_rcm_eq, h_is_real]
+      rcases h_is_c_0_b with h | h <;> rw [h] <;> decide
+    simp [h_neg_abs_c, h_neg_abs_rem, h_neg_irnw, h_neg_wsum, h_neg_rcm]
+    -- =================================================================
+    -- Eight-way dispatch on which selector is `1`. At each leaf the
+    -- opcode formula collapses to a literal and we apply the matching
+    -- `spec_X` projection.
+    -- =================================================================
+    rcases h_div_b with h_div | h_div
+    rotate_left
+    . -- is_div = 1 → opcode 34, apply spec_DIV
+      obtain ⟨h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw⟩ :=
+        h_excl_div h_div
+      simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
+      apply spec_DIV air row <;> grind
+    rcases h_divu_b with h_divu | h_divu
+    rotate_left
+    . -- is_divu = 1 → opcode 35, apply spec_DIVU
+      obtain ⟨_, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw⟩ :=
+        h_excl_divu h_divu
+      simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
+      apply spec_DIVU air row <;> grind
+    rcases h_rem_b with h_rem | h_rem
+    rotate_left
+    . -- is_rem = 1 → opcode 36, apply spec_REM
+      obtain ⟨_, _, h_remu, h_divw, h_remw, h_divuw, h_remuw⟩ :=
+        h_excl_rem h_rem
+      simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
+      apply spec_REM air row <;> grind
+    rcases h_remu_b with h_remu | h_remu
+    rotate_left
+    . -- is_remu = 1 → opcode 37, apply spec_REMU
+      obtain ⟨_, _, _, h_divw, h_remw, h_divuw, h_remuw⟩ :=
+        h_excl_remu h_remu
+      simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
+      apply spec_REMU air row <;> grind
+    rcases h_divw_b with h_divw | h_divw
+    rotate_left
+    . -- is_divw = 1 → opcode 49, apply spec_DIVW
+      obtain ⟨_, _, _, _, h_remw, h_divuw, h_remuw⟩ :=
+        h_excl_divw h_divw
+      simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
+      apply spec_DIVW air row <;> grind
+    rcases h_remw_b with h_remw | h_remw
+    rotate_left
+    . -- is_remw = 1 → opcode 51, apply spec_REMW
+      obtain ⟨_, _, _, _, _, h_divuw, h_remuw⟩ :=
+        h_excl_remw h_remw
+      simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
+      apply spec_REMW air row <;> grind
+    rcases h_divuw_b with h_divuw | h_divuw
+    rotate_left
+    . -- is_divuw = 1 → opcode 50, apply spec_DIVUW
+      obtain ⟨_, _, _, _, _, _, h_remuw⟩ :=
+        h_excl_divuw h_divuw
+      simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
+      apply spec_DIVUW air row <;> grind
+    -- All seven previous selectors are 0; h_sum forces is_remuw = 1.
+    have h_remuw : air.cols.values.is_remuw row 0 = 1 := by
+      have := h_sum
+      rw [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw] at this
+      simpa using this
+    simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
+    apply spec_REMUW air row <;> grind
+
 
 end DivRemChip.Spec

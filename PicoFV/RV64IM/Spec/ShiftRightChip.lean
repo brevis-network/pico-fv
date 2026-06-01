@@ -252,7 +252,7 @@ namespace ShiftRightChip.Spec
     obtain ⟨h_c_decomp,
             ⟨_, h_lo0⟩, ⟨_, h_hi0⟩, ⟨_, h_lo1⟩, ⟨_, h_hi1⟩,
             ⟨_, h_lo2⟩, ⟨_, h_hi2⟩, ⟨_, h_lo3⟩, _, h_hi3⟩ := h_wf
-    -- Step 4: Extract all 59 constraints (post-simp with selectors).
+    -- Step 4: Extract all 64 constraints (post-simp with selectors).
     simp [constraint_and_interaction_simplification, sub_eq_zero,
           h_is_srl, h_is_sra, h_is_srlw, h_is_sraw] at h_constraints
     obtain ⟨_, _h_imm_c_b, _h_w_imm,
@@ -417,7 +417,8 @@ namespace ShiftRightChip.Spec
                   + 0 * 16 + 0 * 32 : FKB).val ≤ 63 := by rw [hs5_lift]; omega
       have h_c_mod64 := c_mod64 _ _ hs5_le h_c_decomp
       rw [hs5_lift] at h_c_mod64
-      -- Bridge `c.val % 64 = k_nat` to `c_for_lookup_0.val % 64 = k_nat` via MISSING_c_eq.
+      -- Bridge `c.val % 64 = k_nat` to `c_for_lookup_0.val % 64 = k_nat`
+      -- via `h_c_eq` (PR #101 constraint 59: `c = c_for_lookup_0`).
       have h_cfl0_mod64 : (air.cols.values.c_for_lookup_0 row 0).val % 64 = k_nat := by
         rw [h_c_eq] at h_c_mod64; exact h_c_mod64
       apply BitVec.eq_of_toNat_eq
@@ -809,7 +810,9 @@ namespace ShiftRightChip.Spec
   --
   -- Same skeleton as `spec_SRL` (4-way case split on (c_bits_4, c_bits_5))
   -- but `b_msb` is no longer pinned to 0. Instead it is bound to the actual
-  -- MSB of `b_3` by `U16MSBGadget.Spec.gadget_spec` from `h_wf`. We then
+  -- MSB of `b_3` by the U16MSB byte-bus entry (gated by `is_sra`); the
+  -- partition `b_msb = 0 ∧ b_3 < 32768 ∨ b_msb = 1 ∧ 32768 ≤ b_3` is then
+  -- derived directly from `h_msb_u16` and `h_b_msb_b` via `grind`. We then
   -- case-split on `b_msb ∈ {0, 1}`:
   -- - `b_msb = 0`: MSB(b) is false, so `BitVec.sshiftRight b = b >>> shift`
   --                and the proof is the SRL-style ushiftRight identity.
@@ -818,7 +821,8 @@ namespace ShiftRightChip.Spec
   --                through the boundary-limb correction
   --                `b_msb · 65536 - sra_msb_v0123 = b_msb · (2^16 - v_0123)`
   --                and the `b_msb · 65535` fillers for the limbs entirely
-  --                above the shift.
+  --                above the shift. The `neg_one_minus_div` helper bridges
+  --                `BitVec.toNat_sshiftRight_of_msb_true` with this form.
   -- =====================================================================
 
   lemma spec_SRA
@@ -1877,9 +1881,22 @@ namespace ShiftRightChip.Spec
         interval_cases k_nat <;> omega
 
   -- =====================================================================
-  -- spec_SRLW — opcode 43 (32-bit logical right shift, sign-extended via
-  -- srw_msb = MSB of a_1).
-  -- Status: SORRY.
+  -- spec_SRLW — opcode 43 (32-bit logical right shift, sign-extended to
+  -- 64 via `srw_msb = MSB(a_1)`).
+  --
+  -- For SRLW, `b_msb` is forced to 0 by constraint 32
+  -- (`(is_srl + is_srlw) · b_msb = 0`), so the 32-bit shift has no
+  -- sign-extension within itself — only the post-shift extension from
+  -- 32 → 64 bits via `srw_msb`. We case-split on (c_bits_4, c_bits_5)
+  -- (4 cases); c_bits_5 only contributes to `c mod 64`, not to the
+  -- 5-bit shift dispatch, so cases (c5=*, c4=0) share the `shift_u16_0`
+  -- branch and (c5=*, c4=1) share the `shift_u16_1` branch.
+  --
+  -- The 64-bit result is built by the `U32w.extend` bridge:
+  -- `U64w.toBV #v[a_0, a_1, srw_msb·65535, srw_msb·65535]`
+  --   = `(U32w.extend #v[a_0, a_1] true).toBV`
+  --   = `sign_extend 64 (U32w.toBV #v[a_0, a_1])`
+  --   = `sign_extend 64 (BitVec.ushiftRight (b.setWidth 32) (c.toNat % 32))`.
   -- =====================================================================
 
   lemma spec_SRLW
@@ -1992,7 +2009,7 @@ namespace ShiftRightChip.Spec
     -- Step 10: Case-split on (c_bits_5, c_bits_4).
     rcases h_cb5_b with hcb5 | hcb5 <;> rcases h_cb4_b with hcb4 | hcb4
     -- =============================================================
-    -- Case (c5=0, c4=0): shift_u16_0 = 1, shift = k_nat ∈ [0, 15].
+    -- Case (c5=0, c4=0): shift_u16_0 = 1, shift mod 32 = k_nat.
     -- =============================================================
     . have hsu1 : air.cols.values.shift_u16_1 row 0 = 0 := by
         rcases h_su1_sel with h | h
@@ -2026,7 +2043,7 @@ namespace ShiftRightChip.Spec
         refine ⟨by ring, ?_⟩
         rcases h_srw_msb_b with h | h <;> rw [h] <;> ring
       have h_msb_iff := U16MSBGadget.Spec.gadget_spec 1 _ _ h_gadget_wf h_gadget_cstr rfl ha1_lt
-      -- shift = k_nat (c.val mod 32).
+      -- c.val mod 64 = k_nat → c.val mod 32 = k_nat.
       rw [hcb4, hcb5] at h_c_decomp
       have hs5_lift : (air.cols.values.c_bits_0 row 0
                     + air.cols.values.c_bits_1 row 0 * 2
@@ -2119,7 +2136,7 @@ namespace ShiftRightChip.Spec
         have hk_le' : k_nat ≤ 15 := hk_le
         interval_cases k_nat <;> omega
     -- =============================================================
-    -- Case (c5=0, c4=1): shift_u16_1 = 1, shift = k_nat + 16.
+    -- Case (c5=0, c4=1): shift_u16_1 = 1, shift mod 32 = k_nat + 16.
     -- =============================================================
     . have hsu0 : air.cols.values.shift_u16_0 row 0 = 0 := by
         rcases h_su0_sel with h | h
@@ -2483,8 +2500,25 @@ namespace ShiftRightChip.Spec
         interval_cases k_nat <;> omega
 
   -- =====================================================================
-  -- spec_SRAW — opcode 44 (32-bit arithmetic right shift, sign-extended).
-  -- Status: SORRY.
+  -- spec_SRAW — opcode 44 (32-bit arithmetic right shift, sign-extended
+  -- to 64 via `srw_msb = MSB(a_1)`).
+  --
+  -- Combines the SRA pattern (sign-ext within the 32-bit shift via
+  -- `b_msb = MSB(b_1)`, the U16MSB gadget on `b_1` gated by `is_sraw`)
+  -- with the W-variant 32 → 64 sign-extension via `srw_msb`. We case-split
+  -- on (c_bits_4, c_bits_5) (4 cases) and within each on `b_msb ∈ {0, 1}`
+  -- (8 sub-cases total).
+  --
+  -- - `b_msb = 0`: MSB(b32) is false → `BitVec.sshiftRight = ushiftRight`,
+  --                same as the SRLW case for the inner 32-bit shift.
+  -- - `b_msb = 1`: MSB(b32) is true → use `BitVec.toNat_sshiftRight_of_msb_true`
+  --                + `neg_one_minus_div` with `w = 32` to bridge to the
+  --                chip's `(b_msb · 65536 - sra_msb_v0123)` boundary
+  --                correction and `b_msb · 65535` fillers.
+  --
+  -- The 64-bit result uses the same `U32w.extend` bridge as SRLW; the
+  -- inner 32-bit equality is closed by `suffices h_eq : U32w.toBV [a_0, a_1]
+  --   = (U32w.toBV [b_0, b_1]).sshiftRight (c.toNat % 32)`.
   -- =====================================================================
 
   lemma spec_SRAW
@@ -3674,7 +3708,10 @@ namespace ShiftRightChip.Spec
     intro h; exfalso; grind
 
   --
-  -- wf_asrt — TODO (will dispatch to spec_SRL / spec_SRA / spec_SRLW / spec_SRAW).
+  -- wf_asrt — dispatches the ALU bus entry to `spec_SRL` / `spec_SRA` /
+  -- `spec_SRLW` / `spec_SRAW` based on which selector is 1 (via
+  -- `selector_breakdown`). The byte entries are vacuous (negative
+  -- multiplicities, never +1).
   --
 
   lemma wf_asrt
