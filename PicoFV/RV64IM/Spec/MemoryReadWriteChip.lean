@@ -2691,22 +2691,24 @@ namespace MemoryReadWriteChip.Spec
                         rw [h_c39] at h_v3
                         exact ⟨h_v0.symm, h_v1.symm, h_v2.symm, h_v3.symm⟩
                       . exact MISSING_LD_extends_correctly h_eq_ld h_x0
-                    -- 6) Closing the bus-operations equivalence requires several steps not yet automated:
-                    --      (a) Unfold `RV64IM.bus_operations` for both `state_bus` and `memory_bus`. The state
-                    --          bus has two entries (prev/curr access at `addr_aligned`); the memory bus has one
-                    --          entry (load at `addr_word`).      (b) Use `mrw-rv64-addr-aligned-gap` MISSING
-                    --          hypothesis to bridge `addr_aligned ↔          addr_word`. (NOT yet added — the chip
-                    --          itself does not enforce this; analogous
-                    --          to RV32 constraint #2 which RV64 dropped.)
-                    --      (c) Unfold `RV64IM.operation_list_effect` to
-                    --          peel off the `ReadMem .Double` operation          on both sides into 8 byte-level reads,
-                    --          and the `WriteMem .Double` (state side)          into 8 byte-level writes.
-                    --      (d) Apply `ExtHashMap.insert_eq_self` to          collapse the state-bus's 8 writes into
-                    --          no-ops (since `mem_val = mem_prev` from
-                    --          h_c16-h_c19, the curr write rewrites the          same byte that was just read).
-                    --      (e) Match the 8 byte-level reads on both          sides via `h_val_eq` (load value =
-                    --          mem_prev value) + the address bridge. This is mechanically tractable but spans ~80
-                    -- lines; mirror RV32 LW (lines 1422–1449 of `PicoFV/RV32IM/Spec/MemoryReadWriteAir.lean`).
+                    -- 6) Bridge addresses + values to close the bus-operations equivalence.
+                    obtain ⟨ h_v0, h_v1, h_v2, h_v3 ⟩ := h_val_eq
+                    obtain ⟨ h_align_0, h_align_1, h_align_2 ⟩ := MISSING_LD_addr_aligned h_eq_ld
+                    -- (a) Unfold `RV64IM.bus_operations` on both sides.
+                    --     State bus → 2 ops: `ReadMem addr_aligned .Double mem_prev_value` and
+                    --     `WriteMem addr_aligned .Double mem_val_value`. Memory bus → 1 op:
+                    --     `ReadMem addr .Double load_value` where `addr = (b + c).toNat` and
+                    --     `load_value = U64w.toBV #v[a_0..3]`.
+                    -- (b) `MISSING_LD_addr_aligned` + `h_c0` (`aw_3 = 0`) + `h_alu_eq` bridges
+                    --     `addr` ↔ `addr_aligned` (Nat equality).
+                    -- (c) `h_v0..3` + `h_c16..h_c19` give `mem_val = mem_prev = load_value`
+                    --     (byte-by-byte after `BitVec.extractLsb` unfolding).
+                    -- (d) `ExtDHashMap.insert_eq_self` collapses the WriteMem 8 inserts to a
+                    --     no-op (each byte being written equals the byte just read).
+                    -- Mechanical but verbose (~80 lines); mirror `RV32IM.spec_LW` lines
+                    -- 1421-1449. Left as a TODO for now — file compiles and the
+                    -- supporting hypotheses (`h_v_eq`, `h_align_*`, `h_c16..h_c19`) are
+                    -- in scope ready to use.
                     sorry
                   . by_cases h_eq_sb : air.cols.values.instruction.opcode row 0 = 15
                     . -- SB. Use `spec_SB` (no MISSING needed for stores).
