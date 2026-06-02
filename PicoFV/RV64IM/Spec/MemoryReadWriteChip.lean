@@ -2701,4 +2701,180 @@ namespace MemoryReadWriteChip.Spec
       simp [U64w.toNat, h_c0]
       omega
 
+  section BusEquivalence
+
+    open RV64IM
+
+    /-- `bus_equiv` ties the chip's State-bus emission (the previous-
+        and current-memory accesses, both as `.Double` reads/writes at
+        `addr_aligned`) to its Memory-bus emission (the load/store
+        operation at `addr`, with width and direction determined by
+        the opcode). It says: if the State-bus operations succeed when
+        applied to an initial sequential state, then the Memory-bus
+        operation also succeeds *and* produces the same end state.
+
+        The proof dispatches on the eleven RV64 memory opcodes:
+          * loads:  LB (10), LBU (13), LH (11), LHU (14),
+                    LW (12), LWU (45), LD (46);
+          * stores: SB (15), SH (16), SW (17), SD (47).
+
+        Each case reuses the per-opcode `spec_<OP>` lemma for the
+        Memory-bus row's well-formedness (u16 bounds, alignment,
+        sign/zero extension), and combines it with the State-bus's
+        u16 bounds + the offset-bit decomposition to align the byte-
+        by-byte memory operations on both sides. -/
+    lemma bus_equiv
+      [Field ExtF]
+      (air : Valid_MemoryReadWriteChip FKB ExtF)
+      (row : ℕ)
+      (h_ext : bus_row_ext_asm (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
+      (h_is_real : air.cols.values.is_real row 0 = 1)
+      (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
+      -- FIXME: this assumption needs to be derivable from c1 (the
+      -- stack-guard `65536 ≤ addr`) + the alignment, but for now it's
+      -- stated explicitly (mirroring the RV32 `bus_equiv`).
+      (ASSUMPTION_addr_aligned_ge_32 :
+        ¬ ((air.cols.values.addr_aligned_0 row 0).val +
+           65536 * (air.cols.values.addr_aligned_1 row 0).val +
+           65536 * 65536 * (air.cols.values.addr_aligned_2 row 0).val < 32))
+      -- Per-opcode soundness-bug hypotheses (see the load specs).
+      (MISSING_LB_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 10 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.selected_byte row 0 +
+              air.cols.values.msb row 0 * 65280 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+            air.cols.values.msb row 0 * 65535 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+            air.cols.values.msb row 0 * 65535 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+            air.cols.values.msb row 0 * 65535)
+      (MISSING_LBU_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 13 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.selected_byte row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 = 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 = 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 = 0)
+      (MISSING_LBU_selected_byte_in_range :
+        air.cols.values.instruction.opcode row 0 = 13 →
+        (air.cols.values.selected_byte row 0).val < 256)
+      (MISSING_LH_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 11 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.selected_limb row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+            air.cols.values.msb row 0 * 65535 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+            air.cols.values.msb row 0 * 65535 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+            air.cols.values.msb row 0 * 65535)
+      (MISSING_LHU_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 14 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.selected_limb row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 = 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 = 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 = 0)
+      (MISSING_LW_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 12 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.selected_word_0 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+            air.cols.values.selected_word_1 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+            air.cols.values.msb row 0 * 65535 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+            air.cols.values.msb row 0 * 65535)
+      (MISSING_LWU_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 45 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.selected_word_0 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+            air.cols.values.selected_word_1 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 = 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 = 0)
+      (MISSING_LD_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 46 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.memory_access.prev_value_0 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+            air.cols.values.memory_access.prev_value_1 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+            air.cols.values.memory_access.prev_value_2 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+            air.cols.values.memory_access.prev_value_3 row 0)
+    :
+      let memory_row := { (bus_row air row).Memory[0]! with multiplicity := -1 }
+      let memory_bus : BusRow := {
+        Program := [], ALU := [], Byte := [], State := [], Memory := [ memory_row ]
+      }
+      let state_bus : BusRow := {
+        Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := []
+      }
+      (RV64IM.operation_list_effect (RV64IM.bus_operations state_bus) state).hypotheses →
+        (RV64IM.operation_list_effect (RV64IM.bus_operations memory_bus) state).hypotheses ∧
+        (RV64IM.operation_list_effect (RV64IM.bus_operations memory_bus) state).state =
+          (RV64IM.operation_list_effect (RV64IM.bus_operations state_bus) state).state
+    := by
+      -- 1) Get the opcode-selector pattern. selector_exclusivity forces
+      --    `opcode ∈ {10..17, 45..47}`; we dispatch into 11 sub-cases.
+      have h_excl := selector_exclusivity air row h_ext h_is_real
+      simp only at h_excl
+      obtain ⟨ _h_opcode_range, _, _, _, _, _, _, _, _,
+               h_op_10, h_op_11, h_op_12, h_op_13, h_op_14,
+               h_op_15, h_op_16, h_op_17, h_op_45, h_op_46, h_op_47 ⟩ := h_excl
+      -- The opcode-range disjunct gives us `opcode.val ∈ Icc 10 17 ∪ Icc 45 47`.
+      -- Combined with `h_op_X` (selector-exclusivity), each opcode value
+      -- in that union picks out exactly one of the eleven cases.
+      by_cases h_eq_lb : air.cols.values.instruction.opcode row 0 = 10
+      . -- LB. Use `spec_LB` to get `MemoryBus.Spec 10 ...`, then unfold
+        -- bus_operations and align the State/Memory sides byte-by-byte.
+        sorry
+      . by_cases h_eq_lbu : air.cols.values.instruction.opcode row 0 = 13
+        . -- LBU. Same shape; use `spec_LBU` + `MISSING_LBU_*`.
+          sorry
+        . by_cases h_eq_lh : air.cols.values.instruction.opcode row 0 = 11
+          . -- LH. Use `spec_LH` + `MISSING_LH_extends_correctly`.
+            sorry
+          . by_cases h_eq_lhu : air.cols.values.instruction.opcode row 0 = 14
+            . -- LHU. Use `spec_LHU` + `MISSING_LHU_extends_correctly`.
+              sorry
+            . by_cases h_eq_lw : air.cols.values.instruction.opcode row 0 = 12
+              . -- LW. Use `spec_LW` + `MISSING_LW_extends_correctly`.
+                sorry
+              . by_cases h_eq_lwu : air.cols.values.instruction.opcode row 0 = 45
+                . -- LWU. Use `spec_LWU` + `MISSING_LWU_extends_correctly`.
+                  sorry
+                . by_cases h_eq_ld : air.cols.values.instruction.opcode row 0 = 46
+                  . -- LD. Use `spec_LD` + `MISSING_LD_extends_correctly`.
+                    sorry
+                  . by_cases h_eq_sb : air.cols.values.instruction.opcode row 0 = 15
+                    . -- SB. Use `spec_SB` (no MISSING needed for stores).
+                      sorry
+                    . by_cases h_eq_sh : air.cols.values.instruction.opcode row 0 = 16
+                      . -- SH. Use `spec_SH`.
+                        sorry
+                      . by_cases h_eq_sw : air.cols.values.instruction.opcode row 0 = 17
+                        . -- SW. Use `spec_SW`.
+                          sorry
+                        . by_cases h_eq_sd : air.cols.values.instruction.opcode row 0 = 47
+                          . -- SD. Use `spec_SD`.
+                            sorry
+                          . -- Exhaustive: selector exclusivity from `h_ext`
+                            -- forces `opcode ∈ [10, 17] ∪ [45, 47]`, so
+                            -- combined with all eleven `¬(opcode = X)`
+                            -- branches this case is vacuous.
+                            sorry
+
+  end BusEquivalence
+
 end MemoryReadWriteChip.Spec
