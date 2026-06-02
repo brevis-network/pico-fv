@@ -1542,13 +1542,83 @@ namespace MemoryReadWriteChip.Spec
       simp [U64w.toNat, h_c0]
       omega
     . -- (e) signExtend 32: a = signExtend 64 (a.truncate 32).
-      -- TODO: same shape as `spec_LH`'s signExtend 16 (d), but the
-      -- truncate-32 of `U64w.toBV` normalises via
-      -- `U64w.setWidth_32_eq_low_U32w` to `U32w.toBV [sw_0, sw_1]`,
-      -- whose `.msb` is `U32w.negative`. The straightforward
-      -- conversion to a Nat comparison requires more work than for
-      -- LH's BV16 truncate; leaving for follow-up.
-      sorry
+      -- Truncate-32 of `U64w.toBV` normalises to `U32w.toBV [sw_0, sw_1]`;
+      -- its `.msb` is `U32w.negative` (`2 · U32w.toNat ≥ 2^32`), forced
+      -- by the U16MSB byte-bus check to match `msb ∈ {0, 1}`.
+      rw [h_v0, h_v1, h_v2, h_v3]
+      rcases h_msb_bool with h_msb | h_msb
+      . -- msb = 0: sw_1 < 32768 → `.negative` is false.
+        rw [h_msb]
+        simp only [zero_mul]
+        have h_sw1_lt_32768 : (air.cols.values.selected_word_1 row 0).val < 32768 := by
+          rw [h_msb] at h_u16msb_sw1
+          simp at h_u16msb_sw1
+          rw [Fin.val_mul] at h_u16msb_sw1
+          have h_2 : (2 : FKB).val = 2 := by decide
+          rw [h_2] at h_u16msb_sw1
+          have h_no_wrap :
+              2 * (air.cols.values.selected_word_1 row 0).val < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap] at h_u16msb_sw1
+          omega
+        apply BitVec.eq_of_toNat_eq
+        rw [BitVec.toNat_signExtend]
+        simp only [U32w.toBV_msb_negative]
+        have h_neg_false :
+            ¬ U32w.negative
+                #v[BitVec.ofNat 16 (air.cols.values.selected_word_0 row 0).val,
+                   BitVec.ofNat 16 (air.cols.values.selected_word_1 row 0).val] := by
+          simp [U32w.negative, U32w.toNat]
+          omega
+        rw [if_neg (by simpa using h_neg_false)]
+        simp [U64w.toNat, U32w.toNat]
+        omega
+      . -- msb = 1: sw_1 ≥ 32768 → `.negative` is true.
+        rw [h_msb]
+        simp only [one_mul]
+        have h_sw1_ge_32768 : 32768 ≤ (air.cols.values.selected_word_1 row 0).val := by
+          rw [h_msb] at h_u16msb_sw1
+          simp at h_u16msb_sw1
+          by_contra h_contra
+          push_neg at h_contra
+          rw [Fin.val_sub, Fin.val_mul] at h_u16msb_sw1
+          have h_2 : (2 : FKB).val = 2 := by decide
+          have h_65k : (65536 : FKB).val = 65536 := by decide
+          rw [h_2, h_65k] at h_u16msb_sw1
+          have h_no_wrap_2 :
+              2 * (air.cols.values.selected_word_1 row 0).val < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_2] at h_u16msb_sw1
+          have h_no_wrap_sum :
+              2130706433 - 65536 + 2 * (air.cols.values.selected_word_1 row 0).val
+                < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_sum] at h_u16msb_sw1
+          omega
+        apply BitVec.eq_of_toNat_eq
+        rw [BitVec.toNat_signExtend]
+        simp only [U32w.toBV_msb_negative]
+        have h_neg_true :
+            U32w.negative
+                #v[BitVec.ofNat 16 (air.cols.values.selected_word_0 row 0).val,
+                   BitVec.ofNat 16 (air.cols.values.selected_word_1 row 0).val] := by
+          unfold U32w.negative
+          push_neg
+          simp [U32w.toNat, BitVec.toNat_ofNat]
+          have h_sw0_mod :
+              (air.cols.values.selected_word_0 row 0).val % 65536 =
+              (air.cols.values.selected_word_0 row 0).val :=
+            Nat.mod_eq_of_lt h_sw0_bound
+          have h_sw1_mod :
+              (air.cols.values.selected_word_1 row 0).val % 65536 =
+              (air.cols.values.selected_word_1 row 0).val :=
+            Nat.mod_eq_of_lt h_sw1_bound
+          rw [h_sw0_mod, h_sw1_mod]
+          omega
+        rw [if_pos (by simpa using h_neg_true)]
+        simp [U64w.toNat, U32w.toNat, BitVec.toNat_setWidth,
+              -BitVec.reduceToNat, -BitVec.toNat_ofNat]
+        repeat rw [BitVec.toNat_ofNat]
+        have h_const_id :
+            65535 * 2^32 + 65535 * 2^48 = 2^64 - 2^32 := by decide
+        omega
 
   -- ======================================
   -- LWU (Load Word, unsigned) — opcode 45
