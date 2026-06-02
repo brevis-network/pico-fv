@@ -1119,7 +1119,10 @@ namespace RV64IM_Interactions
         -- unconstrained on the bus side.
         ((mem_opcode.val ≤ 14 ∨ mem_opcode.val = 45 ∨ mem_opcode.val = 46) →
             a_0.val < 65536 ∧ a_1.val < 65536 ∧ a_2.val < 65536 ∧ a_3.val < 65536) ∧
-        addr < Pico_address_space_size_64 ∧
+        -- Address must lie in the user-accessible range [2^16, 2^48):
+        -- the low 64 KiB are reserved (Pico's stack-guard region —
+        -- enforced by MemoryReadWriteChip's `constraint_1`).
+        65536 ≤ addr ∧ addr < Pico_address_space_size_64 ∧
         -- Alignment requirements
         (mem_opcode = 11 ∨ mem_opcode = 14 ∨ mem_opcode = 16 → 2 ∣ addr) ∧
         (mem_opcode = 12 ∨ mem_opcode = 17 ∨ mem_opcode = 45 → 4 ∣ addr) ∧
