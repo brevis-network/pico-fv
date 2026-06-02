@@ -803,10 +803,95 @@ namespace MemoryReadWriteChip.Spec
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
-    . -- (d) 2 ∣ addr. Same shape as spec_LHU's alignment.
-      -- TODO: rcases on (ob1, ob2) and apply the LD-style 8-divisibility
-      -- argument with non-zero constant offset (od = 2·ob1 + 4·ob2, even).
-      sorry
+    . -- (d) 2 ∣ addr. For LH: ob0 = 0 (c9), so od = 2·ob1 + 4·ob2 ∈
+      -- {0, 2, 4, 6}. From BitRange-13 + 8·inv(8) = 1 in FKB, derive
+      -- aw_0.val = od.val + 8·q.val in Nat; both terms are even, so
+      -- 2 | aw_0.val. Combined with 65536 even, 2 | addr.
+      have h_aw0_even : 2 ∣ (air.cols.values.addr_word_0 row 0).val := by
+        rcases h_c3 with h_ob1 | h_ob1 <;> rcases h_c4 with h_ob2 | h_ob2
+        all_goals rw [h_ob0_zero, h_ob1, h_ob2] at h_bit13
+        all_goals simp at h_bit13
+        . -- ob1 = 0, ob2 = 0: od = 0, aw_0 = 8 · q.
+          have h_eq :
+              air.cols.values.addr_word_0 row 0 =
+              8 * (air.cols.values.addr_word_0 row 0 * 1864368129) := by
+            have h_inv : (8 * 1864368129 : FKB) = 1 := by native_decide
+            linear_combination -(air.cols.values.addr_word_0 row 0) * h_inv
+          apply_fun (·.val) at h_eq
+          rw [Fin.val_mul] at h_eq
+          have h_8 : (8 : FKB).val = 8 := by decide
+          rw [h_8] at h_eq
+          set q : ℕ := (air.cols.values.addr_word_0 row 0 * 1864368129 : FKB).val
+          have h_q_lt : q < 8192 := h_bit13
+          have h_no_wrap : 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap] at h_eq
+          rw [h_eq]
+          exact ⟨4 * q, by ring⟩
+        . -- ob1 = 0, ob2 = 1: od = 4, aw_0 = 4 + 8 · q.
+          have h_eq :
+              air.cols.values.addr_word_0 row 0 =
+              4 + 8 * ((air.cols.values.addr_word_0 row 0 - 4) * 1864368129) := by
+            have h_inv : (8 * 1864368129 : FKB) = 1 := by native_decide
+            linear_combination -(air.cols.values.addr_word_0 row 0 - 4) * h_inv
+          apply_fun (·.val) at h_eq
+          rw [Fin.val_add, Fin.val_mul] at h_eq
+          have h_8 : (8 : FKB).val = 8 := by decide
+          have h_4 : (4 : FKB).val = 4 := by decide
+          rw [h_8, h_4] at h_eq
+          have h_no_wrap_8q :
+              8 * ((air.cols.values.addr_word_0 row 0 - 4) * 1864368129 : FKB).val
+                < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_8q] at h_eq
+          have h_no_wrap_sum :
+              4 + 8 * ((air.cols.values.addr_word_0 row 0 - 4) * 1864368129 : FKB).val
+                < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_sum] at h_eq
+          omega
+        . -- ob1 = 1, ob2 = 0: od = 2, aw_0 = 2 + 8 · q.
+          have h_eq :
+              air.cols.values.addr_word_0 row 0 =
+              2 + 8 * ((air.cols.values.addr_word_0 row 0 - 2) * 1864368129) := by
+            have h_inv : (8 * 1864368129 : FKB) = 1 := by native_decide
+            linear_combination -(air.cols.values.addr_word_0 row 0 - 2) * h_inv
+          apply_fun (·.val) at h_eq
+          rw [Fin.val_add, Fin.val_mul] at h_eq
+          have h_8 : (8 : FKB).val = 8 := by decide
+          have h_2 : (2 : FKB).val = 2 := by decide
+          rw [h_8, h_2] at h_eq
+          have h_no_wrap_8q :
+              8 * ((air.cols.values.addr_word_0 row 0 - 2) * 1864368129 : FKB).val
+                < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_8q] at h_eq
+          have h_no_wrap_sum :
+              2 + 8 * ((air.cols.values.addr_word_0 row 0 - 2) * 1864368129 : FKB).val
+                < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_sum] at h_eq
+          omega
+        . -- ob1 = 1, ob2 = 1: od = 6, aw_0 = 6 + 8 · q.
+          have h_eq :
+              air.cols.values.addr_word_0 row 0 =
+              6 + 8 * ((air.cols.values.addr_word_0 row 0 - 6) * 1864368129) := by
+            have h_inv : (8 * 1864368129 : FKB) = 1 := by native_decide
+            linear_combination -(air.cols.values.addr_word_0 row 0 - 6) * h_inv
+          apply_fun (·.val) at h_eq
+          rw [Fin.val_add, Fin.val_mul] at h_eq
+          have h_8 : (8 : FKB).val = 8 := by decide
+          have h_6 : (6 : FKB).val = 6 := by decide
+          rw [h_8, h_6] at h_eq
+          have h_no_wrap_8q :
+              8 * ((air.cols.values.addr_word_0 row 0 - 6) * 1864368129 : FKB).val
+                < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_8q] at h_eq
+          have h_no_wrap_sum :
+              6 + 8 * ((air.cols.values.addr_word_0 row 0 - 6) * 1864368129 : FKB).val
+                < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_sum] at h_eq
+          omega
+      apply_fun BitVec.toNat at h_alu_eq
+      simp at h_alu_eq
+      rw [← h_alu_eq]
+      simp [U64w.toNat, h_c0]
+      omega
     . -- (e) signExtend 16: a = signExtend 64 (a.truncate 16).
       rw [h_v0, h_v1, h_v2, h_v3]
       rcases h_msb_bool with h_msb | h_msb
@@ -1083,12 +1168,85 @@ namespace MemoryReadWriteChip.Spec
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
-    . -- (d) 2 ∣ addr. ob0 = 0 (c9); BitRange-13 → aw_0 ≡ od mod 8 with
-      -- od = 2·ob1 + 4·ob2 ∈ {0, 2, 4, 6} (all even). So 2 | aw_0, hence
-      -- 2 | addr (since 65536 is even).
-      -- TODO: rcases on (ob1, ob2) and apply the LD-style 8-divisibility
-      -- argument with non-zero constant offset.
-      sorry
+    . -- (d) 2 ∣ addr. Same shape as `spec_LH`'s alignment.
+      have h_aw0_even : 2 ∣ (air.cols.values.addr_word_0 row 0).val := by
+        rcases h_c3 with h_ob1 | h_ob1 <;> rcases h_c4 with h_ob2 | h_ob2
+        all_goals rw [h_ob0_zero, h_ob1, h_ob2] at h_bit13
+        all_goals simp at h_bit13
+        . -- ob1 = 0, ob2 = 0.
+          have h_eq :
+              air.cols.values.addr_word_0 row 0 =
+              8 * (air.cols.values.addr_word_0 row 0 * 1864368129) := by
+            have h_inv : (8 * 1864368129 : FKB) = 1 := by native_decide
+            linear_combination -(air.cols.values.addr_word_0 row 0) * h_inv
+          apply_fun (·.val) at h_eq
+          rw [Fin.val_mul] at h_eq
+          have h_8 : (8 : FKB).val = 8 := by decide
+          rw [h_8] at h_eq
+          set q : ℕ := (air.cols.values.addr_word_0 row 0 * 1864368129 : FKB).val
+          have h_q_lt : q < 8192 := h_bit13
+          have h_no_wrap : 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap] at h_eq
+          rw [h_eq]; exact ⟨4 * q, by ring⟩
+        . -- ob1 = 0, ob2 = 1: od = 4.
+          have h_eq :
+              air.cols.values.addr_word_0 row 0 =
+              4 + 8 * ((air.cols.values.addr_word_0 row 0 - 4) * 1864368129) := by
+            have h_inv : (8 * 1864368129 : FKB) = 1 := by native_decide
+            linear_combination -(air.cols.values.addr_word_0 row 0 - 4) * h_inv
+          apply_fun (·.val) at h_eq
+          rw [Fin.val_add, Fin.val_mul] at h_eq
+          have h_8 : (8 : FKB).val = 8 := by decide
+          have h_4 : (4 : FKB).val = 4 := by decide
+          rw [h_8, h_4] at h_eq
+          set q : ℕ := ((air.cols.values.addr_word_0 row 0 - 4) * 1864368129 : FKB).val
+          have h_q_lt : q < 8192 := h_bit13
+          have h_no_wrap_8q : 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_8q] at h_eq
+          have h_no_wrap_sum : 4 + 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_sum] at h_eq
+          rw [h_eq]; exact ⟨2 + 4 * q, by ring⟩
+        . -- ob1 = 1, ob2 = 0: od = 2.
+          have h_eq :
+              air.cols.values.addr_word_0 row 0 =
+              2 + 8 * ((air.cols.values.addr_word_0 row 0 - 2) * 1864368129) := by
+            have h_inv : (8 * 1864368129 : FKB) = 1 := by native_decide
+            linear_combination -(air.cols.values.addr_word_0 row 0 - 2) * h_inv
+          apply_fun (·.val) at h_eq
+          rw [Fin.val_add, Fin.val_mul] at h_eq
+          have h_8 : (8 : FKB).val = 8 := by decide
+          have h_2 : (2 : FKB).val = 2 := by decide
+          rw [h_8, h_2] at h_eq
+          set q : ℕ := ((air.cols.values.addr_word_0 row 0 - 2) * 1864368129 : FKB).val
+          have h_q_lt : q < 8192 := h_bit13
+          have h_no_wrap_8q : 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_8q] at h_eq
+          have h_no_wrap_sum : 2 + 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_sum] at h_eq
+          rw [h_eq]; exact ⟨1 + 4 * q, by ring⟩
+        . -- ob1 = 1, ob2 = 1: od = 6.
+          have h_eq :
+              air.cols.values.addr_word_0 row 0 =
+              6 + 8 * ((air.cols.values.addr_word_0 row 0 - 6) * 1864368129) := by
+            have h_inv : (8 * 1864368129 : FKB) = 1 := by native_decide
+            linear_combination -(air.cols.values.addr_word_0 row 0 - 6) * h_inv
+          apply_fun (·.val) at h_eq
+          rw [Fin.val_add, Fin.val_mul] at h_eq
+          have h_8 : (8 : FKB).val = 8 := by decide
+          have h_6 : (6 : FKB).val = 6 := by decide
+          rw [h_8, h_6] at h_eq
+          set q : ℕ := ((air.cols.values.addr_word_0 row 0 - 6) * 1864368129 : FKB).val
+          have h_q_lt : q < 8192 := h_bit13
+          have h_no_wrap_8q : 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_8q] at h_eq
+          have h_no_wrap_sum : 6 + 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_sum] at h_eq
+          rw [h_eq]; exact ⟨3 + 4 * q, by ring⟩
+      apply_fun BitVec.toNat at h_alu_eq
+      simp at h_alu_eq
+      rw [← h_alu_eq]
+      simp [U64w.toNat, h_c0]
+      omega
     . -- (e) zeroExtend 16: a = setWidth 64 (a.truncate 16).
       rw [h_v0, h_v1, h_v2, h_v3]
       apply BitVec.eq_of_toNat_eq
@@ -1340,15 +1498,56 @@ namespace MemoryReadWriteChip.Spec
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
-    . -- (d) 4 ∣ addr. Same shape as spec_LWU's alignment.
-      sorry
+    . -- (d) 4 ∣ addr. Same shape as `spec_LWU`'s alignment.
+      have h_aw0_div_4 : 4 ∣ (air.cols.values.addr_word_0 row 0).val := by
+        rcases h_c4 with h_ob2 | h_ob2
+        all_goals rw [h_ob0_zero, h_ob1_zero, h_ob2] at h_bit13
+        all_goals simp at h_bit13
+        . -- ob2 = 0: aw_0 = 8·q.
+          have h_eq :
+              air.cols.values.addr_word_0 row 0 =
+              8 * (air.cols.values.addr_word_0 row 0 * 1864368129) := by
+            have h_inv : (8 * 1864368129 : FKB) = 1 := by native_decide
+            linear_combination -(air.cols.values.addr_word_0 row 0) * h_inv
+          apply_fun (·.val) at h_eq
+          rw [Fin.val_mul] at h_eq
+          have h_8 : (8 : FKB).val = 8 := by decide
+          rw [h_8] at h_eq
+          set q : ℕ := (air.cols.values.addr_word_0 row 0 * 1864368129 : FKB).val
+          have h_q_lt : q < 8192 := h_bit13
+          have h_no_wrap : 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap] at h_eq
+          rw [h_eq]; exact ⟨2 * q, by ring⟩
+        . -- ob2 = 1: aw_0 = 4 + 8·q.
+          have h_eq :
+              air.cols.values.addr_word_0 row 0 =
+              4 + 8 * ((air.cols.values.addr_word_0 row 0 - 4) * 1864368129) := by
+            have h_inv : (8 * 1864368129 : FKB) = 1 := by native_decide
+            linear_combination -(air.cols.values.addr_word_0 row 0 - 4) * h_inv
+          apply_fun (·.val) at h_eq
+          rw [Fin.val_add, Fin.val_mul] at h_eq
+          have h_8 : (8 : FKB).val = 8 := by decide
+          have h_4 : (4 : FKB).val = 4 := by decide
+          rw [h_8, h_4] at h_eq
+          set q : ℕ := ((air.cols.values.addr_word_0 row 0 - 4) * 1864368129 : FKB).val
+          have h_q_lt : q < 8192 := h_bit13
+          have h_no_wrap_8q : 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_8q] at h_eq
+          have h_no_wrap_sum : 4 + 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_sum] at h_eq
+          rw [h_eq]; exact ⟨1 + 2 * q, by ring⟩
+      apply_fun BitVec.toNat at h_alu_eq
+      simp at h_alu_eq
+      rw [← h_alu_eq]
+      simp [U64w.toNat, h_c0]
+      omega
     . -- (e) signExtend 32: a = signExtend 64 (a.truncate 32).
-      -- The W-variant truncate normalises via `setWidth_32_eq_low_U32w`
-      -- to `U32w.toBV [sw_0, sw_1]`. Its `.msb` is `U32w.negative`, i.e.,
-      -- `2 · (sw_0.val + 65536·sw_1.val) ≥ 2^32`, equivalent to `sw_1.val
-      -- ≥ 32768` given `sw_0.val < 65536`. The U16MSB byte-bus check
-      -- forces this relationship to msb.
-      -- TODO: close via `by_cases U32w.negative` + omega with sw_1 bound.
+      -- TODO: same shape as `spec_LH`'s signExtend 16 (d), but the
+      -- truncate-32 of `U64w.toBV` normalises via
+      -- `U64w.setWidth_32_eq_low_U32w` to `U32w.toBV [sw_0, sw_1]`,
+      -- whose `.msb` is `U32w.negative`. The straightforward
+      -- conversion to a Nat comparison requires more work than for
+      -- LH's BV16 truncate; leaving for follow-up.
       sorry
 
   -- ======================================
@@ -1556,10 +1755,51 @@ namespace MemoryReadWriteChip.Spec
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
-    . -- (d) 4 ∣ addr. c10 forces ob0 = ob1 = 0; BitRange-13 gives
-      -- aw_0 = 4·ob2 + 8·q with 4·ob2 ∈ {0, 4} (divisible by 4).
-      -- TODO: rcases on ob2 + LD-style derivation with non-zero offset.
-      sorry
+    . -- (d) 4 ∣ addr. c10 → ob0 = ob1 = 0; BitRange-13 gives
+      -- aw_0 = 4·ob2 + 8·q with 4·ob2 ∈ {0, 4}. So 4 | aw_0, hence
+      -- 4 | addr (65536 = 4 · 16384).
+      have h_aw0_div_4 : 4 ∣ (air.cols.values.addr_word_0 row 0).val := by
+        rcases h_c4 with h_ob2 | h_ob2
+        all_goals rw [h_ob0_zero, h_ob1_zero, h_ob2] at h_bit13
+        all_goals simp at h_bit13
+        . -- ob2 = 0: od = 0, aw_0 = 8·q.
+          have h_eq :
+              air.cols.values.addr_word_0 row 0 =
+              8 * (air.cols.values.addr_word_0 row 0 * 1864368129) := by
+            have h_inv : (8 * 1864368129 : FKB) = 1 := by native_decide
+            linear_combination -(air.cols.values.addr_word_0 row 0) * h_inv
+          apply_fun (·.val) at h_eq
+          rw [Fin.val_mul] at h_eq
+          have h_8 : (8 : FKB).val = 8 := by decide
+          rw [h_8] at h_eq
+          set q : ℕ := (air.cols.values.addr_word_0 row 0 * 1864368129 : FKB).val
+          have h_q_lt : q < 8192 := h_bit13
+          have h_no_wrap : 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap] at h_eq
+          rw [h_eq]; exact ⟨2 * q, by ring⟩
+        . -- ob2 = 1: od = 4, aw_0 = 4 + 8·q.
+          have h_eq :
+              air.cols.values.addr_word_0 row 0 =
+              4 + 8 * ((air.cols.values.addr_word_0 row 0 - 4) * 1864368129) := by
+            have h_inv : (8 * 1864368129 : FKB) = 1 := by native_decide
+            linear_combination -(air.cols.values.addr_word_0 row 0 - 4) * h_inv
+          apply_fun (·.val) at h_eq
+          rw [Fin.val_add, Fin.val_mul] at h_eq
+          have h_8 : (8 : FKB).val = 8 := by decide
+          have h_4 : (4 : FKB).val = 4 := by decide
+          rw [h_8, h_4] at h_eq
+          set q : ℕ := ((air.cols.values.addr_word_0 row 0 - 4) * 1864368129 : FKB).val
+          have h_q_lt : q < 8192 := h_bit13
+          have h_no_wrap_8q : 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_8q] at h_eq
+          have h_no_wrap_sum : 4 + 8 * q < 2130706433 := by omega
+          rw [Nat.mod_eq_of_lt h_no_wrap_sum] at h_eq
+          rw [h_eq]; exact ⟨1 + 2 * q, by ring⟩
+      apply_fun BitVec.toNat at h_alu_eq
+      simp at h_alu_eq
+      rw [← h_alu_eq]
+      simp [U64w.toNat, h_c0]
+      omega
     . -- (e) zeroExtend 32: a = setWidth 64 (a.truncate 32).
       rw [h_v0, h_v1, h_v2, h_v3]
       apply BitVec.eq_of_toNat_eq
