@@ -54,6 +54,30 @@ namespace MemoryReadWriteChip.Spec
     (h_is_real : air.cols.values.is_real row 0 = 1)
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
     (h_opcode : air.cols.values.instruction.opcode row 0 = 10)
+    -- SOUNDNESS-BUG HYPOTHESIS — `mrw-op-a-x0-soundness-gap`.
+    -- When `op_a_0 = 1` (rd = x0), Pico's chip leaves
+    -- `op_a_access.access.value_0..3` unconstrained: c46/c47 (the
+    -- `mem_value_is_neg/pos_not_x0` gate columns) collapse to 0 via
+    -- the `(1 - op_a_0)` factor, so c48-c63 all fire vacuously. But
+    -- the Memory bus carries those very columns as the loaded `a_0..3`
+    -- value — they must hold the correct sign-extended byte, not just
+    -- *something* u16-bounded. The cleanest Pico-side fix is to drop
+    -- the `(1 - op_a_0)` factor from c46/c47, making c48-c63 fire
+    -- unconditionally. The equations they would then enforce for LB
+    -- are stated below: `value_0 = selected_byte + msb · 0xFF00`,
+    -- `value_{1,2,3} = msb · 0xFFFF` (i.e., the 64-bit sign-extension
+    -- of the loaded byte). See `mrw_op_a_x0_soundness_gap.md`.
+    (MISSING_LB_extends_correctly :
+      air.cols.values.instruction.op_a_0 row 0 = 1 →
+        air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+          air.cols.values.selected_byte row 0 +
+            air.cols.values.msb row 0 * 65280 ∧
+        air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+          air.cols.values.msb row 0 * 65535 ∧
+        air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+          air.cols.values.msb row 0 * 65535 ∧
+        air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+          air.cols.values.msb row 0 * 65535)
   :
     MemoryBus.Spec
       (air.cols.values.instruction.opcode row 0)
@@ -172,15 +196,78 @@ namespace MemoryReadWriteChip.Spec
     simp [constraint_24, h_is_lb, h_is_lbu] at h_c24
     simp [constraint_25, h_is_lb, h_is_lbu] at h_c25
     -- ───────────────────────────────────────────────────────────────────
-    -- Step 6: split the goal into the four conjuncts and discharge each.
+    -- Step 6: specialise c45-c63 (op_a_0 booleanness + neg/pos gates +
+    -- value_i fills) and `h_msb_byte` (msb ∈ {0, 1} + `selected_byte`
+    -- byte-bound). With these in hand we derive the *unified* value_i
+    -- extension equations, valid both for `op_a_0 = 0` (from c46-c63)
+    -- and for `op_a_0 = 1` (from `MISSING_LB_extends_correctly`).
+    -- ───────────────────────────────────────────────────────────────────
+    simp [constraint_45, sub_eq_zero, mul_eq_zero] at h_c45
+    simp [constraint_46, h_is_lb, h_is_lh, h_is_lw, sub_eq_zero] at h_c46
+    simp [constraint_47, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+          h_is_lwu, h_is_ld, sub_eq_zero] at h_c47
+    simp [constraint_48, h_is_lb, sub_eq_zero] at h_c48
+    simp [constraint_49, h_is_lb, sub_eq_zero] at h_c49
+    simp [constraint_50, h_is_lb, sub_eq_zero] at h_c50
+    simp [constraint_51, h_is_lb, sub_eq_zero] at h_c51
+    simp [constraint_60, sub_eq_zero] at h_c60
+    simp [constraint_61, sub_eq_zero] at h_c61
+    simp [constraint_62, sub_eq_zero] at h_c62
+    simp [constraint_63, sub_eq_zero] at h_c63
+    simp [ByteBus.Spec] at h_msb_byte
+    obtain ⟨ h_msb_def, h_msb_lt, h_byte_lt ⟩ := h_msb_byte
+    have h_msb_bool : air.cols.values.msb row 0 = 0 ∨
+                      air.cols.values.msb row 0 = 1 := by
+      rw [h_msb_def]; split_ifs <;> [left; right] <;> rfl
+    -- Unified value_i sign-extension equations. The `op_a_0 = 0`
+    -- branch derives them from c48..c63 (gates fire normally). The
+    -- `op_a_0 = 1` branch uses `MISSING_LB_extends_correctly` — the
+    -- assumed Pico-side fix that drops the `(1 - op_a_0)` factor from
+    -- the gate columns, so c48..c63 fire unconditionally.
+    have h_val_eq :
+        air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+          air.cols.values.selected_byte row 0 +
+            air.cols.values.msb row 0 * 65280 ∧
+        air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+          air.cols.values.msb row 0 * 65535 ∧
+        air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+          air.cols.values.msb row 0 * 65535 ∧
+        air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+          air.cols.values.msb row 0 * 65535 := by
+      rcases h_c45 with h_x0 | h_x0
+      . -- op_a_0 = 0: derive from c46/c47 + c48..c63.
+        simp [h_x0] at h_c46 h_c47
+        rcases h_msb_bool with h_msb | h_msb
+        . -- msb = 0: pos = 1 fires c60..c63; value_0 = byte,
+          -- value_{1,2,3} = 0.
+          rw [h_msb] at h_c46 h_c47
+          simp at h_c46 h_c47
+          rcases h_c60 with h | h_v0; . rw [h] at h_c47; simp at h_c47
+          rcases h_c61 with h | h_v1; . rw [h] at h_c47; simp at h_c47
+          rcases h_c62 with h | h_v2; . rw [h] at h_c47; simp at h_c47
+          rcases h_c63 with h | h_v3; . rw [h] at h_c47; simp at h_c47
+          grind
+        . -- msb = 1: neg = 1 fires c48..c51; value_0 = byte + 65280,
+          -- value_{1,2,3} = 65535.
+          rw [h_msb] at h_c46 h_c47
+          simp at h_c46 h_c47
+          rcases h_c48 with h | h_v0; . rw [h] at h_c46; simp at h_c46
+          rcases h_c49 with h | h_v1; . rw [h] at h_c46; simp at h_c46
+          rcases h_c50 with h | h_v2; . rw [h] at h_c46; simp at h_c46
+          rcases h_c51 with h | h_v3; . rw [h] at h_c46; simp at h_c46
+          grind
+      . -- op_a_0 = 1: from the soundness-bug hypothesis.
+        exact MISSING_LB_extends_correctly h_x0
+    obtain ⟨ h_v0, h_v1, h_v2, h_v3 ⟩ := h_val_eq
+    -- ───────────────────────────────────────────────────────────────────
+    -- Step 7: discharge the four `MemoryBus.Spec` conjuncts.
     -- ───────────────────────────────────────────────────────────────────
     refine ⟨?_, ?_, ?_, ?_⟩
     . -- (a) u16 range on `op_a_access.access.value_0..3`.
-      -- Each `value_i` is built from `unsigned_mem_val_i` (bounded since
-      -- it equals `selected_byte` for LB, with `selected_byte < 256`
-      -- from `h_msb_byte`) and `msb · 0xFF00 / 0xFFFF` sign-extension
-      -- fillers (also < 65536). Requires constraints c45-c63.
-      sorry
+      -- Case-split on `msb`:
+      --   * msb = 0 → value_0 = byte (< 256), value_{1,2,3} = 0;
+      --   * msb = 1 → value_0 = byte + 65280 (< 65536), value_{1,2,3} = 65535.
+      grind
     . -- (b) 65536 ≤ addr.
       -- From `h_c1`: `addr_top_two_limb_inv · (aw_1 + aw_2) = 1` forces
       -- `aw_1 + aw_2 ≠ 0` in FKB. With u16 bounds on `aw_1`, `aw_2`
@@ -204,143 +291,80 @@ namespace MemoryReadWriteChip.Spec
       simp [U64w.toNat, h_c0]
       omega
     . -- (c) addr < 2^48.
-      -- Take `.toNat` of both sides of `h_alu_eq`. BitVec addition wraps
-      -- mod 2^64, so the goal-form `(b + c).toNat % 2^64` equals
-      -- `U64w.toNat addr_word`. Then `h_c0` + u16 bounds on `aw_0..2`
-      -- show `U64w.toNat addr_word < 2^48`.
       apply_fun BitVec.toNat at h_alu_eq
       simp at h_alu_eq
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
     . -- (d) LB sign-extension: `a = signExtend 64 (a.truncate 8)`.
-      -- Specialise the chip-side constraints:
-      --   * c45: `op_a_0 ∈ {0, 1}`
-      --   * c46: `mem_value_is_neg_not_x0 = msb · (1 - op_a_0)`  (is_lb=1)
-      --   * c47: `mem_value_is_pos_not_x0 = (1 - msb) · (1 - op_a_0)`
-      --   * c48..51: when `neg = 1`, `value_0 = byte + 65280·msb`,
-      --              `value_{1,2,3} = 65535·msb`.
-      --   * c60..63: when `pos = 1`, `value_i = unsigned_mem_val_i`.
-      simp [constraint_45, sub_eq_zero, mul_eq_zero] at h_c45
-      simp [constraint_46, h_is_lb, h_is_lh, h_is_lw, sub_eq_zero] at h_c46
-      simp [constraint_47, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
-            h_is_lwu, h_is_ld, sub_eq_zero] at h_c47
-      simp [constraint_48, h_is_lb, sub_eq_zero] at h_c48
-      simp [constraint_49, h_is_lb, sub_eq_zero] at h_c49
-      simp [constraint_50, h_is_lb, sub_eq_zero] at h_c50
-      simp [constraint_51, h_is_lb, sub_eq_zero] at h_c51
-      simp [constraint_60, sub_eq_zero] at h_c60
-      simp [constraint_61, sub_eq_zero] at h_c61
-      simp [constraint_62, sub_eq_zero] at h_c62
-      simp [constraint_63, sub_eq_zero] at h_c63
-      -- Get `msb ∈ {0, 1}` and `selected_byte.val < 256` from `h_msb_byte`.
-      simp [ByteBus.Spec] at h_msb_byte
-      obtain ⟨ h_msb_def, h_msb_lt, h_byte_lt ⟩ := h_msb_byte
-      have h_msb_bool : air.cols.values.msb row 0 = 0 ∨
-                        air.cols.values.msb row 0 = 1 := by
-        rw [h_msb_def]; split_ifs <;> [left; right] <;> rfl
-      -- Case-split on op_a_0 ∈ {0, 1}.
-      rcases h_c45 with h_x0 | h_x0
-      . -- op_a_0 = 0. Specialise c46 / c47 / c48-51 / c60-63 to get
-        -- `value_i` in closed form per the (msb=0) / (msb=1) cases.
-        simp [h_x0] at h_c46 h_c47
-        rcases h_msb_bool with h_msb | h_msb
-        . -- msb = 0: pos = 1, neg = 0.
-          -- `value_0 = selected_byte`, `value_{1,2,3} = 0`,
-          -- `selected_byte < 128` (so bit-7 = 0 → sign-extend = zero-extend).
-          rw [h_msb] at h_c46 h_c47
-          simp at h_c46 h_c47
-          -- Pos branch fires; collapse `c60..c63` to equalities.
-          rcases h_c60 with h | h_v0; . rw [h] at h_c47; simp at h_c47
-          rcases h_c61 with h | h_v1; . rw [h] at h_c47; simp at h_c47
-          rcases h_c62 with h | h_v2; . rw [h] at h_c47; simp at h_c47
-          rcases h_c63 with h | h_v3; . rw [h] at h_c47; simp at h_c47
-          rw [h_c22] at h_v0; rw [h_c23] at h_v1
-          rw [h_c24] at h_v2; rw [h_c25] at h_v3
-          -- `selected_byte < 128` from `h_msb_def` + `h_msb = 0`.
-          have h_byte_lt_128 : (air.cols.values.selected_byte row 0).val < 128 := by
-            by_contra h_ge
-            rw [h_msb_def, if_neg (by simp [Fin.lt_def]; omega)] at h_msb
-            exact absurd h_msb (by decide)
-          -- Substitute: value_0 = selected_byte, value_{1,2,3} = 0.
-          rw [← h_v0, ← h_v1, ← h_v2, ← h_v3]
-          -- Bit-7 of `selected_byte` is 0 (since `< 128`), so `setWidth 8`
-          -- has `.msb = false` and `signExtend 64 = zeroExtend 64`.
-          have h_byte_val_lt : (air.cols.values.selected_byte row 0).val < 65536 := by
-            omega
-          apply BitVec.eq_of_toNat_eq
-          have h_bv : (U64w.toBV
-              #v[BitVec.ofNat 16 (air.cols.values.selected_byte row 0).val,
-                 BitVec.ofNat 16 (0 : FKB).val,
-                 BitVec.ofNat 16 (0 : FKB).val,
-                 BitVec.ofNat 16 (0 : FKB).val]).toNat =
-              (air.cols.values.selected_byte row 0).val := by
-            rw [U64w.toBV_toNat]
-            simp [U64w.toNat, Nat.mod_eq_of_lt h_byte_val_lt]
-          rw [h_bv]
-          rw [BitVec.toNat_signExtend, BitVec.toNat_setWidth]
-          have h_msb_false :
-              (BitVec.setWidth 8
-                  (U64w.toBV
-                    #v[BitVec.ofNat 16 (air.cols.values.selected_byte row 0).val,
-                       BitVec.ofNat 16 (0 : FKB).val,
-                       BitVec.ofNat 16 (0 : FKB).val,
-                       BitVec.ofNat 16 (0 : FKB).val])).msb = false := by
-            rw [BitVec.msb_eq_decide]
-            simp [BitVec.toNat_setWidth, U64w.toNat]
-            omega
-          rw [h_msb_false]
-          simp [U64w.toNat]
+      -- Rewrite `value_i` via `h_v0..3`, then case-split on `msb`:
+      --   * msb = 0 → value_0 = byte (< 128 from `h_msb_def`), so
+      --     `(setWidth 8 ...).msb = false` and signExtend = zeroExtend;
+      --   * msb = 1 → value_0 = byte + 65280 (byte ≥ 128), so
+      --     `(setWidth 8 ...).msb = true` and signExtend fills 1s.
+      rw [h_v0, h_v1, h_v2, h_v3]
+      rcases h_msb_bool with h_msb | h_msb
+      . rw [h_msb]
+        simp only [zero_mul, add_zero]
+        have h_byte_lt_128 : (air.cols.values.selected_byte row 0).val < 128 := by
+          by_contra h_ge
+          rw [h_msb_def, if_neg (by simp [Fin.lt_def]; omega)] at h_msb
+          exact absurd h_msb (by decide)
+        have h_byte_val_lt : (air.cols.values.selected_byte row 0).val < 65536 := by
           omega
-        . -- msb = 1: pos = 0, neg = 1.
-          -- `value_0 = selected_byte + 65280`, `value_{1,2,3} = 65535`,
-          -- `selected_byte ≥ 128` (so bit-7 = 1 → sign-extend fills upper
-          -- bits with 1s, matching the chip's 0xFFFF limbs).
-          rw [h_msb] at h_c46 h_c47
-          simp at h_c46 h_c47
-          -- Neg branch fires; collapse `c48..c51` to equalities.
-          rcases h_c48 with h | h_v0; . rw [h] at h_c46; simp at h_c46
-          rcases h_c49 with h | h_v1; . rw [h] at h_c46; simp at h_c46
-          rcases h_c50 with h | h_v2; . rw [h] at h_c46; simp at h_c46
-          rcases h_c51 with h | h_v3; . rw [h] at h_c46; simp at h_c46
-          rw [h_msb] at h_v0 h_v1 h_v2 h_v3
-          simp at h_v0 h_v1 h_v2 h_v3
-          -- `selected_byte ≥ 128` from `h_msb_def` + `h_msb = 1`.
-          have h_byte_ge_128 : 128 ≤ (air.cols.values.selected_byte row 0).val := by
-            by_contra h_lt
-            rw [h_msb_def, if_pos (by simp [Fin.lt_def]; omega)] at h_msb
-            exact absurd h_msb (by decide)
-          -- Substitute: value_0 = byte + 65280, value_{1,2,3} = 65535.
-          rw [h_v0, h_v1, h_v2, h_v3]
-          have h_byte_val_lt : (air.cols.values.selected_byte row 0).val < 65536 := by
-            omega
-          apply BitVec.eq_of_toNat_eq
-          -- The value_0 column has Fin value `selected_byte.val + 65280`
-          -- (max 65535 in FKB; no field wraparound).
-          have h_v0_val :
-              (air.cols.values.selected_byte row 0 + 65280 : FKB).val =
-              (air.cols.values.selected_byte row 0).val + 65280 := by
-            rw [Fin.val_add]
-            simp
-            omega
-          rw [BitVec.toNat_signExtend, BitVec.toNat_setWidth]
-          have h_msb_true :
-              (BitVec.setWidth 8
-                  (U64w.toBV
-                    #v[BitVec.ofNat 16 (air.cols.values.selected_byte row 0 + 65280 : FKB).val,
-                       BitVec.ofNat 16 (65535 : FKB).val,
-                       BitVec.ofNat 16 (65535 : FKB).val,
-                       BitVec.ofNat 16 (65535 : FKB).val])).msb = true := by
-            simp [BitVec.msb_eq_decide, U64w.toNat]
-            omega
-          rw [h_msb_true]
-          simp [U64w.toNat, -BitVec.reduceToNat, -BitVec.toNat_ofNat]
-          repeat rw [BitVec.toNat_ofNat]
+        apply BitVec.eq_of_toNat_eq
+        have h_bv : (U64w.toBV
+            #v[BitVec.ofNat 16 (air.cols.values.selected_byte row 0).val,
+               BitVec.ofNat 16 (0 : FKB).val,
+               BitVec.ofNat 16 (0 : FKB).val,
+               BitVec.ofNat 16 (0 : FKB).val]).toNat =
+            (air.cols.values.selected_byte row 0).val := by
+          rw [U64w.toBV_toNat]
+          simp [U64w.toNat, Nat.mod_eq_of_lt h_byte_val_lt]
+        rw [h_bv]
+        rw [BitVec.toNat_signExtend, BitVec.toNat_setWidth]
+        have h_msb_false :
+            (BitVec.setWidth 8
+                (U64w.toBV
+                  #v[BitVec.ofNat 16 (air.cols.values.selected_byte row 0).val,
+                     BitVec.ofNat 16 (0 : FKB).val,
+                     BitVec.ofNat 16 (0 : FKB).val,
+                     BitVec.ofNat 16 (0 : FKB).val])).msb = false := by
+          rw [BitVec.msb_eq_decide]
+          simp [BitVec.toNat_setWidth, U64w.toNat]
           omega
-      . -- op_a_0 = 1 → blocked by the Pico soundness gap.
-        --   chip leaves `value_i` unconstrained; can't establish the
-        --   bit-pattern equation. See `mrw_op_a_x0_soundness_gap.md`.
-        sorry
+        rw [h_msb_false]
+        simp [U64w.toNat]
+        omega
+      . rw [h_msb]
+        simp only [one_mul]
+        have h_byte_ge_128 : 128 ≤ (air.cols.values.selected_byte row 0).val := by
+          by_contra h_lt
+          rw [h_msb_def, if_pos (by simp [Fin.lt_def]; omega)] at h_msb
+          exact absurd h_msb (by decide)
+        have h_byte_val_lt : (air.cols.values.selected_byte row 0).val < 65536 := by
+          omega
+        apply BitVec.eq_of_toNat_eq
+        have h_v0_val :
+            (air.cols.values.selected_byte row 0 + 65280 : FKB).val =
+            (air.cols.values.selected_byte row 0).val + 65280 := by
+          rw [Fin.val_add]
+          simp
+          omega
+        rw [BitVec.toNat_signExtend, BitVec.toNat_setWidth]
+        have h_msb_true :
+            (BitVec.setWidth 8
+                (U64w.toBV
+                  #v[BitVec.ofNat 16 (air.cols.values.selected_byte row 0 + 65280 : FKB).val,
+                     BitVec.ofNat 16 (65535 : FKB).val,
+                     BitVec.ofNat 16 (65535 : FKB).val,
+                     BitVec.ofNat 16 (65535 : FKB).val])).msb = true := by
+          simp [BitVec.msb_eq_decide, U64w.toNat]
+          omega
+        rw [h_msb_true]
+        simp [U64w.toNat, -BitVec.reduceToNat, -BitVec.toNat_ofNat]
+        repeat rw [BitVec.toNat_ofNat]
+        omega
 
   -- =====================================
   -- LBU (Load Byte, unsigned) — opcode 13
@@ -355,6 +379,29 @@ namespace MemoryReadWriteChip.Spec
     (h_is_real : air.cols.values.is_real row 0 = 1)
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
     (h_opcode : air.cols.values.instruction.opcode row 0 = 13)
+    -- SOUNDNESS-BUG HYPOTHESIS — `mrw-op-a-x0-soundness-gap`.
+    -- See `spec_LB` for the full rationale. For LBU the correct
+    -- extension is the zero-extension of `selected_byte`:
+    --   `value_0 = selected_byte`, `value_{1,2,3} = 0`.
+    (MISSING_LBU_extends_correctly :
+      air.cols.values.instruction.op_a_0 row 0 = 1 →
+        air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+          air.cols.values.selected_byte row 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_1 row 0 = 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_2 row 0 = 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_3 row 0 = 0)
+    -- SOUNDNESS-BUG HYPOTHESIS — `mrw-lbu-high-byte-gap`.
+    -- The chip emits a byte-bus check on `selected_limb_low_byte` for
+    -- the LB+LBU pair, but NOT on the high byte
+    --   `(selected_limb - selected_limb_low_byte) · inv(256)`
+    -- when `offset_bit_0 = 1`. For LB the missing bound is supplied by
+    -- byte bus 6 (the MSB lookup, gated by `-is_lb`); LBU has no such
+    -- backup, so a malicious prover can place an arbitrary FKB element
+    -- in `selected_byte`. Fix: emit a byte-bus check on `selected_byte`
+    -- (or include the high byte in entry 11). The bound below is what
+    -- such a check would produce. See `mrw_lbu_high_byte_gap.md`.
+    (MISSING_LBU_selected_byte_in_range :
+      (air.cols.values.selected_byte row 0).val < 256)
   :
     MemoryBus.Spec
       (air.cols.values.instruction.opcode row 0)
@@ -450,15 +497,17 @@ namespace MemoryReadWriteChip.Spec
     simp [constraint_61, sub_eq_zero] at h_c61
     simp [constraint_62, sub_eq_zero] at h_c62
     simp [constraint_63, sub_eq_zero] at h_c63
-    refine ⟨?_, ?_, ?_, ?_⟩
-    . -- (a) u16 range on `op_a_access.access.value_0..3`.
-      -- Plan: rcases on `op_a_0`. For `op_a_0 = 1` the x0 gap blocks.
-      -- For `op_a_0 = 0` we have `pos = 1, neg = 0` (c46/c47 specialised);
-      -- `c60..c63 + c22..c25` give `value_0 = selected_byte`,
-      -- `value_{1,2,3} = 0`. Then rcases on `offset_bit_0` (boolean from
-      -- c2 + is_mem = 1):
-      --   * 0: `selected_byte = selected_limb_low_byte < 256` ✓
-      --   * 1: high-byte gap (see `mrw_lbu_high_byte_gap.md`)
+    -- Unified value_i zero-extension equations. The `op_a_0 = 0`
+    -- branch closes via c47 + c60..c63 + c22..c25; the `op_a_0 = 1`
+    -- branch uses `MISSING_LBU_extends_correctly` (the assumed Pico-
+    -- side fix: drop the `(1 - op_a_0)` factor from the gate columns,
+    -- so c60..c63 fire unconditionally for LBU).
+    have h_val_eq :
+        air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+          air.cols.values.selected_byte row 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_1 row 0 = 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_2 row 0 = 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_3 row 0 = 0 := by
       rcases h_c45 with h_x0 | h_x0
       . rw [h_x0] at h_c47
         simp at h_c47
@@ -470,17 +519,15 @@ namespace MemoryReadWriteChip.Spec
         rw [h_c23] at h_v1
         rw [h_c24] at h_v2
         rw [h_c25] at h_v3
-        -- selected_byte = offset_bit_0 · high + (1 - offset_bit_0) · low.
-        rcases h_c2 with h_ofs | h_ofs
-        . -- offset_bit_0 = 0: selected_byte = selected_limb_low_byte < 256.
-          rw [h_ofs] at h_c21
-          simp at h_c21
-          rw [← h_v0, ← h_v1, ← h_v2, ← h_v3, h_c21]
-          refine ⟨by omega, by simp, by simp, by simp⟩
-        . -- offset_bit_0 = 1 → high-byte gap blocks.
-          sorry
-      . -- op_a_0 = 1 → x0 gap blocks.
-        sorry
+        exact ⟨h_v0.symm, h_v1.symm, h_v2.symm, h_v3.symm⟩
+      . exact MISSING_LBU_extends_correctly h_x0
+    obtain ⟨ h_v0, h_v1, h_v2, h_v3 ⟩ := h_val_eq
+    refine ⟨?_, ?_, ?_, ?_⟩
+    . -- (a) u16 range. `value_0 = selected_byte < 256`
+      -- (from `MISSING_LBU_selected_byte_in_range`); others = 0.
+      rw [h_v0, h_v1, h_v2, h_v3]
+      refine ⟨?_, by simp, by simp, by simp⟩
+      omega
     . -- (b) 65536 ≤ addr. Same proof as `spec_LB`.
       have h_alu_nat := h_alu_eq
       apply_fun BitVec.toNat at h_alu_nat
@@ -504,34 +551,15 @@ namespace MemoryReadWriteChip.Spec
       simp [U64w.toNat, h_c0]
       omega
     . -- (d) LBU zero-extension: `a = setWidth 64 (setWidth 8 a)`.
-      -- Same case structure as (a). The provable sub-case
-      -- (`op_a_0 = 0, offset_bit_0 = 0`) closes via
-      -- `BitVec.eq_of_toNat_eq` + `omega` after substituting
-      -- `value_i = selected_limb_low_byte / 0 / 0 / 0`.
-      rcases h_c45 with h_x0 | h_x0
-      . rw [h_x0] at h_c47
-        simp at h_c47
-        rcases h_c60 with h | h_v0; . rw [h] at h_c47; simp at h_c47
-        rcases h_c61 with h | h_v1; . rw [h] at h_c47; simp at h_c47
-        rcases h_c62 with h | h_v2; . rw [h] at h_c47; simp at h_c47
-        rcases h_c63 with h | h_v3; . rw [h] at h_c47; simp at h_c47
-        rw [h_c22] at h_v0
-        rw [h_c23] at h_v1
-        rw [h_c24] at h_v2
-        rw [h_c25] at h_v3
-        rcases h_c2 with h_ofs | h_ofs
-        . -- offset_bit_0 = 0: value_0 = selected_limb_low_byte < 256.
-          rw [h_ofs] at h_c21
-          simp at h_c21
-          rw [← h_v0, ← h_v1, ← h_v2, ← h_v3, h_c21]
-          apply BitVec.eq_of_toNat_eq
-          simp [BitVec.toNat_setWidth, U64w.toNat,
-                -BitVec.reduceToNat, -BitVec.toNat_ofNat]
-          repeat rw [BitVec.toNat_ofNat]
-          omega
-        . -- offset_bit_0 = 1 → high-byte gap blocks.
-          sorry
-      . -- op_a_0 = 1 → x0 gap blocks.
-        sorry
+      -- After rewriting `value_i` via `h_v0..3`, both sides reduce to
+      -- `U64w.toBV #v[selected_byte, 0, 0, 0]` (the RHS via
+      -- `setWidth 64 (setWidth 8 …)`, lossless because `selected_byte
+      -- < 256` from `MISSING_LBU_selected_byte_in_range`).
+      rw [h_v0, h_v1, h_v2, h_v3]
+      apply BitVec.eq_of_toNat_eq
+      simp [BitVec.toNat_setWidth, U64w.toNat,
+            -BitVec.reduceToNat, -BitVec.toNat_ofNat]
+      repeat rw [BitVec.toNat_ofNat]
+      omega
 
 end MemoryReadWriteChip.Spec
