@@ -189,17 +189,17 @@ namespace BitwiseAir.Spec
           obtain ⟨h1, h2, h3, _⟩ := selectors
           -- Case split on which selector is active
           rcases h1 with h_xor | h_xor
-          · -- is_xor = 0
+          . -- is_xor = 0
             rcases h2 with h_or | h_or
-            · -- is_or = 0, so is_and = 1
+            . -- is_or = 0, so is_and = 1
               have h_and : air.cols.is_and row 0 = 1 := by grind
               simp only [h_xor, h_or, h_and, one_mul, zero_mul, add_zero, zero_add]
               exact spec_AND air row h_wf h_constraints h_and
-            · -- is_or = 1
+            . -- is_or = 1
               have h_and : air.cols.is_and row 0 = 0 := by grind
               simp only [h_xor, h_or, h_and, one_mul, zero_mul, add_zero, zero_add]
               exact spec_OR air row h_wf h_constraints h_or
-          · -- is_xor = 1
+          . -- is_xor = 1
             have h_or : air.cols.is_or row 0 = 0 := by grind
             have h_and : air.cols.is_and row 0 = 0 := by grind
             simp only [h_xor, h_or, h_and, one_mul, zero_mul, add_zero]

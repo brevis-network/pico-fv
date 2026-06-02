@@ -145,8 +145,8 @@ namespace OpcodeSpec.RV64
       simp [PureSpec.RV64.lh_state_assumptions, input, *]
 
     trans execute_instruction (instruction.LOAD (imm, regidx.Regidx (BitVec.ofNat 5 input.r1.val), regidx.Regidx (BitVec.ofNat 5 input.rd.val), false, 2)) state
-    · simp; congr
-    · rw [PureSpec.RV64.execute_LOADH_pure_equiv input risc_v_assumptions h_opcode_assumptions]
+    . simp; congr
+    . rw [PureSpec.RV64.execute_LOADH_pure_equiv input risc_v_assumptions h_opcode_assumptions]
       simp [
         input,
         PureSpec.RV64.execute_LOADH_pure,
@@ -157,7 +157,7 @@ namespace OpcodeSpec.RV64
         write_reg_state
       ]
       by_cases h_zero : (regidx_to_fin rd).val = 0
-      · simp [write_xreg, h_zero]
-      · simp [write_xreg, Sail.writeReg, PreSail.writeReg]
+      . simp [write_xreg, h_zero]
+      . simp [write_xreg, Sail.writeReg, PreSail.writeReg]
 
 end OpcodeSpec.RV64

@@ -436,12 +436,12 @@ namespace MulGadget.Interpretations
             is_mul_b, is_mulh_b, is_mulhu_b, is_mulhsu_b, is_mulw_b,
             sum_b, _, _, _⟩ := h_constraints
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-    · exact (mul_eq_zero.mp is_mul_b).imp id sub_eq_zero.mp
-    · exact (mul_eq_zero.mp is_mulh_b).imp id sub_eq_zero.mp
-    · exact (mul_eq_zero.mp is_mulhu_b).imp id sub_eq_zero.mp
-    · exact (mul_eq_zero.mp is_mulhsu_b).imp id sub_eq_zero.mp
-    · exact (mul_eq_zero.mp is_mulw_b).imp id sub_eq_zero.mp
-    · exact (mul_eq_zero.mp sum_b).imp id sub_eq_zero.mp
+    . exact (mul_eq_zero.mp is_mul_b).imp id sub_eq_zero.mp
+    . exact (mul_eq_zero.mp is_mulh_b).imp id sub_eq_zero.mp
+    . exact (mul_eq_zero.mp is_mulhu_b).imp id sub_eq_zero.mp
+    . exact (mul_eq_zero.mp is_mulhsu_b).imp id sub_eq_zero.mp
+    . exact (mul_eq_zero.mp is_mulw_b).imp id sub_eq_zero.mp
+    . exact (mul_eq_zero.mp sum_b).imp id sub_eq_zero.mp
 
   /-- Gadget-level analogue of `MulChip.Interpretations.selector_exclusivity`.
       Given the parent invariants `is_real = 1` and

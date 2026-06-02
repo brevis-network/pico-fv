@@ -741,7 +741,7 @@ namespace MulGadget.Spec
     have h_mulhsu_excl := h_excl.2.2.2.1
     have h_mulw_excl   := h_excl.2.2.2.2
     by_cases h_mul : is_mul = 1
-    · -- MUL case (opcode = 30). Other selectors pinned to 0.
+    . -- MUL case (opcode = 30). Other selectors pinned to 0.
       obtain ⟨h_mulh_0, h_mulhu_0, h_mulhsu_0, h_mulw_0⟩ := h_mul_excl h_mul
       -- From `c2 : b_se - (is_mulh + is_mulhsu) * b_msb = 0`, with
       -- `is_mulh = is_mulhsu = 0` we get `b_sign_extend = 0`.
@@ -775,10 +775,10 @@ namespace MulGadget.Spec
             repeat rw [BitVec.append_assoc]
             rfl
           . simp [h_core_mul, U64w.extend_BitVec_extend]
-    · -- Not MUL: pin `is_mul = 0` from `h_breakdown`.
+    . -- Not MUL: pin `is_mul = 0` from `h_breakdown`.
       have h_mul_0 : is_mul = 0 := h_breakdown.1.resolve_right h_mul
       by_cases h_mulh : is_mulh = 1
-      · -- MULH case (opcode = 31). Signed × signed, high 64 bits.
+      . -- MULH case (opcode = 31). Signed × signed, high 64 bits.
         obtain ⟨_h_mul_0', h_mulhu_0, h_mulhsu_0, h_mulw_0⟩ := h_mulh_excl h_mulh
         replace eq_bmsb : b_msb = if (b_3.val < 32768) then 0 else 1
         := by
@@ -829,9 +829,9 @@ namespace MulGadget.Spec
               repeat rw [BitVec.append_assoc]
               rfl
             . simp [h_core_mul, execute_MUL_pure, U64w.extend_BitVec_extend]
-      · have h_mulh_0 : is_mulh = 0 := h_breakdown.2.1.resolve_right h_mulh
+      . have h_mulh_0 : is_mulh = 0 := h_breakdown.2.1.resolve_right h_mulh
         by_cases h_mulhu : is_mulhu = 1
-        · -- MULHU case (opcode = 32). Unsigned × unsigned, high 64 bits.
+        . -- MULHU case (opcode = 32). Unsigned × unsigned, high 64 bits.
           obtain ⟨_h_mul_0', _h_mulh_0', h_mulhsu_0, h_mulw_0⟩ := h_mulhu_excl h_mulhu
           -- Like MUL: both b_sign_extend and c_sign_extend are 0 because
           -- `is_mulh = is_mulhsu = 0`. The only difference is the
@@ -862,9 +862,9 @@ namespace MulGadget.Spec
                 repeat rw [BitVec.append_assoc]
                 rfl
               . simp [h_core_mul, U64w.extend_BitVec_extend]
-        · have h_mulhu_0 : is_mulhu = 0 := h_breakdown.2.2.1.resolve_right h_mulhu
+        . have h_mulhu_0 : is_mulhu = 0 := h_breakdown.2.2.1.resolve_right h_mulhu
           by_cases h_mulhsu : is_mulhsu = 1
-          · -- MULHSU case (opcode = 33). Signed × unsigned, high 64 bits.
+          . -- MULHSU case (opcode = 33). Signed × unsigned, high 64 bits.
             -- Hybrid of MULH (signed b → `eq_bw` with `.extend true`) and
             -- MULHU (unsigned c → substitute `c_sign_extend = 0` directly).
             obtain ⟨_h_mul_0', _h_mulh_0', _h_mulhu_0', h_mulw_0⟩ :=
@@ -911,7 +911,7 @@ namespace MulGadget.Spec
                   repeat rw [BitVec.append_assoc]
                   rfl
                 . simp [h_core_mul, execute_MUL_pure, U64w.extend_BitVec_extend]
-          · have h_mulhsu_0 : is_mulhsu = 0 := h_breakdown.2.2.2.1.resolve_right h_mulhsu
+          . have h_mulhsu_0 : is_mulhsu = 0 := h_breakdown.2.2.2.1.resolve_right h_mulhsu
             -- Remaining case: must be MULW (opcode = 48). From
             -- `h_is_real = 1` and `h_real_eq_sum`, with the four other
             -- selectors `= 0`, we get `is_mulw = 1`.

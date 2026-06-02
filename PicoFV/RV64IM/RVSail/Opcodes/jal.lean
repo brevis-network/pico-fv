@@ -130,8 +130,8 @@ namespace OpcodeSpec.RV64
     rw [spec_JAL_hypotheses] at h
     have h_pc : Sail.readReg Register.PC state = EStateM.Result.ok pc_val state := by
       cases h_read : (Sail.readReg Register.PC state)
-      · simp_all
-      · simp_all
+      . simp_all
+      . simp_all
     rw [PureSpec.RV64.execute_JAL_pure_equiv input rd h_pc h_misa]
 
     simp [

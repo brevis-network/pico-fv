@@ -593,8 +593,8 @@ namespace MulAir.Spec
         have exclusivity := selector_exclusivity air row h_is_real h_constraints
         obtain ⟨h_mul, h_mulh, h_mulhu, h_mulhsu, h_sum⟩ := selectors
         obtain h_mul | h_mul := h_mul
-        · obtain h_mulh | h_mulh := h_mulh
-          · obtain h_mulhu | h_mulhu := h_mulhu
+        . obtain h_mulh | h_mulh := h_mulh
+          . obtain h_mulhu | h_mulhu := h_mulhu
             . obtain h_mulhsu | h_mulhsu := h_mulhsu
               . exfalso; grind
               . have spec := spec_MULHSU air row h_is_real h_ext h_wf h_constraints h_mulhsu

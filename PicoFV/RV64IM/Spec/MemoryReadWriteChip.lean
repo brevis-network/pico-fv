@@ -175,13 +175,13 @@ namespace MemoryReadWriteChip.Spec
     -- Step 6: split the goal into the four conjuncts and discharge each.
     -- ───────────────────────────────────────────────────────────────────
     refine ⟨?_, ?_, ?_, ?_⟩
-    · -- (a) u16 range on `op_a_access.access.value_0..3`.
+    . -- (a) u16 range on `op_a_access.access.value_0..3`.
       -- Each `value_i` is built from `unsigned_mem_val_i` (bounded since
       -- it equals `selected_byte` for LB, with `selected_byte < 256`
       -- from `h_msb_byte`) and `msb · 0xFF00 / 0xFFFF` sign-extension
       -- fillers (also < 65536). Requires constraints c45-c63.
       sorry
-    · -- (b) 65536 ≤ addr.
+    . -- (b) 65536 ≤ addr.
       -- From `h_c1`: `addr_top_two_limb_inv · (aw_1 + aw_2) = 1` forces
       -- `aw_1 + aw_2 ≠ 0` in FKB. With u16 bounds on `aw_1`, `aw_2`
       -- (max sum 131070 < KB_prime), the field sum and the natural sum
@@ -203,7 +203,7 @@ namespace MemoryReadWriteChip.Spec
         simp [Fin.ext_iff, Fin.add_def]; omega
       simp [U64w.toNat, h_c0]
       omega
-    · -- (c) addr < 2^48.
+    . -- (c) addr < 2^48.
       -- Take `.toNat` of both sides of `h_alu_eq`. BitVec addition wraps
       -- mod 2^64, so the goal-form `(b + c).toNat % 2^64` equals
       -- `U64w.toNat addr_word`. Then `h_c0` + u16 bounds on `aw_0..2`
@@ -213,7 +213,7 @@ namespace MemoryReadWriteChip.Spec
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
-    · -- (d) LB sign-extension: `a = signExtend 64 (a.truncate 8)`.
+    . -- (d) LB sign-extension: `a = signExtend 64 (a.truncate 8)`.
       -- Specialise the chip-side constraints:
       --   * c45: `op_a_0 ∈ {0, 1}`
       --   * c46: `mem_value_is_neg_not_x0 = msb · (1 - op_a_0)`  (is_lb=1)
@@ -241,26 +241,20 @@ namespace MemoryReadWriteChip.Spec
         rw [h_msb_def]; split_ifs <;> [left; right] <;> rfl
       -- Case-split on op_a_0 ∈ {0, 1}.
       rcases h_c45 with h_x0 | h_x0
-      rotate_left
-      · -- op_a_0 = 1 → blocked by the Pico soundness gap.
-        --   chip leaves `value_i` unconstrained; can't establish u16
-        --   bound nor the bit-pattern equation. See
-        --   `mrw_op_a_x0_soundness_gap.md`.
-        sorry
-      · -- op_a_0 = 0. Specialise c46 / c47 / c48-51 / c60-63 to get
+      . -- op_a_0 = 0. Specialise c46 / c47 / c48-51 / c60-63 to get
         -- `value_i` in closed form per the (msb=0) / (msb=1) cases.
         simp [h_x0] at h_c46 h_c47
         rcases h_msb_bool with h_msb | h_msb
-        · -- msb = 0: pos = 1, neg = 0.
+        . -- msb = 0: pos = 1, neg = 0.
           -- `value_0 = selected_byte`, `value_{1,2,3} = 0`,
           -- `selected_byte < 128` (so bit-7 = 0 → sign-extend = zero-extend).
           rw [h_msb] at h_c46 h_c47
           simp at h_c46 h_c47
           -- Pos branch fires; collapse `c60..c63` to equalities.
-          rcases h_c60 with h | h_v0; · rw [h] at h_c47; simp at h_c47
-          rcases h_c61 with h | h_v1; · rw [h] at h_c47; simp at h_c47
-          rcases h_c62 with h | h_v2; · rw [h] at h_c47; simp at h_c47
-          rcases h_c63 with h | h_v3; · rw [h] at h_c47; simp at h_c47
+          rcases h_c60 with h | h_v0; . rw [h] at h_c47; simp at h_c47
+          rcases h_c61 with h | h_v1; . rw [h] at h_c47; simp at h_c47
+          rcases h_c62 with h | h_v2; . rw [h] at h_c47; simp at h_c47
+          rcases h_c63 with h | h_v3; . rw [h] at h_c47; simp at h_c47
           rw [h_c22] at h_v0; rw [h_c23] at h_v1
           rw [h_c24] at h_v2; rw [h_c25] at h_v3
           -- `selected_byte < 128` from `h_msb_def` + `h_msb = 0`.
@@ -298,17 +292,17 @@ namespace MemoryReadWriteChip.Spec
           rw [h_msb_false]
           simp [U64w.toNat]
           omega
-        · -- msb = 1: pos = 0, neg = 1.
+        . -- msb = 1: pos = 0, neg = 1.
           -- `value_0 = selected_byte + 65280`, `value_{1,2,3} = 65535`,
           -- `selected_byte ≥ 128` (so bit-7 = 1 → sign-extend fills upper
           -- bits with 1s, matching the chip's 0xFFFF limbs).
           rw [h_msb] at h_c46 h_c47
           simp at h_c46 h_c47
           -- Neg branch fires; collapse `c48..c51` to equalities.
-          rcases h_c48 with h | h_v0; · rw [h] at h_c46; simp at h_c46
-          rcases h_c49 with h | h_v1; · rw [h] at h_c46; simp at h_c46
-          rcases h_c50 with h | h_v2; · rw [h] at h_c46; simp at h_c46
-          rcases h_c51 with h | h_v3; · rw [h] at h_c46; simp at h_c46
+          rcases h_c48 with h | h_v0; . rw [h] at h_c46; simp at h_c46
+          rcases h_c49 with h | h_v1; . rw [h] at h_c46; simp at h_c46
+          rcases h_c50 with h | h_v2; . rw [h] at h_c46; simp at h_c46
+          rcases h_c51 with h | h_v3; . rw [h] at h_c46; simp at h_c46
           rw [h_msb] at h_v0 h_v1 h_v2 h_v3
           simp at h_v0 h_v1 h_v2 h_v3
           -- `selected_byte ≥ 128` from `h_msb_def` + `h_msb = 1`.
@@ -343,6 +337,10 @@ namespace MemoryReadWriteChip.Spec
           simp [U64w.toNat, -BitVec.reduceToNat, -BitVec.toNat_ofNat]
           repeat rw [BitVec.toNat_ofNat]
           omega
+      . -- op_a_0 = 1 → blocked by the Pico soundness gap.
+        --   chip leaves `value_i` unconstrained; can't establish the
+        --   bit-pattern equation. See `mrw_op_a_x0_soundness_gap.md`.
+        sorry
 
   -- =====================================
   -- LBU (Load Byte, unsigned) — opcode 13
@@ -415,6 +413,8 @@ namespace MemoryReadWriteChip.Spec
       at h_constraints
     have h_c0  : constraint_0  air row := by clear *- h_constraints; aesop
     have h_c1  : constraint_1  air row := by clear *- h_constraints; aesop
+    have h_c2  : constraint_2  air row := by clear *- h_constraints; aesop
+    have h_c21 : constraint_21 air row := by clear *- h_constraints; aesop
     have h_c22 : constraint_22 air row := by clear *- h_constraints; aesop
     have h_c23 : constraint_23 air row := by clear *- h_constraints; aesop
     have h_c24 : constraint_24 air row := by clear *- h_constraints; aesop
@@ -432,22 +432,56 @@ namespace MemoryReadWriteChip.Spec
     simp [constraint_1, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
           h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd,
           sub_eq_zero] at h_c1
+    -- c2: `is_mem · offset_bit_0 · (offset_bit_0 - 1) = 0` → `offset_bit_0 ∈ {0, 1}`.
+    simp [constraint_2, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+          h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd,
+          sub_eq_zero, mul_eq_zero] at h_c2
+    simp [constraint_21, h_is_lb, h_is_lbu, sub_eq_zero] at h_c21
     simp [constraint_22, h_is_lb, h_is_lbu, sub_eq_zero] at h_c22
     simp [constraint_23, h_is_lb, h_is_lbu] at h_c23
     simp [constraint_24, h_is_lb, h_is_lbu] at h_c24
     simp [constraint_25, h_is_lb, h_is_lbu] at h_c25
+    -- Specialise c45–c47 (op_a_0 bool + neg/pos gate defs) for LBU.
+    simp [constraint_45, sub_eq_zero, mul_eq_zero] at h_c45
+    simp [constraint_46, h_is_lb, h_is_lh, h_is_lw] at h_c46
+    simp [constraint_47, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+          h_is_lwu, h_is_ld, sub_eq_zero] at h_c47
+    simp [constraint_60, sub_eq_zero] at h_c60
+    simp [constraint_61, sub_eq_zero] at h_c61
+    simp [constraint_62, sub_eq_zero] at h_c62
+    simp [constraint_63, sub_eq_zero] at h_c63
     refine ⟨?_, ?_, ?_, ?_⟩
-    · -- (a) u16 range on `op_a_access.access.value_0..3`.
-      -- Blocked by:
-      --   (i)  `mrw_op_a_x0_soundness_gap` (when `op_a_0 = 1`);
-      --   (ii) the LBU-specific gap: for `offset_bit_0 = 1` the chip's
-      --        `selected_byte = (selected_limb - low_byte) · inv(256)` is
-      --        unbounded — the chip emits only `selected_limb_low_byte`
-      --        on the byte bus (gated by `-(is_lb + is_lbu)`), not the
-      --        high byte. So `unsigned_mem_val_0 = selected_byte` can
-      --        be any FKB element.
-      sorry
-    · -- (b) 65536 ≤ addr. Same proof as `spec_LB`.
+    . -- (a) u16 range on `op_a_access.access.value_0..3`.
+      -- Plan: rcases on `op_a_0`. For `op_a_0 = 1` the x0 gap blocks.
+      -- For `op_a_0 = 0` we have `pos = 1, neg = 0` (c46/c47 specialised);
+      -- `c60..c63 + c22..c25` give `value_0 = selected_byte`,
+      -- `value_{1,2,3} = 0`. Then rcases on `offset_bit_0` (boolean from
+      -- c2 + is_mem = 1):
+      --   * 0: `selected_byte = selected_limb_low_byte < 256` ✓
+      --   * 1: high-byte gap (see `mrw_lbu_high_byte_gap.md`)
+      rcases h_c45 with h_x0 | h_x0
+      . rw [h_x0] at h_c47
+        simp at h_c47
+        rcases h_c60 with h | h_v0; . rw [h] at h_c47; simp at h_c47
+        rcases h_c61 with h | h_v1; . rw [h] at h_c47; simp at h_c47
+        rcases h_c62 with h | h_v2; . rw [h] at h_c47; simp at h_c47
+        rcases h_c63 with h | h_v3; . rw [h] at h_c47; simp at h_c47
+        rw [h_c22] at h_v0
+        rw [h_c23] at h_v1
+        rw [h_c24] at h_v2
+        rw [h_c25] at h_v3
+        -- selected_byte = offset_bit_0 · high + (1 - offset_bit_0) · low.
+        rcases h_c2 with h_ofs | h_ofs
+        . -- offset_bit_0 = 0: selected_byte = selected_limb_low_byte < 256.
+          rw [h_ofs] at h_c21
+          simp at h_c21
+          rw [← h_v0, ← h_v1, ← h_v2, ← h_v3, h_c21]
+          refine ⟨by omega, by simp, by simp, by simp⟩
+        . -- offset_bit_0 = 1 → high-byte gap blocks.
+          sorry
+      . -- op_a_0 = 1 → x0 gap blocks.
+        sorry
+    . -- (b) 65536 ≤ addr. Same proof as `spec_LB`.
       have h_alu_nat := h_alu_eq
       apply_fun BitVec.toNat at h_alu_nat
       simp at h_alu_nat
@@ -463,26 +497,41 @@ namespace MemoryReadWriteChip.Spec
         simp [Fin.ext_iff, Fin.add_def]; omega
       simp [U64w.toNat, h_c0]
       omega
-    · -- (c) addr < 2^48. Same proof as `spec_LB`.
+    . -- (c) addr < 2^48. Same proof as `spec_LB`.
       apply_fun BitVec.toNat at h_alu_eq
       simp at h_alu_eq
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
-    · -- (d) LBU zero-extension: `a = setWidth 64 (setWidth 8 a)`.
-      -- For LBU: c46 → `neg_not_x0 = 0` (since `is_lb = is_lh = is_lw = 0`),
-      --         c47 → `pos_not_x0 = (1 - op_a_0)`.
-      -- Case-split on `op_a_0`:
-      --   * op_a_0 = 0: pos = 1, neg = 0. `c60..c63 + c22..c25` give
-      --     `value_0 = selected_byte`, `value_{1,2,3} = 0`. Then split
-      --     on `offset_bit_0 ∈ {0, 1}`:
-      --       - offset_bit_0 = 0: `selected_byte = selected_limb_low_byte
-      --         < 256` from `h_byte_sl_low`. Spec holds.
-      --       - offset_bit_0 = 1: selected_byte is the high byte,
-      --         `(selected_limb - low_byte) · inv(256)`, which is
-      --         **unbounded** by chip constraints — gap (see comment
-      --         above). Blocked.
-      --   * op_a_0 = 1: x0 gap.
-      sorry
+    . -- (d) LBU zero-extension: `a = setWidth 64 (setWidth 8 a)`.
+      -- Same case structure as (a). The provable sub-case
+      -- (`op_a_0 = 0, offset_bit_0 = 0`) closes via
+      -- `BitVec.eq_of_toNat_eq` + `omega` after substituting
+      -- `value_i = selected_limb_low_byte / 0 / 0 / 0`.
+      rcases h_c45 with h_x0 | h_x0
+      . rw [h_x0] at h_c47
+        simp at h_c47
+        rcases h_c60 with h | h_v0; . rw [h] at h_c47; simp at h_c47
+        rcases h_c61 with h | h_v1; . rw [h] at h_c47; simp at h_c47
+        rcases h_c62 with h | h_v2; . rw [h] at h_c47; simp at h_c47
+        rcases h_c63 with h | h_v3; . rw [h] at h_c47; simp at h_c47
+        rw [h_c22] at h_v0
+        rw [h_c23] at h_v1
+        rw [h_c24] at h_v2
+        rw [h_c25] at h_v3
+        rcases h_c2 with h_ofs | h_ofs
+        . -- offset_bit_0 = 0: value_0 = selected_limb_low_byte < 256.
+          rw [h_ofs] at h_c21
+          simp at h_c21
+          rw [← h_v0, ← h_v1, ← h_v2, ← h_v3, h_c21]
+          apply BitVec.eq_of_toNat_eq
+          simp [BitVec.toNat_setWidth, U64w.toNat,
+                -BitVec.reduceToNat, -BitVec.toNat_ofNat]
+          repeat rw [BitVec.toNat_ofNat]
+          omega
+        . -- offset_bit_0 = 1 → high-byte gap blocks.
+          sorry
+      . -- op_a_0 = 1 → x0 gap blocks.
+        sorry
 
 end MemoryReadWriteChip.Spec

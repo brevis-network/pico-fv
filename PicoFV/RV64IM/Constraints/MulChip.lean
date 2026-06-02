@@ -419,12 +419,12 @@ namespace MulChip.Interpretations
     simp only [AbsConstraints] at h
     obtain ⟨_, h_mul, h_mulh, h_mulhu, h_mulhsu, h_mulw, h_sum⟩ := h
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-    · exact (mul_eq_zero.mp h_mul).imp id sub_eq_zero.mp
-    · exact (mul_eq_zero.mp h_mulh).imp id sub_eq_zero.mp
-    · exact (mul_eq_zero.mp h_mulhu).imp id sub_eq_zero.mp
-    · exact (mul_eq_zero.mp h_mulhsu).imp id sub_eq_zero.mp
-    · exact (mul_eq_zero.mp h_mulw).imp id sub_eq_zero.mp
-    · exact (mul_eq_zero.mp h_sum).imp id sub_eq_zero.mp
+    . exact (mul_eq_zero.mp h_mul).imp id sub_eq_zero.mp
+    . exact (mul_eq_zero.mp h_mulh).imp id sub_eq_zero.mp
+    . exact (mul_eq_zero.mp h_mulhu).imp id sub_eq_zero.mp
+    . exact (mul_eq_zero.mp h_mulhsu).imp id sub_eq_zero.mp
+    . exact (mul_eq_zero.mp h_mulw).imp id sub_eq_zero.mp
+    . exact (mul_eq_zero.mp h_sum).imp id sub_eq_zero.mp
 
   /-- At most one selector is active: if any of `is_mul` / `is_mulh` /
       `is_mulhu` / `is_mulhsu` / `is_mulw` is `1`, the other four are

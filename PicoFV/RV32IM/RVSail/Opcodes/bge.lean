@@ -83,7 +83,7 @@ namespace PureSpec.RV32
     simp [execute_BGE_pure]
 
     by_cases h_eq: bge_input.r1_val.toInt >= bge_input.r2_val.toInt <;> simp [h_eq]
-    · have : ¬(bge_input.r1_val.toInt < bge_input.r2_val.toInt) := by omega
+    . have : ¬(bge_input.r1_val.toInt < bge_input.r2_val.toInt) := by omega
       simp [this]
       rw [readReg_of_write_other_reg_state h_input_pc (by simp)]
       simp
@@ -92,7 +92,7 @@ namespace PureSpec.RV32
 
       by_cases h_throws : (execute_BGE_pure bge_input).throws <;> simp_all [execute_BGE_pure]
       by_cases h_success : (execute_BGE_pure bge_input).success <;> simp_all [execute_BGE_pure]
-    · have : bge_input.r1_val.toInt < bge_input.r2_val.toInt := by omega
+    . have : bge_input.r1_val.toInt < bge_input.r2_val.toInt := by omega
       simp [this]
 
 end PureSpec.RV32

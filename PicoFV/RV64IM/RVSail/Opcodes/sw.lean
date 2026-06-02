@@ -120,15 +120,15 @@ namespace PureSpec.RV64
     simp [execute_STOREW_pure, EStateM.set, modify_memory_4,
           BitVec.extractLsb, BitVec.extractLsb', *]
     congr 1
-    · congr 1
-      · congr 1
-        · congr 1
+    . congr 1
+      . congr 1
+        . congr 1
           simp [← BitVec.toNat_inj]
-        · simp [← BitVec.toNat_inj]
+        . simp [← BitVec.toNat_inj]
           omega
-      · simp [← BitVec.toNat_inj]
+      . simp [← BitVec.toNat_inj]
         omega
-    · simp [← BitVec.toNat_inj]
+    . simp [← BitVec.toNat_inj]
       omega
 
 end PureSpec.RV64
@@ -187,8 +187,8 @@ namespace OpcodeSpec.RV64
       simp [PureSpec.RV64.sw_state_assumptions, input, *]
 
     trans execute_instruction (instruction.STORE (imm, regidx.Regidx (BitVec.ofNat 5 input.r2.val), regidx.Regidx (BitVec.ofNat 5 input.r1.val), 4)) state
-    · simp; congr
-    · rw [PureSpec.RV64.execute_STOREW_pure_equiv input risc_v_assumptions h_opcode_assumptions]
+    . simp; congr
+    . rw [PureSpec.RV64.execute_STOREW_pure_equiv input risc_v_assumptions h_opcode_assumptions]
       simp [
         input,
         PureSpec.RV64.execute_STOREW_pure,
@@ -200,15 +200,15 @@ namespace OpcodeSpec.RV64
         EStateM.set,
       ]
       congr 1
-      · congr 1
-        · congr 1
-          · congr 1
+      . congr 1
+        . congr 1
+          . congr 1
             simp [← BitVec.toNat_inj]
-          · simp [← BitVec.toNat_inj]
+          . simp [← BitVec.toNat_inj]
             omega
-        · simp [← BitVec.toNat_inj]
+        . simp [← BitVec.toNat_inj]
           omega
-      · simp [← BitVec.toNat_inj]
+      . simp [← BitVec.toNat_inj]
         omega
 
 end OpcodeSpec.RV64

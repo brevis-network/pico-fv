@@ -33,10 +33,10 @@ namespace LtAir.Spec
       rw [Fin.val_sub, h_and]; omega
     have h4 : b.val / 128 = 0 ∨ b.val / 128 = 1 := by omega
     rcases h4 with h | h
-    · left
+    . left
       have : (b - (b &&& 127) : FKB) = 0 := by ext; rw [h_sub]; omega
       simp [this]
-    · right
+    . right
       have hsub_val : (b - (b &&& 127) : FKB).val = 128 := by rw [h_sub]; omega
       have : ((b - (b &&& 127)) * 2114060289 : FKB).val = 1 := by
         simp only [Fin.val_mul, hsub_val]; norm_num
@@ -165,7 +165,7 @@ namespace LtAir.Spec
     simp only [show (1#32).toNat = 1 from rfl, show (0#32).toNat = 0 from rfl]
     -- Case split on sign bits FIRST, then handle each case cleanly
     rcases h_bb_bool with hbb | hbb <;> rcases h_bc_bool with hbc | hbc
-    · -- bit_b = 0, bit_c = 0 (both positive → toInt = toNat)
+    . -- bit_b = 0, bit_c = 0 (both positive → toInt = toNat)
       have hbn := not_negative_of_msb_lt _ _ _ _ hb0 hb1 hb2 (h_b3_lt' hbb)
       have hcn := not_negative_of_msb_lt _ _ _ _ hc0 hc1 hc2 (h_c3_lt' hbc)
       simp only [U32b.toInt, hbn, hcn, ↓reduceIte, U32b.toNat]
@@ -182,7 +182,7 @@ namespace LtAir.Spec
       rcases h_bf1_bool with hbf1 | hbf1 <;>
       rcases h_bf0_bool with hbf0 | hbf0 <;>
       simp_all <;> grind
-    · -- bit_b = 0, bit_c = 1 (b positive, c negative → b.toInt ≥ c.toInt → result = 0)
+    . -- bit_b = 0, bit_c = 1 (b positive, c negative → b.toInt ≥ c.toInt → result = 0)
       have hbn := not_negative_of_msb_lt _ _ _ _ hb0 hb1 hb2 (h_b3_lt' hbb)
       have hcn := negative_of_msb_ge _ _ _ _ hc0 hc1 hc2 (h_c3_ge hbc) hc3
       have h_ssb_zero : air.cols.is_sign_bit_same row 0 = 0 := by
@@ -190,7 +190,7 @@ namespace LtAir.Spec
       simp only [U32b.toInt, hbn, hcn, ↓reduceIte, U32b.toNat]
       simp [hbb, hbc, h_ssb_zero] at h_a0
       simp [h_a0]; omega
-    · -- bit_b = 1, bit_c = 0 (b negative, c positive → b.toInt < c.toInt → result = 1)
+    . -- bit_b = 1, bit_c = 0 (b negative, c positive → b.toInt < c.toInt → result = 1)
       have hbn := negative_of_msb_ge _ _ _ _ hb0 hb1 hb2 (h_b3_ge hbb) hb3
       have hcn := not_negative_of_msb_lt _ _ _ _ hc0 hc1 hc2 (h_c3_lt' hbc)
       have h_ssb_zero : air.cols.is_sign_bit_same row 0 = 0 := by
@@ -198,7 +198,7 @@ namespace LtAir.Spec
       simp only [U32b.toInt, hbn, hcn, ↓reduceIte, U32b.toNat]
       simp [hbb, hbc, h_ssb_zero] at h_a0
       simp [h_a0]; omega
-    · -- bit_b = 1, bit_c = 1 (both negative → toInt comparison = toNat comparison)
+    . -- bit_b = 1, bit_c = 1 (both negative → toInt comparison = toNat comparison)
       have hbn := negative_of_msb_ge _ _ _ _ hb0 hb1 hb2 (h_b3_ge hbb) hb3
       have hcn := negative_of_msb_ge _ _ _ _ hc0 hc1 hc2 (h_c3_ge hbc) hc3
       simp only [U32b.toInt, hbn, hcn, ↓reduceIte, U32b.toNat]
@@ -313,14 +313,14 @@ namespace LtAir.Spec
         have selectors := selector_breakdown air row h_constraints
         obtain ⟨h1, h2, _⟩ := selectors
         rcases h1 with h_slt | h_slt
-        · -- is_slt = 0
+        . -- is_slt = 0
           rcases h2 with h_sltu | h_sltu
-          · -- is_slt = 0, is_slt_u = 0 → contradiction with h_mult
+          . -- is_slt = 0, is_slt_u = 0 → contradiction with h_mult
             exfalso; grind
-          · -- is_slt_u = 1
+          . -- is_slt_u = 1
             simp only [h_slt, h_sltu, one_mul, zero_mul, zero_add]
             exact spec_SLTU air row h_ext h_wf h_constraints h_sltu
-        · -- is_slt = 1
+        . -- is_slt = 1
           have h_sltu : air.cols.is_slt_u row 0 = 0 := by grind
           simp only [h_slt, h_sltu, one_mul, zero_mul, add_zero]
           exact spec_SLT air row h_ext h_wf h_constraints h_slt

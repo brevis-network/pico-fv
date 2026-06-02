@@ -1211,10 +1211,10 @@ namespace MemoryReadWriteChip.Interpretations
     obtain ⟨ h_c12, h_c45 ⟩ : constraint_12 air row ∧ constraint_45 air row := by aesop
     clear h_constraints
     refine ⟨?_, ?_⟩
-    · simp only [constraint_12] at h_c12
+    . simp only [constraint_12] at h_c12
       have h_def := MemoryChipValueCols.is_real_def air.cols.values row 0
       grind
-    · simp only [constraint_45] at h_c45
+    . simp only [constraint_45] at h_c45
       clear *- h_c45; grind
 
   /-- Selector exclusivity from the Memory-bus assumption. Given the

@@ -409,14 +409,14 @@ namespace BitwiseChip.Spec
     . intro h_real
       obtain ⟨h_xor_disj, h_or_disj, _, _⟩ := selectors
       rcases h_xor_disj with h_xor | h_xor
-      · rcases h_or_disj with h_or | h_or
-        · have h_and : air.cols.values.is_and row 0 = 1 := by grind
+      . rcases h_or_disj with h_or | h_or
+        . have h_and : air.cols.values.is_and row 0 = 1 := by grind
           simp [h_xor, h_or, h_and]
           exact spec_AND air row h_wf h_constraints h_and
-        · have h_and : air.cols.values.is_and row 0 = 0 := by grind
+        . have h_and : air.cols.values.is_and row 0 = 0 := by grind
           simp [h_xor, h_or, h_and]
           exact spec_OR air row h_wf h_constraints h_or
-      · have h_or : air.cols.values.is_or row 0 = 0 := by grind
+      . have h_or : air.cols.values.is_or row 0 = 0 := by grind
         have h_and : air.cols.values.is_and row 0 = 0 := by grind
         simp [h_xor, h_or, h_and]
         exact spec_XOR air row h_wf h_constraints h_xor

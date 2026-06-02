@@ -83,8 +83,8 @@ namespace PureSpec.RV32
     simp [execute_BNE_pure]
 
     by_cases h_eq: bne_input.r1_val = bne_input.r2_val
-    · simp [h_eq]
-    · have h_ne : bne_input.r1_val != bne_input.r2_val := by
+    . simp [h_eq]
+    . have h_ne : bne_input.r1_val != bne_input.r2_val := by
         simp [ne_eq, h_eq]
       simp [h_eq]
       rw [readReg_of_write_other_reg_state h_input_pc (by simp)]

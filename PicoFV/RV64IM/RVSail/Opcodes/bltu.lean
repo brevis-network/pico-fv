@@ -77,7 +77,7 @@ namespace PureSpec.RV64
     simp [execute_BLTU_pure]
 
     by_cases h_eq: bltu_input.r1_val.toNat < bltu_input.r2_val.toNat
-    · simp [h_eq]
+    . simp [h_eq]
       have : ¬(bltu_input.r2_val.toNat ≤ bltu_input.r1_val.toNat) := by omega
       simp [this]
       rw [readReg_of_write_other_reg_state h_input_pc (by simp)]
@@ -88,7 +88,7 @@ namespace PureSpec.RV64
       by_cases h_throws : (execute_BLTU_pure bltu_input).throws <;> simp_all [execute_BLTU_pure]
       by_cases h_success : (execute_BLTU_pure bltu_input).success <;> simp_all [execute_BLTU_pure]
 
-    · simp [h_eq]
+    . simp [h_eq]
       have : bltu_input.r2_val.toNat ≤ bltu_input.r1_val.toNat := by omega
       simp [this]
 

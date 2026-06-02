@@ -1379,8 +1379,8 @@ namespace DivRemAir.Spec
           have exclusivity := selector_exclusivity air row h_is_real h_constraints
           obtain ⟨h_div, h_divu, h_rem, h_remu, h_sum⟩ := selectors
           obtain h_div | h_div := h_div
-          · obtain h_divu | h_divu := h_divu
-            · obtain h_rem | h_rem := h_rem
+          . obtain h_divu | h_divu := h_divu
+            . obtain h_rem | h_rem := h_rem
               . obtain h_remu | h_remu := h_remu
                 . exfalso; grind
                 . have spec := spec_REMU air row h_is_real h_ext h_wf h_constraints h_remu

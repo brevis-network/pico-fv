@@ -199,8 +199,8 @@ namespace SLLChip.Spec
       have h_sub : ((2^k : ℕ) : FKB) * (b - higher * ((2^(16-k):ℕ):FKB) - lower) = 0 := by
         linear_combination heq + hcast * higher
       rcases mul_eq_zero.mp h_sub with h | h
-      · exact absurd h hpow_ne
-      · linear_combination h
+      . exact absurd h hpow_ne
+      . linear_combination h
     have hpow16k_val : (((2^(16-k):ℕ):FKB)).val = 2^(16-k) := by
       have hlt : (2^(16-k) : ℕ) < KB_prime := by omega
       rw [Fin.val_natCast]; exact Nat.mod_eq_of_lt hlt

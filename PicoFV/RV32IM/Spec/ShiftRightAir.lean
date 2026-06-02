@@ -49,8 +49,8 @@ namespace ShiftRightAir.Spec
     have h_carry_val : carry.val = bsr.val - sb.val * 2^low3.val := by grind
     have h_pos : (0 : ℕ) < 2^low3.val := by positivity
     constructor
-    · omega
-    · rw [h_carry_val, h_sb_val]
+    . omega
+    . rw [h_carry_val, h_sb_val]
       have h_dam := Nat.div_add_mod bsr.val (2^low3.val)
       have : bsr.val / 2 ^ low3.val * 2 ^ low3.val = 2 ^ low3.val * (bsr.val / 2 ^ low3.val) := by ring
       have := Nat.mod_lt bsr.val h_pos

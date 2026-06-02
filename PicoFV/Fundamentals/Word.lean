@@ -2069,9 +2069,9 @@ namespace U64b
     := by
       rcases with_sign <;>
         simp [extend, BitVec.extend, ext, ← BitVec.toNat_inj]
-      · simp [U128b.toNat, U64b.toNat]
+      . simp [U128b.toNat, U64b.toNat]
         omega
-      · rw [BitVec.toNat_signExtend]
+      . rw [BitVec.toNat_signExtend]
         simp [U64b.toBV_msb_negative]
         by_cases w.negative
         all_goals

@@ -973,8 +973,8 @@ namespace ShiftRightChip.Spec
                    (air.cols.values.b_msb.msb row 0 = 1 ∧
                     32768 ≤ (air.cols.values.b_3 row 0).val) := by
       rcases h_b_msb_b with hm | hm
-      · left; refine ⟨hm, ?_⟩; rw [hm] at h_msb_u16; grind
-      · right; refine ⟨hm, ?_⟩; rw [hm] at h_msb_u16; grind
+      . left; refine ⟨hm, ?_⟩; rw [hm] at h_msb_u16; grind
+      . right; refine ⟨hm, ?_⟩; rw [hm] at h_msb_u16; grind
     -- Step 11: Case-split on (c_bits_4, c_bits_5).
     rcases h_cb5_b with hcb5 | hcb5 <;> rcases h_cb4_b with hcb4 | hcb4
     -- =============================================================
@@ -2630,8 +2630,8 @@ namespace ShiftRightChip.Spec
                    (air.cols.values.b_msb.msb row 0 = 1 ∧
                     32768 ≤ (air.cols.values.b_1 row 0).val) := by
       rcases h_b_msb_b with hm | hm
-      · left; refine ⟨hm, ?_⟩; rw [hm] at h_b_msb_u16; grind
-      · right; refine ⟨hm, ?_⟩; rw [hm] at h_b_msb_u16; grind
+      . left; refine ⟨hm, ?_⟩; rw [hm] at h_b_msb_u16; grind
+      . right; refine ⟨hm, ?_⟩; rw [hm] at h_b_msb_u16; grind
     -- Step 11: Case-split on (c_bits_5, c_bits_4).
     rcases h_cb5_b with hcb5 | hcb5 <;> rcases h_cb4_b with hcb4 | hcb4
     -- =============================================================

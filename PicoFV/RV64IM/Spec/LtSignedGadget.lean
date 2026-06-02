@@ -87,7 +87,7 @@ namespace LtSignedGadget.Spec
       simp [LtWordU16Gadget.AbsConstraints, h_is_real, sub_eq_zero] at h_lt
       grind
     refine ⟨h_bit, ?_, ?_⟩
-    · -- is_signed = 0: shifted operands equal originals, unsigned compare
+    . -- is_signed = 0: shifted operands equal originals, unsigned compare
       intro h_zero
       subst h_zero
       have hb_msb : b_msb = 0 := by grind
@@ -103,7 +103,7 @@ namespace LtSignedGadget.Spec
       obtain ⟨_, h_iff⟩ := h_lt_spec
       rw [hb_msb, hc_msb] at h_iff
       simpa using h_iff
-    · -- is_signed = 1: shifted top limb = msb-flipped, gives signed compare
+    . -- is_signed = 1: shifted top limb = msb-flipped, gives signed compare
       intro h_one
       subst h_one
       -- Get the b_msb / c_msb partition facts from U16MSBGadget.Spec
