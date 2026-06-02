@@ -2855,7 +2855,172 @@ namespace MemoryReadWriteChip.Spec
                 . -- LWU. Use `spec_LWU` + `MISSING_LWU_extends_correctly`.
                   sorry
                 . by_cases h_eq_ld : air.cols.values.instruction.opcode row 0 = 46
-                  . -- LD. Use `spec_LD` + `MISSING_LD_extends_correctly`.
+                  . -- ============================================
+                    -- LD case (opcode 46): full 8-byte load.
+                    -- ============================================
+                    -- Strategy: c11 forces all offset bits to 0, so
+                    -- addr_aligned matches addr_word (a *chip-side* gap;
+                    -- see `mrw-rv64-addr-aligned-gap`). For LD the chip
+                    -- also forces:
+                    --   * `mem_val_i = mem_prev_i`  (c16-c19)
+                    --     → State-bus WriteMem is a no-op (`insert_eq_self`).
+                    --   * `value_i = mem_prev_i`  (c36-c39 + c60-c63 +
+                    --     MISSING_LD_extends_correctly)
+                    --     → Memory-bus ReadMem reads the same 8 bytes
+                    --       the State-bus ReadMem read.
+                    obtain ⟨ h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                             h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw,
+                             h_is_sd ⟩ :=
+                      h_op_46 h_eq_ld
+                    -- 1) Process h_ext (selector externals).
+                    simp [bus_row_ext_asm, bus_row, AbsBuses,
+                          h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                          h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw,
+                          h_is_sd, h_is_real] at h_ext
+                    obtain ⟨ _opcode_range, ub_b0, ub_b1, ub_b2, ub_b3,
+                             ub_c0, ub_c1, ub_c2, ub_c3, _ ⟩ := h_ext
+                    -- 2) Process h_wf (bus assertions).
+                    simp [bus_row_wf_asm, bus_row, AbsBuses,
+                          h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                          h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw,
+                          h_is_sd, h_is_real] at h_wf
+                    obtain ⟨ h_alu_addr, _h_byte_aw0, _h_byte_aw1,
+                             _h_byte_aw2, _h_bit13, _h_byte_d16,
+                             _h_byte_d8,
+                             ub_mpv0, ub_mpv1, ub_mpv2, ub_mpv3 ⟩ := h_wf
+                    simp [ALUBus.Spec] at h_alu_addr
+                    obtain ⟨ ⟨ ub_aw0, ub_aw1, ub_aw2, ub_aw3 ⟩,
+                             h_alu_eq ⟩ := h_alu_addr
+                    simp [RV64IM.execute_RTYPE_pure] at h_alu_eq
+                    -- 3) Extract relevant constraints.
+                    rw [allHold_iff_allHold_simplified] at h_constraints
+                    simp only [allHold_simplified, row_constraint_list,
+                               List.Forall] at h_constraints
+                    have h_c0  : constraint_0  air row := by
+                      clear *- h_constraints; aesop
+                    have h_c11 : constraint_11 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c16 : constraint_16 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c17 : constraint_17 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c18 : constraint_18 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c19 : constraint_19 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c36 : constraint_36 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c37 : constraint_37 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c38 : constraint_38 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c39 : constraint_39 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c44 : constraint_44 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c45 : constraint_45 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c46 : constraint_46 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c47 : constraint_47 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c60 : constraint_60 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c61 : constraint_61 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c62 : constraint_62 air row := by
+                      clear *- h_constraints; aesop
+                    have h_c63 : constraint_63 air row := by
+                      clear *- h_constraints; aesop
+                    clear h_constraints
+                    -- 4) Specialize constraints for LD.
+                    simp [constraint_0, h_is_lb, h_is_lbu, h_is_lh,
+                          h_is_lhu, h_is_lw, h_is_lwu, h_is_ld, h_is_sb,
+                          h_is_sh, h_is_sw, h_is_sd] at h_c0
+                    simp [constraint_11, h_is_ld, h_is_sd] at h_c11
+                    simp [constraint_16, h_is_lb, h_is_lbu, h_is_lh,
+                          h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
+                          sub_eq_zero] at h_c16
+                    simp [constraint_17, h_is_lb, h_is_lbu, h_is_lh,
+                          h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
+                          sub_eq_zero] at h_c17
+                    simp [constraint_18, h_is_lb, h_is_lbu, h_is_lh,
+                          h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
+                          sub_eq_zero] at h_c18
+                    simp [constraint_19, h_is_lb, h_is_lbu, h_is_lh,
+                          h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
+                          sub_eq_zero] at h_c19
+                    simp [constraint_36, h_is_ld, sub_eq_zero] at h_c36
+                    simp [constraint_37, h_is_ld, sub_eq_zero] at h_c37
+                    simp [constraint_38, h_is_ld, sub_eq_zero] at h_c38
+                    simp [constraint_39, h_is_ld, sub_eq_zero] at h_c39
+                    simp [constraint_44, h_is_lwu, h_is_ld] at h_c44
+                    simp [constraint_45, sub_eq_zero, mul_eq_zero] at h_c45
+                    simp [constraint_46, h_is_lb, h_is_lh, h_is_lw,
+                          h_c44] at h_c46
+                    simp [constraint_47, h_is_lb, h_is_lbu, h_is_lh,
+                          h_is_lhu, h_is_lw, h_is_lwu, h_is_ld, h_c44,
+                          sub_eq_zero] at h_c47
+                    simp [constraint_60, sub_eq_zero] at h_c60
+                    simp [constraint_61, sub_eq_zero] at h_c61
+                    simp [constraint_62, sub_eq_zero] at h_c62
+                    simp [constraint_63, sub_eq_zero] at h_c63
+                    -- 5) Derive `value_i = mem_prev_i` unconditionally.
+                    --    (Same derivation as `spec_LD`.)
+                    have h_val_eq :
+                        air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+                          air.cols.values.memory_access.prev_value_0 row 0 ∧
+                        air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+                          air.cols.values.memory_access.prev_value_1 row 0 ∧
+                        air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+                          air.cols.values.memory_access.prev_value_2 row 0 ∧
+                        air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+                          air.cols.values.memory_access.prev_value_3 row 0 := by
+                      rcases h_c45 with h_x0 | h_x0
+                      . rw [h_x0] at h_c47
+                        simp at h_c47
+                        rcases h_c60 with h | h_v0
+                        . rw [h] at h_c47; simp at h_c47
+                        rcases h_c61 with h | h_v1
+                        . rw [h] at h_c47; simp at h_c47
+                        rcases h_c62 with h | h_v2
+                        . rw [h] at h_c47; simp at h_c47
+                        rcases h_c63 with h | h_v3
+                        . rw [h] at h_c47; simp at h_c47
+                        rw [h_c36] at h_v0
+                        rw [h_c37] at h_v1
+                        rw [h_c38] at h_v2
+                        rw [h_c39] at h_v3
+                        exact ⟨h_v0.symm, h_v1.symm, h_v2.symm, h_v3.symm⟩
+                      . exact MISSING_LD_extends_correctly h_eq_ld h_x0
+                    -- 6) Closing the bus-operations equivalence
+                    --    requires several steps not yet automated:
+                    --      (a) Unfold `RV64IM.bus_operations` for both
+                    --          `state_bus` and `memory_bus`. The state
+                    --          bus has two entries (prev/curr access at
+                    --          `addr_aligned`); the memory bus has one
+                    --          entry (load at `addr_word`).
+                    --      (b) Use `mrw-rv64-addr-aligned-gap` MISSING
+                    --          hypothesis to bridge `addr_aligned ↔
+                    --          addr_word`. (NOT yet added — the chip
+                    --          itself does not enforce this; analogous
+                    --          to RV32 constraint #2 which RV64 dropped.)
+                    --      (c) Unfold `RV64IM.operation_list_effect` to
+                    --          peel off the `ReadMem .Double` operation
+                    --          on both sides into 8 byte-level reads,
+                    --          and the `WriteMem .Double` (state side)
+                    --          into 8 byte-level writes.
+                    --      (d) Apply `ExtHashMap.insert_eq_self` to
+                    --          collapse the state-bus's 8 writes into
+                    --          no-ops (since `mem_val = mem_prev` from
+                    --          h_c16-h_c19, the curr write rewrites the
+                    --          same byte that was just read).
+                    --      (e) Match the 8 byte-level reads on both
+                    --          sides via `h_val_eq` (load value =
+                    --          mem_prev value) + the address bridge.
+                    -- This is mechanically tractable but spans ~80
+                    -- lines; mirror RV32 LW (lines 1422–1449 of
+                    -- `PicoFV/RV32IM/Spec/MemoryReadWriteAir.lean`).
                     sorry
                   . by_cases h_eq_sb : air.cols.values.instruction.opcode row 0 = 15
                     . -- SB. Use `spec_SB` (no MISSING needed for stores).
