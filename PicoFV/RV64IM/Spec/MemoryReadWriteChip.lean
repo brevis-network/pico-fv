@@ -525,9 +525,7 @@ namespace MemoryReadWriteChip.Spec
     refine ⟨?_, ?_, ?_, ?_⟩
     . -- (a) u16 range. `value_0 = selected_byte < 256`
       -- (from `MISSING_LBU_selected_byte_in_range`); others = 0.
-      rw [h_v0, h_v1, h_v2, h_v3]
-      refine ⟨?_, by simp, by simp, by simp⟩
-      omega
+      simp [*]; omega
     . -- (b) 65536 ≤ addr. Same proof as `spec_LB`.
       have h_alu_nat := h_alu_eq
       apply_fun BitVec.toNat at h_alu_nat
@@ -561,5 +559,263 @@ namespace MemoryReadWriteChip.Spec
             -BitVec.reduceToNat, -BitVec.toNat_ofNat]
       repeat rw [BitVec.toNat_ofNat]
       omega
+
+  -- ====================================
+  -- LH (Load Halfword, signed) — opcode 11
+  -- ====================================
+
+  lemma spec_LH
+    [Field ExtF]
+    (air : Valid_MemoryReadWriteChip FKB ExtF)
+    (row : ℕ)
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_is_real : air.cols.values.is_real row 0 = 1)
+    (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
+    (h_opcode : air.cols.values.instruction.opcode row 0 = 11)
+    -- SOUNDNESS-BUG HYPOTHESIS — `mrw-op-a-x0-soundness-gap`.
+    -- LH sign-extends the loaded halfword. The chip's c52..c55 (neg
+    -- branch) and c60..c63 (pos branch) together compute:
+    --   `value_0 = selected_limb`,
+    --   `value_{1,2,3} = msb · 0xFFFF` (with `msb = bit_15(selected_limb)`).
+    -- Both branches are gated by `(1 - op_a_0)`; when `op_a_0 = 1`
+    -- (rd = x0) the value_i columns are unconstrained. Pico-side fix:
+    -- drop the `(1 - op_a_0)` factor from c46/c47.
+    (MISSING_LH_extends_correctly :
+      air.cols.values.instruction.op_a_0 row 0 = 1 →
+        air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+          air.cols.values.selected_limb row 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+          air.cols.values.msb row 0 * 65535 ∧
+        air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+          air.cols.values.msb row 0 * 65535 ∧
+        air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+          air.cols.values.msb row 0 * 65535)
+  :
+    MemoryBus.Spec
+      (air.cols.values.instruction.opcode row 0)
+      (air.cols.values.instruction.op_a_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_3 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_3 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_3 row 0)
+  := by
+    -- TODO: 5 LH MemoryBus.Spec conjuncts:
+    --   (a) u16 limb bounds — via h_val_eq + U16MSB byte-bus check
+    --       (gated by -is_lh) bounding `selected_limb < 65536`;
+    --   (b) `65536 ≤ addr` — copy from `spec_LB`;
+    --   (c) `addr < 2^48` — copy from `spec_LB`;
+    --   (d) `2 ∣ addr` — c9 forces `offset_bit_0 = 0` for LH; combine
+    --       with the ByteBus 9 (BitRange-13) check on
+    --       `(aw_0 - offset_decoded)·inv(8)` to get `2 ∣ aw_0`;
+    --   (e) signExtend equation — same shape as `spec_LB`'s (d), with
+    --       `selected_limb` taking the role of `selected_byte` and
+    --       bit-15 as the sign bit.
+    sorry
+
+  -- =====================================
+  -- LHU (Load Halfword, unsigned) — opcode 14
+  -- =====================================
+
+  lemma spec_LHU
+    [Field ExtF]
+    (air : Valid_MemoryReadWriteChip FKB ExtF)
+    (row : ℕ)
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_is_real : air.cols.values.is_real row 0 = 1)
+    (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
+    (h_opcode : air.cols.values.instruction.opcode row 0 = 14)
+    -- SOUNDNESS-BUG HYPOTHESIS — `mrw-op-a-x0-soundness-gap`.
+    -- LHU zero-extends the loaded halfword. c42 forces `msb = 0` for
+    -- LHU, so the canonical layout is:
+    --   `value_0 = selected_limb`, `value_{1,2,3} = 0`.
+    (MISSING_LHU_extends_correctly :
+      air.cols.values.instruction.op_a_0 row 0 = 1 →
+        air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+          air.cols.values.selected_limb row 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_1 row 0 = 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_2 row 0 = 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_3 row 0 = 0)
+  :
+    MemoryBus.Spec
+      (air.cols.values.instruction.opcode row 0)
+      (air.cols.values.instruction.op_a_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_3 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_3 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_3 row 0)
+  := by
+    -- TODO: 5 LHU MemoryBus.Spec conjuncts. The U16MSB byte-bus check
+    -- on selected_limb is gated by `-is_lh`, vacuous for LHU; so
+    -- `selected_limb < 65536` must come from c20 + state-bus u16 bounds
+    -- on `memory_access.prev_value_i` + the `limb_select` one-hot
+    -- (offset_bit_1, offset_bit_2 case split). Alignment 2|addr from
+    -- c9. Extension is zero-extend 16 (no sign bit).
+    sorry
+
+  -- ====================================
+  -- LW (Load Word, signed) — opcode 12
+  -- ====================================
+
+  lemma spec_LW
+    [Field ExtF]
+    (air : Valid_MemoryReadWriteChip FKB ExtF)
+    (row : ℕ)
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_is_real : air.cols.values.is_real row 0 = 1)
+    (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
+    (h_opcode : air.cols.values.instruction.opcode row 0 = 12)
+    -- SOUNDNESS-BUG HYPOTHESIS — `mrw-op-a-x0-soundness-gap`.
+    -- LW sign-extends the loaded word. c56..c59 / c60..c63 enforce:
+    --   `value_0 = selected_word_0`, `value_1 = selected_word_1`,
+    --   `value_{2,3} = msb · 0xFFFF` (`msb = bit_15(selected_word_1)`).
+    (MISSING_LW_extends_correctly :
+      air.cols.values.instruction.op_a_0 row 0 = 1 →
+        air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+          air.cols.values.selected_word_0 row 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+          air.cols.values.selected_word_1 row 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+          air.cols.values.msb row 0 * 65535 ∧
+        air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+          air.cols.values.msb row 0 * 65535)
+  :
+    MemoryBus.Spec
+      (air.cols.values.instruction.opcode row 0)
+      (air.cols.values.instruction.op_a_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_3 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_3 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_3 row 0)
+  := by
+    -- TODO: 5 LW conjuncts. selected_word_1 < 65536 from U16MSB byte
+    -- bus (gated by -is_lw). selected_word_0 < 65536 from c30 + state
+    -- bus + offset_bit_2 case split. Alignment 4|addr from c10
+    -- (offset_bit_0 = offset_bit_1 = 0). Sign-extension to 64 bits via
+    -- the upper-32-bit fill (msb relates to bit-15 of selected_word_1).
+    sorry
+
+  -- ======================================
+  -- LWU (Load Word, unsigned) — opcode 45
+  -- ======================================
+
+  lemma spec_LWU
+    [Field ExtF]
+    (air : Valid_MemoryReadWriteChip FKB ExtF)
+    (row : ℕ)
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_is_real : air.cols.values.is_real row 0 = 1)
+    (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
+    (h_opcode : air.cols.values.instruction.opcode row 0 = 45)
+    -- SOUNDNESS-BUG HYPOTHESIS — `mrw-op-a-x0-soundness-gap`.
+    -- LWU zero-extends the loaded word. c44 forces `msb = 0` for LWU:
+    --   `value_0 = selected_word_0`, `value_1 = selected_word_1`,
+    --   `value_{2,3} = 0`.
+    (MISSING_LWU_extends_correctly :
+      air.cols.values.instruction.op_a_0 row 0 = 1 →
+        air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+          air.cols.values.selected_word_0 row 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+          air.cols.values.selected_word_1 row 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_2 row 0 = 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_3 row 0 = 0)
+  :
+    MemoryBus.Spec
+      (air.cols.values.instruction.opcode row 0)
+      (air.cols.values.instruction.op_a_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_3 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_3 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_3 row 0)
+  := by
+    -- TODO: 5 LWU conjuncts. U16MSB on selected_word_1 is gated by
+    -- `-is_lw`, vacuous for LWU. selected_word_{0,1} < 65536 from
+    -- c30/c31 + state bus + offset_bit_2 case split. Alignment 4|addr
+    -- from c10 (offset_bit_0 = offset_bit_1 = 0). Extension zero-ext 32.
+    sorry
+
+  -- ========================================
+  -- LD (Load Doubleword) — opcode 46
+  -- ========================================
+
+  lemma spec_LD
+    [Field ExtF]
+    (air : Valid_MemoryReadWriteChip FKB ExtF)
+    (row : ℕ)
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_is_real : air.cols.values.is_real row 0 = 1)
+    (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
+    (h_opcode : air.cols.values.instruction.opcode row 0 = 46)
+    -- SOUNDNESS-BUG HYPOTHESIS — `mrw-op-a-x0-soundness-gap`.
+    -- LD has no extension; c36..c39 enforce
+    --   `unsigned_mem_val_i = memory_access.prev_value_i`,
+    -- and c60..c63 (pos branch, fires for LD since c44 forces msb = 0)
+    -- give `value_i = unsigned_mem_val_i`. When `op_a_0 = 1` the latter
+    -- gate goes vacuous; the assumed fix preserves the equation.
+    (MISSING_LD_extends_correctly :
+      air.cols.values.instruction.op_a_0 row 0 = 1 →
+        air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+          air.cols.values.memory_access.prev_value_0 row 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+          air.cols.values.memory_access.prev_value_1 row 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+          air.cols.values.memory_access.prev_value_2 row 0 ∧
+        air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+          air.cols.values.memory_access.prev_value_3 row 0)
+  :
+    MemoryBus.Spec
+      (air.cols.values.instruction.opcode row 0)
+      (air.cols.values.instruction.op_a_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_a_access.access.value_3 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_b_access.access.value_3 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_0 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_1 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_2 row 0)
+      (air.cols.values.instruction.op_c_access.access.value_3 row 0)
+  := by
+    -- TODO: 4 LD conjuncts. (a) u16 directly from state-bus bounds on
+    -- `memory_access.prev_value_i` via h_val_eq. (b), (c) copy from LB.
+    -- (d) 8|addr from c11 (offset bits all 0 for LD) + ByteBus 9
+    -- (BitRange-13) check on `(aw_0 - offset_decoded)·inv(8)`. No
+    -- extension equation (LD is not in the load-eq conjuncts of
+    -- `MemoryBus.Spec`).
+    sorry
 
 end MemoryReadWriteChip.Spec
