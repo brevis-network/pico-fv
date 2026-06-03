@@ -2461,6 +2461,252 @@ namespace MemoryReadWriteChip.Spec
     -- one lemma per opcode (`bus_equiv_<OP>`). The original is preserved verbatim in a block
     -- comment so the existing closed-case bodies (LD, SD, SW, SH, LWU, LW) can be lifted as
     -- the per-opcode lemmas get filled in.
+
+    -- Shared conclusion of every per-opcode lemma: the State-bus emission (a `.Double` Read/Write
+    -- pair at `addr_aligned`) is equivalent — both in produced hypotheses and final state — to the
+    -- Memory-bus emission (the load/store operation at `addr`).
+    def bus_equiv_goal
+      [Field ExtF]
+      (air : Valid_MemoryReadWriteChip FKB ExtF)
+      (row : ℕ)
+      (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    :
+      Prop
+    :=
+      let memory_row := { (bus_row air row).Memory[0]! with multiplicity := -1 }
+      let memory_bus : BusRow := {
+        Program := [], ALU := [], Byte := [], State := [], Memory := [ memory_row ]
+      }
+      let state_bus : BusRow := {
+        Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := []
+      }
+      (RV64IM.operation_list_effect (RV64IM.bus_operations state_bus) state).hypotheses →
+        (RV64IM.operation_list_effect (RV64IM.bus_operations memory_bus) state).hypotheses ∧
+        (RV64IM.operation_list_effect (RV64IM.bus_operations memory_bus) state).state =
+          (RV64IM.operation_list_effect (RV64IM.bus_operations state_bus) state).state
+
+    -- Per-opcode `addr_aligned + offset = addr_word` chip-side gap (the RV32 analogue is enforced
+    -- by RV32IM's `constraint_12`; RV64 dropped it). Replicated per opcode below so each per-opcode
+    -- lemma can take just its own bridge. The offset shape depends on which `offset_bit_*` are free:
+    --   * LD/SD: all zero (8-aligned), so `addr_aligned = addr_word`.
+    --   * LW/LWU/SW: `ob_0 = ob_1 = 0`, so offset = `4·ob_2`.
+    --   * LH/LHU/SH: `ob_0 = 0`, so offset = `2·ob_1 + 4·ob_2`.
+    --   * LB/LBU/SB: all three offset bits free, so offset = `ob_0 + 2·ob_1 + 4·ob_2`.
+
+    section bus_equiv_per_opcode
+
+      variable [Field ExtF]
+      variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+      variable (air : Valid_MemoryReadWriteChip FKB ExtF)
+      variable (row : ℕ)
+      variable (h_ext : bus_row_ext_asm (bus_row air row))
+      variable (h_wf : bus_row_wf_asm (bus_row air row))
+      variable (h_is_real : air.cols.values.is_real row 0 = 1)
+      variable (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
+      variable (ASSUMPTION_addr_aligned_ge_32 :
+        ¬ ((air.cols.values.addr_aligned_0 row 0).val +
+           65536 * (air.cols.values.addr_aligned_1 row 0).val +
+           65536 * 65536 * (air.cols.values.addr_aligned_2 row 0).val < 32))
+
+      lemma bus_equiv_LD
+        (h_opcode : air.cols.values.instruction.opcode row 0 = 46)
+        (MISSING_LD_extends_correctly :
+          air.cols.values.instruction.op_a_0 row 0 = 1 →
+            air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+              air.cols.values.memory_access.prev_value_0 row 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+              air.cols.values.memory_access.prev_value_1 row 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+              air.cols.values.memory_access.prev_value_2 row 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+              air.cols.values.memory_access.prev_value_3 row 0)
+        (MISSING_LD_addr_aligned :
+          air.cols.values.addr_aligned_0 row 0 = air.cols.values.addr_word_0 row 0 ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      : bus_equiv_goal air row state := by
+        sorry
+
+      lemma bus_equiv_SD
+        (h_opcode : air.cols.values.instruction.opcode row 0 = 47)
+        (MISSING_SD_addr_aligned :
+          air.cols.values.addr_aligned_0 row 0 = air.cols.values.addr_word_0 row 0 ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      : bus_equiv_goal air row state := by
+        sorry
+
+      lemma bus_equiv_SW
+        (h_opcode : air.cols.values.instruction.opcode row 0 = 17)
+        (MISSING_SW_addr_aligned :
+          (air.cols.values.addr_aligned_0 row 0).val +
+            4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      : bus_equiv_goal air row state := by
+        sorry
+
+      lemma bus_equiv_SH
+        (h_opcode : air.cols.values.instruction.opcode row 0 = 16)
+        (MISSING_SH_addr_aligned :
+          (air.cols.values.addr_aligned_0 row 0).val +
+            2 * (air.cols.values.offset_bit_1 row 0).val +
+              4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      : bus_equiv_goal air row state := by
+        sorry
+
+      lemma bus_equiv_SB
+        (h_opcode : air.cols.values.instruction.opcode row 0 = 15)
+        (MISSING_SB_addr_aligned :
+          (air.cols.values.addr_aligned_0 row 0).val +
+            (air.cols.values.offset_bit_0 row 0).val +
+              2 * (air.cols.values.offset_bit_1 row 0).val +
+                4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+        (MISSING_SB_byte_decomposition :
+          (air.cols.values.instruction.op_a_access.access.value_0 row 0).val % 256 =
+              (air.cols.values.register_low_byte row 0).val ∧
+            (air.cols.values.selected_limb row 0).val % 256 =
+              (air.cols.values.mem_limb_low_byte row 0).val ∧
+            (air.cols.values.register_low_byte row 0).val < 256 ∧
+            (air.cols.values.mem_limb_low_byte row 0).val < 256)
+      : bus_equiv_goal air row state := by
+        sorry
+
+      lemma bus_equiv_LWU
+        (h_opcode : air.cols.values.instruction.opcode row 0 = 45)
+        (MISSING_LWU_extends_correctly :
+          air.cols.values.instruction.op_a_0 row 0 = 1 →
+            air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+              air.cols.values.selected_word_0 row 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+              air.cols.values.selected_word_1 row 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_2 row 0 = 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_3 row 0 = 0)
+        (MISSING_LWU_addr_aligned :
+          (air.cols.values.addr_aligned_0 row 0).val +
+            4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      : bus_equiv_goal air row state := by
+        sorry
+
+      lemma bus_equiv_LW
+        (h_opcode : air.cols.values.instruction.opcode row 0 = 12)
+        (MISSING_LW_extends_correctly :
+          air.cols.values.instruction.op_a_0 row 0 = 1 →
+            air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+              air.cols.values.selected_word_0 row 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+              air.cols.values.selected_word_1 row 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+              air.cols.values.msb row 0 * 65535 ∧
+            air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+              air.cols.values.msb row 0 * 65535)
+        (MISSING_LW_addr_aligned :
+          (air.cols.values.addr_aligned_0 row 0).val +
+            4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      : bus_equiv_goal air row state := by
+        sorry
+
+      lemma bus_equiv_LHU
+        (h_opcode : air.cols.values.instruction.opcode row 0 = 14)
+        (MISSING_LHU_extends_correctly :
+          air.cols.values.instruction.op_a_0 row 0 = 1 →
+            air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+              air.cols.values.selected_limb row 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_1 row 0 = 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_2 row 0 = 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_3 row 0 = 0)
+        (MISSING_LHU_addr_aligned :
+          (air.cols.values.addr_aligned_0 row 0).val +
+            2 * (air.cols.values.offset_bit_1 row 0).val +
+              4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      : bus_equiv_goal air row state := by
+        sorry
+
+      lemma bus_equiv_LH
+        (h_opcode : air.cols.values.instruction.opcode row 0 = 11)
+        (MISSING_LH_extends_correctly :
+          air.cols.values.instruction.op_a_0 row 0 = 1 →
+            air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+              air.cols.values.selected_limb row 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+              air.cols.values.msb row 0 * 65535 ∧
+            air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+              air.cols.values.msb row 0 * 65535 ∧
+            air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+              air.cols.values.msb row 0 * 65535)
+        (MISSING_LH_addr_aligned :
+          (air.cols.values.addr_aligned_0 row 0).val +
+            2 * (air.cols.values.offset_bit_1 row 0).val +
+              4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      : bus_equiv_goal air row state := by
+        sorry
+
+      lemma bus_equiv_LBU
+        (h_opcode : air.cols.values.instruction.opcode row 0 = 13)
+        (MISSING_LBU_extends_correctly :
+          air.cols.values.instruction.op_a_0 row 0 = 1 →
+            air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+              air.cols.values.selected_byte row 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_1 row 0 = 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_2 row 0 = 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_3 row 0 = 0)
+        (MISSING_LBU_selected_byte_in_range :
+          (air.cols.values.selected_byte row 0).val < 256)
+        (MISSING_LBU_addr_aligned :
+          (air.cols.values.addr_aligned_0 row 0).val +
+            (air.cols.values.offset_bit_0 row 0).val +
+              2 * (air.cols.values.offset_bit_1 row 0).val +
+                4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      : bus_equiv_goal air row state := by
+        sorry
+
+      lemma bus_equiv_LB
+        (h_opcode : air.cols.values.instruction.opcode row 0 = 10)
+        (MISSING_LB_extends_correctly :
+          air.cols.values.instruction.op_a_0 row 0 = 1 →
+            air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+              air.cols.values.selected_byte row 0 +
+                air.cols.values.msb row 0 * 65280 ∧
+            air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+              air.cols.values.msb row 0 * 65535 ∧
+            air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+              air.cols.values.msb row 0 * 65535 ∧
+            air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+              air.cols.values.msb row 0 * 65535)
+        (MISSING_LB_addr_aligned :
+          (air.cols.values.addr_aligned_0 row 0).val +
+            (air.cols.values.offset_bit_0 row 0).val +
+              2 * (air.cols.values.offset_bit_1 row 0).val +
+                4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      : bus_equiv_goal air row state := by
+        sorry
+
+    end bus_equiv_per_opcode
 /-
     lemma bus_equiv
       [Field ExtF]
