@@ -2562,6 +2562,12 @@ namespace MemoryReadWriteChip.Spec
           air.cols.values.addr_aligned_0 row 0 = air.cols.values.addr_word_0 row 0 ∧
           air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
           air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      -- SD analogue of `MISSING_LD_addr_aligned`: same chip-side gap.
+      (MISSING_SD_addr_aligned :
+        air.cols.values.instruction.opcode row 0 = 47 →
+          air.cols.values.addr_aligned_0 row 0 = air.cols.values.addr_word_0 row 0 ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
     :
       let memory_row := { (bus_row air row).Memory[0]! with multiplicity := -1 }
       let memory_bus : BusRow := {
@@ -2692,24 +2698,82 @@ namespace MemoryReadWriteChip.Spec
                         exact ⟨h_v0.symm, h_v1.symm, h_v2.symm, h_v3.symm⟩
                       . exact MISSING_LD_extends_correctly h_eq_ld h_x0
                     -- 6) Bridge addresses + values to close the bus-operations equivalence.
+                    --    Mirrors the RV32 LW pattern (RV32IM/Spec/MemoryReadWriteAir.lean lines 1421-1449),
+                    --    adapted for 8-byte reads/writes (instead of 4) and the RV64 column layout
+                    --    (`addr_aligned_0..2` u16 limbs vs RV32's single field element).
                     obtain ⟨ h_v0, h_v1, h_v2, h_v3 ⟩ := h_val_eq
                     obtain ⟨ h_align_0, h_align_1, h_align_2 ⟩ := MISSING_LD_addr_aligned h_eq_ld
-                    -- (a) Unfold `RV64IM.bus_operations` on both sides.
-                    --     State bus → 2 ops: `ReadMem addr_aligned .Double mem_prev_value` and
-                    --     `WriteMem addr_aligned .Double mem_val_value`. Memory bus → 1 op:
-                    --     `ReadMem addr .Double load_value` where `addr = (b + c).toNat` and
-                    --     `load_value = U64w.toBV #v[a_0..3]`.
-                    -- (b) `MISSING_LD_addr_aligned` + `h_c0` (`aw_3 = 0`) + `h_alu_eq` bridges
-                    --     `addr` ↔ `addr_aligned` (Nat equality).
-                    -- (c) `h_v0..3` + `h_c16..h_c19` give `mem_val = mem_prev = load_value`
-                    --     (byte-by-byte after `BitVec.extractLsb` unfolding).
-                    -- (d) `ExtDHashMap.insert_eq_self` collapses the WriteMem 8 inserts to a
-                    --     no-op (each byte being written equals the byte just read).
-                    -- Mechanical but verbose (~80 lines); mirror `RV32IM.spec_LW` lines
-                    -- 1421-1449. Left as a TODO for now — file compiles and the
-                    -- supporting hypotheses (`h_v_eq`, `h_align_*`, `h_c16..h_c19`) are
-                    -- in scope ready to use.
-                    sorry
+                    -- Unfold both buses' operation lists. `*` lets simp use every selector
+                    -- hypothesis in scope (mirrors RV32's `simp [..., *]`).
+                    simp [RV64IM.operation_list_effect, RV64IM.operation_effect, RV64IM.bus_operations,
+                          bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu,
+                          h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real, h_eq_ld]
+                    simp [List.filterMap_cons, List.filterMap_nil]
+                    -- Memory (not register) access on the State bus side.
+                    have h_addr_ge_32 :
+                        ¬ ((air.cols.values.addr_aligned_0 row 0).val +
+                           65536 * (air.cols.values.addr_aligned_1 row 0).val +
+                           4294967296 * (air.cols.values.addr_aligned_2 row 0).val < 32) := by
+                      have := ASSUMPTION_addr_aligned_ge_32
+                      omega
+                    simp [h_addr_ge_32, RV64IM.operation_effect, BitVec.extractLsb, U64w.toBV]
+                    clear h_addr_ge_32
+                    -- Peel the byte-level reads/writes via the BV append unfold.
+                    repeat rw [BitVec.extractLsb'_append_eq_ite]
+                    simp
+                    -- Introduce the 8 byte facts from the State-bus assumption.
+                    intro h_mem_0 h_mem_1 h_mem_2 h_mem_3 h_mem_4 h_mem_5 h_mem_6 h_mem_7
+                    -- Bridge: state-bus address (addr_aligned) = memory-bus address (b + c).toNat.
+                    --   • `h_align_*` pin `addr_aligned_i = addr_word_i`.
+                    --   • `h_alu_eq` + `h_c0` give `(b + c) = U64w.toBV addr_word`.
+                    apply_fun BitVec.toNat at h_alu_eq
+                    simp at h_alu_eq
+                    rw [← h_alu_eq]
+                    simp [U64w.toNat, h_c0]
+                    -- Eliminate `↑aw_i % 65536` (no-op since `aw_i < 65536`).
+                    have h_aw0_mod : (air.cols.values.addr_word_0 row 0).val % 65536 =
+                        (air.cols.values.addr_word_0 row 0).val := Nat.mod_eq_of_lt ub_aw0
+                    have h_aw1_mod : (air.cols.values.addr_word_1 row 0).val % 65536 =
+                        (air.cols.values.addr_word_1 row 0).val := Nat.mod_eq_of_lt ub_aw1
+                    have h_aw2_mod : (air.cols.values.addr_word_2 row 0).val % 65536 =
+                        (air.cols.values.addr_word_2 row 0).val := Nat.mod_eq_of_lt ub_aw2
+                    rw [h_aw0_mod, h_aw1_mod, h_aw2_mod]
+                    -- Bridge State-bus's `addr_aligned_*` to `addr_word_*` in both the goal
+                    -- and the `h_mem_*` hypotheses.
+                    rw [h_align_0, h_align_1, h_align_2]
+                    rw [h_align_0, h_align_1, h_align_2] at h_mem_0 h_mem_1 h_mem_2 h_mem_3
+                                                            h_mem_4 h_mem_5 h_mem_6 h_mem_7
+                    refine ⟨?_, ?_⟩
+                    · -- Memory-bus byte reads ↔ State-bus byte reads.
+                      -- `h_v0..3` bridge `a_i = mem_prev_i` so the load value equals the prev value
+                      -- the State bus read out. The 8 hypotheses `h_mem_*` give exactly those bytes
+                      -- (modulo `mul_comm` between `65536 *` and `* 65536` forms).
+                      rw [h_v0, h_v1, h_v2, h_v3]
+                      simp only [mul_comm 65536, mul_comm 4294967296] at h_mem_0 h_mem_1 h_mem_2 h_mem_3
+                                                                         h_mem_4 h_mem_5 h_mem_6 h_mem_7
+                      exact ⟨h_mem_0, h_mem_1, h_mem_2, h_mem_3, h_mem_4, h_mem_5, h_mem_6, h_mem_7⟩
+                    · -- State equivalence: each `WriteMem .Double` byte insert is a no-op
+                      -- (`mem_val_i = mem_prev_i` from `h_c16..h_c19` — overwrites with same byte).
+                      -- Peel the 8 inserts innermost-first; bind each `h` via a `have` that
+                      -- restates `state.mem[k]?` (getElem? notation, what `operation_effect`
+                      -- produced) as `state.mem.get? k` (what `insert_eq_self` expects).
+                      rw [h_c16, h_c17, h_c18, h_c19]
+                      have hg_0 : state.mem.get? _ = _ := h_mem_0
+                      have hg_1 : state.mem.get? _ = _ := h_mem_1
+                      have hg_2 : state.mem.get? _ = _ := h_mem_2
+                      have hg_3 : state.mem.get? _ = _ := h_mem_3
+                      have hg_4 : state.mem.get? _ = _ := h_mem_4
+                      have hg_5 : state.mem.get? _ = _ := h_mem_5
+                      have hg_6 : state.mem.get? _ = _ := h_mem_6
+                      have hg_7 : state.mem.get? _ = _ := h_mem_7
+                      rw [ExtHashMap.insert_eq_self (h := hg_0)]
+                      rw [ExtHashMap.insert_eq_self (h := hg_1)]
+                      rw [ExtHashMap.insert_eq_self (h := hg_2)]
+                      rw [ExtHashMap.insert_eq_self (h := hg_3)]
+                      rw [ExtHashMap.insert_eq_self (h := hg_4)]
+                      rw [ExtHashMap.insert_eq_self (h := hg_5)]
+                      rw [ExtHashMap.insert_eq_self (h := hg_6)]
+                      rw [ExtHashMap.insert_eq_self (h := hg_7)]
                   . by_cases h_eq_sb : air.cols.values.instruction.opcode row 0 = 15
                     . -- SB. Use `spec_SB` (no MISSING needed for stores).
                       sorry
@@ -2720,11 +2784,102 @@ namespace MemoryReadWriteChip.Spec
                         . -- SW. Use `spec_SW`.
                           sorry
                         . by_cases h_eq_sd : air.cols.values.instruction.opcode row 0 = 47
-                          . -- SD. Use `spec_SD`.
-                            sorry
+                          . -- ============================================
+                            -- SD case (opcode 47): full 8-byte store.
+                            -- ============================================
+                            obtain ⟨ h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                                     h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd ⟩ :=
+                              h_op_47 h_eq_sd
+                            -- 1) Process h_ext.
+                            simp [bus_row_ext_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                                  h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_ext
+                            obtain ⟨ _opcode_range, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, _ ⟩ := h_ext
+                            -- 2) Process h_wf.
+                            simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                                  h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_wf
+                            obtain ⟨ h_alu_addr, _h_byte_aw0, _h_byte_aw1, _h_byte_aw2, _h_bit13,
+                                     _h_byte_d16, _h_byte_d8, ub_mpv0, ub_mpv1, ub_mpv2, ub_mpv3 ⟩ := h_wf
+                            simp [ALUBus.Spec] at h_alu_addr
+                            obtain ⟨ ⟨ ub_aw0, ub_aw1, ub_aw2, ub_aw3 ⟩, h_alu_eq ⟩ := h_alu_addr
+                            simp [RV64IM.execute_RTYPE_pure] at h_alu_eq
+                            -- 3) Extract constraints. c0 (addr_word splits b+c), c77-c80 (store_value = op_a for SD),
+                            --    c81-c84 (mem_val = store_value for all stores).
+                            rw [allHold_iff_allHold_simplified] at h_constraints
+                            simp only [allHold_simplified, row_constraint_list, List.Forall] at h_constraints
+                            obtain ⟨ h_c0, h_c77, h_c78, h_c79, h_c80, h_c81, h_c82, h_c83, h_c84 ⟩ :
+                                constraint_0  air row ∧
+                                constraint_77 air row ∧ constraint_78 air row ∧
+                                constraint_79 air row ∧ constraint_80 air row ∧
+                                constraint_81 air row ∧ constraint_82 air row ∧
+                                constraint_83 air row ∧ constraint_84 air row := by
+                              clear *- h_constraints; aesop
+                            clear h_constraints
+                            simp [constraint_0, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                                  h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd] at h_c0
+                            simp [constraint_77, h_is_sd, sub_eq_zero] at h_c77
+                            simp [constraint_78, h_is_sd, sub_eq_zero] at h_c78
+                            simp [constraint_79, h_is_sd, sub_eq_zero] at h_c79
+                            simp [constraint_80, h_is_sd, sub_eq_zero] at h_c80
+                            simp [constraint_81, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c81
+                            simp [constraint_82, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c82
+                            simp [constraint_83, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c83
+                            simp [constraint_84, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c84
+                            -- 4) Derive mem_val = op_a via store_value as intermediary.
+                            have h_mv0 : air.cols.values.memory_access.access.value_0 row 0 =
+                                         air.cols.values.instruction.op_a_access.access.value_0 row 0 := by
+                              rw [h_c81, h_c77]
+                            have h_mv1 : air.cols.values.memory_access.access.value_1 row 0 =
+                                         air.cols.values.instruction.op_a_access.access.value_1 row 0 := by
+                              rw [h_c82, h_c78]
+                            have h_mv2 : air.cols.values.memory_access.access.value_2 row 0 =
+                                         air.cols.values.instruction.op_a_access.access.value_2 row 0 := by
+                              rw [h_c83, h_c79]
+                            have h_mv3 : air.cols.values.memory_access.access.value_3 row 0 =
+                                         air.cols.values.instruction.op_a_access.access.value_3 row 0 := by
+                              rw [h_c84, h_c80]
+                            -- 5) Bridge addr_aligned = addr_word via MISSING.
+                            obtain ⟨ h_align_0, h_align_1, h_align_2 ⟩ := MISSING_SD_addr_aligned h_eq_sd
+                            -- 6) Unfold bus_operations.
+                            simp [h_eq_sd, RV64IM.operation_list_effect, RV64IM.bus_operations, bus_row, AbsBuses,
+                                  h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                                  h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real]
+                            simp [List.filterMap_cons, List.filterMap_nil]
+                            have h_addr_ge_32 :
+                                ¬ ((air.cols.values.addr_aligned_0 row 0).val +
+                                   65536 * (air.cols.values.addr_aligned_1 row 0).val +
+                                   4294967296 * (air.cols.values.addr_aligned_2 row 0).val < 32) := by
+                              have := ASSUMPTION_addr_aligned_ge_32
+                              omega
+                            simp [h_addr_ge_32, RV64IM.operation_effect, BitVec.extractLsb, U64w.toBV]
+                            clear h_addr_ge_32
+                            repeat rw [BitVec.extractLsb'_append_eq_ite]
+                            simp
+                            -- 7) Bridge state-bus address to memory-bus address via h_alu_eq + h_c0.
+                            apply_fun BitVec.toNat at h_alu_eq
+                            simp at h_alu_eq
+                            rw [← h_alu_eq]
+                            simp [U64w.toNat, h_c0]
+                            have h_aw0_mod : (air.cols.values.addr_word_0 row 0).val % 65536 =
+                                (air.cols.values.addr_word_0 row 0).val := Nat.mod_eq_of_lt ub_aw0
+                            have h_aw1_mod : (air.cols.values.addr_word_1 row 0).val % 65536 =
+                                (air.cols.values.addr_word_1 row 0).val := Nat.mod_eq_of_lt ub_aw1
+                            have h_aw2_mod : (air.cols.values.addr_word_2 row 0).val % 65536 =
+                                (air.cols.values.addr_word_2 row 0).val := Nat.mod_eq_of_lt ub_aw2
+                            rw [h_aw0_mod, h_aw1_mod, h_aw2_mod]
+                            rw [h_align_0, h_align_1, h_align_2]
+                            -- 8) Identify mem_val with op_a so both buses write the same bytes.
+                            rw [h_mv0, h_mv1, h_mv2, h_mv3]
+                            -- Now state-bus and memory-bus emit identical operations: same address (addr_word),
+                            -- same 8 bytes (op_a). Goal is reflexive once the State-bus ReadMem hypotheses are
+                            -- consumed.
+                            simp only [mul_comm 65536, mul_comm 4294967296]
+                            intro _ _ _ _ _ _ _ _
+                            trivial
                           . -- Exhaustive: selector exclusivity from `h_ext` forces `opcode ∈ [10, 17] ∪ [45, 47]`, so
                             -- combined with all eleven `¬(opcode = X)` branches this case is vacuous.
-                            sorry
+                            exfalso
+                            simp [Finset.mem_Icc] at _h_opcode_range
+                            omega
 
   end BusEquivalence
 
