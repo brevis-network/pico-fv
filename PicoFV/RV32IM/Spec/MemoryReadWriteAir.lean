@@ -1082,26 +1082,6 @@ namespace MemoryReadWriteAir.Spec
           . exfalso; grind
         . exfalso; grind
 
-  namespace ExtHashMap
-
-    lemma insert_eq_self [BEq K] [LawfulBEq K] [Hashable K]
-      (m : Std.ExtHashMap K V)
-      (h : m.get? k = .some v)
-    :
-      m.insert k v = m
-    := by
-      grind
-
-    lemma insert_comm [BEq K] [LawfulBEq K] [Hashable K]
-      (m : Std.ExtHashMap K V)
-      (h_neq : ¬ K₁ = K₂)
-    :
-      (m.insert K₁ V₁).insert K₂ V₂ = (m.insert K₂ V₂).insert K₁ V₁
-    := by
-      grind
-
-  end ExtHashMap
-
   section BusEquivalence
 
     lemma bus_equiv
