@@ -2697,8 +2697,178 @@ namespace MemoryReadWriteChip.Spec
             . -- LHU. Use `spec_LHU` + `MISSING_LHU_extends_correctly`.
               sorry
             . by_cases h_eq_lw : air.cols.values.instruction.opcode row 0 = 12
-              . -- LW. Use `spec_LW` + `MISSING_LW_extends_correctly`.
-                sorry
+              . -- ============================================
+                -- LW case (opcode 12): sign-extended 4-byte load. Mirrors LWU; only the high-limb
+                -- extension (a_2 = a_3 = msb * 65535 instead of 0) differs, which doesn't affect the
+                -- 4-byte memory-bus payload.
+                -- ============================================
+                obtain ⟨ h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                         h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd ⟩ :=
+                  h_op_12 h_eq_lw
+                simp [bus_row_ext_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                      h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_ext
+                obtain ⟨ _opcode_range, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, _ ⟩ := h_ext
+                simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                      h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_wf
+                obtain ⟨ h_alu_addr, _h_byte_aw0, _h_byte_aw1, _h_byte_aw2, _h_bit13, _h_byte_d16, _h_byte_d8,
+                         _h_byte_lw_msb, ub_mpv0, ub_mpv1, ub_mpv2, ub_mpv3 ⟩ := h_wf
+                simp [ALUBus.Spec] at h_alu_addr
+                obtain ⟨ ⟨ ub_aw0, ub_aw1, ub_aw2, ub_aw3 ⟩, h_alu_eq ⟩ := h_alu_addr
+                simp [RV64IM.execute_RTYPE_pure] at h_alu_eq
+                rw [allHold_iff_allHold_simplified] at h_constraints
+                simp only [allHold_simplified, row_constraint_list, List.Forall] at h_constraints
+                obtain ⟨ h_c0, h_c2, h_c3, h_c4, h_c10, h_c16, h_c17, h_c18, h_c19, h_c30, h_c31,
+                         h_c45, h_c47, h_c60, h_c61, h_c62, h_c63 ⟩ :
+                    constraint_0  air row ∧ constraint_2  air row ∧ constraint_3  air row ∧
+                    constraint_4  air row ∧ constraint_10 air row ∧
+                    constraint_16 air row ∧ constraint_17 air row ∧
+                    constraint_18 air row ∧ constraint_19 air row ∧
+                    constraint_30 air row ∧ constraint_31 air row ∧
+                    constraint_45 air row ∧ constraint_47 air row ∧
+                    constraint_60 air row ∧ constraint_61 air row ∧
+                    constraint_62 air row ∧ constraint_63 air row := by
+                  clear *- h_constraints; aesop
+                clear h_constraints
+                simp [constraint_0, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                      h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd] at h_c0
+                simp [constraint_2, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                      h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero,
+                      mul_eq_zero] at h_c2
+                simp [constraint_3, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                      h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero,
+                      mul_eq_zero] at h_c3
+                simp [constraint_4, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                      h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero,
+                      mul_eq_zero] at h_c4
+                simp [constraint_10, h_is_lw, h_is_lwu, h_is_sw] at h_c10
+                have h_ob0_zero : air.cols.values.offset_bit_0 row 0 = 0 := by
+                  rcases h_c2 with h | h
+                  . exact h
+                  . rcases h_c3 with h3 | h3
+                    . rw [h, h3] at h_c10; simp at h_c10
+                    . rw [h, h3] at h_c10; simp at h_c10
+                have h_ob1_zero : air.cols.values.offset_bit_1 row 0 = 0 := by
+                  rcases h_c3 with h | h
+                  . exact h
+                  . rw [h, h_ob0_zero] at h_c10; simp at h_c10
+                simp [constraint_16, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
+                      sub_eq_zero] at h_c16
+                simp [constraint_17, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
+                      sub_eq_zero] at h_c17
+                simp [constraint_18, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
+                      sub_eq_zero] at h_c18
+                simp [constraint_19, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
+                      sub_eq_zero] at h_c19
+                simp [constraint_30, h_is_lw, h_is_lwu, sub_eq_zero] at h_c30
+                simp [constraint_31, h_is_lw, h_is_lwu, sub_eq_zero] at h_c31
+                simp [constraint_45, sub_eq_zero, mul_eq_zero] at h_c45
+                simp [constraint_47, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
+                      sub_eq_zero] at h_c47
+                simp [constraint_60, sub_eq_zero] at h_c60
+                simp [constraint_61, sub_eq_zero] at h_c61
+                simp [constraint_62, sub_eq_zero] at h_c62
+                simp [constraint_63, sub_eq_zero] at h_c63
+                have h_val_eq :
+                    air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+                      air.cols.values.selected_word_0 row 0 ∧
+                    air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+                      air.cols.values.selected_word_1 row 0 := by
+                  rcases h_c45 with h_x0 | h_x0
+                  . -- x0 case: soundness gap (same pattern as LWU).
+                    sorry
+                  . obtain ⟨ h_v0, h_v1, _, _ ⟩ := MISSING_LW_extends_correctly h_eq_lw h_x0
+                    exact ⟨h_v0, h_v1⟩
+                obtain ⟨ h_v0, h_v1 ⟩ := h_val_eq
+                obtain ⟨ h_align_addr, h_align_1, h_align_2 ⟩ := MISSING_LW_addr_aligned h_eq_lw
+                simp [RV64IM.operation_list_effect, RV64IM.operation_effect, RV64IM.bus_operations,
+                      bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu,
+                      h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real, h_eq_lw]
+                simp [List.filterMap_cons, List.filterMap_nil]
+                have h_addr_ge_32 :
+                    ¬ ((air.cols.values.addr_aligned_0 row 0).val +
+                       65536 * (air.cols.values.addr_aligned_1 row 0).val +
+                       4294967296 * (air.cols.values.addr_aligned_2 row 0).val < 32) := by
+                  have := ASSUMPTION_addr_aligned_ge_32
+                  omega
+                simp [h_addr_ge_32, RV64IM.operation_effect, BitVec.extractLsb, U64w.toBV]
+                clear h_addr_ge_32
+                repeat rw [BitVec.extractLsb'_append_eq_ite]
+                simp
+                intro h_mem_0 h_mem_1 h_mem_2 h_mem_3 h_mem_4 h_mem_5 h_mem_6 h_mem_7
+                apply_fun BitVec.toNat at h_alu_eq
+                simp at h_alu_eq
+                rw [← h_alu_eq]
+                simp [U64w.toNat, h_c0]
+                have h_aw0_mod : (air.cols.values.addr_word_0 row 0).val % 65536 =
+                    (air.cols.values.addr_word_0 row 0).val := Nat.mod_eq_of_lt ub_aw0
+                have h_aw1_mod : (air.cols.values.addr_word_1 row 0).val % 65536 =
+                    (air.cols.values.addr_word_1 row 0).val := Nat.mod_eq_of_lt ub_aw1
+                have h_aw2_mod : (air.cols.values.addr_word_2 row 0).val % 65536 =
+                    (air.cols.values.addr_word_2 row 0).val := Nat.mod_eq_of_lt ub_aw2
+                rw [h_aw0_mod, h_aw1_mod, h_aw2_mod]
+                rw [h_align_1, h_align_2]
+                rw [h_align_1, h_align_2] at h_mem_0 h_mem_1 h_mem_2 h_mem_3
+                                            h_mem_4 h_mem_5 h_mem_6 h_mem_7
+                rw [h_v0, h_v1]
+                rcases h_c4 with h_ob2 | h_ob2
+                . -- ob_2 = 0
+                  rw [h_ob2] at h_c30 h_c31 h_align_addr
+                  simp at h_c30 h_c31 h_align_addr
+                  rw [h_c30, h_c31]
+                  rw [show (air.cols.values.addr_word_0 row 0).val =
+                           (air.cols.values.addr_aligned_0 row 0).val by omega]
+                  simp only [mul_comm 65536, mul_comm 4294967296] at h_mem_0 h_mem_1 h_mem_2 h_mem_3
+                                                                     h_mem_4 h_mem_5 h_mem_6 h_mem_7 ⊢
+                  refine ⟨?_, ?_⟩
+                  . exact ⟨h_mem_0, h_mem_1, h_mem_2, h_mem_3⟩
+                  . rw [h_c16, h_c17, h_c18, h_c19]
+                    have hg_0 : state.mem.get? _ = _ := h_mem_0
+                    have hg_1 : state.mem.get? _ = _ := h_mem_1
+                    have hg_2 : state.mem.get? _ = _ := h_mem_2
+                    have hg_3 : state.mem.get? _ = _ := h_mem_3
+                    have hg_4 : state.mem.get? _ = _ := h_mem_4
+                    have hg_5 : state.mem.get? _ = _ := h_mem_5
+                    have hg_6 : state.mem.get? _ = _ := h_mem_6
+                    have hg_7 : state.mem.get? _ = _ := h_mem_7
+                    rw [ExtHashMap.insert_eq_self (h := hg_0)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_1)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_2)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_3)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_4)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_5)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_6)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_7)]
+                . -- ob_2 = 1
+                  rw [h_ob2] at h_c30 h_c31 h_align_addr
+                  simp at h_c30 h_c31 h_align_addr
+                  rw [h_c30, h_c31]
+                  have h_aw0_eq :
+                      (air.cols.values.addr_word_0 row 0).val =
+                        (air.cols.values.addr_aligned_0 row 0).val + 4 := by omega
+                  rw [h_aw0_eq]
+                  simp only [mul_comm 65536, mul_comm 4294967296] at h_mem_0 h_mem_1 h_mem_2 h_mem_3
+                                                                     h_mem_4 h_mem_5 h_mem_6 h_mem_7 ⊢
+                  refine ⟨?_, ?_⟩
+                  . ring_nf
+                    ring_nf at h_mem_4 h_mem_5 h_mem_6 h_mem_7
+                    exact ⟨h_mem_4, h_mem_5, h_mem_6, h_mem_7⟩
+                  . rw [h_c16, h_c17, h_c18, h_c19]
+                    have hg_0 : state.mem.get? _ = _ := h_mem_0
+                    have hg_1 : state.mem.get? _ = _ := h_mem_1
+                    have hg_2 : state.mem.get? _ = _ := h_mem_2
+                    have hg_3 : state.mem.get? _ = _ := h_mem_3
+                    have hg_4 : state.mem.get? _ = _ := h_mem_4
+                    have hg_5 : state.mem.get? _ = _ := h_mem_5
+                    have hg_6 : state.mem.get? _ = _ := h_mem_6
+                    have hg_7 : state.mem.get? _ = _ := h_mem_7
+                    rw [ExtHashMap.insert_eq_self (h := hg_0)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_1)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_2)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_3)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_4)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_5)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_6)]
+                    rw [ExtHashMap.insert_eq_self (h := hg_7)]
               . by_cases h_eq_lwu : air.cols.values.instruction.opcode row 0 = 45
                 . -- ============================================
                   -- LWU case (opcode 45): zero-extended 4-byte load.
