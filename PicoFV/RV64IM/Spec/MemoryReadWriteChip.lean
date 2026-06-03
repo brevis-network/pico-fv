@@ -2503,10 +2503,10 @@ namespace MemoryReadWriteChip.Spec
       variable (h_wf : bus_row_wf_asm (bus_row air row))
       variable (h_is_real : air.cols.values.is_real row 0 = 1)
       variable (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
-      variable (ASSUMPTION_addr_aligned_ge_32 :
-        ¬ ((air.cols.values.addr_aligned_0 row 0).val +
-           65536 * (air.cols.values.addr_aligned_1 row 0).val +
-           65536 * 65536 * (air.cols.values.addr_aligned_2 row 0).val < 32))
+      -- `addr_aligned ≥ 32` is derived internally from `constraint_1` (which pins
+      -- `addr_word_1 + addr_word_2 ≠ 0`, equivalent to `addr_word ≥ 65536`) plus the per-opcode
+      -- `addr_aligned ↔ addr_word` bridge — so it is not exposed as a separate assumption.
+      include h_ext h_wf h_is_real h_constraints
 
       lemma bus_equiv_LD
         (h_opcode : air.cols.values.instruction.opcode row 0 = 46)
@@ -2525,7 +2525,152 @@ namespace MemoryReadWriteChip.Spec
           air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
           air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
       : bus_equiv_goal air row state := by
-        sorry
+        unfold bus_equiv_goal
+        have h_excl := selector_exclusivity air row h_ext h_is_real
+        simp only at h_excl
+        obtain ⟨ _, _, _, _, _, _, _, _, _,
+                 _, _, _, _, _, _, _, _, _, h_op_46, _ ⟩ := h_excl
+        obtain ⟨ h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                 h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd ⟩ :=
+          h_op_46 h_opcode
+        simp [bus_row_ext_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+              h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_ext
+        obtain ⟨ _opcode_range, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, _ ⟩ := h_ext
+        simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+              h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_wf
+        obtain ⟨ h_alu_addr, _h_byte_aw0, _h_byte_aw1, _h_byte_aw2, _h_bit13, _h_byte_d16, _h_byte_d8,
+                 ub_mpv0, ub_mpv1, ub_mpv2, ub_mpv3 ⟩ := h_wf
+        simp [ALUBus.Spec] at h_alu_addr
+        obtain ⟨ ⟨ ub_aw0, ub_aw1, ub_aw2, ub_aw3 ⟩, h_alu_eq ⟩ := h_alu_addr
+        simp [RV64IM.execute_RTYPE_pure] at h_alu_eq
+        rw [allHold_iff_allHold_simplified] at h_constraints
+        simp only [allHold_simplified, row_constraint_list, List.Forall] at h_constraints
+        obtain ⟨ h_c0, h_c1, h_c11, h_c16, h_c17, h_c18, h_c19, h_c36, h_c37, h_c38, h_c39,
+                 h_c44, h_c45, h_c46, h_c47, h_c60, h_c61, h_c62, h_c63 ⟩ :
+            constraint_0  air row ∧ constraint_1  air row ∧
+            constraint_11 air row ∧ constraint_16 air row ∧ constraint_17 air row ∧
+            constraint_18 air row ∧ constraint_19 air row ∧ constraint_36 air row ∧ constraint_37 air row ∧
+            constraint_38 air row ∧ constraint_39 air row ∧ constraint_44 air row ∧ constraint_45 air row ∧
+            constraint_46 air row ∧ constraint_47 air row ∧ constraint_60 air row ∧ constraint_61 air row ∧
+            constraint_62 air row ∧ constraint_63 air row := by
+          clear *- h_constraints; aesop
+        clear h_constraints
+        simp [constraint_0, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld, h_is_sb,
+              h_is_sh, h_is_sw, h_is_sd] at h_c0
+        simp [constraint_1, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld, h_is_sb,
+              h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c1
+        simp [constraint_11, h_is_ld, h_is_sd] at h_c11
+        simp [constraint_16, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
+              sub_eq_zero] at h_c16
+        simp [constraint_17, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
+              sub_eq_zero] at h_c17
+        simp [constraint_18, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
+              sub_eq_zero] at h_c18
+        simp [constraint_19, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
+              sub_eq_zero] at h_c19
+        simp [constraint_36, h_is_ld, sub_eq_zero] at h_c36
+        simp [constraint_37, h_is_ld, sub_eq_zero] at h_c37
+        simp [constraint_38, h_is_ld, sub_eq_zero] at h_c38
+        simp [constraint_39, h_is_ld, sub_eq_zero] at h_c39
+        simp [constraint_44, h_is_lwu, h_is_ld] at h_c44
+        simp [constraint_45, sub_eq_zero, mul_eq_zero] at h_c45
+        simp [constraint_46, h_is_lb, h_is_lh, h_is_lw, h_c44] at h_c46
+        simp [constraint_47, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld, h_c44,
+              sub_eq_zero] at h_c47
+        simp [constraint_60, sub_eq_zero] at h_c60
+        simp [constraint_61, sub_eq_zero] at h_c61
+        simp [constraint_62, sub_eq_zero] at h_c62
+        simp [constraint_63, sub_eq_zero] at h_c63
+        -- c1 gives `addr_top_two_limb_inv * (aw_1 + aw_2) = 1`, so `aw_1 + aw_2 ≠ 0` in FKB. Combined
+        -- with the addr_aligned ↔ addr_word bridge and the u16 bounds, this forces `addr_aligned ≥ 65536`.
+        have h_sum_ne :
+            air.cols.values.addr_word_1 row 0 +
+            air.cols.values.addr_word_2 row 0 ≠ 0 := by
+          intro h_zero; rw [h_zero] at h_c1; simp at h_c1
+        have h_sum_nat_ne :
+            (air.cols.values.addr_word_1 row 0).val +
+            (air.cols.values.addr_word_2 row 0).val ≠ 0 := by
+          intro h_zero; apply h_sum_ne
+          simp [Fin.ext_iff, Fin.add_def]; omega
+        obtain ⟨ h_align_0, h_align_1, h_align_2 ⟩ := MISSING_LD_addr_aligned
+        have h_addr_ge_32 :
+            ¬ ((air.cols.values.addr_aligned_0 row 0).val +
+               65536 * (air.cols.values.addr_aligned_1 row 0).val +
+               65536 * 65536 * (air.cols.values.addr_aligned_2 row 0).val < 32) := by
+          rw [h_align_1, h_align_2]
+          omega
+        have h_val_eq :
+            air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+              air.cols.values.memory_access.prev_value_0 row 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+              air.cols.values.memory_access.prev_value_1 row 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+              air.cols.values.memory_access.prev_value_2 row 0 ∧
+            air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+              air.cols.values.memory_access.prev_value_3 row 0 := by
+          rcases h_c45 with h_x0 | h_x0
+          . rw [h_x0] at h_c47
+            simp at h_c47
+            rcases h_c60 with h | h_v0
+            . rw [h] at h_c47; simp at h_c47
+            rcases h_c61 with h | h_v1
+            . rw [h] at h_c47; simp at h_c47
+            rcases h_c62 with h | h_v2
+            . rw [h] at h_c47; simp at h_c47
+            rcases h_c63 with h | h_v3
+            . rw [h] at h_c47; simp at h_c47
+            rw [h_c36] at h_v0
+            rw [h_c37] at h_v1
+            rw [h_c38] at h_v2
+            rw [h_c39] at h_v3
+            exact ⟨h_v0.symm, h_v1.symm, h_v2.symm, h_v3.symm⟩
+          . exact MISSING_LD_extends_correctly h_x0
+        obtain ⟨ h_v0, h_v1, h_v2, h_v3 ⟩ := h_val_eq
+        simp [RV64IM.operation_list_effect, RV64IM.operation_effect, RV64IM.bus_operations,
+              bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu,
+              h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real, h_opcode]
+        simp [List.filterMap_cons, List.filterMap_nil]
+        simp [h_addr_ge_32, RV64IM.operation_effect, BitVec.extractLsb, U64w.toBV]
+        clear h_addr_ge_32
+        repeat rw [BitVec.extractLsb'_append_eq_ite]
+        simp
+        intro h_mem_0 h_mem_1 h_mem_2 h_mem_3 h_mem_4 h_mem_5 h_mem_6 h_mem_7
+        apply_fun BitVec.toNat at h_alu_eq
+        simp at h_alu_eq
+        rw [← h_alu_eq]
+        simp [U64w.toNat, h_c0]
+        have h_aw0_mod : (air.cols.values.addr_word_0 row 0).val % 65536 =
+            (air.cols.values.addr_word_0 row 0).val := Nat.mod_eq_of_lt ub_aw0
+        have h_aw1_mod : (air.cols.values.addr_word_1 row 0).val % 65536 =
+            (air.cols.values.addr_word_1 row 0).val := Nat.mod_eq_of_lt ub_aw1
+        have h_aw2_mod : (air.cols.values.addr_word_2 row 0).val % 65536 =
+            (air.cols.values.addr_word_2 row 0).val := Nat.mod_eq_of_lt ub_aw2
+        rw [h_aw0_mod, h_aw1_mod, h_aw2_mod]
+        rw [h_align_0, h_align_1, h_align_2]
+        rw [h_align_0, h_align_1, h_align_2] at h_mem_0 h_mem_1 h_mem_2 h_mem_3
+                                                h_mem_4 h_mem_5 h_mem_6 h_mem_7
+        refine ⟨?_, ?_⟩
+        . rw [h_v0, h_v1, h_v2, h_v3]
+          simp only [mul_comm 65536, mul_comm 4294967296] at h_mem_0 h_mem_1 h_mem_2 h_mem_3
+                                                             h_mem_4 h_mem_5 h_mem_6 h_mem_7
+          exact ⟨h_mem_0, h_mem_1, h_mem_2, h_mem_3, h_mem_4, h_mem_5, h_mem_6, h_mem_7⟩
+        . rw [h_c16, h_c17, h_c18, h_c19]
+          have hg_0 : state.mem.get? _ = _ := h_mem_0
+          have hg_1 : state.mem.get? _ = _ := h_mem_1
+          have hg_2 : state.mem.get? _ = _ := h_mem_2
+          have hg_3 : state.mem.get? _ = _ := h_mem_3
+          have hg_4 : state.mem.get? _ = _ := h_mem_4
+          have hg_5 : state.mem.get? _ = _ := h_mem_5
+          have hg_6 : state.mem.get? _ = _ := h_mem_6
+          have hg_7 : state.mem.get? _ = _ := h_mem_7
+          rw [ExtHashMap.insert_eq_self (h := hg_0)]
+          rw [ExtHashMap.insert_eq_self (h := hg_1)]
+          rw [ExtHashMap.insert_eq_self (h := hg_2)]
+          rw [ExtHashMap.insert_eq_self (h := hg_3)]
+          rw [ExtHashMap.insert_eq_self (h := hg_4)]
+          rw [ExtHashMap.insert_eq_self (h := hg_5)]
+          rw [ExtHashMap.insert_eq_self (h := hg_6)]
+          rw [ExtHashMap.insert_eq_self (h := hg_7)]
 
       lemma bus_equiv_SD
         (h_opcode : air.cols.values.instruction.opcode row 0 = 47)
