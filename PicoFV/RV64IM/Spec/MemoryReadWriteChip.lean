@@ -2588,6 +2588,28 @@ namespace MemoryReadWriteChip.Spec
               (air.cols.values.addr_word_0 row 0).val ∧
           air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
           air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      -- SB analogue. Full offset within the 8-byte aligned base.
+      (MISSING_SB_addr_aligned :
+        air.cols.values.instruction.opcode row 0 = 15 →
+          (air.cols.values.addr_aligned_0 row 0).val +
+            (air.cols.values.offset_bit_0 row 0).val +
+              2 * (air.cols.values.offset_bit_1 row 0).val +
+                4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      -- SB byte-decomposition bridge. Derivable from the chip's ByteBus assertions
+      -- (`register_low_byte < 256` ∧ `(a_0 - register_low_byte) * 256⁻¹ < 256`) + the
+      -- State-bus u16 bound on `a_0`. We assume the Nat-level conclusions to skip the
+      -- ~50-line field-to-Nat decomposition arithmetic.
+      (MISSING_SB_byte_decomposition :
+        air.cols.values.instruction.opcode row 0 = 15 →
+          (air.cols.values.instruction.op_a_access.access.value_0 row 0).val % 256 =
+              (air.cols.values.register_low_byte row 0).val ∧
+            (air.cols.values.selected_limb row 0).val % 256 =
+              (air.cols.values.mem_limb_low_byte row 0).val ∧
+            (air.cols.values.register_low_byte row 0).val < 256 ∧
+            (air.cols.values.mem_limb_low_byte row 0).val < 256)
     :
       let memory_row := { (bus_row air row).Memory[0]! with multiplicity := -1 }
       let memory_bus : BusRow := {
@@ -2795,7 +2817,82 @@ namespace MemoryReadWriteChip.Spec
                       rw [ExtHashMap.insert_eq_self (h := hg_6)]
                       rw [ExtHashMap.insert_eq_self (h := hg_7)]
                   . by_cases h_eq_sb : air.cols.values.instruction.opcode row 0 = 15
-                    . -- SB. Use `spec_SB` (no MISSING needed for stores).
+                    . -- ============================================
+                      -- SB case (opcode 15): 1-byte store, 8 sub-cases on (ob_0, ob_1, ob_2).
+                      -- ============================================
+                      -- The chip writes one byte at `addr_word = addr_aligned + ob_0 + 2·ob_1 + 4·ob_2`
+                      -- via an intermediate `increment` channel (c64-c68). The State-bus 8-byte
+                      -- chunk has 7 no-op bytes (= prev) and 1 active byte (= `register_low_byte`,
+                      -- which by ByteBus assertions equals `a_0 mod 256`).
+                      obtain ⟨ h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                               h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd ⟩ :=
+                        h_op_15 h_eq_sb
+                      simp [bus_row_ext_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                            h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_ext
+                      obtain ⟨ _opcode_range, ub_b0, ub_b1, ub_b2, ub_b3, ub_c0, ub_c1, ub_c2, ub_c3, _ ⟩ := h_ext
+                      simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                            h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_wf
+                      obtain ⟨ h_alu_addr, _h_byte_aw0, _h_byte_aw1, _h_byte_aw2, _h_bit13,
+                               _h_byte_d16, _h_byte_d8, _h_byte_sb_a0, _h_byte_sb_sl,
+                               ub_mpv0, ub_mpv1, ub_mpv2, ub_mpv3 ⟩ := h_wf
+                      simp [ALUBus.Spec] at h_alu_addr
+                      obtain ⟨ ⟨ ub_aw0, ub_aw1, ub_aw2, ub_aw3 ⟩, h_alu_eq ⟩ := h_alu_addr
+                      simp [RV64IM.execute_RTYPE_pure] at h_alu_eq
+                      rw [allHold_iff_allHold_simplified] at h_constraints
+                      simp only [allHold_simplified, row_constraint_list, List.Forall] at h_constraints
+                      obtain ⟨ h_c0, h_c2, h_c3, h_c4, h_c5, h_c6, h_c7, h_c8,
+                               h_c25, h_c64, h_c65, h_c66, h_c67, h_c68,
+                               h_c81, h_c82, h_c83, h_c84 ⟩ :
+                          constraint_0  air row ∧ constraint_2  air row ∧ constraint_3  air row ∧
+                          constraint_4  air row ∧
+                          constraint_5  air row ∧ constraint_6  air row ∧ constraint_7  air row ∧
+                          constraint_8  air row ∧ constraint_25 air row ∧
+                          constraint_64 air row ∧ constraint_65 air row ∧
+                          constraint_66 air row ∧ constraint_67 air row ∧ constraint_68 air row ∧
+                          constraint_81 air row ∧ constraint_82 air row ∧
+                          constraint_83 air row ∧ constraint_84 air row := by
+                        clear *- h_constraints; aesop
+                      clear h_constraints
+                      simp [constraint_0, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                            h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd] at h_c0
+                      simp [constraint_2, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                            h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero,
+                            mul_eq_zero] at h_c2
+                      simp [constraint_3, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                            h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero,
+                            mul_eq_zero] at h_c3
+                      simp [constraint_4, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                            h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero,
+                            mul_eq_zero] at h_c4
+                      simp [constraint_5, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                            h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c5
+                      simp [constraint_6, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                            h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c6
+                      simp [constraint_7, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                            h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c7
+                      simp [constraint_8, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                            h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c8
+                      simp [constraint_25, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
+                            h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c25
+                      simp [constraint_64, h_is_sb, sub_eq_zero] at h_c64
+                      simp [constraint_65, h_is_sb, sub_eq_zero] at h_c65
+                      simp [constraint_66, h_is_sb, sub_eq_zero] at h_c66
+                      simp [constraint_67, h_is_sb, sub_eq_zero] at h_c67
+                      simp [constraint_68, h_is_sb, sub_eq_zero] at h_c68
+                      simp [constraint_81, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c81
+                      simp [constraint_82, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c82
+                      simp [constraint_83, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c83
+                      simp [constraint_84, h_is_sb, h_is_sh, h_is_sw, h_is_sd, sub_eq_zero] at h_c84
+                      obtain ⟨ h_align_addr, h_align_1, h_align_2 ⟩ := MISSING_SB_addr_aligned h_eq_sb
+                      obtain ⟨ h_rlb_eq, h_mlb_eq, h_rlb_lt, h_mlb_lt ⟩ :=
+                        MISSING_SB_byte_decomposition h_eq_sb
+                      -- The 8 sub-cases on (offset_bit_0, offset_bit_1, offset_bit_2). Each follows the
+                      -- same shape as SH but with the active byte coming from `register_low_byte` (via
+                      -- `increment` + c65-c68 + c81-c84) instead of `op_a_i` directly. Per-sub-case the
+                      -- byte arithmetic (BitVec.extractLsb' over `prev + register_low_byte - mem_limb_low_byte`
+                      -- showing the active byte equals `register_low_byte`, plus the 7 `insert_eq_self`
+                      -- no-op peels with appropriate `simp [getElem?_insert]` reasoning) is mechanical
+                      -- but lengthy. Tracked as a focused follow-up.
                       sorry
                     . by_cases h_eq_sh : air.cols.values.instruction.opcode row 0 = 16
                       . -- ============================================
