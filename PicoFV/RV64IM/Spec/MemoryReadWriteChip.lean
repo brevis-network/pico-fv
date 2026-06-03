@@ -4118,6 +4118,231 @@ namespace MemoryReadWriteChip.Spec
         sorry
 
     end bus_equiv_per_opcode
+
+    -- The top-level dispatcher. Selector exclusivity (derived from `h_ext` + `h_is_real`) forces
+    -- the opcode into one of eleven values; each branch hands off to the per-opcode lemma.
+    -- The dispatcher takes every per-opcode MISSING hypothesis (the same as the commented-out
+    -- monolithic `bus_equiv` had — the address-aligned bridges per opcode plus the per-load
+    -- `extends_correctly` bridges plus the LBU byte-range / SB byte-decomposition bridges).
+    lemma bus_equiv
+      [Field ExtF]
+      {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+      (air : Valid_MemoryReadWriteChip FKB ExtF)
+      (row : ℕ)
+      (h_ext : bus_row_ext_asm (bus_row air row))
+      (h_wf : bus_row_wf_asm (bus_row air row))
+      (h_is_real : air.cols.values.is_real row 0 = 1)
+      (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
+      (MISSING_LB_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 10 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.selected_byte row 0 + air.cols.values.msb row 0 * 65280 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+            air.cols.values.msb row 0 * 65535 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+            air.cols.values.msb row 0 * 65535 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+            air.cols.values.msb row 0 * 65535)
+      (MISSING_LBU_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 13 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.selected_byte row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 = 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 = 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 = 0)
+      (MISSING_LBU_selected_byte_in_range :
+        air.cols.values.instruction.opcode row 0 = 13 →
+        (air.cols.values.selected_byte row 0).val < 256)
+      (MISSING_LH_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 11 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.selected_limb row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+            air.cols.values.msb row 0 * 65535 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+            air.cols.values.msb row 0 * 65535 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+            air.cols.values.msb row 0 * 65535)
+      (MISSING_LHU_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 14 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.selected_limb row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 = 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 = 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 = 0)
+      (MISSING_LW_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 12 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.selected_word_0 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+            air.cols.values.selected_word_1 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+            air.cols.values.msb row 0 * 65535 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+            air.cols.values.msb row 0 * 65535)
+      (MISSING_LWU_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 45 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.selected_word_0 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+            air.cols.values.selected_word_1 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 = 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 = 0)
+      (MISSING_LD_extends_correctly :
+        air.cols.values.instruction.opcode row 0 = 46 →
+        air.cols.values.instruction.op_a_0 row 0 = 1 →
+          air.cols.values.instruction.op_a_access.access.value_0 row 0 =
+            air.cols.values.memory_access.prev_value_0 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_1 row 0 =
+            air.cols.values.memory_access.prev_value_1 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_2 row 0 =
+            air.cols.values.memory_access.prev_value_2 row 0 ∧
+          air.cols.values.instruction.op_a_access.access.value_3 row 0 =
+            air.cols.values.memory_access.prev_value_3 row 0)
+      (MISSING_LB_addr_aligned :
+        air.cols.values.instruction.opcode row 0 = 10 →
+          (air.cols.values.addr_aligned_0 row 0).val +
+            (air.cols.values.offset_bit_0 row 0).val +
+              2 * (air.cols.values.offset_bit_1 row 0).val +
+                4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      (MISSING_LBU_addr_aligned :
+        air.cols.values.instruction.opcode row 0 = 13 →
+          (air.cols.values.addr_aligned_0 row 0).val +
+            (air.cols.values.offset_bit_0 row 0).val +
+              2 * (air.cols.values.offset_bit_1 row 0).val +
+                4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      (MISSING_LH_addr_aligned :
+        air.cols.values.instruction.opcode row 0 = 11 →
+          (air.cols.values.addr_aligned_0 row 0).val +
+            2 * (air.cols.values.offset_bit_1 row 0).val +
+              4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      (MISSING_LHU_addr_aligned :
+        air.cols.values.instruction.opcode row 0 = 14 →
+          (air.cols.values.addr_aligned_0 row 0).val +
+            2 * (air.cols.values.offset_bit_1 row 0).val +
+              4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      (MISSING_LW_addr_aligned :
+        air.cols.values.instruction.opcode row 0 = 12 →
+          (air.cols.values.addr_aligned_0 row 0).val +
+            4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      (MISSING_LWU_addr_aligned :
+        air.cols.values.instruction.opcode row 0 = 45 →
+          (air.cols.values.addr_aligned_0 row 0).val +
+            4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      (MISSING_LD_addr_aligned :
+        air.cols.values.instruction.opcode row 0 = 46 →
+          air.cols.values.addr_aligned_0 row 0 = air.cols.values.addr_word_0 row 0 ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      (MISSING_SB_addr_aligned :
+        air.cols.values.instruction.opcode row 0 = 15 →
+          (air.cols.values.addr_aligned_0 row 0).val +
+            (air.cols.values.offset_bit_0 row 0).val +
+              2 * (air.cols.values.offset_bit_1 row 0).val +
+                4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      (MISSING_SH_addr_aligned :
+        air.cols.values.instruction.opcode row 0 = 16 →
+          (air.cols.values.addr_aligned_0 row 0).val +
+            2 * (air.cols.values.offset_bit_1 row 0).val +
+              4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      (MISSING_SW_addr_aligned :
+        air.cols.values.instruction.opcode row 0 = 17 →
+          (air.cols.values.addr_aligned_0 row 0).val +
+            4 * (air.cols.values.offset_bit_2 row 0).val =
+              (air.cols.values.addr_word_0 row 0).val ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      (MISSING_SD_addr_aligned :
+        air.cols.values.instruction.opcode row 0 = 47 →
+          air.cols.values.addr_aligned_0 row 0 = air.cols.values.addr_word_0 row 0 ∧
+          air.cols.values.addr_aligned_1 row 0 = air.cols.values.addr_word_1 row 0 ∧
+          air.cols.values.addr_aligned_2 row 0 = air.cols.values.addr_word_2 row 0)
+      (MISSING_SB_byte_decomposition :
+        air.cols.values.instruction.opcode row 0 = 15 →
+          (air.cols.values.instruction.op_a_access.access.value_0 row 0).val % 256 =
+              (air.cols.values.register_low_byte row 0).val ∧
+            (air.cols.values.selected_limb row 0).val % 256 =
+              (air.cols.values.mem_limb_low_byte row 0).val ∧
+            (air.cols.values.register_low_byte row 0).val < 256 ∧
+            (air.cols.values.mem_limb_low_byte row 0).val < 256)
+    :
+      bus_equiv_goal air row state
+    := by
+      have h_excl := selector_exclusivity air row h_ext h_is_real
+      simp only at h_excl
+      obtain ⟨ _opcode_range, _, _, _, _, _, _, _, _,
+               _h_op_10, _h_op_11, _h_op_12, _h_op_13, _h_op_14,
+               _h_op_15, _h_op_16, _h_op_17, _h_op_45, _h_op_46, _h_op_47 ⟩ := h_excl
+      by_cases h_eq_lb : air.cols.values.instruction.opcode row 0 = 10
+      . exact bus_equiv_LB air row h_ext h_wf h_is_real h_constraints h_eq_lb
+              (MISSING_LB_extends_correctly h_eq_lb) (MISSING_LB_addr_aligned h_eq_lb)
+      . by_cases h_eq_lbu : air.cols.values.instruction.opcode row 0 = 13
+        . exact bus_equiv_LBU air row h_ext h_wf h_is_real h_constraints h_eq_lbu
+                (MISSING_LBU_extends_correctly h_eq_lbu)
+                (MISSING_LBU_selected_byte_in_range h_eq_lbu)
+                (MISSING_LBU_addr_aligned h_eq_lbu)
+        . by_cases h_eq_lh : air.cols.values.instruction.opcode row 0 = 11
+          . exact bus_equiv_LH air row h_ext h_wf h_is_real h_constraints h_eq_lh
+                  (MISSING_LH_extends_correctly h_eq_lh) (MISSING_LH_addr_aligned h_eq_lh)
+          . by_cases h_eq_lhu : air.cols.values.instruction.opcode row 0 = 14
+            . exact bus_equiv_LHU air row h_ext h_wf h_is_real h_constraints h_eq_lhu
+                    (MISSING_LHU_extends_correctly h_eq_lhu) (MISSING_LHU_addr_aligned h_eq_lhu)
+            . by_cases h_eq_lw : air.cols.values.instruction.opcode row 0 = 12
+              . exact bus_equiv_LW air row h_ext h_wf h_is_real h_constraints h_eq_lw
+                      (MISSING_LW_extends_correctly h_eq_lw) (MISSING_LW_addr_aligned h_eq_lw)
+              . by_cases h_eq_lwu : air.cols.values.instruction.opcode row 0 = 45
+                . exact bus_equiv_LWU air row h_ext h_wf h_is_real h_constraints h_eq_lwu
+                        (MISSING_LWU_extends_correctly h_eq_lwu) (MISSING_LWU_addr_aligned h_eq_lwu)
+                . by_cases h_eq_ld : air.cols.values.instruction.opcode row 0 = 46
+                  . exact bus_equiv_LD air row h_ext h_wf h_is_real h_constraints h_eq_ld
+                          (MISSING_LD_extends_correctly h_eq_ld) (MISSING_LD_addr_aligned h_eq_ld)
+                  . by_cases h_eq_sb : air.cols.values.instruction.opcode row 0 = 15
+                    . exact bus_equiv_SB air row h_ext h_wf h_is_real h_constraints h_eq_sb
+                            (MISSING_SB_addr_aligned h_eq_sb)
+                            (MISSING_SB_byte_decomposition h_eq_sb)
+                    . by_cases h_eq_sh : air.cols.values.instruction.opcode row 0 = 16
+                      . exact bus_equiv_SH air row h_ext h_wf h_is_real h_constraints h_eq_sh
+                              (MISSING_SH_addr_aligned h_eq_sh)
+                      . by_cases h_eq_sw : air.cols.values.instruction.opcode row 0 = 17
+                        . exact bus_equiv_SW air row h_ext h_wf h_is_real h_constraints h_eq_sw
+                                (MISSING_SW_addr_aligned h_eq_sw)
+                        . by_cases h_eq_sd : air.cols.values.instruction.opcode row 0 = 47
+                          . exact bus_equiv_SD air row h_ext h_wf h_is_real h_constraints h_eq_sd
+                                  (MISSING_SD_addr_aligned h_eq_sd)
+                          . exfalso
+                            simp [Finset.mem_Icc] at _opcode_range
+                            omega
+
 /-
     lemma bus_equiv
       [Field ExtF]
