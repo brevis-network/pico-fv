@@ -17,7 +17,7 @@ set_option linter.unusedVariables false
 Lean formalisation of `MemoryChipCols` / `MemoryChipValueCols` /
 `MemoryInstructionCols` from
 `vm/src/chips/chips/riscv_memory/read_write/columns.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
+`0ecd943c3dba682e1848d1f2d52ac50a24949d8a` (Pico PR #101 head).
 
 ```rust
 pub struct MemoryChipCols<F> {
@@ -28,7 +28,6 @@ pub struct MemoryChipValueCols<F> {
     pub chunk: F,
     pub clk: F,
     pub addr_word: Word<F>,
-    pub addr_aligned: Word<F>,
     pub offset_bit: [F; 3],
     pub limb_select: [F; 4],
     pub addr_top_two_limb_inv: F,
@@ -45,7 +44,7 @@ pub struct MemoryChipValueCols<F> {
     pub unsigned_mem_val: Word<F>,
     pub mem_value_is_pos_not_x0: F,
     pub mem_value_is_neg_not_x0: F,
-    pub instruction: MemoryInstructionCols<F>,            // 44
+    pub instruction: MemoryInstructionCols<F>,            // 34
 }
 
 pub struct MemoryInstructionCols<T> {
@@ -57,25 +56,31 @@ pub struct MemoryInstructionCols<T> {
     pub is_ld: T,
     pub is_sb: T, pub is_sh: T, pub is_sw: T, pub is_sd: T,
     pub op_a_access: MemoryReadWriteCols<T>,              // 13
-    pub op_b_access: MemoryReadCols<T>,                   //  9
-    pub op_c_access: MemoryReadCols<T>,                   //  9
+    pub op_b_access: Word<T>,                             //  4
+    pub op_c_access: Word<T>,                             //  4
 }
 ```
 
-Layout: 1 + 1 + 4 + 4 + 3 + 4 + 1 + 13 + 1 + 1 + 1 + 2 + 1 + 1 + 1 + 1 + 4 +
-4 + 1 + 1 + 44 = **94 columns** total (matches Pico's
+Layout: 1 + 1 + 4 + 3 + 4 + 1 + 13 + 1 + 1 + 1 + 2 + 1 + 1 + 1 + 1 + 4 +
+4 + 1 + 1 + 34 = **80 columns** total (matches Pico's
 `BaseAir<F>::width = NUM_MEMORY_CHIP_COLS = size_of::<MemoryChipValueCols<u8>>()`).
 
-Note: the Lean extraction's constraints reference at most column index 88, so
-columns 89-93 (the access metadata of `op_c_access`: `prev_chunk`, `prev_clk`,
-`compare_clk`, `diff_16bit_limb`, `diff_8bit_limb`) are allocated but
-unconstrained — `op_c` is treated as an immediate, so its memory state isn't
-checked on this chip.
+Post-PR #101 column layout deltas from the prior `b6f2de04` baseline:
+* `addr_aligned: Word<F>` removed (4 cols) — aligned address now computed
+  inline as `addr_word_0 - offset_sum` in the State/Memory bus lookup tuples.
+  See commit `db682d9c`.
+* `op_b_access`/`op_c_access` changed from `MemoryReadCols<T>` (9 cols each)
+  to `Word<T>` (4 cols each), removing 10 unused metadata cols (5 per operand:
+  `prev_chunk`, `prev_clk`, `compare_clk`, `diff_16bit_limb`, `diff_8bit_limb`).
+  See commit `0ecd943c`.
 -/
 
 -- ============================================================================
--- MemoryInstructionCols (44 columns)
+-- MemoryInstructionCols (34 columns)
 -- ============================================================================
+-- Post-Pico PR #101 commit `0ecd943c`: op_b_access and op_c_access changed from
+-- MemoryReadCols (9 cols each) to plain Word (4 cols each), removing 10 unused
+-- metadata cols total.
 
 #define_subair "MemoryInstructionCols" using "pico_encapsulation" where
   Column["opcode"]
@@ -92,12 +97,23 @@ checked on this chip.
   Column["is_sw"]
   Column["is_sd"]
   SubAir["op_a_access": "MemoryReadWriteCols" width := 13]
-  SubAir["op_b_access": "MemoryReadCols" width := 9]
-  SubAir["op_c_access": "MemoryReadCols" width := 9]
+  -- op_b_access (Word = 4)
+  Column["op_b_access_0"]
+  Column["op_b_access_1"]
+  Column["op_b_access_2"]
+  Column["op_b_access_3"]
+  -- op_c_access (Word = 4)
+  Column["op_c_access_0"]
+  Column["op_c_access_1"]
+  Column["op_c_access_2"]
+  Column["op_c_access_3"]
 
 -- ============================================================================
--- MemoryChipValueCols (94 columns)
+-- MemoryChipValueCols (80 columns)
 -- ============================================================================
+-- Post-Pico PR #101 commit `db682d9c`: addr_aligned (4 cols) removed; the
+-- aligned address is computed inline as `addr_word_0 - offset_sum` in the
+-- State-bus / Memory-bus lookup tuples.
 
 #define_subair "MemoryChipValueCols" using "pico_encapsulation" where
   Column["chunk"]
@@ -107,11 +123,6 @@ checked on this chip.
   Column["addr_word_1"]
   Column["addr_word_2"]
   Column["addr_word_3"]
-  -- addr_aligned (Word = 4)
-  Column["addr_aligned_0"]
-  Column["addr_aligned_1"]
-  Column["addr_aligned_2"]
-  Column["addr_aligned_3"]
   -- offset_bit ([F; 3])
   Column["offset_bit_0"]
   Column["offset_bit_1"]
@@ -146,22 +157,22 @@ checked on this chip.
   Column["unsigned_mem_val_3"]
   Column["mem_value_is_pos_not_x0"]
   Column["mem_value_is_neg_not_x0"]
-  -- instruction (MemoryInstructionCols = 44)
-  SubAir["instruction": "MemoryInstructionCols" width := 44]
+  -- instruction (MemoryInstructionCols = 34)
+  SubAir["instruction": "MemoryInstructionCols" width := 34]
 
 -- ============================================================================
--- MemoryChipCols (94 columns — single value, MEMORY_RW_DATAPAR = 1)
+-- MemoryChipCols (80 columns — single value, MEMORY_RW_DATAPAR = 1)
 -- ============================================================================
 
 #define_subair "MemoryChipCols" using "pico_encapsulation" where
-  SubAir["values": "MemoryChipValueCols" width := 94]
+  SubAir["values": "MemoryChipValueCols" width := 80]
 
 -- ============================================================================
 -- Air definition
 -- ============================================================================
 
 #define_air "MemoryReadWriteChip" using "pico_encapsulation" where
-  MainSubAir["cols": "MemoryChipCols" width := 94]
+  MainSubAir["cols": "MemoryChipCols" width := 80]
 
 -- ============================================================================
 -- Computed values

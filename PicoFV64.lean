@@ -99,6 +99,7 @@ import PicoFV.RV64IM.Constraints.U16ToU8GadgetSafe
 import PicoFV.RV64IM.Constraints.MulGadget
 import PicoFV.RV64IM.Constraints.MulChip
 import PicoFV.RV64IM.Constraints.DivRemChip
+import PicoFV.RV64IM.Constraints.MemoryReadWriteChip
 
 -- Spec (semantic specifications)
 import PicoFV.RV64IM.Spec.AddGadget
@@ -124,3 +125,4 @@ import PicoFV.RV64IM.Spec.MulGadgetCore
 import PicoFV.RV64IM.Spec.MulGadget
 import PicoFV.RV64IM.Spec.MulChip
 import PicoFV.RV64IM.Spec.DivRemChip
+import PicoFV.RV64IM.Spec.MemoryReadWriteChip

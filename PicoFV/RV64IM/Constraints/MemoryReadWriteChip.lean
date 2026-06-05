@@ -14,47 +14,53 @@ The `ConstraintsAndBuses` namespace below restates each of the 85
 algebraic constraints and the 16 bus interactions emitted by
 `MemoryReadWriteChip::eval`
 (`vm/src/chips/chips/riscv_memory/read_write/constraints.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`) in terms of the
-`Valid_MemoryReadWriteChip` air's named accessors, plus a `_equiv` lemma
+`0ecd943c3dba682e1848d1f2d52ac50a24949d8a`, Pico PR #101 head) in terms of
+the `Valid_MemoryReadWriteChip` air's named accessors, plus a `_equiv` lemma
 per constraint proving equality with the raw form in
 `PicoFV.RV64IM.Extraction.MemoryReadWriteChip`.
 
-The chip layout (matching `MemoryChipValueCols<F>`, 94 columns) is:
+The chip layout (matching `MemoryChipValueCols<F>`, 80 columns) is:
 
 | Cols    | Field path (under `air.cols.values`)                | Notes |
 |---------|-----------------------------------------------------|-------|
 | 0       | `chunk`                                             | execution chunk |
 | 1       | `clk`                                               | clock |
 | 2..5    | `addr_word_0..3`                                    | full 64-bit address |
-| 6..9    | `addr_aligned_0..3`                                 | 8-byte-aligned address |
-| 10..12  | `offset_bit_0..2`                                   | low 3 bits of `addr_word_0` |
-| 13..16  | `limb_select_0..3`                                  | one-hot limb selector |
-| 17      | `addr_top_two_limb_inv`                             | stack-guard witness |
-| 18..21  | `memory_access.prev_value_0..3`                     | RW: previous memory value |
-| 22..25  | `memory_access.access.value_0..3`                   | RW: current memory value |
-| 26..30  | `memory_access.access.{prev_chunk,prev_clk,compare_clk,diff_16bit_limb,diff_8bit_limb}` | access metadata |
-| 31      | `selected_limb`                                     | mem limb at `limb_select` |
-| 32      | `selected_limb_low_byte`                            | low byte of `selected_limb` |
-| 33      | `selected_byte`                                     | byte at `offset_bit_0` |
-| 34..35  | `selected_word_0..1`                                | word-load output (LW/LWU) |
-| 36      | `msb`                                               | sign-extension flag |
-| 37      | `register_low_byte`                                 | low byte of `op_a_0` (SB) |
-| 38      | `mem_limb_low_byte`                                 | low byte of target mem limb |
-| 39      | `increment`                                         | SB/SH/SW: delta to memory |
-| 40..43  | `store_value_0..3`                                  | store: new memory value |
-| 44..47  | `unsigned_mem_val_0..3`                             | zero-extended load result |
-| 48      | `mem_value_is_pos_not_x0`                           | gate for non-extending load |
-| 49      | `mem_value_is_neg_not_x0`                           | gate for sign-extending load |
-| 50      | `instruction.opcode`                                |  |
-| 51      | `instruction.op_a_0`                                | x0 flag (rd == x0) |
-| 52..62  | `instruction.is_lb..is_sd`                          | 11 op selectors |
-| 63..66  | `instruction.op_a_access.prev_value_0..3`           | RW: previous register `rd` |
-| 67..70  | `instruction.op_a_access.access.value_0..3`         | RW: new register `rd` |
-| 71..75  | `instruction.op_a_access.access.{prev_chunk,…}`     | access metadata |
-| 76..79  | `instruction.op_b_access.access.value_0..3`         | register `rs1` |
-| 80..84  | `instruction.op_b_access.access.{prev_chunk,…}`     | access metadata |
-| 85..88  | `instruction.op_c_access.access.value_0..3`         | immediate (treated as register-shaped) |
-| 89..93  | `instruction.op_c_access.access.{prev_chunk,…}`     | unconstrained (op_c is immediate) |
+| 6..8    | `offset_bit_0..2`                                   | low 3 bits of `addr_word_0` |
+| 9..12   | `limb_select_0..3`                                  | one-hot limb selector |
+| 13      | `addr_top_two_limb_inv`                             | stack-guard witness |
+| 14..17  | `memory_access.prev_value_0..3`                     | RW: previous memory value |
+| 18..21  | `memory_access.access.value_0..3`                   | RW: current memory value |
+| 22..26  | `memory_access.access.{prev_chunk,prev_clk,compare_clk,diff_16bit_limb,diff_8bit_limb}` | access metadata |
+| 27      | `selected_limb`                                     | mem limb at `limb_select` |
+| 28      | `selected_limb_low_byte`                            | low byte of `selected_limb` |
+| 29      | `selected_byte`                                     | byte at `offset_bit_0` |
+| 30..31  | `selected_word_0..1`                                | word-load output (LW/LWU) |
+| 32      | `msb`                                               | sign-extension flag |
+| 33      | `register_low_byte`                                 | low byte of `op_a_0` (SB) |
+| 34      | `mem_limb_low_byte`                                 | low byte of target mem limb |
+| 35      | `increment`                                         | SB/SH/SW: delta to memory |
+| 36..39  | `store_value_0..3`                                  | store: new memory value |
+| 40..43  | `unsigned_mem_val_0..3`                             | zero-extended load result |
+| 44      | `mem_value_is_pos_not_x0`                           | gate for non-extending load |
+| 45      | `mem_value_is_neg_not_x0`                           | gate for sign-extending load |
+| 46      | `instruction.opcode`                                |  |
+| 47      | `instruction.op_a_0`                                | x0 flag (rd == x0) |
+| 48..58  | `instruction.is_lb..is_sd`                          | 11 op selectors |
+| 59..62  | `instruction.op_a_access.prev_value_0..3`           | RW: previous register `rd` |
+| 63..66  | `instruction.op_a_access.access.value_0..3`         | RW: new register `rd` |
+| 67..71  | `instruction.op_a_access.access.{prev_chunk,…}`     | access metadata |
+| 72..75  | `instruction.op_b_access_0..3`                      | register `rs1` (now plain `Word`) |
+| 76..79  | `instruction.op_c_access_0..3`                      | immediate (treated as register-shaped, plain `Word`) |
+
+Post-PR-#101 deltas vs the prior `b6f2de04` baseline:
+* `addr_aligned_0..3` removed (commit `db682d9c`): aligned address now
+  computed inline as `addr_word_0 - offset_sum` in the State-bus tuples.
+* `op_b_access`/`op_c_access` flattened to plain `Word` (commit `0ecd943c`):
+  10 unused metadata cols removed across the two operands.
+* 4 new constraints `op_a_0 · op_a_val_i = 0` (commit `7860af12`).
+* LB/LBU byte-bus tuple's `x_3` slot is now the high-byte witness instead
+  of `0` (commit `fc197c0b`).
 
 Semantic grouping (from the Rust eval, C1..C8):
 
@@ -865,6 +871,47 @@ namespace MemoryReadWriteChip.ConstraintsAndBuses
       : MemoryReadWriteChip.Extraction.constraint_84 air row ↔ constraint_84 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- Constraints 85-88 (Pico PR #101 commit `7860af12`): when `op_a_0 = 1`
+      -- (rd = x0), pin each `op_a_access.access.value_i` to zero. Closes the
+      -- soundness gap where the existing fill constraints (c48-c63) all carry
+      -- `(1 - op_a_0)` and so leave the payload unconstrained on x0 writes.
+
+      @[constraint_and_interaction_simplification]
+      def constraint_85 (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ) : Prop :=
+        ((air.cols.values.instruction.op_a_0 row 0) * (air.cols.values.instruction.op_a_access.access.value_0 row 0)) = 0
+
+      @[simp]
+      lemma constraint_85_equiv (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ)
+      : MemoryReadWriteChip.Extraction.constraint_85 air row ↔ constraint_85 air row
+      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      @[constraint_and_interaction_simplification]
+      def constraint_86 (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ) : Prop :=
+        ((air.cols.values.instruction.op_a_0 row 0) * (air.cols.values.instruction.op_a_access.access.value_1 row 0)) = 0
+
+      @[simp]
+      lemma constraint_86_equiv (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ)
+      : MemoryReadWriteChip.Extraction.constraint_86 air row ↔ constraint_86 air row
+      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      @[constraint_and_interaction_simplification]
+      def constraint_87 (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ) : Prop :=
+        ((air.cols.values.instruction.op_a_0 row 0) * (air.cols.values.instruction.op_a_access.access.value_2 row 0)) = 0
+
+      @[simp]
+      lemma constraint_87_equiv (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ)
+      : MemoryReadWriteChip.Extraction.constraint_87 air row ↔ constraint_87 air row
+      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      @[constraint_and_interaction_simplification]
+      def constraint_88 (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ) : Prop :=
+        ((air.cols.values.instruction.op_a_0 row 0) * (air.cols.values.instruction.op_a_access.access.value_3 row 0)) = 0
+
+      @[simp]
+      lemma constraint_88_equiv (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ)
+      : MemoryReadWriteChip.Extraction.constraint_88 air row ↔ constraint_88 air row
+      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
       @[constraint_and_interaction_simplification]
       def row_constraint_list (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ) : List Prop :=
         [
@@ -952,7 +999,11 @@ namespace MemoryReadWriteChip.ConstraintsAndBuses
           constraint_81 air row,
           constraint_82 air row,
           constraint_83 air row,
-          constraint_84 air row
+          constraint_84 air row,
+          constraint_85 air row,
+          constraint_86 air row,
+          constraint_87 air row,
+          constraint_88 air row
         ]
 
     end row_constraints
@@ -961,17 +1012,17 @@ namespace MemoryReadWriteChip.ConstraintsAndBuses
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_MemoryReadWriteChip FKB ExtF) (row : ℕ) : List (FKB × List FKB) :=
-        [ (((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0))), [0, (air.cols.values.instruction.opcode row 0), (air.cols.values.instruction.op_a_access.access.value_0 row 0), (air.cols.values.instruction.op_a_access.access.value_1 row 0), (air.cols.values.instruction.op_a_access.access.value_2 row 0), (air.cols.values.instruction.op_a_access.access.value_3 row 0), (air.cols.values.instruction.op_b_access.access.value_0 row 0), (air.cols.values.instruction.op_b_access.access.value_1 row 0), (air.cols.values.instruction.op_b_access.access.value_2 row 0), (air.cols.values.instruction.op_b_access.access.value_3 row 0), (air.cols.values.instruction.op_c_access.access.value_0 row 0), (air.cols.values.instruction.op_c_access.access.value_1 row 0), (air.cols.values.instruction.op_c_access.access.value_2 row 0), (air.cols.values.instruction.op_c_access.access.value_3 row 0), (air.cols.values.instruction.op_a_0 row 0), (air.cols.values.instruction.is_lb row 0), (air.cols.values.instruction.is_lbu row 0), (air.cols.values.instruction.is_lh row 0), (air.cols.values.instruction.is_lhu row 0), (air.cols.values.instruction.is_lw row 0), (air.cols.values.instruction.is_lwu row 0), (air.cols.values.instruction.is_ld row 0), (air.cols.values.instruction.is_sb row 0), (air.cols.values.instruction.is_sh row 0), (air.cols.values.instruction.is_sw row 0), (air.cols.values.instruction.is_sd row 0)]),
-          (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [3, 0, (air.cols.values.addr_word_0 row 0), (air.cols.values.addr_word_1 row 0), (air.cols.values.addr_word_2 row 0), (air.cols.values.addr_word_3 row 0), (air.cols.values.instruction.op_b_access.access.value_0 row 0), (air.cols.values.instruction.op_b_access.access.value_1 row 0), (air.cols.values.instruction.op_b_access.access.value_2 row 0), (air.cols.values.instruction.op_b_access.access.value_3 row 0), (air.cols.values.instruction.op_c_access.access.value_0 row 0), (air.cols.values.instruction.op_c_access.access.value_1 row 0), (air.cols.values.instruction.op_c_access.access.value_2 row 0), (air.cols.values.instruction.op_c_access.access.value_3 row 0)]),
+        [ (((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0))), [0, (air.cols.values.instruction.opcode row 0), (air.cols.values.instruction.op_a_access.access.value_0 row 0), (air.cols.values.instruction.op_a_access.access.value_1 row 0), (air.cols.values.instruction.op_a_access.access.value_2 row 0), (air.cols.values.instruction.op_a_access.access.value_3 row 0), (air.cols.values.instruction.op_b_access_0 row 0), (air.cols.values.instruction.op_b_access_1 row 0), (air.cols.values.instruction.op_b_access_2 row 0), (air.cols.values.instruction.op_b_access_3 row 0), (air.cols.values.instruction.op_c_access_0 row 0), (air.cols.values.instruction.op_c_access_1 row 0), (air.cols.values.instruction.op_c_access_2 row 0), (air.cols.values.instruction.op_c_access_3 row 0), (air.cols.values.instruction.op_a_0 row 0), (air.cols.values.instruction.is_lb row 0), (air.cols.values.instruction.is_lbu row 0), (air.cols.values.instruction.is_lh row 0), (air.cols.values.instruction.is_lhu row 0), (air.cols.values.instruction.is_lw row 0), (air.cols.values.instruction.is_lwu row 0), (air.cols.values.instruction.is_ld row 0), (air.cols.values.instruction.is_sb row 0), (air.cols.values.instruction.is_sh row 0), (air.cols.values.instruction.is_sw row 0), (air.cols.values.instruction.is_sd row 0)]),
+          (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [3, 0, (air.cols.values.addr_word_0 row 0), (air.cols.values.addr_word_1 row 0), (air.cols.values.addr_word_2 row 0), (air.cols.values.addr_word_3 row 0), (air.cols.values.instruction.op_b_access_0 row 0), (air.cols.values.instruction.op_b_access_1 row 0), (air.cols.values.instruction.op_b_access_2 row 0), (air.cols.values.instruction.op_b_access_3 row 0), (air.cols.values.instruction.op_c_access_0 row 0), (air.cols.values.instruction.op_c_access_1 row 0), (air.cols.values.instruction.op_c_access_2 row 0), (air.cols.values.instruction.op_c_access_3 row 0)]),
           (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [4, 8, (air.cols.values.addr_word_0 row 0), 0, 0, 0]),
           (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [4, 8, (air.cols.values.addr_word_1 row 0), 0, 0, 0]),
           (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [4, 8, (air.cols.values.addr_word_2 row 0), 0, 0, 0]),
           (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [4, 9, (((0 + (air.cols.values.addr_word_0 row 0)) - (((0 + (air.cols.values.offset_bit_0 row 0)) + (2 * (air.cols.values.offset_bit_1 row 0))) + (4 * (air.cols.values.offset_bit_2 row 0)))) * 1864368129), 0, 13, 0]),
           (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [4, 8, (air.cols.values.memory_access.access.diff_16bit_limb row 0), 0, 0, 0]),
           (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [4, 7, 0, 0, (air.cols.values.memory_access.access.diff_8bit_limb row 0), 0]),
-          (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [0, (air.cols.values.memory_access.access.prev_chunk row 0), (air.cols.values.memory_access.access.prev_clk row 0), (air.cols.values.addr_aligned_0 row 0), (air.cols.values.addr_aligned_1 row 0), (air.cols.values.addr_aligned_2 row 0), (air.cols.values.memory_access.prev_value_0 row 0), (air.cols.values.memory_access.prev_value_1 row 0), (air.cols.values.memory_access.prev_value_2 row 0), (air.cols.values.memory_access.prev_value_3 row 0)]),
-          (((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0))), [0, (air.cols.values.chunk row 0), ((air.cols.values.clk row 0) + 0), (air.cols.values.addr_aligned_0 row 0), (air.cols.values.addr_aligned_1 row 0), (air.cols.values.addr_aligned_2 row 0), (air.cols.values.memory_access.access.value_0 row 0), (air.cols.values.memory_access.access.value_1 row 0), (air.cols.values.memory_access.access.value_2 row 0), (air.cols.values.memory_access.access.value_3 row 0)]),
-          (-(((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0))), [4, 7, 0, 0, (air.cols.values.selected_limb_low_byte row 0), 0]),
+          (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [0, (air.cols.values.memory_access.access.prev_chunk row 0), (air.cols.values.memory_access.access.prev_clk row 0), ((air.cols.values.addr_word_0 row 0) - ((0 + (air.cols.values.offset_bit_0 row 0)) + 2 * (air.cols.values.offset_bit_1 row 0) + 4 * (air.cols.values.offset_bit_2 row 0))), (air.cols.values.addr_word_1 row 0), (air.cols.values.addr_word_2 row 0), (air.cols.values.memory_access.prev_value_0 row 0), (air.cols.values.memory_access.prev_value_1 row 0), (air.cols.values.memory_access.prev_value_2 row 0), (air.cols.values.memory_access.prev_value_3 row 0)]),
+          (((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0))), [0, (air.cols.values.chunk row 0), ((air.cols.values.clk row 0) + 0), ((air.cols.values.addr_word_0 row 0) - ((0 + (air.cols.values.offset_bit_0 row 0)) + 2 * (air.cols.values.offset_bit_1 row 0) + 4 * (air.cols.values.offset_bit_2 row 0))), (air.cols.values.addr_word_1 row 0), (air.cols.values.addr_word_2 row 0), (air.cols.values.memory_access.access.value_0 row 0), (air.cols.values.memory_access.access.value_1 row 0), (air.cols.values.memory_access.access.value_2 row 0), (air.cols.values.memory_access.access.value_3 row 0)]),
+          (-(((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0))), [4, 7, 0, 0, (air.cols.values.selected_limb_low_byte row 0), (((0 + (air.cols.values.selected_limb row 0)) - (air.cols.values.selected_limb_low_byte row 0)) * 2122383361)]),
           (-((air.cols.values.instruction.is_lb row 0)), [4, 6, (air.cols.values.msb row 0), 0, (air.cols.values.selected_byte row 0), 0]),
           (-((air.cols.values.instruction.is_lh row 0)), [4, 8, (((2 * (air.cols.values.selected_limb row 0)) - 0) - ((air.cols.values.msb row 0) * 65536)), 0, 0, 0]),
           (-((air.cols.values.instruction.is_lw row 0)), [4, 8, (((2 * (air.cols.values.selected_word_1 row 0)) - 0) - ((air.cols.values.msb row 0) * 65536)), 0, 0, 0]),
@@ -1044,24 +1095,26 @@ namespace MemoryReadWriteChip.ConstraintsAndBuses
     let a_1 := air.cols.values.instruction.op_a_access.access.value_1 row 0
     let a_2 := air.cols.values.instruction.op_a_access.access.value_2 row 0
     let a_3 := air.cols.values.instruction.op_a_access.access.value_3 row 0
-    let b_0 := air.cols.values.instruction.op_b_access.access.value_0 row 0
-    let b_1 := air.cols.values.instruction.op_b_access.access.value_1 row 0
-    let b_2 := air.cols.values.instruction.op_b_access.access.value_2 row 0
-    let b_3 := air.cols.values.instruction.op_b_access.access.value_3 row 0
-    let c_0 := air.cols.values.instruction.op_c_access.access.value_0 row 0
-    let c_1 := air.cols.values.instruction.op_c_access.access.value_1 row 0
-    let c_2 := air.cols.values.instruction.op_c_access.access.value_2 row 0
-    let c_3 := air.cols.values.instruction.op_c_access.access.value_3 row 0
+    let b_0 := air.cols.values.instruction.op_b_access_0 row 0
+    let b_1 := air.cols.values.instruction.op_b_access_1 row 0
+    let b_2 := air.cols.values.instruction.op_b_access_2 row 0
+    let b_3 := air.cols.values.instruction.op_b_access_3 row 0
+    let c_0 := air.cols.values.instruction.op_c_access_0 row 0
+    let c_1 := air.cols.values.instruction.op_c_access_1 row 0
+    let c_2 := air.cols.values.instruction.op_c_access_2 row 0
+    let c_3 := air.cols.values.instruction.op_c_access_3 row 0
     let addr_word_0 := air.cols.values.addr_word_0 row 0
     let addr_word_1 := air.cols.values.addr_word_1 row 0
     let addr_word_2 := air.cols.values.addr_word_2 row 0
     let addr_word_3 := air.cols.values.addr_word_3 row 0
-    let addr_aligned_0 := air.cols.values.addr_aligned_0 row 0
-    let addr_aligned_1 := air.cols.values.addr_aligned_1 row 0
-    let addr_aligned_2 := air.cols.values.addr_aligned_2 row 0
     let offset_bit_0 := air.cols.values.offset_bit_0 row 0
     let offset_bit_1 := air.cols.values.offset_bit_1 row 0
     let offset_bit_2 := air.cols.values.offset_bit_2 row 0
+    -- Aligned address now computed inline (Pico PR #101 commit db682d9c).
+    let addr_aligned_0 := addr_word_0 -
+      ((0 + offset_bit_0) + 2 * offset_bit_1 + 4 * offset_bit_2)
+    let addr_aligned_1 := addr_word_1
+    let addr_aligned_2 := addr_word_2
     let chunk := air.cols.values.chunk row 0
     let clk   := air.cols.values.clk   row 0
     let prev_chunk := air.cols.values.memory_access.access.prev_chunk row 0
@@ -1107,9 +1160,10 @@ namespace MemoryReadWriteChip.ConstraintsAndBuses
         (-(is_mem), #v[8, diff_16, 0, 0, 0]),
         -- u8 range on diff_8bit_limb (memory access metadata, -is_mem).
         (-(is_mem), #v[7, 0, 0, diff_8, 0]),
-        -- u8 range on selected_limb_low_byte (LB/LBU byte split,
-        -- gated by -(is_lb + is_lbu)).
-        (-(is_lb + is_lbu), #v[7, 0, 0, selected_limb_low_byte, 0]),
+        -- Two-byte range check on the (low, high) decomposition of `selected_limb`
+        -- (Pico PR #101 commit `fc197c0b`, gated by -(is_lb + is_lbu)).
+        (-(is_lb + is_lbu), #v[7, 0, 0, selected_limb_low_byte,
+                              ((0 + selected_limb) - selected_limb_low_byte) * 2122383361]),
         -- MSB lookup: verify `msb` is bit-7 of selected_byte (-is_lb).
         (-(is_lb), #v[6, msb, 0, selected_byte, 0]),
         -- U16MSB on selected_limb: 2·selected_limb - msb·2^16 ∈ [0, 2^16)
@@ -1245,14 +1299,14 @@ namespace MemoryReadWriteChip.Interpretations
     let is_sh  := air.cols.values.instruction.is_sh       row 0
     let is_sw  := air.cols.values.instruction.is_sw       row 0
     let is_sd  := air.cols.values.instruction.is_sd       row 0
-    let b_0 := air.cols.values.instruction.op_b_access.access.value_0 row 0
-    let b_1 := air.cols.values.instruction.op_b_access.access.value_1 row 0
-    let b_2 := air.cols.values.instruction.op_b_access.access.value_2 row 0
-    let b_3 := air.cols.values.instruction.op_b_access.access.value_3 row 0
-    let c_0 := air.cols.values.instruction.op_c_access.access.value_0 row 0
-    let c_1 := air.cols.values.instruction.op_c_access.access.value_1 row 0
-    let c_2 := air.cols.values.instruction.op_c_access.access.value_2 row 0
-    let c_3 := air.cols.values.instruction.op_c_access.access.value_3 row 0
+    let b_0 := air.cols.values.instruction.op_b_access_0 row 0
+    let b_1 := air.cols.values.instruction.op_b_access_1 row 0
+    let b_2 := air.cols.values.instruction.op_b_access_2 row 0
+    let b_3 := air.cols.values.instruction.op_b_access_3 row 0
+    let c_0 := air.cols.values.instruction.op_c_access_0 row 0
+    let c_1 := air.cols.values.instruction.op_c_access_1 row 0
+    let c_2 := air.cols.values.instruction.op_c_access_2 row 0
+    let c_3 := air.cols.values.instruction.op_c_access_3 row 0
     (opcode ∈ Finset.Icc (10 : FKB) 17 ∨ opcode ∈ Finset.Icc (45 : FKB) 47) ∧
     b_0.val < 65536 ∧ b_1.val < 65536 ∧ b_2.val < 65536 ∧ b_3.val < 65536 ∧
     c_0.val < 65536 ∧ c_1.val < 65536 ∧ c_2.val < 65536 ∧ c_3.val < 65536 ∧

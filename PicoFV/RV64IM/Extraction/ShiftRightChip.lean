@@ -1,10 +1,4 @@
---Extracted on 2026-5-11 at 15:37:07.463846858 using git commit "b6f2de04bef696f0eb7f918a494b2ac3c841d0b0"
---Manually extended on 2026-05-31 to incorporate Pico PR #101 commit
---"0bacdaf030d4bdc812315ca2f0263410e7d6a522" (fix(alu): close two soundness gaps
---in ShiftRight chip constraints): adds `c = c_for_lookup[0]` (constraint_59) and
---per-limb `b[i] * v_0123 = higher_limb[i] * 65536 + lower_limb[i] * v_0123`
---carry equations (constraints 60..63). These were previously documented as
---Lean-level `MISSING_*` axioms and have now been promoted to real constraints.
+--Extracted on 2026-5-11 at 15:37:07.463846858 using git commit "0ecd943c3dba682e1848d1f2d52ac50a24949d8a"
 import Mathlib.Data.List.Defs
 
 import LeanZKCircuit_Plonky3.Plonky3.Circuit

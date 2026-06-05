@@ -14,12 +14,13 @@ namespace RV64IM
   | .Double => 64
 
   inductive Operation where
-  | ReadPC   (val : BitVec 64) : Operation
-  | WritePC  (val : BitVec 64) : Operation
-  | ReadReg  (reg : regidx) (val : BitVec 64) : Operation
-  | WriteReg (reg : regidx) (val : BitVec 64) : Operation
-  | ReadMem  (addr : ℕ) (mw : MemoryWidth) (val : BitVec (width_of_mem_width mw)) : Operation
-  | WriteMem (addr : ℕ) (mw : MemoryWidth) (val : BitVec (width_of_mem_width mw)) : Operation
+  | ReadPC     (val : BitVec 64) : Operation
+  | WritePC    (val : BitVec 64) : Operation
+  | ReadReg    (reg : regidx) (val : BitVec 64) : Operation
+  | WriteReg   (reg : regidx) (val : BitVec 64) : Operation
+  | ReadMem    (addr : ℕ) (mw : MemoryWidth) (val : BitVec (width_of_mem_width mw)) : Operation
+  | ReadMemAny (addr : ℕ) (mw : MemoryWidth) : Operation
+  | WriteMem   (addr : ℕ) (mw : MemoryWidth) (val : BitVec (width_of_mem_width mw)) : Operation
 
   section OperationEffect
 
@@ -93,6 +94,34 @@ namespace RV64IM
                                 state.mem[addr + 5]? = .some data5 ∧
                                 state.mem[addr + 6]? = .some data6 ∧
                                 state.mem[addr + 7]? = .some data7 }
+        | .ReadMemAny addr mw =>
+          match mw with
+          | .Byte =>
+            { result with
+                hypotheses := result.hypotheses ∧ state.mem[addr]?.isSome }
+          | .Half =>
+            { result with
+                hypotheses := result.hypotheses ∧
+                                state.mem[addr]?.isSome ∧
+                                state.mem[addr + 1]?.isSome }
+          | .Word =>
+            { result with
+                hypotheses := result.hypotheses ∧
+                                state.mem[addr]?.isSome ∧
+                                state.mem[addr + 1]?.isSome ∧
+                                state.mem[addr + 2]?.isSome ∧
+                                state.mem[addr + 3]?.isSome }
+          | .Double =>
+            { result with
+                hypotheses := result.hypotheses ∧
+                                state.mem[addr]?.isSome ∧
+                                state.mem[addr + 1]?.isSome ∧
+                                state.mem[addr + 2]?.isSome ∧
+                                state.mem[addr + 3]?.isSome ∧
+                                state.mem[addr + 4]?.isSome ∧
+                                state.mem[addr + 5]?.isSome ∧
+                                state.mem[addr + 6]?.isSome ∧
+                                state.mem[addr + 7]?.isSome }
         | .WriteMem addr mw val =>
           { result with
               state :=
@@ -179,6 +208,8 @@ namespace RV64IM
             simp [write_xreg, h_r0, Sail.writeReg, PreSail.writeReg] <;>
             rw [ih] <;> grind
         case ReadMem addr width val =>
+          cases width <;> simp <;> rw [ih] <;> grind
+        case ReadMemAny addr width =>
           cases width <;> simp <;> rw [ih] <;> grind
         case WriteMem addr width val =>
           cases width <;> simp <;> rw [ih] <;> grind
@@ -279,6 +310,17 @@ namespace RV64IM
       cases width <;> apply operation_effect_state_hyps
 
     @[simp]
+    lemma operation_list_effect_state_readMemAny
+    :
+      (operation_list_effect (.ReadMemAny addr width :: ops) state).state
+        =
+      (operation_list_effect ops state).state
+    := by
+      simp [operation_list_effect, List.foldl_cons]
+      conv => lhs; arg 1; arg 2; unfold operation_effect; simp
+      cases width <;> apply operation_effect_state_hyps
+
+    @[simp]
     lemma operation_list_effect_hypotheses_writePC
     :
       (operation_list_effect [.WritePC val] state).hypotheses = True
@@ -360,7 +402,7 @@ namespace RV64IM
     def state_filter (ops : List Operation) :=
       List.filter (fun op =>
         match op with
-        | .ReadPC _ | .ReadReg _ _ | .ReadMem _ _ _ => false
+        | .ReadPC _ | .ReadReg _ _ | .ReadMem _ _ _ | .ReadMemAny _ _ => false
         | _ => true
       ) ops
 
@@ -455,14 +497,17 @@ namespace RV64IM
                 | .Double => .some (.WriteMem address .Double
                                      (U64w.toBV #v[memory_row.a_0, memory_row.a_1, memory_row.a_2, memory_row.a_3]))
               | false =>
-                match width with
-                | .Byte   => .some (.ReadMem address .Byte   (BitVec.ofNat 8  (memory_row.a_0).val))
-                | .Half   => .some (.ReadMem address .Half   (BitVec.ofNat 16 (memory_row.a_0).val))
-                | .Word   => .some (.ReadMem address .Word
-                                     ((BitVec.ofNat 16 (memory_row.a_1).val)
-                                     ++ (BitVec.ofNat 16 (memory_row.a_0).val)))
-                | .Double => .some (.ReadMem address .Double
-                                     (U64w.toBV #v[memory_row.a_0, memory_row.a_1, memory_row.a_2, memory_row.a_3]))
+                if memory_row.a_is_0 = 1 then
+                  .some (.ReadMemAny address width)
+                else
+                  match width with
+                  | .Byte   => .some (.ReadMem address .Byte   (BitVec.ofNat 8  (memory_row.a_0).val))
+                  | .Half   => .some (.ReadMem address .Half   (BitVec.ofNat 16 (memory_row.a_0).val))
+                  | .Word   => .some (.ReadMem address .Word
+                                       ((BitVec.ofNat 16 (memory_row.a_1).val)
+                                       ++ (BitVec.ofNat 16 (memory_row.a_0).val)))
+                  | .Double => .some (.ReadMem address .Double
+                                       (U64w.toBV #v[memory_row.a_0, memory_row.a_1, memory_row.a_2, memory_row.a_3]))
         ) row.Memory
       program ++ state ++ memory
 
