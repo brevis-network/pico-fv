@@ -69,6 +69,7 @@ namespace MemoryReadWriteChip.Spec
       (air.cols.values.instruction.op_c_access_1 row 0)
       (air.cols.values.instruction.op_c_access_2 row 0)
       (air.cols.values.instruction.op_c_access_3 row 0)
+      (air.cols.values.instruction.op_a_0 row 0)
   := by
     -- ───────────────────────────────────────────────────────────────────
     -- Step 1: get the per-opcode selector pattern from selector_exclusivity.
@@ -97,7 +98,7 @@ namespace MemoryReadWriteChip.Spec
     simp [bus_row_ext_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
           h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_ext
     obtain ⟨ _opcode_range, _ub_b0, _ub_b1, _ub_b2, _ub_b3, _ub_c0, _ub_c1, _ub_c2, _ub_c3,
-             _neg_op_11, _neg_op_12, _neg_op_13, _neg_op_14, _neg_op_45, _neg_op_46,
+             h_ext_lb_x0, _neg_op_12, _neg_op_13, _neg_op_14, _neg_op_45, _neg_op_46,
              _neg_op_15, _neg_op_16, _neg_op_17, _neg_op_47 ⟩ := h_ext
     -- ───────────────────────────────────────────────────────────────────
     -- Step 4: peel `h_wf` to expose the consumer-side ALU-bus assumption
@@ -133,14 +134,10 @@ namespace MemoryReadWriteChip.Spec
         constraint_24 air row ∧ constraint_25 air row := by
       clear *- h_constraints; aesop
     -- Constraints driving `op_a_access.access.value_i` in the LB case.
-    -- c85..c88 (PR #101 commit `7860af12`) pin `value_i = 0` when `op_a_0 = 1`.
-    obtain ⟨ h_c45, h_c46, h_c47, h_c48, h_c49, h_c50, h_c51, h_c60, h_c61, h_c62, h_c63,
-             h_c85, h_c86, h_c87, h_c88 ⟩ :
+    obtain ⟨ h_c45, h_c46, h_c47, h_c48, h_c49, h_c50, h_c51, h_c60, h_c61, h_c62, h_c63 ⟩ :
         constraint_45 air row ∧ constraint_46 air row ∧ constraint_47 air row ∧ constraint_48 air row ∧
         constraint_49 air row ∧ constraint_50 air row ∧ constraint_51 air row ∧ constraint_60 air row ∧
-        constraint_61 air row ∧ constraint_62 air row ∧ constraint_63 air row ∧
-        constraint_85 air row ∧ constraint_86 air row ∧
-        constraint_87 air row ∧ constraint_88 air row := by
+        constraint_61 air row ∧ constraint_62 air row ∧ constraint_63 air row := by
       clear *- h_constraints; aesop
     clear h_constraints
     -- Specialise selector-gated constraints to the LB-active branch.
@@ -170,11 +167,6 @@ namespace MemoryReadWriteChip.Spec
     simp [constraint_61, sub_eq_zero] at h_c61
     simp [constraint_62, sub_eq_zero] at h_c62
     simp [constraint_63, sub_eq_zero] at h_c63
-    -- c85..c88: `op_a_0 * value_i = 0` (PR #101 commit `7860af12`).
-    simp [constraint_85, mul_eq_zero] at h_c85
-    simp [constraint_86, mul_eq_zero] at h_c86
-    simp [constraint_87, mul_eq_zero] at h_c87
-    simp [constraint_88, mul_eq_zero] at h_c88
     simp [ByteBus.Spec] at h_msb_byte
     obtain ⟨ h_msb_def, h_msb_lt, h_byte_lt ⟩ := h_msb_byte
     have h_msb_bool : air.cols.values.msb row 0 = 0 ∨
@@ -183,8 +175,8 @@ namespace MemoryReadWriteChip.Spec
     -- Disjunctive value_i statement:
     --   * `op_a_0 = 0` (rd ≠ x0): the sign-extension form, derived from
     --     c46/c47 + c48..c63 by case-splitting on `msb`.
-    --   * `op_a_0 = 1` (rd = x0): all-zeros, derived from c85..c88
-    --     (Pico PR #101 commit `7860af12`).
+    --   * `op_a_0 = 1` (rd = x0): all-zeros, derived from the bus externals
+    --     (`h_ext_lb_x0`: opcode = 10 → op_a_0 ≠ 0 → value_i = 0).
     have h_val_eq :
         (air.cols.values.instruction.op_a_access.access.value_0 row 0 =
            air.cols.values.selected_byte row 0 +
@@ -223,23 +215,9 @@ namespace MemoryReadWriteChip.Spec
           rcases h_c50 with h | h_v2; . rw [h] at h_c46; simp at h_c46
           rcases h_c51 with h | h_v3; . rw [h] at h_c46; simp at h_c46
           grind
-      . -- op_a_0 = 1: all-zeros from c85..c88. Each `h_c8N` is
-        -- `op_a_0 = 0 ∨ value_N = 0`; rule out the left disjunct via `h_x0`.
+      . -- op_a_0 = 1: all-zeros from the bus externals.
         right
-        refine ⟨?_, ?_, ?_, ?_⟩ <;>
-          first
-            | (rcases h_c85 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c86 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c87 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c88 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
+        exact h_ext_lb_x0 h_opcode (by rw [h_x0]; decide)
     -- ───────────────────────────────────────────────────────────────────
     -- Step 7: discharge the four `MemoryBus.Spec` conjuncts.
     -- ───────────────────────────────────────────────────────────────────
@@ -278,11 +256,11 @@ namespace MemoryReadWriteChip.Spec
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
-    . -- (d) LB sign-extension: `a = signExtend 64 (a.truncate 8)`.
-      -- Case-split on the disjunctive `h_val_eq`:
-      --   * sign-extension form: case-split further on `msb` ∈ {0, 1}
-      --     (msb = 0 → byte ≥ 0, msb = 1 → byte + 0xFF00 with byte ≥ 128).
-      --   * all-zeros form: `signExtend 64 (0.truncate 8) = 0` is trivial.
+    . -- (d) LB sign-extension: `a_is_0 = 0 → a = signExtend 64 (a.truncate 8)`.
+      -- The bus spec now gates the load equation on `a_is_0 = 0` (rd ≠ x0);
+      -- we still discharge the equation in both `h_val_eq` branches because
+      -- the all-zeros branch makes both sides identically zero.
+      intro _h_op_a_0_eq
       rcases h_val_eq with ⟨h_v0, h_v1, h_v2, h_v3⟩ | ⟨h_v0, h_v1, h_v2, h_v3⟩
       . -- Sign-extension form.
         rw [h_v0, h_v1, h_v2, h_v3]
@@ -376,6 +354,7 @@ namespace MemoryReadWriteChip.Spec
       (air.cols.values.instruction.op_c_access_1 row 0)
       (air.cols.values.instruction.op_c_access_2 row 0)
       (air.cols.values.instruction.op_c_access_3 row 0)
+      (air.cols.values.instruction.op_a_0 row 0)
   := by
     have h_excl := selector_exclusivity air row h_ext h_is_real
     simp only at h_excl
@@ -390,7 +369,7 @@ namespace MemoryReadWriteChip.Spec
     simp [bus_row_ext_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
           h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_ext
     obtain ⟨ _opcode_range, _ub_b0, _ub_b1, _ub_b2, _ub_b3, _ub_c0, _ub_c1, _ub_c2, _ub_c3,
-             _neg_op_10, _neg_op_11, _neg_op_12, _neg_op_14, _neg_op_45, _neg_op_46,
+             _neg_op_10, _neg_op_11, _neg_op_12, h_ext_lbu_x0, _neg_op_14, _neg_op_45, _neg_op_46,
              _neg_op_15, _neg_op_16, _neg_op_17, _neg_op_47 ⟩ := h_ext
     simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
           h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_wf
@@ -409,15 +388,11 @@ namespace MemoryReadWriteChip.Spec
     rw [allHold_iff_allHold_simplified] at h_constraints
     simp only [allHold_simplified, row_constraint_list, List.Forall]
       at h_constraints
-    -- c85..c88 (PR #101 commit `7860af12`) close the `op_a_0 = 1` x0 gap.
-    obtain ⟨ h_c0, h_c1, h_c2, h_c21, h_c22, h_c23, h_c24, h_c25, h_c45, h_c46, h_c47, h_c60, h_c61, h_c62, h_c63,
-             h_c85, h_c86, h_c87, h_c88 ⟩ :
+    obtain ⟨ h_c0, h_c1, h_c2, h_c21, h_c22, h_c23, h_c24, h_c25, h_c45, h_c46, h_c47, h_c60, h_c61, h_c62, h_c63 ⟩ :
         constraint_0  air row ∧ constraint_1  air row ∧ constraint_2  air row ∧ constraint_21 air row ∧
         constraint_22 air row ∧ constraint_23 air row ∧ constraint_24 air row ∧ constraint_25 air row ∧
         constraint_45 air row ∧ constraint_46 air row ∧ constraint_47 air row ∧ constraint_60 air row ∧
-        constraint_61 air row ∧ constraint_62 air row ∧ constraint_63 air row ∧
-        constraint_85 air row ∧ constraint_86 air row ∧
-        constraint_87 air row ∧ constraint_88 air row := by
+        constraint_61 air row ∧ constraint_62 air row ∧ constraint_63 air row := by
       clear *- h_constraints; aesop
     clear h_constraints
     simp [constraint_0, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
@@ -440,11 +415,6 @@ namespace MemoryReadWriteChip.Spec
     simp [constraint_61, sub_eq_zero] at h_c61
     simp [constraint_62, sub_eq_zero] at h_c62
     simp [constraint_63, sub_eq_zero] at h_c63
-    -- c85..c88: `op_a_0 * value_i = 0` (PR #101 commit `7860af12`).
-    simp [constraint_85, mul_eq_zero] at h_c85
-    simp [constraint_86, mul_eq_zero] at h_c86
-    simp [constraint_87, mul_eq_zero] at h_c87
-    simp [constraint_88, mul_eq_zero] at h_c88
     -- Both bytes of the `selected_limb` decomposition are now range-checked
     -- (PR #101 commit `fc197c0b`). Derive `selected_byte.val < 256` from c2 + c21.
     obtain ⟨ h_byte_low_lt, h_byte_high_lt ⟩ := h_byte_sl_low
@@ -459,7 +429,8 @@ namespace MemoryReadWriteChip.Spec
     -- Disjunctive value_i statement:
     --   * `op_a_0 = 0` (rd ≠ x0): the zero-extension form, derived from
     --     c47 + c60..c63 + c22..c25.
-    --   * `op_a_0 = 1` (rd = x0): all-zeros, from c85..c88.
+    --   * `op_a_0 = 1` (rd = x0): all-zeros, from the bus externals
+    --     (`h_ext_lbu_x0`: opcode = 13 → op_a_0 ≠ 0 → value_i = 0).
     have h_val_eq :
         (air.cols.values.instruction.op_a_access.access.value_0 row 0 =
            air.cols.values.selected_byte row 0 ∧
@@ -485,20 +456,7 @@ namespace MemoryReadWriteChip.Spec
         rw [h_c25] at h_v3
         exact ⟨h_v0.symm, h_v1.symm, h_v2.symm, h_v3.symm⟩
       . right
-        refine ⟨?_, ?_, ?_, ?_⟩ <;>
-          first
-            | (rcases h_c85 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c86 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c87 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c88 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
+        exact h_ext_lbu_x0 h_opcode (by rw [h_x0]; decide)
     refine ⟨?_, ?_, ?_, ?_⟩
     . -- (a) u16 range. Both disjuncts of `h_val_eq` bound each `value_i < 65536`:
       -- zero-extension form uses `h_sb_lt : selected_byte < 256`; all-zeros is trivial.
@@ -527,13 +485,11 @@ namespace MemoryReadWriteChip.Spec
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
-    . -- (d) LBU zero-extension: `a = setWidth 64 (setWidth 8 a)`.
-      -- Case-split on the disjunctive `h_val_eq`:
-      --   * zero-extension form: both sides reduce to `U64w.toBV #v[selected_byte, 0, 0, 0]`
-      --     (the RHS via `setWidth 64 (setWidth 8 …)`, lossless because
-      --     `selected_byte < 256` from `h_sb_lt` — derived from c21 + the new byte-bus
-      --     high-byte range check, PR #101 commit `fc197c0b`).
-      --   * all-zeros form: trivially `0 = setWidth 64 (setWidth 8 0)`.
+    . -- (d) LBU zero-extension: `a_is_0 = 0 → a = setWidth 64 (setWidth 8 a)`.
+      -- The bus spec now gates the load equation on `a_is_0 = 0`; both
+      -- `h_val_eq` branches still discharge it (the all-zeros branch
+      -- trivially since both sides are zero).
+      intro _h_op_a_0_eq
       rcases h_val_eq with ⟨h_v0, h_v1, h_v2, h_v3⟩ | ⟨h_v0, h_v1, h_v2, h_v3⟩
       . rw [h_v0, h_v1, h_v2, h_v3]
         apply BitVec.eq_of_toNat_eq
@@ -572,6 +528,7 @@ namespace MemoryReadWriteChip.Spec
       (air.cols.values.instruction.op_c_access_1 row 0)
       (air.cols.values.instruction.op_c_access_2 row 0)
       (air.cols.values.instruction.op_c_access_3 row 0)
+      (air.cols.values.instruction.op_a_0 row 0)
   := by
     have h_excl := selector_exclusivity air row h_ext h_is_real
     simp only at h_excl
@@ -586,7 +543,7 @@ namespace MemoryReadWriteChip.Spec
     simp [bus_row_ext_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
           h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_ext
     obtain ⟨ _opcode_range, _ub_b0, _ub_b1, _ub_b2, _ub_b3, _ub_c0, _ub_c1, _ub_c2, _ub_c3,
-             _neg_op_10, _neg_op_12, _neg_op_13, _neg_op_14, _neg_op_45, _neg_op_46,
+             _neg_op_10, h_ext_lh_x0, _neg_op_12, _neg_op_13, _neg_op_14, _neg_op_45, _neg_op_46,
              _neg_op_15, _neg_op_16, _neg_op_17, _neg_op_47 ⟩ := h_ext
     -- For LH, h_wf has 12 conjuncts (vs 11 for LD/LHU): adds the U16MSB
     -- byte-bus check on `selected_limb` (gated by `-is_lh`).
@@ -602,19 +559,15 @@ namespace MemoryReadWriteChip.Spec
     rw [allHold_iff_allHold_simplified] at h_constraints
     simp only [allHold_simplified, row_constraint_list, List.Forall]
       at h_constraints
-    -- c85..c88 (PR #101 commit `7860af12`) close the `op_a_0 = 1` x0 gap.
     obtain ⟨ h_c0, h_c1, h_c3, h_c4, h_c5, h_c6, h_c7, h_c8, h_c9, h_c20, h_c26, h_c27, h_c28, h_c29, h_c41, h_c45,
-             h_c46, h_c47, h_c52, h_c53, h_c54, h_c55, h_c60, h_c61, h_c62, h_c63,
-             h_c85, h_c86, h_c87, h_c88 ⟩ :
+             h_c46, h_c47, h_c52, h_c53, h_c54, h_c55, h_c60, h_c61, h_c62, h_c63 ⟩ :
         constraint_0  air row ∧ constraint_1  air row ∧ constraint_3  air row ∧ constraint_4  air row ∧
         constraint_5  air row ∧ constraint_6  air row ∧ constraint_7  air row ∧ constraint_8  air row ∧
         constraint_9  air row ∧ constraint_20 air row ∧ constraint_26 air row ∧ constraint_27 air row ∧
         constraint_28 air row ∧ constraint_29 air row ∧ constraint_41 air row ∧ constraint_45 air row ∧
         constraint_46 air row ∧ constraint_47 air row ∧ constraint_52 air row ∧ constraint_53 air row ∧
         constraint_54 air row ∧ constraint_55 air row ∧ constraint_60 air row ∧ constraint_61 air row ∧
-        constraint_62 air row ∧ constraint_63 air row ∧
-        constraint_85 air row ∧ constraint_86 air row ∧
-        constraint_87 air row ∧ constraint_88 air row := by
+        constraint_62 air row ∧ constraint_63 air row := by
       clear *- h_constraints; aesop
     clear h_constraints
     simp [constraint_0, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
@@ -653,11 +606,6 @@ namespace MemoryReadWriteChip.Spec
     simp [constraint_61, sub_eq_zero] at h_c61
     simp [constraint_62, sub_eq_zero] at h_c62
     simp [constraint_63, sub_eq_zero] at h_c63
-    -- c85..c88: `op_a_0 * value_i = 0` (PR #101 commit `7860af12`).
-    simp [constraint_85, mul_eq_zero] at h_c85
-    simp [constraint_86, mul_eq_zero] at h_c86
-    simp [constraint_87, mul_eq_zero] at h_c87
-    simp [constraint_88, mul_eq_zero] at h_c88
     have h_ob0_zero : air.cols.values.offset_bit_0 row 0 = 0 := h_c9
     have h_msb_bool : air.cols.values.msb row 0 = 0 ∨
                       air.cols.values.msb row 0 = 1 := h_c41
@@ -726,20 +674,7 @@ namespace MemoryReadWriteChip.Spec
           . simpa using h_v2
           . simpa using h_v3
       . right
-        refine ⟨?_, ?_, ?_, ?_⟩ <;>
-          first
-            | (rcases h_c85 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c86 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c87 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c88 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
+        exact h_ext_lh_x0 h_opcode (by rw [h_x0]; decide)
     refine ⟨?_, ?_, ?_, ?_, ?_⟩
     . -- (a) u16 bounds. Case-split on the disjunctive `h_val_eq`.
       rcases h_val_eq with ⟨h_v0, h_v1, h_v2, h_v3⟩ | ⟨h_v0, h_v1, h_v2, h_v3⟩
@@ -857,10 +792,10 @@ namespace MemoryReadWriteChip.Spec
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
-    . -- (e) signExtend 16: a = signExtend 64 (a.truncate 16).
-      -- Case-split on the disjunctive `h_val_eq`:
-      --   * sign-extension form: existing two-case (msb = 0 / msb = 1) proof.
-      --   * all-zeros form: trivial.
+    . -- (e) signExtend 16: `a_is_0 = 0 → a = signExtend 64 (a.truncate 16)`.
+      -- The bus spec gates this on `a_is_0 = 0`; both `h_val_eq` branches still
+      -- discharge the equation (all-zeros trivially).
+      intro _h_op_a_0_eq
       rcases h_val_eq with ⟨h_v0, h_v1, h_v2, h_v3⟩ | ⟨h_v0, h_v1, h_v2, h_v3⟩
       . rw [h_v0, h_v1, h_v2, h_v3]
         rcases h_msb_bool with h_msb | h_msb
@@ -963,6 +898,7 @@ namespace MemoryReadWriteChip.Spec
       (air.cols.values.instruction.op_c_access_1 row 0)
       (air.cols.values.instruction.op_c_access_2 row 0)
       (air.cols.values.instruction.op_c_access_3 row 0)
+      (air.cols.values.instruction.op_a_0 row 0)
   := by
     -- Step 1: per-opcode selectors.
     have h_excl := selector_exclusivity air row h_ext h_is_real
@@ -978,7 +914,7 @@ namespace MemoryReadWriteChip.Spec
     simp [bus_row_ext_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
           h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_ext
     obtain ⟨ _opcode_range, _ub_b0, _ub_b1, _ub_b2, _ub_b3, _ub_c0, _ub_c1, _ub_c2, _ub_c3,
-             _neg_op_10, _neg_op_11, _neg_op_12, _neg_op_13, _neg_op_45, _neg_op_46,
+             _neg_op_10, _neg_op_11, _neg_op_12, _neg_op_13, h_ext_lhu_x0, _neg_op_45, _neg_op_46,
              _neg_op_15, _neg_op_16, _neg_op_17, _neg_op_47 ⟩ := h_ext
     -- h_wf for LHU: same shape as LD (no selected_*/byte-split buses fire).
     simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
@@ -993,18 +929,14 @@ namespace MemoryReadWriteChip.Spec
     rw [allHold_iff_allHold_simplified] at h_constraints
     simp only [allHold_simplified, row_constraint_list, List.Forall]
       at h_constraints
-    -- c85..c88 (PR #101 commit `7860af12`) close the `op_a_0 = 1` x0 gap.
     obtain ⟨ h_c0, h_c1, h_c3, h_c4, h_c5, h_c6, h_c7, h_c8, h_c9, h_c20, h_c26, h_c27, h_c28, h_c29, h_c42, h_c45,
-             h_c46, h_c47, h_c60, h_c61, h_c62, h_c63,
-             h_c85, h_c86, h_c87, h_c88 ⟩ :
+             h_c46, h_c47, h_c60, h_c61, h_c62, h_c63 ⟩ :
         constraint_0  air row ∧ constraint_1  air row ∧ constraint_3  air row ∧ constraint_4  air row ∧
         constraint_5  air row ∧ constraint_6  air row ∧ constraint_7  air row ∧ constraint_8  air row ∧
         constraint_9  air row ∧ constraint_20 air row ∧ constraint_26 air row ∧ constraint_27 air row ∧
         constraint_28 air row ∧ constraint_29 air row ∧ constraint_42 air row ∧ constraint_45 air row ∧
         constraint_46 air row ∧ constraint_47 air row ∧ constraint_60 air row ∧ constraint_61 air row ∧
-        constraint_62 air row ∧ constraint_63 air row ∧
-        constraint_85 air row ∧ constraint_86 air row ∧
-        constraint_87 air row ∧ constraint_88 air row := by
+        constraint_62 air row ∧ constraint_63 air row := by
       clear *- h_constraints; aesop
     clear h_constraints
     simp [constraint_0, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
@@ -1040,11 +972,6 @@ namespace MemoryReadWriteChip.Spec
     simp [constraint_61, sub_eq_zero] at h_c61
     simp [constraint_62, sub_eq_zero] at h_c62
     simp [constraint_63, sub_eq_zero] at h_c63
-    -- c85..c88: `op_a_0 * value_i = 0` (PR #101 commit `7860af12`).
-    simp [constraint_85, mul_eq_zero] at h_c85
-    simp [constraint_86, mul_eq_zero] at h_c86
-    simp [constraint_87, mul_eq_zero] at h_c87
-    simp [constraint_88, mul_eq_zero] at h_c88
     -- Offset bits booleans.
     have h_ob0_zero : air.cols.values.offset_bit_0 row 0 = 0 := h_c9
     -- selected_limb < 65536 via c20 + limb_select case-split on (ob1, ob2).
@@ -1085,20 +1012,7 @@ namespace MemoryReadWriteChip.Spec
         rw [h_c29] at h_v3
         exact ⟨h_v0.symm, h_v1.symm, h_v2.symm, h_v3.symm⟩
       . right
-        refine ⟨?_, ?_, ?_, ?_⟩ <;>
-          first
-            | (rcases h_c85 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c86 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c87 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c88 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
+        exact h_ext_lhu_x0 h_opcode (by rw [h_x0]; decide)
     refine ⟨?_, ?_, ?_, ?_, ?_⟩
     . -- (a) u16 bounds. Both disjuncts of `h_val_eq` bound each `value_i < 65536`.
       rcases h_val_eq with ⟨h_v0, h_v1, h_v2, h_v3⟩ | ⟨h_v0, h_v1, h_v2, h_v3⟩
@@ -1206,7 +1120,8 @@ namespace MemoryReadWriteChip.Spec
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
-    . -- (e) zeroExtend 16: a = setWidth 64 (a.truncate 16). Case-split on the disjunctive `h_val_eq`.
+    . -- (e) zeroExtend 16: `a_is_0 = 0 → a = setWidth 64 (a.truncate 16)`.
+      intro _h_op_a_0_eq
       rcases h_val_eq with ⟨h_v0, h_v1, h_v2, h_v3⟩ | ⟨h_v0, h_v1, h_v2, h_v3⟩
       . rw [h_v0, h_v1, h_v2, h_v3]
         apply BitVec.eq_of_toNat_eq
@@ -1245,6 +1160,7 @@ namespace MemoryReadWriteChip.Spec
       (air.cols.values.instruction.op_c_access_1 row 0)
       (air.cols.values.instruction.op_c_access_2 row 0)
       (air.cols.values.instruction.op_c_access_3 row 0)
+      (air.cols.values.instruction.op_a_0 row 0)
   := by
     have h_excl := selector_exclusivity air row h_ext h_is_real
     simp only at h_excl
@@ -1259,7 +1175,7 @@ namespace MemoryReadWriteChip.Spec
     simp [bus_row_ext_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
           h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_ext
     obtain ⟨ _opcode_range, _ub_b0, _ub_b1, _ub_b2, _ub_b3, _ub_c0, _ub_c1, _ub_c2, _ub_c3,
-             _neg_op_10, _neg_op_11, _neg_op_13, _neg_op_14, _neg_op_45, _neg_op_46,
+             _neg_op_10, _neg_op_11, h_ext_lw_x0, _neg_op_13, _neg_op_14, _neg_op_45, _neg_op_46,
              _neg_op_15, _neg_op_16, _neg_op_17, _neg_op_47 ⟩ := h_ext
     -- h_wf for LW: U16MSB on selected_word_1 active (gated by -is_lw).
     simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
@@ -1273,18 +1189,14 @@ namespace MemoryReadWriteChip.Spec
     rw [allHold_iff_allHold_simplified] at h_constraints
     simp only [allHold_simplified, row_constraint_list, List.Forall]
       at h_constraints
-    -- c85..c88 (PR #101 commit `7860af12`) close the `op_a_0 = 1` x0 gap.
     obtain ⟨ h_c0, h_c1, h_c2, h_c3, h_c4, h_c10, h_c30, h_c31, h_c32, h_c33, h_c34, h_c35, h_c43, h_c45, h_c46, h_c47,
-             h_c56, h_c57, h_c58, h_c59, h_c60, h_c61, h_c62, h_c63,
-             h_c85, h_c86, h_c87, h_c88 ⟩ :
+             h_c56, h_c57, h_c58, h_c59, h_c60, h_c61, h_c62, h_c63 ⟩ :
         constraint_0  air row ∧ constraint_1  air row ∧ constraint_2  air row ∧ constraint_3  air row ∧
         constraint_4  air row ∧ constraint_10 air row ∧ constraint_30 air row ∧ constraint_31 air row ∧
         constraint_32 air row ∧ constraint_33 air row ∧ constraint_34 air row ∧ constraint_35 air row ∧
         constraint_43 air row ∧ constraint_45 air row ∧ constraint_46 air row ∧ constraint_47 air row ∧
         constraint_56 air row ∧ constraint_57 air row ∧ constraint_58 air row ∧ constraint_59 air row ∧
-        constraint_60 air row ∧ constraint_61 air row ∧ constraint_62 air row ∧ constraint_63 air row ∧
-        constraint_85 air row ∧ constraint_86 air row ∧
-        constraint_87 air row ∧ constraint_88 air row := by
+        constraint_60 air row ∧ constraint_61 air row ∧ constraint_62 air row ∧ constraint_63 air row := by
       clear *- h_constraints; aesop
     clear h_constraints
     simp [constraint_0, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
@@ -1317,11 +1229,6 @@ namespace MemoryReadWriteChip.Spec
     simp [constraint_61, sub_eq_zero] at h_c61
     simp [constraint_62, sub_eq_zero] at h_c62
     simp [constraint_63, sub_eq_zero] at h_c63
-    -- c85..c88: `op_a_0 * value_i = 0` (PR #101 commit `7860af12`).
-    simp [constraint_85, mul_eq_zero] at h_c85
-    simp [constraint_86, mul_eq_zero] at h_c86
-    simp [constraint_87, mul_eq_zero] at h_c87
-    simp [constraint_88, mul_eq_zero] at h_c88
     -- ob0 = 0 and ob1 = 0 from c10.
     have h_ob0_zero : air.cols.values.offset_bit_0 row 0 = 0 := by
       rcases h_c2 with h | h
@@ -1407,20 +1314,7 @@ namespace MemoryReadWriteChip.Spec
           . simpa using h_v2
           . simpa using h_v3
       . right
-        refine ⟨?_, ?_, ?_, ?_⟩ <;>
-          first
-            | (rcases h_c85 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c86 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c87 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c88 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
+        exact h_ext_lw_x0 h_opcode (by rw [h_x0]; decide)
     refine ⟨?_, ?_, ?_, ?_, ?_⟩
     . -- (a) u16 bounds. Both disjuncts of `h_val_eq` bound each `value_i < 65536`.
       rcases h_val_eq with ⟨h_v0, h_v1, h_v2, h_v3⟩ | ⟨h_v0, h_v1, h_v2, h_v3⟩
@@ -1493,10 +1387,8 @@ namespace MemoryReadWriteChip.Spec
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
-    . -- (e) signExtend 32: a = signExtend 64 (a.truncate 32). Case-split on the disjunctive `h_val_eq`.
-      -- Sign-extension form: truncate-32 of `U64w.toBV` normalises to `U32w.toBV [sw_0, sw_1]`;
-      -- its `.msb` is `U32w.negative` (`2 · U32w.toNat ≥ 2^32`), forced by the U16MSB byte-bus
-      -- check to match `msb ∈ {0, 1}`.
+    . -- (e) signExtend 32: `a_is_0 = 0 → a = signExtend 64 (a.truncate 32)`.
+      intro _h_op_a_0_eq
       rcases h_val_eq with ⟨h_v0, h_v1, h_v2, h_v3⟩ | ⟨h_v0, h_v1, h_v2, h_v3⟩
       . rw [h_v0, h_v1, h_v2, h_v3]
         rcases h_msb_bool with h_msb | h_msb
@@ -1604,6 +1496,7 @@ namespace MemoryReadWriteChip.Spec
       (air.cols.values.instruction.op_c_access_1 row 0)
       (air.cols.values.instruction.op_c_access_2 row 0)
       (air.cols.values.instruction.op_c_access_3 row 0)
+      (air.cols.values.instruction.op_a_0 row 0)
   := by
     have h_excl := selector_exclusivity air row h_ext h_is_real
     simp only at h_excl
@@ -1618,7 +1511,7 @@ namespace MemoryReadWriteChip.Spec
     simp [bus_row_ext_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
           h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_ext
     obtain ⟨ _opcode_range, _ub_b0, _ub_b1, _ub_b2, _ub_b3, _ub_c0, _ub_c1, _ub_c2, _ub_c3,
-             _neg_op_10, _neg_op_11, _neg_op_12, _neg_op_13, _neg_op_14, _neg_op_46,
+             _neg_op_10, _neg_op_11, _neg_op_12, _neg_op_13, _neg_op_14, h_ext_lwu_x0, _neg_op_46,
              _neg_op_15, _neg_op_16, _neg_op_17, _neg_op_47 ⟩ := h_ext
     -- h_wf for LWU: same shape as LD/LHU (no selected_*/byte-split buses fire).
     simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
@@ -1632,17 +1525,13 @@ namespace MemoryReadWriteChip.Spec
     rw [allHold_iff_allHold_simplified] at h_constraints
     simp only [allHold_simplified, row_constraint_list, List.Forall]
       at h_constraints
-    -- c85..c88 (PR #101 commit `7860af12`) close the `op_a_0 = 1` x0 gap.
     obtain ⟨ h_c0, h_c1, h_c2, h_c3, h_c4, h_c10, h_c30, h_c31, h_c32, h_c33, h_c34, h_c35, h_c44, h_c45, h_c46, h_c47,
-             h_c60, h_c61, h_c62, h_c63,
-             h_c85, h_c86, h_c87, h_c88 ⟩ :
+             h_c60, h_c61, h_c62, h_c63 ⟩ :
         constraint_0  air row ∧ constraint_1  air row ∧ constraint_2  air row ∧ constraint_3  air row ∧
         constraint_4  air row ∧ constraint_10 air row ∧ constraint_30 air row ∧ constraint_31 air row ∧
         constraint_32 air row ∧ constraint_33 air row ∧ constraint_34 air row ∧ constraint_35 air row ∧
         constraint_44 air row ∧ constraint_45 air row ∧ constraint_46 air row ∧ constraint_47 air row ∧
-        constraint_60 air row ∧ constraint_61 air row ∧ constraint_62 air row ∧ constraint_63 air row ∧
-        constraint_85 air row ∧ constraint_86 air row ∧
-        constraint_87 air row ∧ constraint_88 air row := by
+        constraint_60 air row ∧ constraint_61 air row ∧ constraint_62 air row ∧ constraint_63 air row := by
       clear *- h_constraints; aesop
     clear h_constraints
     simp [constraint_0, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
@@ -1672,11 +1561,6 @@ namespace MemoryReadWriteChip.Spec
     simp [constraint_61, sub_eq_zero] at h_c61
     simp [constraint_62, sub_eq_zero] at h_c62
     simp [constraint_63, sub_eq_zero] at h_c63
-    -- c85..c88: `op_a_0 * value_i = 0` (PR #101 commit `7860af12`).
-    simp [constraint_85, mul_eq_zero] at h_c85
-    simp [constraint_86, mul_eq_zero] at h_c86
-    simp [constraint_87, mul_eq_zero] at h_c87
-    simp [constraint_88, mul_eq_zero] at h_c88
     -- Derive ob0 = 0 and ob1 = 0 from c10 + booleans.
     have h_ob0_zero : air.cols.values.offset_bit_0 row 0 = 0 := by
       rcases h_c2 with h | h
@@ -1734,20 +1618,7 @@ namespace MemoryReadWriteChip.Spec
         rw [h_c35] at h_v3
         exact ⟨h_v0.symm, h_v1.symm, h_v2.symm, h_v3.symm⟩
       . right
-        refine ⟨?_, ?_, ?_, ?_⟩ <;>
-          first
-            | (rcases h_c85 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c86 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c87 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c88 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
+        exact h_ext_lwu_x0 h_opcode (by rw [h_x0]; decide)
     refine ⟨?_, ?_, ?_, ?_, ?_⟩
     . -- (a) u16 bounds. Both disjuncts of `h_val_eq` bound each `value_i < 65536`.
       rcases h_val_eq with ⟨h_v0, h_v1, h_v2, h_v3⟩ | ⟨h_v0, h_v1, h_v2, h_v3⟩
@@ -1820,7 +1691,8 @@ namespace MemoryReadWriteChip.Spec
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
-    . -- (e) zeroExtend 32: a = setWidth 64 (a.truncate 32). Case-split on the disjunctive `h_val_eq`.
+    . -- (e) zeroExtend 32: `a_is_0 = 0 → a = setWidth 64 (a.truncate 32)`.
+      intro _h_op_a_0_eq
       rcases h_val_eq with ⟨h_v0, h_v1, h_v2, h_v3⟩ | ⟨h_v0, h_v1, h_v2, h_v3⟩
       . rw [h_v0, h_v1, h_v2, h_v3]
         apply BitVec.eq_of_toNat_eq
@@ -1830,6 +1702,8 @@ namespace MemoryReadWriteChip.Spec
       . rw [h_v0, h_v1, h_v2, h_v3]
         apply BitVec.eq_of_toNat_eq
         simp [BitVec.toNat_setWidth, U64w.toNat, U32w.toNat]
+
+
 
   -- ========================================
   -- LD (Load Doubleword) — opcode 46
@@ -1859,6 +1733,7 @@ namespace MemoryReadWriteChip.Spec
       (air.cols.values.instruction.op_c_access_1 row 0)
       (air.cols.values.instruction.op_c_access_2 row 0)
       (air.cols.values.instruction.op_c_access_3 row 0)
+      (air.cols.values.instruction.op_a_0 row 0)
   := by
     -- Step 1: per-opcode selector pattern.
     have h_excl := selector_exclusivity air row h_ext h_is_real
@@ -1876,7 +1751,7 @@ namespace MemoryReadWriteChip.Spec
     simp [bus_row_ext_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
           h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_ext
     obtain ⟨ _opcode_range, _ub_b0, _ub_b1, _ub_b2, _ub_b3, _ub_c0, _ub_c1, _ub_c2, _ub_c3,
-             _neg_op_10, _neg_op_11, _neg_op_12, _neg_op_13, _neg_op_14, _neg_op_45,
+             _neg_op_10, _neg_op_11, _neg_op_12, _neg_op_13, _neg_op_14, _neg_op_45, h_ext_ld_x0,
              _neg_op_15, _neg_op_16, _neg_op_17, _neg_op_47 ⟩ := h_ext
     -- Step 4: peel h_wf. For LD: 11 conjuncts (no selected_*/byte-split buses fire).
     simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
@@ -1891,16 +1766,13 @@ namespace MemoryReadWriteChip.Spec
     rw [allHold_iff_allHold_simplified] at h_constraints
     simp only [allHold_simplified, row_constraint_list, List.Forall]
       at h_constraints
-    -- c85..c88 (PR #101 commit `7860af12`) close the `op_a_0 = 1` x0 gap.
     obtain ⟨ h_c0, h_c1, h_c2, h_c3, h_c4, h_c11, h_c36, h_c37, h_c38, h_c39, h_c44, h_c45, h_c46, h_c47, h_c60, h_c61,
-             h_c62, h_c63, h_c85, h_c86, h_c87, h_c88 ⟩ :
+             h_c62, h_c63 ⟩ :
         constraint_0  air row ∧ constraint_1  air row ∧ constraint_2  air row ∧ constraint_3  air row ∧
         constraint_4  air row ∧ constraint_11 air row ∧ constraint_36 air row ∧ constraint_37 air row ∧
         constraint_38 air row ∧ constraint_39 air row ∧ constraint_44 air row ∧ constraint_45 air row ∧
         constraint_46 air row ∧ constraint_47 air row ∧ constraint_60 air row ∧ constraint_61 air row ∧
-        constraint_62 air row ∧ constraint_63 air row ∧
-        constraint_85 air row ∧ constraint_86 air row ∧
-        constraint_87 air row ∧ constraint_88 air row := by
+        constraint_62 air row ∧ constraint_63 air row := by
       clear *- h_constraints; aesop
     clear h_constraints
     -- Step 6: specialise constraints for LD.
@@ -1929,11 +1801,6 @@ namespace MemoryReadWriteChip.Spec
     simp [constraint_61, sub_eq_zero] at h_c61
     simp [constraint_62, sub_eq_zero] at h_c62
     simp [constraint_63, sub_eq_zero] at h_c63
-    -- c85..c88: `op_a_0 * value_i = 0` (PR #101 commit `7860af12`).
-    simp [constraint_85, mul_eq_zero] at h_c85
-    simp [constraint_86, mul_eq_zero] at h_c86
-    simp [constraint_87, mul_eq_zero] at h_c87
-    simp [constraint_88, mul_eq_zero] at h_c88
     -- Step 7: derive ob0 = ob1 = ob2 = 0 (from c11 + booleans c2, c3, c4).
     have h_ob0_zero : air.cols.values.offset_bit_0 row 0 = 0 := by
       rcases h_c2 with h | h
@@ -1982,20 +1849,7 @@ namespace MemoryReadWriteChip.Spec
         rw [h_c39] at h_v3
         exact ⟨h_v0.symm, h_v1.symm, h_v2.symm, h_v3.symm⟩
       . right
-        refine ⟨?_, ?_, ?_, ?_⟩ <;>
-          first
-            | (rcases h_c85 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c86 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c87 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
-            | (rcases h_c88 with h | h
-               · exact absurd h_x0 (by rw [h]; decide)
-               · exact h)
+        exact h_ext_ld_x0 h_opcode (by rw [h_x0]; decide)
     refine ⟨?_, ?_, ?_, ?_⟩
     . -- (a) u16 bounds. Both disjuncts of `h_val_eq` bound each `value_i < 65536`.
       rcases h_val_eq with ⟨h_v0, h_v1, h_v2, h_v3⟩ | ⟨h_v0, h_v1, h_v2, h_v3⟩
@@ -2052,7 +1906,6 @@ namespace MemoryReadWriteChip.Spec
       simp [U64w.toNat, h_c0]
       omega
 
-  -- ====================================
   -- SB (Store Byte) — opcode 15
   -- ====================================
 
@@ -2085,6 +1938,7 @@ namespace MemoryReadWriteChip.Spec
       (air.cols.values.instruction.op_c_access_1 row 0)
       (air.cols.values.instruction.op_c_access_2 row 0)
       (air.cols.values.instruction.op_c_access_3 row 0)
+      (air.cols.values.instruction.op_a_0 row 0)
   := by
     have h_excl := selector_exclusivity air row h_ext h_is_real
     simp only at h_excl
@@ -2144,6 +1998,7 @@ namespace MemoryReadWriteChip.Spec
       simp [U64w.toNat, h_c0]
       omega
 
+
   -- ====================================
   -- SH (Store Halfword) — opcode 16
   -- ====================================
@@ -2172,6 +2027,7 @@ namespace MemoryReadWriteChip.Spec
       (air.cols.values.instruction.op_c_access_1 row 0)
       (air.cols.values.instruction.op_c_access_2 row 0)
       (air.cols.values.instruction.op_c_access_3 row 0)
+      (air.cols.values.instruction.op_a_0 row 0)
   := by
     have h_excl := selector_exclusivity air row h_ext h_is_real
     simp only at h_excl
@@ -2315,6 +2171,7 @@ namespace MemoryReadWriteChip.Spec
       simp [U64w.toNat, h_c0]
       omega
 
+
   -- ====================================
   -- SW (Store Word) — opcode 17
   -- ====================================
@@ -2343,6 +2200,7 @@ namespace MemoryReadWriteChip.Spec
       (air.cols.values.instruction.op_c_access_1 row 0)
       (air.cols.values.instruction.op_c_access_2 row 0)
       (air.cols.values.instruction.op_c_access_3 row 0)
+      (air.cols.values.instruction.op_a_0 row 0)
   := by
     have h_excl := selector_exclusivity air row h_ext h_is_real
     simp only at h_excl
@@ -2462,6 +2320,7 @@ namespace MemoryReadWriteChip.Spec
       simp [U64w.toNat, h_c0]
       omega
 
+
   -- ========================================
   -- SD (Store Doubleword) — opcode 47
   -- ========================================
@@ -2490,6 +2349,7 @@ namespace MemoryReadWriteChip.Spec
       (air.cols.values.instruction.op_c_access_1 row 0)
       (air.cols.values.instruction.op_c_access_2 row 0)
       (air.cols.values.instruction.op_c_access_3 row 0)
+      (air.cols.values.instruction.op_a_0 row 0)
   := by
     have h_excl := selector_exclusivity air row h_ext h_is_real
     simp only at h_excl
@@ -2596,6 +2456,7 @@ namespace MemoryReadWriteChip.Spec
       rw [← h_alu_eq]
       simp [U64w.toNat, h_c0]
       omega
+
 
   section BusEquivalence
 

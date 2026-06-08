@@ -739,15 +739,15 @@ namespace RV32IM_Interactions
         }
 
       /-- Memory bus pure specification -/
-      def MemoryBus.Spec (mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 : FKB) : Prop :=
+      def MemoryBus.Spec (mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 a_is_0 : FKB) : Prop :=
         (mem_opcode < 15 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256) ∧
         (U32b.toBV #v[b_0, b_1, b_2, b_3] + U32b.toBV #v[c_0, c_1, c_2, c_3]).toNat < Pico_address_space_size_32 ∧
         (mem_opcode = 11 ∨ mem_opcode = 14 ∨ mem_opcode = 16 → 2 ∣ (U32b.toBV #v[b_0, b_1, b_2, b_3] + U32b.toBV #v[c_0, c_1, c_2, c_3]).toNat) ∧
         (mem_opcode = 12 ∨ mem_opcode = 17 → 4 ∣ (U32b.toBV #v[b_0, b_1, b_2, b_3] + U32b.toBV #v[c_0, c_1, c_2, c_3]).toNat) ∧
-        (mem_opcode = 10 → U32b.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 true) ∧
-        (mem_opcode = 11 → U32b.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 true) ∧
-        (mem_opcode = 13 → U32b.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 false) ∧
-        (mem_opcode = 14 → U32b.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 false)
+        (mem_opcode = 10 → a_is_0 = 0 → U32b.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 true) ∧
+        (mem_opcode = 11 → a_is_0 = 0 → U32b.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 true) ∧
+        (mem_opcode = 13 → a_is_0 = 0 → U32b.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend (BitVec.ofNat 8 a_0.val) 32 false) ∧
+        (mem_opcode = 14 → a_is_0 = 0 → U32b.toBV #v[a_0, a_1, a_2, a_3] = BitVec.extend ((BitVec.ofNat 8 a_1.val) ++ (BitVec.ofNat 8 a_0.val)) 32 false)
 
       /-- Memory bus entry instance -/
       @[simp, grind]
@@ -769,18 +769,18 @@ namespace RV32IM_Interactions
               mem_opcode ∈ Finset.Icc 10 17 ∧
               b_0 < 256 ∧ b_1 < 256 ∧ b_2 < 256 ∧ b_3 < 256 ∧
               c_0 < 256 ∧ c_1 < 256 ∧ c_2 < 256 ∧ c_3 < 256 ∧
-              (mem_opcode = 10 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 1, 0, 0, 0, 0, 0, 0, 0 )) ∧
-              (mem_opcode = 11 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 1, 0, 0, 0, 0, 0 )) ∧
-              (mem_opcode = 12 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 1, 0, 0, 0 )) ∧
-              (mem_opcode = 13 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 1, 0, 0, 0, 0, 0, 0 )) ∧
-              (mem_opcode = 14 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 1, 0, 0, 0, 0 )) ∧
+              (mem_opcode = 10 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 1, 0, 0, 0, 0, 0, 0, 0 ) ∧ (¬ a_is_0 = 0 → a_0 = 0 ∧ a_1 = 0 ∧ a_2 = 0 ∧ a_3 = 0 )) ∧
+              (mem_opcode = 11 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 1, 0, 0, 0, 0, 0 ) ∧ (¬ a_is_0 = 0 → a_0 = 0 ∧ a_1 = 0 ∧ a_2 = 0 ∧ a_3 = 0 )) ∧
+              (mem_opcode = 12 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 1, 0, 0, 0 ) ∧ (¬ a_is_0 = 0 → a_0 = 0 ∧ a_1 = 0 ∧ a_2 = 0 ∧ a_3 = 0 )) ∧
+              (mem_opcode = 13 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 1, 0, 0, 0, 0, 0, 0 ) ∧ (¬ a_is_0 = 0 → a_0 = 0 ∧ a_1 = 0 ∧ a_2 = 0 ∧ a_3 = 0 )) ∧
+              (mem_opcode = 14 → ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 1, 0, 0, 0, 0 ) ∧ (¬ a_is_0 = 0 → a_0 = 0 ∧ a_1 = 0 ∧ a_2 = 0 ∧ a_3 = 0 )) ∧
               (mem_opcode = 15 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256 ∧ ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 1, 0, 0 )) ∧
               (mem_opcode = 16 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256 ∧ ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 0, 1, 0 )) ∧
               (mem_opcode = 17 → a_0 < 256 ∧ a_1 < 256 ∧ a_2 < 256 ∧ a_3 < 256 ∧ ( is_lb, is_lbu, is_lh, is_lhu, is_lw, is_sb, is_sh, is_sw ) = ( 0, 0, 0, 0, 0, 0, 0, 1 ))
 
           -- Well-formedness derived from pure specification
           wf_properties := fun ⟨_, mem_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, a_is_0, _, _, _, _, _, _, _, _⟩ =>
-            MemoryBus.Spec mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3
+            MemoryBus.Spec mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 a_is_0
 
           deserialise := MemoryBusEntry.deserialise
 

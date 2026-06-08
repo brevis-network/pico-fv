@@ -871,47 +871,6 @@ namespace MemoryReadWriteChip.ConstraintsAndBuses
       : MemoryReadWriteChip.Extraction.constraint_84 air row ↔ constraint_84 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
-      -- Constraints 85-88 (Pico PR #101 commit `7860af12`): when `op_a_0 = 1`
-      -- (rd = x0), pin each `op_a_access.access.value_i` to zero. Closes the
-      -- soundness gap where the existing fill constraints (c48-c63) all carry
-      -- `(1 - op_a_0)` and so leave the payload unconstrained on x0 writes.
-
-      @[constraint_and_interaction_simplification]
-      def constraint_85 (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.values.instruction.op_a_0 row 0) * (air.cols.values.instruction.op_a_access.access.value_0 row 0)) = 0
-
-      @[simp]
-      lemma constraint_85_equiv (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ)
-      : MemoryReadWriteChip.Extraction.constraint_85 air row ↔ constraint_85 air row
-      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
-
-      @[constraint_and_interaction_simplification]
-      def constraint_86 (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.values.instruction.op_a_0 row 0) * (air.cols.values.instruction.op_a_access.access.value_1 row 0)) = 0
-
-      @[simp]
-      lemma constraint_86_equiv (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ)
-      : MemoryReadWriteChip.Extraction.constraint_86 air row ↔ constraint_86 air row
-      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
-
-      @[constraint_and_interaction_simplification]
-      def constraint_87 (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.values.instruction.op_a_0 row 0) * (air.cols.values.instruction.op_a_access.access.value_2 row 0)) = 0
-
-      @[simp]
-      lemma constraint_87_equiv (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ)
-      : MemoryReadWriteChip.Extraction.constraint_87 air row ↔ constraint_87 air row
-      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
-
-      @[constraint_and_interaction_simplification]
-      def constraint_88 (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.values.instruction.op_a_0 row 0) * (air.cols.values.instruction.op_a_access.access.value_3 row 0)) = 0
-
-      @[simp]
-      lemma constraint_88_equiv (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ)
-      : MemoryReadWriteChip.Extraction.constraint_88 air row ↔ constraint_88 air row
-      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
-
       @[constraint_and_interaction_simplification]
       def row_constraint_list (air : Valid_MemoryReadWriteChip F ExtF) (row : ℕ) : List Prop :=
         [
@@ -999,11 +958,7 @@ namespace MemoryReadWriteChip.ConstraintsAndBuses
           constraint_81 air row,
           constraint_82 air row,
           constraint_83 air row,
-          constraint_84 air row,
-          constraint_85 air row,
-          constraint_86 air row,
-          constraint_87 air row,
-          constraint_88 air row
+          constraint_84 air row
         ]
 
     end row_constraints

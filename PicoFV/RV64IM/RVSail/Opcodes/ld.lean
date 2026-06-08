@@ -37,14 +37,23 @@ namespace PureSpec.RV64
   : Prop :=
     Sail.readReg Register.PC state = EStateM.Result.ok i.PC state ∧
     read_xreg i.r1 state = EStateM.Result.ok i.r1_val state ∧
-    state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat]? = .some i.data0 ∧
-    state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 1]? = .some i.data1 ∧
-    state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 2]? = .some i.data2 ∧
-    state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 3]? = .some i.data3 ∧
-    state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 4]? = .some i.data4 ∧
-    state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 5]? = .some i.data5 ∧
-    state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 6]? = .some i.data6 ∧
-    state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 7]? = .some i.data7 ∧
+    (if i.rd == 0
+      then state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat]?.isSome ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 1]?.isSome ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 2]?.isSome ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 3]?.isSome ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 4]?.isSome ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 5]?.isSome ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 6]?.isSome ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 7]?.isSome
+      else state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat]? = .some i.data0 ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 1]? = .some i.data1 ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 2]? = .some i.data2 ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 3]? = .some i.data3 ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 4]? = .some i.data4 ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 5]? = .some i.data5 ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 6]? = .some i.data6 ∧
+           state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 7]? = .some i.data7) ∧
     (i.r1_val + BitVec.signExtend 64 i.imm).toNat < Pico_address_space_size_64 ∧
     (8 : ℤ) ∣ (i.r1_val + BitVec.signExtend 64 i.imm).toNat
 
@@ -69,9 +78,9 @@ namespace PureSpec.RV64
     ) state
   := by
     have next_gma := RISC_V_assumptions_invariant_under_pc_increment risc_v_assumptions (val := input.PC + 4#64)
-    obtain ⟨ h_pc, h_r1, h_mem0, h_mem1, h_mem2, h_mem3, h_mem4, h_mem5, h_mem6, h_mem7, h_range, h_align ⟩ := h_opcode_assumptions
+    obtain ⟨ h_pc, h_r1, h_mem, h_range, h_align ⟩ := h_opcode_assumptions
     rw [readReg_succ] at h_pc
-    simp at h_mem0 h_mem1 h_mem2 h_mem3 h_mem4 h_mem5 h_mem6 h_mem7 h_range h_align
+    simp at h_mem h_range h_align
 
     simp [
       Sail.readReg,
@@ -94,7 +103,9 @@ namespace PureSpec.RV64
     rw [if_neg (by omega)]
 
     simp [write_reg_state, execute_LOADD_pure, *]
-    simp [*, wX_write_xreg_equiv]
+    split_ifs at h_mem with h_mem_if
+    . simp [*, LeanRV64D.Functions.wX_bits, LeanRV64D.Functions.wX, write_xreg]
+    . simp [*, wX_write_xreg_equiv]
 
 end PureSpec.RV64
 
@@ -108,34 +119,59 @@ namespace OpcodeSpec.RV64
     (pc_val r1_val : BitVec 64)
     (data0 data1 data2 data3 data4 data5 data6 data7 : BitVec 8)
   : List Operation :=
-    [
-      .ReadPC pc_val,
-      .ReadReg r1 r1_val,
-      .ReadMem (r1_val + BitVec.signExtend 64 imm).toNat .Double (data7 ++ data6 ++ data5 ++ data4 ++ data3 ++ data2 ++ data1 ++ data0),
-      .WritePC (pc_val + 4#64),
-      .WriteReg rd (data7 ++ data6 ++ data5 ++ data4 ++ data3 ++ data2 ++ data1 ++ data0),
-    ]
+    if rd == regidx.Regidx 0#5
+    then
+      [
+        .ReadPC pc_val,
+        .ReadReg r1 r1_val,
+        .ReadMemAny (r1_val + BitVec.signExtend 64 imm).toNat .Double,
+        .WritePC (pc_val + 4#64),
+      ]
+    else
+      [
+        .ReadPC pc_val,
+        .ReadReg r1 r1_val,
+        .ReadMem (r1_val + BitVec.signExtend 64 imm).toNat .Double (data7 ++ data6 ++ data5 ++ data4 ++ data3 ++ data2 ++ data1 ++ data0),
+        .WritePC (pc_val + 4#64),
+        .WriteReg rd (data7 ++ data6 ++ data5 ++ data4 ++ data3 ++ data2 ++ data1 ++ data0),
+      ]
 
   set_option maxHeartbeats 0 in
   lemma spec_LD_hypotheses
   :
     (operation_list_effect (spec_LD r1 rd imm pc_val r1_val data0 data1 data2 data3 data4 data5 data6 data7) state).hypotheses
       =
-    (Sail.readReg Register.PC state = EStateM.Result.ok pc_val state ∧
-     read_xreg (regidx_to_fin r1) state = EStateM.Result.ok r1_val state ∧
-     state.mem[(r1_val + BitVec.signExtend 64 imm).toNat]? = .some data0 ∧
-     state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 1]? = .some data1 ∧
-     state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 2]? = .some data2 ∧
-     state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 3]? = .some data3 ∧
-     state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 4]? = .some data4 ∧
-     state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 5]? = .some data5 ∧
-     state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 6]? = .some data6 ∧
-     state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 7]? = .some data7)
+    if rd == regidx.Regidx 0#5
+    then
+      (Sail.readReg Register.PC state = EStateM.Result.ok pc_val state ∧
+       read_xreg (regidx_to_fin r1) state = EStateM.Result.ok r1_val state ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat]?.isSome ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 1]?.isSome ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 2]?.isSome ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 3]?.isSome ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 4]?.isSome ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 5]?.isSome ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 6]?.isSome ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 7]?.isSome)
+    else
+      (Sail.readReg Register.PC state = EStateM.Result.ok pc_val state ∧
+       read_xreg (regidx_to_fin r1) state = EStateM.Result.ok r1_val state ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat]? = .some data0 ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 1]? = .some data1 ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 2]? = .some data2 ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 3]? = .some data3 ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 4]? = .some data4 ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 5]? = .some data5 ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 6]? = .some data6 ∧
+       state.mem[(r1_val + BitVec.signExtend 64 imm).toNat + 7]? = .some data7)
   := by
-    simp [operation_list_effect, spec_LD, List.foldl, operation_effect]
-    simp [Sail.writeReg, PreSail.writeReg, BitVec.extractLsb, and_assoc]
-    repeat rw [BitVec.extractLsb'_append_eq_ite]
-    simp
+    split_ifs with h_rd_zero
+    . simp [operation_list_effect, spec_LD, List.foldl, operation_effect, h_rd_zero]
+      grind
+    . simp [operation_list_effect, spec_LD, List.foldl, operation_effect, h_rd_zero]
+      simp [Sail.writeReg, PreSail.writeReg, BitVec.extractLsb, and_assoc]
+      repeat rw [BitVec.extractLsb'_append_eq_ite]
+      simp
 
   lemma execute_LD_equiv
     (h : (operation_list_effect (spec_LD r1 rd imm pc_val r1_val data0 data1 data2 data3 data4 data5 data6 data7) state).hypotheses)
@@ -157,26 +193,22 @@ namespace OpcodeSpec.RV64
     }
 
     rw [spec_LD_hypotheses] at h
-    obtain ⟨h_pc, h_r1, h_mem0, h_mem1, h_mem2, h_mem3, h_mem4, h_mem5, h_mem6, h_mem7⟩ := h
-    simp at h_mem0 h_mem1 h_mem2 h_mem3 h_mem4 h_mem5 h_mem6 h_mem7 h_range h_align
-
-    have h_opcode_assumptions : PureSpec.RV64.ld_state_assumptions input state := by
-      simp [PureSpec.RV64.ld_state_assumptions, input, *]
+    simp at h_range h_align
 
     trans execute_instruction (instruction.LOAD (imm, regidx.Regidx (BitVec.ofNat 5 input.r1.val), regidx.Regidx (BitVec.ofNat 5 input.rd.val), false, 8)) state
     . simp; congr
-    . rw [PureSpec.RV64.execute_LOADD_pure_equiv input risc_v_assumptions h_opcode_assumptions]
-      simp [
-        input,
-        PureSpec.RV64.execute_LOADD_pure,
-        writeReg_state_success,
-        operation_list_effect,
-        operation_effect,
-        spec_LD,
-        write_reg_state
-      ]
-      by_cases h_zero : (regidx_to_fin rd).val = 0
-      . simp [write_xreg, h_zero]
-      . simp [write_xreg, Sail.writeReg, PreSail.writeReg]
+    . rw [PureSpec.RV64.execute_LOADD_pure_equiv input risc_v_assumptions]
+      . split_ifs at h with h_zero <;>
+        [ (have h_zero' : (regidx_to_fin rd).val = 0 := by clear *- h_zero; simp_all [regidx_to_fin]);
+          (have h_zero' : ¬ (regidx_to_fin rd).val = 0 := by clear *- h_zero; obtain ⟨ rd, _ ⟩ := rd; simp_all [regidx_to_fin, ← BitVec.toNat_inj]) ]
+        . simp [ input, PureSpec.RV64.execute_LOADD_pure, writeReg_state_success,
+                 operation_list_effect, operation_effect, spec_LD, write_reg_state,
+                 write_xreg, h_zero, h_zero' ]
+        . simp [ input, PureSpec.RV64.execute_LOADD_pure, writeReg_state_success,
+                 operation_list_effect, operation_effect, spec_LD, write_reg_state,
+                 write_xreg, h_zero ]
+      . simp [PureSpec.RV64.ld_state_assumptions, regidx_to_fin, input, *]
+        obtain ⟨ rd, _ ⟩ := rd; simp [← BitVec.toNat_inj] at *
+        split_ifs at h with h_if <;> simp_all [regidx_to_fin]
 
 end OpcodeSpec.RV64

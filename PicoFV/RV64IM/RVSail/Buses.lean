@@ -655,9 +655,7 @@ namespace RV64IM_Interactions
           -- only need to fit in 48 bits, not the full 64.
           axioms := fun entry =>
             (¬ entry.multiplicity = 0) →
-              let pc_addr := entry.pc_0.val + 65536 * entry.pc_1.val
-                           + 65536 * 65536 * entry.pc_2.val
-              pc_addr < 2 ^ 48 ∧ pc_addr % 4 = 0
+              entry.pc_0.val % 4 = 0
 
           -- No chip-external constraints
           externals := fun _ => True
@@ -1110,7 +1108,7 @@ namespace RV64IM_Interactions
           * Alignment: 2-byte (LH/LHU/SH), 4-byte (LW/LWU/SW), 8-byte (LD/SD).
                                                                               -/
       def MemoryBus.Spec
-        (mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 : FKB) : Prop :=
+        (mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 a_is_0 : FKB) : Prop :=
         let a := U64w.toBV #v[a_0, a_1, a_2, a_3]
         let b := U64w.toBV #v[b_0, b_1, b_2, b_3]
         let c := U64w.toBV #v[c_0, c_1, c_2, c_3]
@@ -1127,14 +1125,15 @@ namespace RV64IM_Interactions
         (mem_opcode = 11 ∨ mem_opcode = 14 ∨ mem_opcode = 16 → 2 ∣ addr) ∧
         (mem_opcode = 12 ∨ mem_opcode = 17 ∨ mem_opcode = 45 → 4 ∣ addr) ∧
         (mem_opcode = 46 ∨ mem_opcode = 47 → 8 ∣ addr) ∧
-        -- Load result equations: the limb layout produced by the chip
-        -- makes the U64w view equal to the canonical sign/zero extension.
-        (mem_opcode = 10 → a = BitVec.signExtend 64 (a.truncate 8)) ∧   -- LB
-        (mem_opcode = 11 → a = BitVec.signExtend 64 (a.truncate 16)) ∧  -- LH
-        (mem_opcode = 12 → a = BitVec.signExtend 64 (a.truncate 32)) ∧  -- LW
-        (mem_opcode = 13 → a = BitVec.zeroExtend 64 (a.truncate 8)) ∧   -- LBU
-        (mem_opcode = 14 → a = BitVec.zeroExtend 64 (a.truncate 16)) ∧  -- LHU
-        (mem_opcode = 45 → a = BitVec.zeroExtend 64 (a.truncate 32))    -- LWU
+        -- Load result equations: gated on `a_is_0 = 0` (rd ≠ x0) since the
+        -- chip leaves `a_*` unconstrained on x0 loads (zeroing is enforced
+        -- CPU-side via c16-c19 and exposed through the externals below).
+        (mem_opcode = 10 → a_is_0 = 0 → a = BitVec.signExtend 64 (a.truncate 8)) ∧   -- LB
+        (mem_opcode = 11 → a_is_0 = 0 → a = BitVec.signExtend 64 (a.truncate 16)) ∧  -- LH
+        (mem_opcode = 12 → a_is_0 = 0 → a = BitVec.signExtend 64 (a.truncate 32)) ∧  -- LW
+        (mem_opcode = 13 → a_is_0 = 0 → a = BitVec.zeroExtend 64 (a.truncate 8)) ∧   -- LBU
+        (mem_opcode = 14 → a_is_0 = 0 → a = BitVec.zeroExtend 64 (a.truncate 16)) ∧  -- LHU
+        (mem_opcode = 45 → a_is_0 = 0 → a = BitVec.zeroExtend 64 (a.truncate 32))    -- LWU
         -- LD (46) needs no extension; SB/SH/SW/SD (15-17, 47) don't
         -- constrain `a` on the bus.
 
@@ -1154,18 +1153,25 @@ namespace RV64IM_Interactions
           -- range-checked by the chip externally; one selector is asserted
           -- per opcode (load selectors for 10..14, 45, 46; store selectors
           -- for 15..17, 47).
-          externals := fun ⟨multiplicity, mem_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, _a_is_0, is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd⟩ =>
+          externals := fun ⟨multiplicity, mem_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, a_is_0, is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd⟩ =>
             ¬(multiplicity = 0) →
               (mem_opcode ∈ Finset.Icc 10 17 ∨ mem_opcode ∈ Finset.Icc 45 47) ∧
               b_0.val < 65536 ∧ b_1.val < 65536 ∧ b_2.val < 65536 ∧ b_3.val < 65536 ∧
               c_0.val < 65536 ∧ c_1.val < 65536 ∧ c_2.val < 65536 ∧ c_3.val < 65536 ∧
-              (mem_opcode = 10 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)) ∧
-              (mem_opcode = 11 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0)) ∧
-              (mem_opcode = 12 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0)) ∧
-              (mem_opcode = 13 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0)) ∧
-              (mem_opcode = 14 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0)) ∧
-              (mem_opcode = 45 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0)) ∧
-              (mem_opcode = 46 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0)) ∧
+              (mem_opcode = 10 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) ∧
+                (¬ a_is_0 = 0 → a_0 = 0 ∧ a_1 = 0 ∧ a_2 = 0 ∧ a_3 = 0)) ∧
+              (mem_opcode = 11 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0) ∧
+                (¬ a_is_0 = 0 → a_0 = 0 ∧ a_1 = 0 ∧ a_2 = 0 ∧ a_3 = 0)) ∧
+              (mem_opcode = 12 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0) ∧
+                (¬ a_is_0 = 0 → a_0 = 0 ∧ a_1 = 0 ∧ a_2 = 0 ∧ a_3 = 0)) ∧
+              (mem_opcode = 13 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0) ∧
+                (¬ a_is_0 = 0 → a_0 = 0 ∧ a_1 = 0 ∧ a_2 = 0 ∧ a_3 = 0)) ∧
+              (mem_opcode = 14 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0) ∧
+                (¬ a_is_0 = 0 → a_0 = 0 ∧ a_1 = 0 ∧ a_2 = 0 ∧ a_3 = 0)) ∧
+              (mem_opcode = 45 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0) ∧
+                (¬ a_is_0 = 0 → a_0 = 0 ∧ a_1 = 0 ∧ a_2 = 0 ∧ a_3 = 0)) ∧
+              (mem_opcode = 46 → (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0) ∧
+                (¬ a_is_0 = 0 → a_0 = 0 ∧ a_1 = 0 ∧ a_2 = 0 ∧ a_3 = 0)) ∧
               (mem_opcode = 15 → a_0.val < 65536 ∧ a_1.val < 65536 ∧ a_2.val < 65536 ∧ a_3.val < 65536 ∧
                 (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0)) ∧
               (mem_opcode = 16 → a_0.val < 65536 ∧ a_1.val < 65536 ∧ a_2.val < 65536 ∧ a_3.val < 65536 ∧
@@ -1175,8 +1181,8 @@ namespace RV64IM_Interactions
               (mem_opcode = 47 → a_0.val < 65536 ∧ a_1.val < 65536 ∧ a_2.val < 65536 ∧ a_3.val < 65536 ∧
                 (is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld, is_sb, is_sh, is_sw, is_sd) = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1))
 
-          wf_properties := fun ⟨_, mem_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, _, _, _, _, _, _, _, _, _, _, _, _⟩ =>
-            MemoryBus.Spec mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3
+          wf_properties := fun ⟨_, mem_opcode, a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3, c_0, c_1, c_2, c_3, a_is_0, _, _, _, _, _, _, _, _, _, _, _⟩ =>
+            MemoryBus.Spec mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 a_is_0
 
           deserialise := MemoryBusEntry.deserialise
 

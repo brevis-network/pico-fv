@@ -104,6 +104,17 @@ namespace CpuAir.Spec
     -- Immediate auxiliaries
     have imm_b_eqs := imm_b_eqs air row h_constraints
     have imm_c_eqs := imm_c_eqs air row h_constraints
+    -- Zero if is_a_0
+    have h_zeroes :
+      ¬air.cols.instruction.a_is_0 row 0 = 0 →
+        air.cols.op_a_access.access.value_0 row 0 = 0 ∧ air.cols.op_a_access.access.value_1 row 0 = 0 ∧
+        air.cols.op_a_access.access.value_2 row 0 = 0 ∧ air.cols.op_a_access.access.value_3 row 0 = 0
+    := by
+      clear *- h_constraints
+      have relevant_constraints : constraint_16 air row ∧ constraint_17 air row ∧ constraint_18 air row ∧ constraint_19 air row
+        := by simp [allHold_simplified] at h_constraints; aesop
+      simp [constraint_16, constraint_17, constraint_18, constraint_19] at relevant_constraints
+      grind
     -- Expand goal
     simp [
       bus_row_ext_asrt,
@@ -153,27 +164,27 @@ namespace CpuAir.Spec
     . have eq_opcode_KB : air.cols.instruction.opcode row 0 = 10 := by clear *- eq_opcode; omega
       simp at h_opcode_props h_selectors ⊢
       simp [h_selectors, eq_opcode_KB] at h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs ⊢
-      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs
+      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs h_zeroes
       grind
     . have eq_opcode_KB : air.cols.instruction.opcode row 0 = 11 := by clear *- eq_opcode; omega
       simp at h_opcode_props h_selectors ⊢
       simp [h_selectors, eq_opcode_KB] at h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs ⊢
-      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs
+      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs h_zeroes
       grind
     . have eq_opcode_KB : air.cols.instruction.opcode row 0 = 12 := by clear *- eq_opcode; omega
       simp at h_opcode_props h_selectors ⊢
       simp [h_selectors, eq_opcode_KB] at h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs ⊢
-      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs
+      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs h_zeroes
       grind
     . have eq_opcode_KB : air.cols.instruction.opcode row 0 = 13 := by clear *- eq_opcode; omega
       simp at h_opcode_props h_selectors ⊢
       simp [h_selectors, eq_opcode_KB] at h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs ⊢
-      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs
+      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs h_zeroes
       grind
     . have eq_opcode_KB : air.cols.instruction.opcode row 0 = 14 := by clear *- eq_opcode; omega
       simp at h_opcode_props h_selectors ⊢
       simp [h_selectors, eq_opcode_KB] at h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs ⊢
-      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs
+      clear *- h_opcode_props h_imm ub_nonimm_b ub_nonimm_c imm_b_eqs imm_c_eqs h_zeroes
       grind
     . have eq_opcode_KB : air.cols.instruction.opcode row 0 = 15 := by clear *- eq_opcode; omega
       simp at h_opcode_props h_selectors ⊢
