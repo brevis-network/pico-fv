@@ -117,6 +117,80 @@ namespace Transpiler
   := by
     simp [← imm_to_KB_BV_usgn]
 
+  /-! ### Signed-extension lemmas for W-imms (sgn = true) -/
+
+  set_option maxHeartbeats 1_000_000 in
+  lemma immw_to_KB_BV_sgn {w : ℕ} (imm : BitVec w) :
+    let imm_KB := imm_to_KB imm true
+    U32w.toBV #v[imm_KB[0], imm_KB[1]] =
+    BitVec.signExtend 32 imm
+  := by
+    simp [
+      imm_to_KB,
+      U64w.fromNat,
+      BitVec.extend,
+    ]
+    by_cases h_w_32 : w ≤ 32
+    . simp [← BitVec.toNat_inj, BitVec.toNat_signExtend, U32w.toNat, BitVec.msb_eq_decide]
+      have ub_pow_32 : 2 ^ w ≤ 4294967296 := by interval_cases w <;> simp
+      have ub_pow_64 : 2 ^ w ≤ 18446744073709551616 := by interval_cases w <;> simp
+      rw [Nat.mod_eq_of_lt (b := 4294967296) (by omega)]
+      repeat rw [Nat.mod_eq_of_lt (b := 18446744073709551616) (by omega)]
+      split_ifs <;> interval_cases w <;> simp at * <;> omega
+    . simp [← BitVec.toNat_inj, U32w.toNat, BitVec.toNat_signExtend]
+      split_ifs with h_if
+      . by_cases h_w_64 : w ≤ 64
+        . interval_cases w <;> simp at * <;> omega
+        . suffices h_zero : 2 ^ 64 < 2 ^ w
+          . omega
+          . exact Nat.pow_lt_pow_right (by simp) (by omega)
+      . omega
+
+  lemma immw_to_KB_Nat_sgn {w : ℕ} (imm : BitVec w) :
+    let imm_KB := imm_to_KB imm true
+    U32w.toNat #v[imm_KB[0], imm_KB[1]] =
+    (BitVec.signExtend 32 imm).toNat
+  := by
+    simp [← immw_to_KB_BV_sgn]
+
+  lemma immw_to_KB_Int_sgn {w : ℕ} (imm : BitVec w) :
+    let imm_KB := imm_to_KB imm true
+    U32w.toInt #v[imm_KB[0], imm_KB[1]] =
+    (BitVec.signExtend 32 imm).toInt
+  := by
+    simp [← immw_to_KB_BV_sgn]
+
+  /-! ### Zero-extension lemmas for W-imms (sgn = false) -/
+
+  lemma immw_to_KB_BV_usgn {w : ℕ} (imm : BitVec w) :
+    let imm_KB := imm_to_KB imm false
+    U32w.toBV #v[imm_KB[0], imm_KB[1]] =
+    BitVec.setWidth 32 imm
+  := by
+    simp [← BitVec.toNat_inj]
+    simp [
+      U32w.toNat,
+      imm_to_KB,
+      U64w.fromNat,
+      BitVec.extend,
+    ]
+    omega
+
+  lemma immw_to_KB_Nat_usgn {w : ℕ} (imm : BitVec w) :
+    let imm_KB := imm_to_KB imm false
+    U32w.toNat #v[imm_KB[0], imm_KB[1]] =
+    (BitVec.setWidth 32 imm).toNat
+  := by
+    simp [← immw_to_KB_BV_usgn]
+
+  lemma immw_to_KB_Int_usgn {w : ℕ} (imm : BitVec w) :
+    let imm_KB := imm_to_KB imm false
+    U32w.toInt #v[imm_KB[0], imm_KB[1]] =
+    (BitVec.setWidth 32 imm).toInt
+  := by
+    simp [← immw_to_KB_BV_usgn]
+
+
   /-! ## Opcode encodings
 
       These mirror the Pico `Opcode` enum at
@@ -681,7 +755,9 @@ namespace Transpiler
     -- DIV : 2 opcodes (DIV/DIVU)
     -- ====================================================================
     | .DIV (rs2, rs1, rd, sgn) =>
-      let opcode : FKB := match sgn with | true => 34 | false => 35   -- DIV / DIVU
+      -- `sgn` here is Sail's `is_unsigned` field: `true` = DIVU, `false` = DIV.
+      -- Chip opcode 34 = DIV (signed, `.DRS` arm), opcode 35 = DIVU (unsigned, `.DRU` arm).
+      let opcode : FKB := match sgn with | true => 35 | false => 34   -- DIVU / DIV
       let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         (
@@ -709,7 +785,9 @@ namespace Transpiler
     -- DIVW : 2 opcodes (DIVW/DIVUW) — RV64-only
     -- ====================================================================
     | .DIVW (rs2, rs1, rd, sgn) =>
-      let opcode : FKB := match sgn with | true => 49 | false => 50   -- DIVW / DIVUW
+      -- `sgn` = Sail's `is_unsigned`: `true` = DIVUW, `false` = DIVW.
+      -- Chip opcode 49 = DIVW (signed), opcode 50 = DIVUW (unsigned).
+      let opcode : FKB := match sgn with | true => 50 | false => 49   -- DIVUW / DIVW
       let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         (
@@ -737,7 +815,9 @@ namespace Transpiler
     -- REM : 2 opcodes (REM/REMU)
     -- ====================================================================
     | .REM (rs2, rs1, rd, sgn) =>
-      let opcode : FKB := match sgn with | true => 36 | false => 37   -- REM / REMU
+      -- `sgn` = Sail's `is_unsigned`: `true` = REMU, `false` = REM.
+      -- Chip opcode 36 = REM (signed), opcode 37 = REMU (unsigned).
+      let opcode : FKB := match sgn with | true => 37 | false => 36   -- REMU / REM
       let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         (
@@ -765,7 +845,9 @@ namespace Transpiler
     -- REMW : 2 opcodes (REMW/REMUW) — RV64-only
     -- ====================================================================
     | .REMW (rs2, rs1, rd, sgn) =>
-      let opcode : FKB := match sgn with | true => 51 | false => 52   -- REMW / REMUW
+      -- `sgn` = Sail's `is_unsigned`: `true` = REMUW, `false` = REMW.
+      -- Chip opcode 51 = REMW (signed), opcode 52 = REMUW (unsigned).
+      let opcode : FKB := match sgn with | true => 52 | false => 51   -- REMUW / REMW
       let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         (

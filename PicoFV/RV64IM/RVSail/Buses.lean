@@ -307,11 +307,15 @@ namespace RV64IM_Interactions
         (entry.opcode = 31 → ∃ rs2 rs1 rd, instr = .MUL (rs2, rs1, rd, { result_part := .High, signed_rs1 := .Signed, signed_rs2 := .Signed })) ∧
         (entry.opcode = 32 → ∃ rs2 rs1 rd, instr = .MUL (rs2, rs1, rd, { result_part := .High, signed_rs1 := .Unsigned, signed_rs2 := .Unsigned })) ∧
         (entry.opcode = 33 → ∃ rs2 rs1 rd, instr = .MUL (rs2, rs1, rd, { result_part := .High, signed_rs1 := .Signed, signed_rs2 := .Unsigned })) ∧
-        -- DIV/REM (64-bit)
-        (entry.opcode = 34 → ∃ rs2 rs1 rd, instr = .DIV (rs2, rs1, rd, true)) ∧
-        (entry.opcode = 35 → ∃ rs2 rs1 rd, instr = .DIV (rs2, rs1, rd, false)) ∧
-        (entry.opcode = 36 → ∃ rs2 rs1 rd, instr = .REM (rs2, rs1, rd, true)) ∧
-        (entry.opcode = 37 → ∃ rs2 rs1 rd, instr = .REM (rs2, rs1, rd, false)) ∧
+        -- DIV/REM (64-bit). Sail's 4th-field bool is `is_unsigned`:
+        --   chip opcode 34 = DIV  (signed,   `is_unsigned = false`),
+        --   chip opcode 35 = DIVU (unsigned, `is_unsigned = true`),
+        --   chip opcode 36 = REM  (signed,   `is_unsigned = false`),
+        --   chip opcode 37 = REMU (unsigned, `is_unsigned = true`).
+        (entry.opcode = 34 → ∃ rs2 rs1 rd, instr = .DIV (rs2, rs1, rd, false)) ∧
+        (entry.opcode = 35 → ∃ rs2 rs1 rd, instr = .DIV (rs2, rs1, rd, true)) ∧
+        (entry.opcode = 36 → ∃ rs2 rs1 rd, instr = .REM (rs2, rs1, rd, false)) ∧
+        (entry.opcode = 37 → ∃ rs2 rs1 rd, instr = .REM (rs2, rs1, rd, true)) ∧
         -- W-variants of R-type ops (RV64-only)
         (entry.opcode = 40 →
           (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPEW (rs2, rs1, rd, .ADDW)) ∨
@@ -329,10 +333,13 @@ namespace RV64IM_Interactions
           (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .SHIFTIWOP (imm, rs1, rd, .SRAIW))) ∧
         -- W-variants of MUL/DIV/REM
         (entry.opcode = 48 → ∃ rs2 rs1 rd, instr = .MULW (rs2, rs1, rd)) ∧
-        (entry.opcode = 49 → ∃ rs2 rs1 rd, instr = .DIVW (rs2, rs1, rd, true)) ∧
-        (entry.opcode = 50 → ∃ rs2 rs1 rd, instr = .DIVW (rs2, rs1, rd, false)) ∧
-        (entry.opcode = 51 → ∃ rs2 rs1 rd, instr = .REMW (rs2, rs1, rd, true)) ∧
-        (entry.opcode = 52 → ∃ rs2 rs1 rd, instr = .REMW (rs2, rs1, rd, false))
+        -- DIVW/REMW (RV64-only 32-bit). Same `is_unsigned` convention as above:
+        --   chip opcode 49 = DIVW,  opcode 50 = DIVUW,
+        --   chip opcode 51 = REMW,  opcode 52 = REMUW.
+        (entry.opcode = 49 → ∃ rs2 rs1 rd, instr = .DIVW (rs2, rs1, rd, false)) ∧
+        (entry.opcode = 50 → ∃ rs2 rs1 rd, instr = .DIVW (rs2, rs1, rd, true)) ∧
+        (entry.opcode = 51 → ∃ rs2 rs1 rd, instr = .REMW (rs2, rs1, rd, false)) ∧
+        (entry.opcode = 52 → ∃ rs2 rs1 rd, instr = .REMW (rs2, rs1, rd, true))
       := by
         have ⟨ h_op_eq, h_imm_b_eq, h_imm_c_eq ⟩ :
             entry.opcode = data.2[3] ∧ entry.imm_b = data.2[18] ∧ entry.imm_c = data.2[19]
