@@ -74,6 +74,13 @@ namespace KoalaBear
 
   section Auxiliaries
 
+    /-- Only zero equals its negation in KoalaBear -/
+    @[simp, grind .]
+    lemma eq_neg_eq_zero_lr (m : FKB) : -m = m ↔ m = 0 := by grind
+
+    @[simp, grind .]
+    lemma eq_neg_eq_zero_rl (m : FKB) : m = -m ↔ m = 0 := by grind
+
     lemma inv_256_eq_one_lr : (2122383361 : FKB) * 256 = 1 := by rfl
 
     lemma inv256_prod_lt_256

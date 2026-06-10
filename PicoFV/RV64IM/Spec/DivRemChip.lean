@@ -1888,7 +1888,7 @@ namespace DivRemChip.Spec
     --   * `is_c_0 = 1`: chip says `c_0 = c_1 = c_2 = c_3 = 0`, hence
     --     `c.setWidth 32 = 0`, so the executor's `.DRU` returns
     --     `q = 0xFFFFFFFF` and `r = b.setWidth 32`.
-    --   * `is_c_0 = 0`: normal unsigned word division (deferred).
+    --   * `is_c_0 = 0`: normal unsigned word division.
     -- Case : c = 0
     obtain eq_cz | eq_cz := b_c_zero <;> simp [eq_cz] at h_c_zero; rotate_left
     . have h_eq_z : U32w.toBV #v[0#16, 0#16] = 0#32 := by clear *-; decide

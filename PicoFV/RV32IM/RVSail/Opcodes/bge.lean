@@ -155,7 +155,7 @@ namespace OpcodeSpec.RV32
       spec_BGE,
     ]
 
-    rw [BitVec.mod_4_zero_equiv] at h_success
+    rw [BitVec.mod_4_zero_equiv_32] at h_success
     by_cases h_eq : r1_val.toInt ≥ r2_val.toInt <;> simp_all
     repeat rw [if_neg (by omega)]
     rfl

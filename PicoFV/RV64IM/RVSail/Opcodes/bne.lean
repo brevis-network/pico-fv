@@ -122,8 +122,8 @@ namespace OpcodeSpec.RV64
     (h : (operation_list_effect (spec_BNE r1 r2 imm pc_val r1_val r2_val) state).hypotheses)
     (h_misa : Sail.readReg Register.misa state = EStateM.Result.ok misa state)
     (h_success :
-      (BitVec.ofBool (pc_val + BitVec.signExtend 64 imm)[0] = 0#1) ∧
-      (BitVec.ofBool (pc_val + BitVec.signExtend 64 imm)[1] = 0#1)
+      (¬ r1_val = r2_val) →
+        (pc_val + BitVec.signExtend 64 imm) % 4 = 0
     )
   :
     execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BNE)) state =
@@ -147,8 +147,9 @@ namespace OpcodeSpec.RV64
       operation_list_effect,
       operation_effect,
       spec_BNE,
-      h_success
     ]
-    congr 1; split_ifs <;> rfl
+
+    rw [BitVec.mod_4_zero_equiv_64] at h_success
+    by_cases h_eq : ¬(r1_val = r2_val) <;> simp_all
 
 end OpcodeSpec.RV64

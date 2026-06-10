@@ -155,7 +155,7 @@ namespace OpcodeSpec.RV32
       spec_BNE,
     ]
 
-    rw [BitVec.mod_4_zero_equiv] at h_success
+    rw [BitVec.mod_4_zero_equiv_32] at h_success
     by_cases h_eq : ¬(r1_val = r2_val) <;> simp_all
 
 end OpcodeSpec.RV32

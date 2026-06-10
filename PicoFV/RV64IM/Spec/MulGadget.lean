@@ -40,11 +40,14 @@ All 45 internal witness columns (`carry_0..15`, `product_0..15`,
 `b_sign_extend`, `c_sign_extend`) are exposed as explicit parameters,
 matching the rest of the gadget Specs in this directory.
 
-The proof of `gadget_spec` is currently `sorry` — the algebraic
-content (correct polynomial multiplication with 16-byte carry
-propagation, sign-extension handling, and per-selector windowing) is
-substantial and deferred. The statement is the binding interface that
-`DivRemChip`'s two `MulGadget` instantiations will consume.
+`gadget_spec` is proven: the algebraic content (polynomial
+multiplication with 16-byte carry propagation, sign-extension
+handling, and per-selector windowing) is discharged via
+`core_mul_64` (in `Spec/MulGadgetCore.lean`) — the 128-bit
+schoolbook-multiplication identity — combined with the per-selector
+range reductions and the carry-chain lift. The statement is the
+binding interface that `DivRemChip`'s two `MulGadget` instantiations
+consume.
 -/
 
 namespace MulGadget.Spec
@@ -318,8 +321,7 @@ namespace MulGadget.Spec
       `{30, 31, 32, 33, 48}` already packages `result_range` (all four
       `a_i < 65536`) and `operand_range` (all four `b_i, c_i < 65536`)
       into the conclusion, so callers reading off ALU-bus consistency
-      get the ranges for free — no separate range conjunct is needed.
-      **Proof: `sorry`.** -/
+      get the ranges for free — no separate range conjunct is needed. -/
   lemma gadget_spec
     (is_real is_mul is_mulh is_mulw is_mulhu is_mulhsu
      a_0 a_1 a_2 a_3
@@ -540,9 +542,8 @@ namespace MulGadget.Spec
     -- Each byte is `BitVec.ofNat 8 fkb_byte.val`, which has
     -- `.toNat = fkb_byte.val` whenever `fkb_byte.val < 256`.
     -- ====================================================================
-    -- Defining locally; not actually used yet since core_mul_64 below
-    -- is sorry'd. Once step 3's `h_chain_nat` is filled in, these
-    -- definitions feed into `core_mul_64`'s hypotheses.
+    -- Local `U128b` definitions of `bw`, `cw`, `prod` that feed into
+    -- `core_mul_64`'s hypotheses in step 5.
     let bw : U128b := #v[
       BitVec.ofNat 8 b_lower_byte_0.val,
       BitVec.ofNat 8 ((b_0 - b_lower_byte_0) * 2122383361).val,

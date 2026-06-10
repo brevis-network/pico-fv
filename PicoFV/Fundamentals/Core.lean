@@ -75,6 +75,38 @@ namespace List
     case zero => simp_all
     case succ n ih => simp [range_add]; grind
 
+  /-- Strong induction on lists -/
+  @[elab_as_elim]
+  def strongInductionOn
+    {T : Type}
+    {P : List T → Prop}
+    (l : List T)
+    (ih : ∀ (l : List T), (∀ (l' : List T), l'.length < l.length → P l') → P l)
+  :
+    P l
+  :=
+    (ih l) fun l' _ => strongInductionOn l' ih
+    termination_by (List.length l)
+
+  /-- Take is idempotent if its length parameter is at least the list length -/
+  lemma take_eq_self
+    {T : Type}
+    {l : List T}
+    {n : ℕ}
+    (h_len : l.length ≤ n)
+  :
+    l.take n = l
+  := by
+    simpa [List.take_eq_self_iff]
+
+  /-- `Forall` of `True` with `id` always holds -/
+  @[simp, grind .]
+  lemma forall_id_true {len : ℕ}
+  :
+    List.Forall id (List.replicate len True)
+  := by
+    induction len <;> simp_all [List.replicate_add]
+
 end List
 
 namespace BitVec
@@ -197,7 +229,19 @@ namespace BitVec
     apply BitVec.toInt_dvd_toInt_iff.mpr
     bv_decide
 
-  lemma mod_4_zero_equiv {x : BitVec 32} : x % 4 = 0 ↔ x[0] = false ∧ x[1] = false
+  lemma mod_4_zero_equiv_32 {x : BitVec 32} : x % 4 = 0 ↔ x[0] = false ∧ x[1] = false
+    := by bv_decide
+
+  lemma mod_4_zero_equiv_64 {x : BitVec 64} : x % 4 = 0 ↔ x[0] = false ∧ x[1] = false
+    := by bv_decide
+
+  lemma mod_4_zero_equiv_16 {x : BitVec 16} : x % 4 = 0 ↔ x[0] = false ∧ x[1] = false
+    := by bv_decide
+
+  /-- `x % 4 < 2 ↔ bit 1 of x is 0` — JALR's success precondition only needs
+  bit 1 of the un-masked target to be 0 (bit 0 is masked out by `~1`). -/
+  lemma mod_4_lt_two_equiv_64 {x : BitVec 64} :
+      x % 4 < 2 ↔ BitVec.ofBool x[1] = 0#1
     := by bv_decide
 
 end BitVec

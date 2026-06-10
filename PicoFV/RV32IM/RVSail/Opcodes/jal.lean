@@ -130,7 +130,7 @@ namespace OpcodeSpec.RV32
       . simp_all
       . simp_all
     rw [PureSpec.RV32.execute_JAL_pure_equiv input rd h_pc h_misa]
-    rw [BitVec.mod_4_zero_equiv] at h_success
+    rw [BitVec.mod_4_zero_equiv_32] at h_success
 
     simp [
       input,
