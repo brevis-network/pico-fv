@@ -5,25 +5,24 @@ RISC-V zkVM and end-to-end equivalence proofs between every Pico chip's
 constraint system and the corresponding [Official Lean RISC-V
 specification](https://github.com/NethermindEth/sail-riscv-lean/tree/v4.28.0-rc1).
 
-The development covers both the **RV32IM** and **RV64IM** variants of Pico:
-
-- **RV32IM** — all 45 opcodes in the RV32IM base ISA are equivalence-proven:
+The development covers the **RV64IM** variant of Pico. All 62 opcodes in the
+RV64IM ISA are equivalence-proven:
   - 27 ALU opcodes: `ADD`, `ADDI`, `SUB`, `XOR`, `XORI`, `OR`, `ORI`, `AND`,
     `ANDI`, `SLT`, `SLTI`, `SLTU`, `SLTIU`, `SLL`, `SLLI`, `SRL`, `SRLI`, `SRA`,
     `SRAI`, `MUL`, `MULH`, `MULHU`, `MULHSU`, `DIV`, `DIVU`, `REM`, `REMU`;
   - 10 control-flow opcodes: `AUIPC`, `LUI`, `BEQ`, `BNE`, `BLT`, `BGE`, `BLTU`,
     `BGEU`, `JAL`, `JALR`;
-  - 8 memory opcodes: `LW`, `LH`, `LHU`, `LB`, `LBU`, `SW`, `SH`, `SB`.
-
-- **RV64IM** — all 62 opcodes in the RV64IM ISA are equivalence-proven:
-  - the 45 RV32IM opcodes above (with `LW` now signed-extended per the
-    RV64 spec);
+  - 11 memory opcodes: `LW`, `LH`, `LHU`, `LB`, `LBU`, `SW`, `SH`, `SB`, and
+    the RV64 additions `LWU`, `LD`, `SD` (`LW` sign-extends per the RV64 spec);
   - 5 word-variant ALU opcodes: `ADDW`, `SUBW`, `SLLW`, `SRLW`, `SRAW`;
   - 4 word-variant immediate opcodes: `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`;
-  - 5 word-variant MUL/DIV opcodes: `MULW`, `DIVW`, `DIVUW`, `REMW`, `REMUW`;
-  - 3 new memory opcodes: `LWU`, `LD`, `SD`.
+  - 5 word-variant MUL/DIV opcodes: `MULW`, `DIVW`, `DIVUW`, `REMW`, `REMUW`.
 
 `ECALL` is intentionally out of scope.
+
+These proofs are about the Pico revision named in the first line of each
+`PicoFV/RV64IM/Extraction/` file, which predates Pico v3.0.0. Moving them to
+v3.0.0 is in progress.
 
 For each opcode, the equivalence theorem states: under the chip's row
 constraints, bus assumptions, and program well-formedness, executing one Sail
@@ -33,14 +32,16 @@ applying the chip's emitted CPU-bus operations.
 In the course of this development, several chip-side soundness gaps
 were surfaced in the Pico implementation:
 
-- **RV64IM** — 13 gaps across `LtChip`, `ShiftRightChip`, `SLLChip`,
-  `JalrChip`, `DivRemChip`, and `MemoryReadWriteChip`. **All 13 closed
-  upstream** by Pico PR #101.
-- **RV32IM** — 1 gap remains in `MemoryReadWriteAir`: the chip does
-  not enforce `addr_aligned ≥ 32` (the analogue of the RV64
-  `addr_aligned` gap that PR #101 closed for RV64). The
-  `bus_equiv` lemma in `RV32IM/Spec/MemoryReadWriteAir.lean` takes
-  it as an explicit hypothesis pending an upstream fix.
+13 gaps across `LtChip`, `ShiftRightChip`, `SLLChip`, `JalrChip`,
+`DivRemChip`, and `MemoryReadWriteChip`. **All 13 closed upstream** by Pico
+PR #101.
+
+### RV32IM (historical)
+
+An RV32IM development of all 45 RV32IM base opcodes used to live alongside
+RV64IM. It matches Pico v1.x only and is no longer maintained here; it is
+preserved upstream at
+[NethermindEth/pico-fv@a7f9a09](https://github.com/NethermindEth/pico-fv/tree/a7f9a0976e245aeef89c3f02c51ae85023207b53).
 
 ## Repository structure
 
@@ -51,25 +52,24 @@ PicoFV/
 │   ├── Interaction.lean — generic bus interactions (typeclass-driven)
 │   ├── KoalaBear.lean   — the KoalaBear finite field (FKB = Fin 2 130 706 433)
 │   └── Word.lean        — u32/u64 byte- and limb-level representations
-├── RV32IM/              — RV32IM development (mirrors RV64IM)
-│   ├── Airs/            — chip column / row layouts
-│   ├── Constraints/     — extracted constraint definitions per chip
-│   ├── Extraction/      — auto-extracted chip data from Pico
-│   ├── RVSail/          — Sail-side glue + per-opcode pure / effectful specs
-│   ├── Spec/            — hand-written chip specifications & bus equivalences
-│   ├── Transpiler/      — instruction → chip-row encoding
-│   └── Equivalence/     — per-opcode equivalence theorems
-└── RV64IM/              — RV64IM development (same layout as RV32IM)
+└── RV64IM/              — RV64IM development
+    ├── Airs/            — chip column / row layouts
+    ├── Constraints/     — extracted constraint definitions per chip
+    ├── Extraction/      — auto-extracted chip data from Pico
+    ├── RVSail/          — Sail-side glue + per-opcode pure / effectful specs
+    ├── Spec/            — hand-written chip specifications & bus equivalences
+    ├── Transpiler/      — instruction → chip-row encoding
+    └── Equivalence/     — per-opcode equivalence theorems
 ```
 
-Within `RV{32,64}IM/Spec/` (and `Constraints/`), each chip used by Pico
+Within `RV64IM/Spec/` (and `Constraints/`), each chip used by Pico
 has its own file: ALU chips (`AddChip`, `SubChip`, `BitwiseChip`, `LtChip`,
 `SLLChip`, `ShiftRightChip`, `MulChip`, `DivRemChip`), the CPU chip
-(`CpuChip` / `CpuAir`), the memory chip (`MemoryReadWriteChip`), and any
+(`CpuChip`), the memory chip (`MemoryReadWriteChip`), and any
 chip-local gadgets (`AddGadget`, `SubGadget`, `MulGadget`,
 `IsZeroGadget`, `LtSignedGadget`, …).
 
-Within `RV{32,64}IM/RVSail/Opcodes/`, every opcode has its own file
+Within `RV64IM/RVSail/Opcodes/`, every opcode has its own file
 containing the pure functional spec and the effectful Sail spec, along
 with the bridge lemmas between them.
 
@@ -115,7 +115,3 @@ failure — are documented inline in the relevant `Spec/` file headers
 `RV64IM/Spec/DivRemChip.lean`,
 `RV64IM/Spec/MemoryReadWriteChip.lean`); all 13 are closed
 upstream by Pico PR #101.
-
-The remaining open RV32IM `MemoryReadWriteAir` gap is flagged
-in-source via the `FIXME` on the explicit `ASSUMPTION` parameter
-to `bus_equiv`.

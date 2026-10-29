@@ -1,5 +1,8 @@
 # RV64IM `MemoryReadWriteChip` — soundness gaps
 
+> The RV32IM files cited below are no longer in this repository; read them at
+> [NethermindEth/pico-fv@a7f9a09](https://github.com/NethermindEth/pico-fv/tree/a7f9a0976e245aeef89c3f02c51ae85023207b53).
+
 **Context:** Formal verification of the Pico RV64IM `MemoryReadWriteChip` in Lean 4. This document summarizes three soundness gaps surfaced while proving (a) each opcode's spec (`spec_<OP>`) and (b) the State-bus ↔ Memory-bus equivalence (`bus_equiv`). Each is a missing chip-side constraint, **not** a Lean proof artifact. In every case, the analogous RV32IM chip is correct; RV64IM dropped or never added the constraint.
 
 **Audience:** Pico / Brevis developers maintaining the chip.
