@@ -86,6 +86,26 @@ lake build
 The first two commands are optional but speed up the initial build by
 fetching mathlib's binary cache.
 
+## Checking the theorems
+
+After `lake build`, `scripts/fv-check/check.sh` checks the top-level theorems
+listed in `scripts/fv-check/theorems.txt` (the 62 opcode equivalence theorems
+and the memory chip's `spec_*` / `bus_equiv*` theorems). It fails if a theorem
+is missing, depends on an axiom outside two lists, or its axioms or statement
+differ from the snapshots in `axioms.txt` and `signatures.txt`:
+
+- Lean's core axioms: `propext`, `Classical.choice`, `Quot.sound`, and
+  `Lean.ofReduceBool` / `Lean.trustCompiler`, which `native_decide` and
+  `bv_decide` rely on (they trust Lean's compiler to evaluate decidable
+  propositions);
+- `spec-axioms.txt`: functions the Lean RISC-V specification declares as
+  axioms (floating point, random bits, reservations, platform output). The
+  equivalence theorems hold for any interpretation of them.
+
+So a `sorry`, or an axiom of our own, fails the check. A change to a theorem's
+statement shows up as a diff of `signatures.txt` for review; once reviewed,
+`check.sh --update` records it.
+
 ## Soundness audit
 
 The 13 RV64IM soundness bugs found during the formalisation —
