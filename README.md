@@ -98,11 +98,12 @@ fetching mathlib's binary cache.
 ## Checking the theorems
 
 After `lake build`, `scripts/fv-check/check.sh` checks the top-level theorems
-listed in `scripts/fv-check/theorems.d/` (the 62 opcode equivalence theorems,
-one file per instruction class, and the memory chip's `spec_*` / `bus_equiv*`
-theorems). It fails if a theorem
-is missing, depends on an axiom outside two lists, or its axioms or statement
-differ from the snapshots in `axioms.txt` and `signatures.txt`:
+listed in `scripts/fv-check/theorems.d/`: the 62 opcode equivalence theorems
+(one file per instruction class), the memory chip's `spec_*` / `bus_equiv*`
+theorems and `LtChip`'s specification. It fails if a theorem is missing,
+depends on an axiom (a statement Lean accepts without proof) outside two lists,
+or its axioms or statement differ from the snapshots in `axioms.txt` and
+`signatures.txt`:
 
 - Lean's core axioms: `propext`, `Classical.choice`, `Quot.sound`, and
   `Lean.ofReduceBool` / `Lean.trustCompiler`, which `native_decide` and
@@ -112,7 +113,7 @@ differ from the snapshots in `axioms.txt` and `signatures.txt`:
   axioms (floating point, random bits, reservations, platform output). The
   equivalence theorems hold for any interpretation of them.
 
-So a `sorry`, or an axiom of our own, fails the check. A change to a theorem's
+So a `sorry`, or an `axiom` declared in this repository, fails the check. A change to a theorem's
 statement shows up as a diff of `signatures.txt` for review; once reviewed,
 `check.sh --update` records it.
 
@@ -126,3 +127,5 @@ More checks run in CI: `check_layers.sh` (no chip imports another chip),
 The 13 RV64IM soundness gaps found during the formalisation are described in
 `Report.pdf` and, for the memory chip, in
 [`RV64_MemoryReadWriteChip_soundness_gaps.md`](RV64_MemoryReadWriteChip_soundness_gaps.md).
+[`docs/rv64-bug-mapping.md`](docs/rv64-bug-mapping.md) records the Pico 3.x constraint that closes
+each of them, filled in as the chips move to v3.1.1.

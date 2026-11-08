@@ -24,8 +24,8 @@ with their statements in `signatures.txt`. They are of two kinds.
 - **Chip specifications** (`<Chip>.Spec.*`). For a row of a non-CPU chip that satisfies its
   extracted constraints, the bus messages it serves have the meaning the bus assumptions give them
   (for example, an ALU row really computes the operation it claims). Every chip's specification
-  is built, but only the memory chip's (`MemoryReadWriteChip.Spec.*`) is in the checked list
-  today.
+  is built; the checked list holds the memory chip's (`MemoryReadWriteChip.Spec.*`) and
+  `LtChip`'s (`LtChip.Spec.*`) today.
 
 The proofs are about this Pico revision:
 
@@ -34,7 +34,7 @@ Pico commit [`2acc7c182`](https://github.com/brevis-network/pico/commit/2acc7c18
 <!-- end generated -->
 
 <!-- generated: pending -->
-6 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `CpuChip.lean`, `DivRemChip.lean`, `LtChip.lean`, `MemoryReadWriteChip.lean`, `SLLChip.lean`, `ShiftRightChip.lean`.
+5 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `CpuChip.lean`, `DivRemChip.lean`, `MemoryReadWriteChip.lean`, `SLLChip.lean`, `ShiftRightChip.lean`.
 <!-- end generated -->
 
 ## Summary of the risks
@@ -96,6 +96,13 @@ makes are discharged by what the other chips prove relies on Pico's LogUp argume
 every bus, and on each message being served by a chip whose specification is proven. Neither is
 proven here.
 
+Messages a chip serves but the contract does not specify yet are not covered either. On a merged
+branch-comparison row `LtChip` serves ALU opcodes 264 / 265 (`SLT` / `SLTU` + 256), which are
+not in `ALUBus.validOpcode`. Under the current contract such a row contradicts the ALU entry's
+external assumption, so `LtChip`'s theorems say nothing about it. At the pinned commit Pico's
+CPU does send these opcodes for its branch comparisons, so branch outcomes computed on merged
+rows are not verified until the CPU chip moves to Pico 3.x and the contract specifies them.
+
 ### A5. What is not covered
 
 `ECALL` and syscalls, the precompile chips, the program, global memory and memory
@@ -113,7 +120,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 23 |
+| kernel + compiler | 27 |
 | kernel + compiler + RISC-V spec axioms | 62 |
 <!-- end generated -->
 

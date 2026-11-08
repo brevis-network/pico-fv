@@ -20,9 +20,12 @@ and demonstrates re-use of `LtSignedGadget`'s spec:
   `LtSignedGadget.Spec.gadget_spec` at `is_signed = 1` and bridges
   the resulting `bit ↔ b.toInt < c.toInt` to
   `a = zero_extend (bool_to_bit ...)` via the chip's `a_0 = bit`
-  identity + `a_{1,2,3} = 0` zeroing.
+  identity + `a_{1,2,3} = 0` zeroing (`a_1 = 0` through `is_cmp = 0`).
 - `spec_SLTU` — opcode 9 (unsigned compare). Identical to `spec_SLT`
   except `is_signed = 0` (`bit ↔ b.toNat < c.toNat`).
+- `is_cmp_eq_zero` — under the current ALU-bus contract a real row has
+  `is_cmp = 0` (a merged branch-comparison opcode, `+ 256`, is not a
+  valid ALU opcode yet).
 - `wf_asrt` — dispatches the single ALU entry to `spec_SLT` /
   `spec_SLTU` based on which selector is active; byte entries are
   vacuous (`is_real ∈ {0, 1}`, never `-1`).
@@ -82,6 +85,37 @@ namespace LtChip.Spec
       simp [U64w.toBV]
 
   --
+  -- is_cmp under the current ALU-bus contract
+  --
+
+  /-- On a real row `is_cmp = 0`. A merged branch-comparison row would serve the opcode
+      `SLT/SLTU + 256`, which `ALUBus.validOpcode` does not contain, contradicting the
+      ALU entry's external assumption. Once the contract specifies those opcodes (with the
+      3.x CPU chip), this lemma gives way to their specification. -/
+  lemma is_cmp_eq_zero
+    [Field ExtF]
+    (air : Valid_LtChip FKB ExtF)
+    (row : ℕ)
+    (h_ext_asm : bus_row_ext_asm (bus_row air row))
+    (h_constraints : LtChip.Extraction.allHold air row)
+    (h_is_real : air.cols.values.is_slt row 0 + air.cols.values.is_slt_u row 0 = 1)
+  :
+    air.cols.values.is_cmp row 0 = 0
+  := by
+    obtain ⟨_, _, _, _, _, h_c3, _⟩ := allHold_abs air row h_constraints
+    obtain ⟨h_slt_b, h_slt_u_b, _⟩ := selector_breakdown air row h_constraints
+    simp [constraint_and_interaction_simplification, sub_eq_zero] at h_c3
+    rw [bus_row_abs, LtChip.AbsBuses, bus_row_ext_asm_append] at h_ext_asm
+    obtain ⟨_, h_chip_ext_asm⟩ := h_ext_asm
+    rcases h_c3 with h_cmp | h_cmp
+    · exact h_cmp
+    · exfalso
+      rcases h_slt_b with h_slt | h_slt <;> rcases h_slt_u_b with h_slt_u | h_slt_u <;>
+        simp [h_slt, h_slt_u] at h_is_real <;>
+        simp [bus_row_ext_asm, ALUBus.externals, ALUBus.validOpcode, h_slt, h_slt_u, h_cmp]
+          at h_chip_ext_asm
+
+  --
   -- spec_SLT — opcode 8 (signed compare)
   --
 
@@ -121,7 +155,8 @@ namespace LtChip.Spec
       := by rw [h_is_slt, h_is_slt_u]; ring
     -- Decompose `allHold` into `LtSignedGadget.AbsConstraints` + chip extras.
     have h_abs := allHold_abs air row h_constraints
-    obtain ⟨h_gadget_constraints, h_c27, h_c28, h_c29, h_c30⟩ := h_abs
+    obtain ⟨h_gadget_constraints, h_c29, h_c30, h_c31, h_c32, _, _⟩ := h_abs
+    have h_cmp := is_cmp_eq_zero air row h_ext_asm h_constraints h_is_real
     -- Decompose chip's `bus_row` into gadget + chip ALU entry.
     rw [bus_row_abs, LtChip.AbsBuses,
         bus_row_ext_asm_append] at h_ext_asm
@@ -132,7 +167,7 @@ namespace LtChip.Spec
     -- Extract operand u16 bounds from chip's ALU external assumption
     -- (opcode 8 ∉ operandsInternal, so externals enforce operand_range).
     simp [bus_row_ext_asm, ALUBus.externals, ALUBus.operandsInternal,
-          ALUBus.validOpcode, ALUBus.operandRange, h_is_slt, h_is_slt_u]
+          ALUBus.validOpcode, ALUBus.operandRange, h_is_slt, h_is_slt_u, h_cmp]
       at h_chip_ext_asm
     obtain ⟨h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3⟩ := h_chip_ext_asm
     -- Apply the gadget's pure spec at is_signed = 1.
@@ -160,20 +195,21 @@ namespace LtChip.Spec
     obtain ⟨h_bit_bool, _h_unsigned_iff, h_signed_iff⟩ := h_gadget_spec
     -- Fire the signed branch.
     have h_iff := h_signed_iff h_is_slt
-    -- Extract a_1 = a_2 = a_3 = 0 and a_0 = bit from chip's constraints 27-30.
-    simp [constraint_and_interaction_simplification] at h_c27 h_c28 h_c29 h_c30
+    -- Extract a_1 = a_2 = a_3 = 0 (a_1 since is_cmp = 0) and a_0 = bit from
+    -- the chip's constraints 29-32.
+    simp [constraint_and_interaction_simplification, h_cmp, sub_eq_zero] at h_c29 h_c30 h_c31 h_c32
     have h_a0_eq : air.cols.values.a_0 row 0 = air.cols.values.lt_signed.result.bit row 0
-      := by clear *- h_c30 h_is_real; grind
+      := by clear *- h_c32 h_is_real; grind
     -- For opcode 8, `ALUBus.Spec` reduces to `result_range ∧ a = SLT_pure`.
     refine ⟨⟨?_, ?_, ?_, ?_⟩, ?_⟩
     -- Result limb ranges: a_0 ∈ {0, 1}, a_1 = a_2 = a_3 = 0.
     . rw [h_a0_eq]; rcases h_bit_bool with hb | hb <;> rw [hb] <;> decide
-    . rw [h_c27]; decide
-    . rw [h_c28]; decide
     . rw [h_c29]; decide
+    . rw [h_c30]; decide
+    . rw [h_c31]; decide
     -- Result equation: a = setWidth 64 (if b.toInt < c.toInt then 1 else 0).
     simp [RV64IM.execute_RTYPE_pure, zopz0zI_s, U64w.toBV_toInt] at h_iff ⊢
-    exact a_eq_setWidth_ite _ _ _ _ _ _ h_c27 h_c28 h_c29 h_a0_eq h_bit_bool h_iff
+    exact a_eq_setWidth_ite _ _ _ _ _ _ h_c29 h_c30 h_c31 h_a0_eq h_bit_bool h_iff
 
   --
   -- spec_SLTU — opcode 9 (unsigned compare)
@@ -208,7 +244,8 @@ namespace LtChip.Spec
     have h_is_real : air.cols.values.is_slt row 0 + air.cols.values.is_slt_u row 0 = 1
       := by rw [h_is_slt, h_is_slt_u]; ring
     have h_abs := allHold_abs air row h_constraints
-    obtain ⟨h_gadget_constraints, h_c27, h_c28, h_c29, h_c30⟩ := h_abs
+    obtain ⟨h_gadget_constraints, h_c29, h_c30, h_c31, h_c32, _, _⟩ := h_abs
+    have h_cmp := is_cmp_eq_zero air row h_ext_asm h_constraints h_is_real
     rw [bus_row_abs, LtChip.AbsBuses,
         bus_row_ext_asm_append] at h_ext_asm
     rw [bus_row_abs, LtChip.AbsBuses,
@@ -216,7 +253,7 @@ namespace LtChip.Spec
     obtain ⟨h_gadget_ext_asm, h_chip_ext_asm⟩ := h_ext_asm
     obtain ⟨h_gadget_wf_asm, _h_chip_wf_asm⟩ := h_wf_asm
     simp [bus_row_ext_asm, ALUBus.externals, ALUBus.operandsInternal,
-          ALUBus.validOpcode, ALUBus.operandRange, h_is_slt, h_is_slt_u]
+          ALUBus.validOpcode, ALUBus.operandRange, h_is_slt, h_is_slt_u, h_cmp]
       at h_chip_ext_asm
     obtain ⟨h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3⟩ := h_chip_ext_asm
     have h_gadget_spec := LtSignedGadget.Spec.gadget_spec
@@ -242,16 +279,16 @@ namespace LtChip.Spec
       ⟨h_c0, h_c1, h_c2, h_c3⟩
     obtain ⟨h_bit_bool, h_unsigned_iff, _h_signed_iff⟩ := h_gadget_spec
     have h_iff := h_unsigned_iff h_is_slt
-    simp [constraint_and_interaction_simplification] at h_c27 h_c28 h_c29 h_c30
+    simp [constraint_and_interaction_simplification, h_cmp, sub_eq_zero] at h_c29 h_c30 h_c31 h_c32
     have h_a0_eq : air.cols.values.a_0 row 0 = air.cols.values.lt_signed.result.bit row 0
-      := by clear *- h_c30 h_is_real; grind
+      := by clear *- h_c32 h_is_real; grind
     refine ⟨⟨?_, ?_, ?_, ?_⟩, ?_⟩
     . rw [h_a0_eq]; rcases h_bit_bool with hb | hb <;> rw [hb] <;> decide
-    . rw [h_c27]; decide
-    . rw [h_c28]; decide
     . rw [h_c29]; decide
+    . rw [h_c30]; decide
+    . rw [h_c31]; decide
     simp [RV64IM.execute_RTYPE_pure, zopz0zI_u, U64w.toBV_toNat] at h_iff ⊢
-    exact a_eq_setWidth_ite _ _ _ _ _ _ h_c27 h_c28 h_c29 h_a0_eq h_bit_bool h_iff
+    exact a_eq_setWidth_ite _ _ _ _ _ _ h_c29 h_c30 h_c31 h_a0_eq h_bit_bool h_iff
 
   --
   -- Externals — vacuous: byte entries have trivial externals; the
@@ -305,15 +342,16 @@ namespace LtChip.Spec
     refine ⟨?_, ?_⟩
     -- ALU entry: dispatch to spec_SLT / spec_SLTU based on selector.
     . intro h_real
+      have h_cmp := is_cmp_eq_zero air row h_ext_asm h_constraints (by clear *- h_real; grind)
       obtain ⟨h_slt_disj, h_slt_u_disj, _⟩ := selectors
       rcases h_slt_disj with h_slt | h_slt
       . -- is_slt = 0 ⇒ is_slt_u = 1 (since sum = 1)
         have h_slt_u : air.cols.values.is_slt_u row 0 = 1 := by grind
-        simp [h_slt, h_slt_u]
+        simp [h_slt, h_slt_u, h_cmp]
         exact spec_SLTU air row h_ext_asm h_wf_asm h_constraints h_slt_u
       . -- is_slt = 1 ⇒ is_slt_u = 0
         have h_slt_u : air.cols.values.is_slt_u row 0 = 0 := by grind
-        simp [h_slt, h_slt_u]
+        simp [h_slt, h_slt_u, h_cmp]
         exact spec_SLT air row h_ext_asm h_wf_asm h_constraints h_slt
     -- Byte entries: vacuous (multiplicity ≥ 0, never -1).
     . split_ands <;> intro h <;> exfalso <;> grind
