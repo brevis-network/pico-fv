@@ -20,12 +20,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: leanprover/lean-action@fe408643ea7367d8c0404a8be3975bb145f5fb64 # v1.7.0
-        with:
-          auto-config: false
-          use-mathlib-cache: true
-          use-github-cache: false
-      # After lean-action has cloned the packages (see ci.yml).
+      - name: install elan
+        run: scripts/ci/install_elan.sh
+      # Also clones the Lake packages, which the restore below needs in place.
+      - name: Mathlib cache
+        run: lake exe cache get
+      # After Lake has cloned the packages (see ci.yml).
       - name: restore builds
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
