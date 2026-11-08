@@ -89,6 +89,6 @@ python3 scripts/fv-check/soundness_facts.py --check
 If a check's facts change (for example a file leaves `pending.txt`), regenerate `SOUNDNESS.md`
 with `python3 scripts/fv-check/soundness_facts.py`.
 
-CI builds on a 16 GB runner. A module whose elaboration needs more than 4 GiB of private memory
-(`RssAnon` while `lean` builds it) goes in `scripts/ci/heavy-modules.txt`, which CI builds one at a
-time.
+CI builds on a 16 GB runner. A module whose elaboration needs more than 3 GiB of private memory
+(`RssAnon` while `lean` builds it) goes in `scripts/ci/heavy-modules.txt`, which CI builds first,
+one at a time.
