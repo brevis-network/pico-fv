@@ -3690,7 +3690,8 @@ namespace ShiftRightChip.Spec
             interval_cases k_nat <;> omega
 
   --
-  -- Externals — vacuous (negative byte multiplicities, never +1).
+  -- Externals — vacuous (the served ALU entry's multiplicity is never 1;
+  -- byte entries carry no externals).
   --
 
   lemma ext_asrt
@@ -3710,8 +3711,8 @@ namespace ShiftRightChip.Spec
   --
   -- wf_asrt — dispatches the ALU bus entry to `spec_SRL` / `spec_SRA` /
   -- `spec_SRLW` / `spec_SRAW` based on which selector is 1 (via
-  -- `selector_breakdown`). The byte entries are vacuous (negative
-  -- multiplicities, never +1).
+  -- `selector_breakdown`). The byte entries are vacuous (positive
+  -- multiplicities, never -1).
   --
 
   lemma wf_asrt
@@ -3752,7 +3753,7 @@ namespace ShiftRightChip.Spec
         have h_sraw : air.cols.values.is_sraw row 0 = 0 := by grind
         simp [h_srl, h_sra, h_srlw, h_sraw]
         exact spec_SRL air row h_ext h_wf h_constraints h_srl h_sra h_srlw h_sraw
-    -- Byte entries: vacuous (negative multiplicity, never +1).
+    -- Byte entries: vacuous (positive multiplicity, never -1).
     . split_ands <;> intro h <;> exfalso <;> grind
 
 end ShiftRightChip.Spec

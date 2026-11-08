@@ -1341,7 +1341,7 @@ namespace SLLChip.Spec
 
   --
   -- Externals — vacuous: byte entries have trivial externals; the
-  -- ALU entry's `ext_assert_cond` (multiplicity = -1) never fires.
+  -- ALU entry's `ext_assert_cond` (multiplicity = 1) never fires.
   --
 
   lemma ext_asrt
@@ -1387,7 +1387,7 @@ namespace SLLChip.Spec
         have h_sllw : air.cols.values.is_sllw row 0 = 0 := by grind
         simp [h_sll, h_sllw]
         exact spec_SLL air row h_ext h_wf h_constraints h_sll
-    -- Byte entries: vacuous (negative multiplicity, never +1).
+    -- Byte entries: vacuous (positive multiplicity, never -1).
     . split_ands <;> intro h <;> exfalso <;> grind
 
 end SLLChip.Spec

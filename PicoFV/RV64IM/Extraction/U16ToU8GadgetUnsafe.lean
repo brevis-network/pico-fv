@@ -1,4 +1,4 @@
---Extracted on 2026-5-11 at 15:37:39.722709401 using git commit "e1280624bd"
+--Extracted from pico commit "2acc7c1828fb4ec1bed5963511bb370870c5b608" by extractor/. Do not edit.
 import Mathlib.Data.List.Defs
 
 import LeanZKCircuit_Plonky3.Plonky3.Circuit
@@ -19,7 +19,6 @@ def constrain_interactions {C : Type → Type → Type} {F ExtF : Type} [Field F
 def constraint_list {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ)
 : List Prop :=
   [
-
   ]
 @[constraint_and_interaction_simplification]
 def allHold {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ)
@@ -27,4 +26,3 @@ def allHold {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] 
   constrain_interactions c ∧
   List.Forall (·) (constraint_list c row)
 end U16ToU8GadgetUnsafe.Extraction
-------

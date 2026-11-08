@@ -23,13 +23,13 @@ set_option maxHeartbeats 1_000_000_000
 
     Bus tag → payload length (from `Extraction/CpuChip.lean`):
 
-    | bus | tag | data length |
+    | bus | tag (Pico `LookupType`) | data length |
     |-----|-----|-------------|
-    | State   | 0 | 9   |
-    | Program | 1 | 43  |
-    | ALU     | 3 | 13  |
-    | Byte    | 4 | 5   |
-    | Memory  | 0 | 25  |
+    | State   | 1 (Memory) | 9   |
+    | Program | 2          | 43  |
+    | ALU     | 4 (Alu)    | 13  |
+    | Byte    | 5          | 5   |
+    | Memory  | 1 (Memory) | 25  |
                                                                               -/
 
 namespace RV64IM_Interactions
@@ -1213,15 +1213,15 @@ namespace RV64IM_Interactions
       State : List (StateBusEntry FKB)
       Memory : List (MemoryBusEntry FKB)
 
-    /-- Filter a `BusRow` to keep only entries with negative multiplicity (= -1).
+    /-- Filter a `BusRow` to keep only entries with multiplicity 1 (Pico's `looking` side).
         These are the "read" entries: the chip assumes them and sends them
         to other chips for verification via the bus argument. -/
     def BusRow.readEntries (br : BusRow) : BusRow :=
-      { Program := br.Program.filter (fun e => e.multiplicity = -1)
-        ALU     := br.ALU.filter     (fun e => e.multiplicity = -1)
-        Byte    := br.Byte.filter    (fun e => e.multiplicity = -1)
-        State   := br.State.filter   (fun e => e.multiplicity = -1)
-        Memory  := br.Memory.filter  (fun e => e.multiplicity = -1) }
+      { Program := br.Program.filter (fun e => e.multiplicity = 1)
+        ALU     := br.ALU.filter     (fun e => e.multiplicity = 1)
+        Byte    := br.Byte.filter    (fun e => e.multiplicity = 1)
+        State   := br.State.filter   (fun e => e.multiplicity = 1)
+        Memory  := br.Memory.filter  (fun e => e.multiplicity = 1) }
 
     /-- Concatenate two `BusRow`s pointwise on each of the five lists. -/
     def BusRow.append (r1 r2 : BusRow) : BusRow :=
@@ -1332,10 +1332,11 @@ namespace RV64IM_Interactions
       tauto
 
     /-- Deserialise a raw bus row (list of (multiplicity, [bus_id, ...data])
-        tuples) into a typed `BusRow`. Bus tag layout matches RV32 exactly;
-        the per-bus data lengths change to (State 9, Program 43, ALU 13,
-        Byte 5, Memory 25). State and Memory both use tag `0` and are
-        disambiguated by payload length. -/
+        tuples) into a typed `BusRow`. Bus tags are Pico's `LookupType`
+        discriminants (Memory 1, Program 2, Alu 4, Byte 5); the per-bus data
+        lengths are (State 9, Program 43, ALU 13, Byte 5, Memory 25). State
+        and Memory are both `LookupType::Memory` and are disambiguated by
+        payload length. -/
     def deserialise_bus_row (row : List (FKB × List FKB)) : BusRow :=
       let initial_bus_row : BusRow :=
         { Program := [], ALU := [], Byte := [], State := [], Memory := [] }
@@ -1344,7 +1345,7 @@ namespace RV64IM_Interactions
           let bus_id := entry.head!
           let entry_data := entry.tail!
           match bus_id with
-          | 0 =>
+          | 1 =>
               if _ : entry_data.length = 9 then
                 let entry_data_vector : Vector FKB 9 := ⟨ entry_data.toArray, by simp; omega ⟩
                 let bus_entry := StateBusEntry.deserialise (multiplicity, entry_data_vector)
@@ -1356,19 +1357,19 @@ namespace RV64IM_Interactions
                   { result with Memory := result.Memory ++ [ bus_entry ] }
                 else result
               )
-          | 1 =>
+          | 2 =>
             if _ : entry_data.length = 43 then
               let entry_data_vector : Vector FKB 43 := ⟨ entry_data.toArray, by simp; omega ⟩
               let bus_entry := ProgramBusEntry.deserialise (multiplicity, entry_data_vector)
               { result with Program := result.Program ++ [ bus_entry ] }
             else result
-          | 3 =>
+          | 4 =>
               if _ : entry_data.length = 13 then
                 let entry_data_vector : Vector FKB 13 := ⟨ entry_data.toArray, by simp; omega ⟩
                 let bus_entry := ALUBusEntry.deserialise (multiplicity, entry_data_vector)
                 { result with ALU := result.ALU ++ [ bus_entry ] }
               else result
-          | 4 =>
+          | 5 =>
             if _ : entry_data.length = 5 then
               let entry_data_vector : Vector FKB 5 := ⟨ entry_data.toArray, by simp; omega ⟩
               let bus_entry := ByteBusEntry.deserialise (multiplicity, entry_data_vector)

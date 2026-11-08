@@ -22,7 +22,7 @@ namespace CpuChip.Interpretations
   Mirrors the raw bus row's first entry (line ~2309 of `CpuChip.lean`). -/
   def program_bus_entry (air : Valid_CpuChip FKB ExtF) (row : ℕ) :
       FKB × Vector FKB 43 :=
-    ( -air.cols.is_real row 0
+    ( air.cols.is_real row 0
     , #v[ air.cols.pc_0 row 0
         , air.cols.pc_1 row 0
         , air.cols.pc_2 row 0
@@ -268,8 +268,8 @@ namespace CpuChip.Interpretations
   the Program-bus entry's `operand_properties`: there exists a Sail instruction
   whose RV64 transpilation produces this row.
 
-  The chip consumes the Program-bus entry with multiplicity `-is_real`; under
-  `is_real = 1` the consumer-side `wf_assume_cond` (multiplicity = -1) fires
+  The chip looks up the Program-bus entry with multiplicity `is_real`; under
+  `is_real = 1` the consumer-side `wf_assume_cond` (multiplicity = 1) fires
   and gives `wf_properties = operand_properties` of the entry. -/
   lemma program_bus_operand_properties
     [Field ExtF]
@@ -281,11 +281,11 @@ namespace CpuChip.Interpretations
       (ProgramBusEntry.deserialise (program_bus_entry air row))
   := by
     -- The Program-bus list inside `bus_row air row` is the singleton produced
-    -- by `deserialise_bus_row` from `raw_bus_row`'s first (bus-id `1`) entry.
+    -- by `deserialise_bus_row` from `raw_bus_row`'s first (bus-id `2`) entry.
     -- `bus_row_wf_asm` is `List.Forall id` over a concatenation; its leading
-    -- conjunct is the Program entry's `wf_assume` = `multiplicity = -1 →
-    -- operand_properties`. Under `is_real = 1`, the multiplicity (`-is_real`)
-    -- becomes `-1`.
+    -- conjunct is the Program entry's `wf_assume` = `multiplicity = 1 →
+    -- operand_properties`. Under `is_real = 1`, the multiplicity (`+is_real`)
+    -- becomes `1`.
     simp [bus_row_wf_asm] at h_wf; replace h_wf := h_wf.1
     simp [bus_row, deserialise_bus_row, raw_bus_row, h_is_real] at h_wf
     simpa [program_bus_entry, ProgramBusEntry.deserialise, h_is_real]
@@ -769,6 +769,9 @@ namespace CpuChip.Interpretations
     simp [bus_row_wf_asm, bus_row, deserialise_bus_row, raw_bus_row, h_is_real,
           ByteBus.Spec] at h_wf
     simp [*]
+    -- The pc ranges came from `h_wf`; the rest follows from the constraints alone, and
+    -- `grind` wanders on `h_wf`'s unrelated bus implications.
+    clear h_wf
     grind
 
   -- ============================================================================
@@ -832,7 +835,7 @@ namespace CpuChip.Interpretations
   := by
     -- u16 bounds on pc_0..2 and next_pc_0..2 are the second through seventh
     -- entries of `raw_bus_row` (each a Byte-bus u16 range check at multiplicity
-    -- `-is_real`). Unfold `bus_row_wf_asm` over `bus_row`, substitute `is_real
+    -- `+is_real`). Unfold `bus_row_wf_asm` over `bus_row`, substitute `is_real
     -- = 1`, and read off the `ByteBus.Spec _ 8 _ _ _ _` conjuncts.
     simp [bus_row_wf_asm, bus_row, deserialise_bus_row, raw_bus_row, h_is_real,
           ByteBus.Spec] at h_wf
@@ -879,7 +882,7 @@ namespace CpuChip.Interpretations
     -- pc_0..2 < 2^16 from h_wf (Byte-bus consumer entries)
     simp [bus_row_wf_asm, bus_row, deserialise_bus_row, raw_bus_row, h_is_real,
           ByteBus.Spec] at h_wf
-    -- op_a value_0..3 < 2^16 from h_wf_asrt (State-bus producer entry, mult = is_real = 1)
+    -- op_a value_0..3 < 2^16 from h_wf_asrt (State-bus producer entry, mult = -is_real = -1)
     simp [bus_row_wf_asrt, bus_row, deserialise_bus_row, raw_bus_row, h_is_real] at h_wf_asrt
     simp only [pc]
     apply carry_chain_plus_four_implies_sum
@@ -950,7 +953,7 @@ namespace CpuChip.Interpretations
   -- ============================================================================
   -- Program-bus alignment: on every real row the PC is divisible by 4.
   -- `ProgramBus.axioms` asserts `multiplicity ≠ 0 → pc_0.val % 4 = 0`; the
-  -- chip consumes the entry with multiplicity `-is_real`, so under `is_real = 1`
+  -- chip consumes the entry with multiplicity `+is_real`, so under `is_real = 1`
   -- the axiom fires. Since `pc.toNat % 4 = pc_0.val % 4`, the U48w-packed PC
   -- is 4-aligned too.
   -- ============================================================================
@@ -970,7 +973,7 @@ namespace CpuChip.Interpretations
 
   /-- u16 bounds on each PC and next_pc limb on a real row. Thin wrapper over
   the trailing 6 conjuncts of `is_real_active_constraints` (Byte-bus u16
-  range checks emitted with multiplicity `-is_real`). -/
+  range checks emitted with multiplicity `is_real`). -/
   lemma pc_next_pc_u16_bounds
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -2079,11 +2082,11 @@ namespace CpuChip.Interpretations
       split_ifs <;> simp
 
   /-- u16 bounds on op_a / op_b / op_c access values:
-    * **op_a value** (4 limbs) — from `h_wf_asrt` (State-bus producer, mult = +is_real)
+    * **op_a value** (4 limbs) — from `h_wf_asrt` (State-bus producer, mult = -is_real)
     * **op_a prev_value** (4 limbs) — from `h_wf` (State-bus consumer for the
-      read entry, mult = -is_real)
+      read entry, mult = +is_real)
     * **op_b value** (4 limbs) — from `h_wf` *gated on `imm_b = 0`* (State-bus
-      consumer for op_b register read, mult = -(1 - imm_b))
+      consumer for op_b register read, mult = 1 - imm_b)
     * **op_c value** (4 limbs) — from `h_wf` *gated on `imm_c = 0`* (analogous).
   Loose RV64 analog of RV32's unconditional `operand_range` (CpuAir.lean:3342);
   the immediate cases (`imm_b = 1` / `imm_c = 1`) are intentionally deferred —

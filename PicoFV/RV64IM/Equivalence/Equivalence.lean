@@ -336,12 +336,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -434,7 +434,7 @@ namespace Equivalence
       (h_reg_rs2 : (air.cols.instruction.op_c_0 row 0).val < 32)
     :
       List.Forall
-        (fun a => a.multiplicity = -1 →
+        (fun a => a.multiplicity = 1 →
           ALUBus.Spec a.ALU_opcode
             a.a_0 a.a_1 a.a_2 a.a_3 a.b_0 a.b_1 a.b_2 a.b_3 a.c_0 a.c_1 a.c_2 a.c_3)
         (bus_row air row).ALU ∧
@@ -1242,12 +1242,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -1320,7 +1320,7 @@ namespace Equivalence
       (h_reg_rs2 : (air.cols.instruction.op_c_0 row 0).val < 32)
     :
       List.Forall
-        (fun a => a.multiplicity = -1 →
+        (fun a => a.multiplicity = 1 →
           ALUBus.Spec a.ALU_opcode
             a.a_0 a.a_1 a.a_2 a.a_3 a.b_0 a.b_1 a.b_2 a.b_3 a.c_0 a.c_1 a.c_2 a.c_3)
         (bus_row air row).ALU ∧
@@ -1803,12 +1803,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -1887,7 +1887,7 @@ namespace Equivalence
       (h_reg_rs1 : (air.cols.instruction.op_b_0 row 0).val < 32)
     :
       List.Forall
-        (fun a => a.multiplicity = -1 →
+        (fun a => a.multiplicity = 1 →
           ALUBus.Spec a.ALU_opcode
             a.a_0 a.a_1 a.a_2 a.a_3 a.b_0 a.b_1 a.b_2 a.b_3 a.c_0 a.c_1 a.c_2 a.c_3)
         (bus_row air row).ALU ∧
@@ -2024,7 +2024,7 @@ namespace Equivalence
         -- The op_a write: we need to show op_a value = op_b + signExtend 64 imm' (per ADDI spec)
         -- This comes from the ALU bus spec at opcode 0 (ADD), which the chip emits for ITYPE too.
         -- Wait — the chip emits an ALU bus lookup for is_alu = 1 (which is set for both RTYPE and ITYPE).
-        -- The lookup is `[3, opcode, op_a, op_b, op_c]` at opcode 0 → spec is `op_a = op_b + op_c`.
+        -- The lookup is `[4, opcode, op_a, op_b, op_c]` at opcode 0 → spec is `op_a = op_b + op_c`.
         simp [bus_row, deserialise_bus_row, raw_bus_row, ALUBus.Spec, execute_RTYPE_pure,
               and_assoc, *] at h_wf_alu
         obtain ⟨ _ub_a0, _ub_a1, _ub_a2, _ub_a3, h_spec, _rest ⟩ := h_wf_alu
@@ -2517,12 +2517,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -2722,12 +2722,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_all_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_all_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -2806,7 +2806,7 @@ namespace Equivalence
       (h_reg_rs1 : (air.cols.instruction.op_b_0 row 0).val < 32)
     :
       List.Forall
-        (fun a => a.multiplicity = -1 →
+        (fun a => a.multiplicity = 1 →
           ALUBus.Spec a.ALU_opcode
             a.a_0 a.a_1 a.a_2 a.a_3 a.b_0 a.b_1 a.b_2 a.b_3 a.c_0 a.c_1 a.c_2 a.c_3)
         (bus_row air row).ALU ∧
@@ -3231,12 +3231,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -3307,7 +3307,7 @@ namespace Equivalence
       (h_reg_rs1 : (air.cols.instruction.op_b_0 row 0).val < 32)
     :
       List.Forall
-        (fun a => a.multiplicity = -1 →
+        (fun a => a.multiplicity = 1 →
           ALUBus.Spec a.ALU_opcode
             a.a_0 a.a_1 a.a_2 a.a_3 a.b_0 a.b_1 a.b_2 a.b_3 a.c_0 a.c_1 a.c_2 a.c_3)
         (bus_row air row).ALU ∧
@@ -3740,12 +3740,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_all_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_all_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -3930,7 +3930,7 @@ namespace Equivalence
       (h_reg_rs2 : (air.cols.instruction.op_c_0 row 0).val < 32)
     :
       List.Forall
-        (fun a => a.multiplicity = -1 →
+        (fun a => a.multiplicity = 1 →
           ALUBus.Spec a.ALU_opcode
             a.a_0 a.a_1 a.a_2 a.a_3 a.b_0 a.b_1 a.b_2 a.b_3 a.c_0 a.c_1 a.c_2 a.c_3)
         (bus_row air row).ALU ∧
@@ -4466,12 +4466,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -4547,7 +4547,7 @@ namespace Equivalence
       (h_reg_rs2 : (air.cols.instruction.op_c_0 row 0).val < 32)
     :
       List.Forall
-        (fun a => a.multiplicity = -1 →
+        (fun a => a.multiplicity = 1 →
           ALUBus.Spec a.ALU_opcode
             a.a_0 a.a_1 a.a_2 a.a_3 a.b_0 a.b_1 a.b_2 a.b_3 a.c_0 a.c_1 a.c_2 a.c_3)
         (bus_row air row).ALU ∧
@@ -5203,12 +5203,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -5365,12 +5365,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -5518,12 +5518,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -5690,12 +5690,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -5949,12 +5949,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -7192,12 +7192,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])
@@ -7857,12 +7857,12 @@ namespace Equivalence
         -Vector.getElem_mk, -ProgramBusEntry.mk.injEq
       ] at h_wf
       obtain ⟨ instr, mult, data, props, h_eq, h_eq_entry, h_props ⟩ := h_wf
-      have h_eq_mult : mult = -1 := by aesop
+      have h_eq_mult : mult = 1 := by aesop
       simp [h_eq_mult] at h_eq h_eq_entry
       have h_opcode_props
         := @ProgramBusEntry.operand_properties_inversion
             instr
-            ⟨ -1, data ⟩
+            ⟨ 1, data ⟩
             props
             (ProgramBusEntry.deserialise (program_bus_entry air row))
             (by simp [h_eq, h_is_real])

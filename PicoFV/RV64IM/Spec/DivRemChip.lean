@@ -2527,29 +2527,29 @@ namespace DivRemChip.Spec
 
   --
   -- Well-formedness — every vacuously-gated bus entry is discharged
-  -- by refuting `-x = 1` for boolean `x`; the single live ALU
+  -- by refuting `x = -1` for boolean `x`; the single live ALU
   -- emission is dispatched to the active `spec_*` projection.
   --
 
   -- =====================================================================
-  -- Every bus entry whose multiplicity is the negation of a binary
-  -- selector (or a sum of negated booleans) is vacuous in FKB: `-0 = 0`
-  -- and `-1 = KB_prime - 1`, neither equals `1`. Five distinct LHS
-  -- shapes appear and are discharged by `h_neg_*` auxiliaries:
-  --   * `-abs_c_alu_event = 1` (`c_neg_gadget` ALU + 4 byte buses)
-  --   * `-abs_rem_alu_event = 1` (`rem_neg_gadget` ALU + 4 byte buses)
-  --   * `-is_real_not_word = 1` (the `c_times_quotient_upper`
+  -- Every looking bus entry has a binary selector (or a sum of booleans)
+  -- as multiplicity, so its `wf_assert_cond` (multiplicity = -1) is
+  -- unsatisfiable in FKB: `0` and `1` are not `-1 = KB_prime - 1`. The
+  -- `h_neg_*` auxiliaries discharge the distinct shapes:
+  --   * `abs_c_alu_event = -1` (`c_neg_gadget` ALU + 4 byte buses)
+  --   * `abs_rem_alu_event = -1` (`rem_neg_gadget` ALU + 4 byte buses)
+  --   * `is_real_not_word = -1` (the `c_times_quotient_upper`
   --     MulGadget block ≈ 30 byte buses, plus 3 top-limb U16MSB buses)
-  --   * `-remainder_check_multiplicity = 1` (`remainder_lt_gadget`
+  --   * `remainder_check_multiplicity = -1` (`remainder_lt_gadget`
   --     byte-range check); derived via the defining equation
   --     `rcm = (1 - is_c_0_result) · is_real` and IsZeroWordGadget's
   --     `result ∈ {0, 1}` constraint
-  --   * `-is_remuw + -is_divuw + -is_remw + -is_divw = 1` (4 W-variant
-  --     U16MSB byte buses) — vacuous since each summand is `≤ 0`
-  -- The single non-vacuous entry is the chip's positive-multiplicity
-  -- ALU emission gated by `is_real = 1`; when active, the exact-one
-  -- selector constraint pins one of the eight selectors to `1` and we
-  -- dispatch to the matching `spec_DIV` / … / `spec_REMUW`.
+  -- The 4 W-variant U16MSB byte buses (multiplicity a sum of W selectors)
+  -- are discharged by `simp` from the selector facts.
+  -- The single non-vacuous entry is the chip's served ALU emission,
+  -- multiplicity `-is_real`; when active, the exact-one selector
+  -- constraint pins one of the eight selectors to `1` and we dispatch to
+  -- the matching `spec_DIV` / … / `spec_REMUW`.
   -- =====================================================================
 
   lemma wf_asrt
@@ -2574,11 +2574,10 @@ namespace DivRemChip.Spec
           U16MSBGadget.AbsBuses, U16ToU8GadgetSafe.AbsBuses,
           h_is_real]
     -- =================================================================
-    -- Vacuous-LHS auxiliaries. Every conjunct of the form `-x = 1 → …`
-    -- where `x` is a boolean (or a sum of negated booleans) collapses
-    -- to `True` because the premise is unsatisfiable in FKB (`-0 = 0`,
-    -- `-1 = KB_prime - 1`, neither equals `1`). We carve out one
-    -- helper per distinct LHS shape.
+    -- Vacuous-LHS auxiliaries. Every conjunct of the form `x = -1 → …`
+    -- where `x` is a boolean collapses to `True` because the premise is
+    -- unsatisfiable in FKB (neither `0` nor `1` equals `-1 = KB_prime - 1`).
+    -- We carve out one helper per distinct LHS shape.
     -- =================================================================
     have h_abs_c_b :
         air.cols.values.abs_c_alu_event row 0 = 0 ∨
@@ -2587,7 +2586,7 @@ namespace DivRemChip.Spec
       simp [AbsConstraints, sub_eq_zero] at this
       clear *- this; aesop
     have h_neg_abs_c :
-        -air.cols.values.abs_c_alu_event row 0 ≠ (1 : FKB) := by
+        air.cols.values.abs_c_alu_event row 0 ≠ (-1 : FKB) := by
       rcases h_abs_c_b with h | h <;> rw [h] <;> decide
     have h_abs_rem_b :
         air.cols.values.abs_rem_alu_event row 0 = 0 ∨
@@ -2596,7 +2595,7 @@ namespace DivRemChip.Spec
       simp [AbsConstraints, sub_eq_zero] at this
       clear *- this; aesop
     have h_neg_abs_rem :
-        -air.cols.values.abs_rem_alu_event row 0 ≠ (1 : FKB) := by
+        air.cols.values.abs_rem_alu_event row 0 ≠ (-1 : FKB) := by
       rcases h_abs_rem_b with h | h <;> rw [h] <;> decide
     have h_irnw_b :
         air.cols.values.is_real_not_word row 0 = 0 ∨
@@ -2605,17 +2604,11 @@ namespace DivRemChip.Spec
       simp [AbsConstraints, sub_eq_zero] at this
       clear *- this; aesop
     have h_neg_irnw :
-        -air.cols.values.is_real_not_word row 0 ≠ (1 : FKB) := by
+        air.cols.values.is_real_not_word row 0 ≠ (-1 : FKB) := by
       rcases h_irnw_b with h | h <;> rw [h] <;> decide
-    have h_neg_wsum :
-        -air.cols.values.is_remuw row 0 + (-air.cols.values.is_divuw row 0 +
-          (-air.cols.values.is_remw row 0 + -air.cols.values.is_divw row 0))
-            ≠ (1 : FKB) := by
-      clear *- h_divw_b h_remw_b h_divuw_b h_remuw_b
-      grind
     -- `remainder_check_multiplicity = (1 - is_c_0_result) · is_real`
     -- (constraint 16). With `is_real = 1`, this gives `rcm = 1 - is_c_0`,
-    -- so `rcm ∈ {0, 1}` and `-rcm` cannot equal `1` in FKB.
+    -- so `rcm ∈ {0, 1}` cannot equal `-1` in FKB.
     have h_rcm_eq :
         air.cols.values.remainder_check_multiplicity row 0
         = (1 - air.cols.values.is_c_0.result row 0)
@@ -2631,10 +2624,10 @@ namespace DivRemChip.Spec
             sub_eq_zero, mul_eq_zero] at this
       clear *- this; aesop
     have h_neg_rcm :
-        -air.cols.values.remainder_check_multiplicity row 0 ≠ (1 : FKB) := by
+        air.cols.values.remainder_check_multiplicity row 0 ≠ (-1 : FKB) := by
       rw [h_rcm_eq, h_is_real]
       rcases h_is_c_0_b with h | h <;> rw [h] <;> decide
-    simp [h_neg_abs_c, h_neg_abs_rem, h_neg_irnw, h_neg_wsum, h_neg_rcm]
+    simp [h_neg_abs_c, h_neg_abs_rem, h_neg_irnw, h_neg_rcm]
     -- =================================================================
     -- Eight-way dispatch on which selector is `1`. At each leaf the
     -- opcode formula collapses to a literal and we apply the matching

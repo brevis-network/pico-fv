@@ -34,7 +34,7 @@ The 5 algebraic constraints are:
   with `inv(2^16) ≡ 2130673921 (mod KB_prime)` and `carry_{-1} = 0`.
 
 The 4 bus interactions are u16 range-checks of each `value_i` on the byte
-bus (opcode 4, sub-op 8 = `U16Range`), gated by `-is_real`.
+bus (opcode 5, sub-op 8 = `U16Range`), gated by `+is_real`.
 -/
 
 namespace AddGadget
@@ -87,10 +87,10 @@ namespace AddGadget
       Program := [],
       ALU := [],
       Byte := List.map ByteBusEntry.deserialise [
-        (-(is_real), #v[8, value_0, 0, 0, 0]),
-        (-(is_real), #v[8, value_1, 0, 0, 0]),
-        (-(is_real), #v[8, value_2, 0, 0, 0]),
-        (-(is_real), #v[8, value_3, 0, 0, 0])
+        ((is_real), #v[8, value_0, 0, 0, 0]),
+        ((is_real), #v[8, value_1, 0, 0, 0]),
+        ((is_real), #v[8, value_2, 0, 0, 0]),
+        ((is_real), #v[8, value_3, 0, 0, 0])
       ],
       State := [],
       Memory := []
@@ -200,16 +200,16 @@ namespace AddGadget.ConstraintsAndBuses
 
       -- =====================================================================
       -- Bus interactions emitted by `AddGadget::eval` (per row):
-      -- 4 ByteBus entries (opcode 4, sub-op 8 = U16Range): u16 range-check
-      -- each `value_i`, gated by `-is_real`.
+      -- 4 ByteBus entries (opcode 5, sub-op 8 = U16Range): u16 range-check
+      -- each `value_i`, gated by `+is_real`.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_AddGadgetAir FKB ExtF) (row : ℕ) : List (FKB × List FKB) :=
-        [ (-(air.cols.is_real row 0), [4, 8, (air.cols.gadget.value_0 row 0), 0, 0, 0]),
-          (-(air.cols.is_real row 0), [4, 8, (air.cols.gadget.value_1 row 0), 0, 0, 0]),
-          (-(air.cols.is_real row 0), [4, 8, (air.cols.gadget.value_2 row 0), 0, 0, 0]),
-          (-(air.cols.is_real row 0), [4, 8, (air.cols.gadget.value_3 row 0), 0, 0, 0]) ]
+        [ ((air.cols.is_real row 0), [5, 8, (air.cols.gadget.value_0 row 0), 0, 0, 0]),
+          ((air.cols.is_real row 0), [5, 8, (air.cols.gadget.value_1 row 0), 0, 0, 0]),
+          ((air.cols.is_real row 0), [5, 8, (air.cols.gadget.value_2 row 0), 0, 0, 0]),
+          ((air.cols.is_real row 0), [5, 8, (air.cols.gadget.value_3 row 0), 0, 0, 0]) ]
 
       @[constraint_and_interaction_simplification]
       def constrain_interactions (air : Valid_AddGadgetAir FKB ExtF) : Prop :=

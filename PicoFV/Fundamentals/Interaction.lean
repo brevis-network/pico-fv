@@ -47,14 +47,14 @@ namespace Interaction
       wf_properties : α → Prop
 
       -- Condition under which well-formedness properties are assumed
-      wf_assume_cond : α → Prop := fun entry => multiplicity entry = -1
+      wf_assume_cond : α → Prop := fun entry => multiplicity entry = 1
       -- Condition under which well-formedness properties need to be asserted
-      wf_assert_cond : α → Prop := fun entry => multiplicity entry = 1
+      wf_assert_cond : α → Prop := fun entry => multiplicity entry = -1
 
       -- Condition under which external properties are assumed
-      ext_assume_cond : α → Prop := fun entry => multiplicity entry = 1
+      ext_assume_cond : α → Prop := fun entry => multiplicity entry = -1
       -- Condition under which external properties need to be asserted
-      ext_assert_cond : α → Prop := fun entry => multiplicity entry = -1
+      ext_assert_cond : α → Prop := fun entry => multiplicity entry = 1
 
       -- Assumption and assertion of externals
       ext_assume (a : α) := ext_assume_cond a → externals a

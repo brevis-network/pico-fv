@@ -70,7 +70,7 @@ namespace LtChip
     ({
       Program := [],
       ALU := List.map ALUBusEntry.deserialise [
-        (is_slt + is_slt_u,
+        (-(is_slt + is_slt_u),
           #v[ is_slt * 8 + is_slt_u * 9,
               a_0, a_1, a_2, a_3,
               b_0, b_1, b_2, b_3,
@@ -581,35 +581,35 @@ namespace LtChip.ConstraintsAndBuses
 
       -- =====================================================================
       -- Bus interactions emitted by `LtChip::eval` (per row):
-      -- 2 ByteBus entries (opcode 4, sub-op 8): U16Range on the two
+      -- 2 ByteBus entries (opcode 5, sub-op 8): U16Range on the two
       --   shifted top limbs `2*b_3 - b_msb*65536` and `2*c_3 - c_msb*65536`,
-      --   gated by `-is_slt` (U16MSBGadget #1 and #2 emit these).
+      --   gated by `+is_slt` (U16MSBGadget #1 and #2 emit these).
       -- 1 ByteBus entry: the comparison entry from LtWordU16Gadget,
-      --   `(comp_0 - comp_1) + bit*65536`, gated by `-(is_slt + is_slt_u)`.
-      -- 1 ALU entry (opcode 3, sub-op `is_slt*8 + is_slt_u*9` ∈ {8, 9}):
+      --   `(comp_0 - comp_1) + bit*65536`, gated by `is_slt + is_slt_u`.
+      -- 1 ALU entry (opcode 4, sub-op `is_slt*8 + is_slt_u*9` ∈ {8, 9}):
       --   carries `(a_0..3, b_0..3, c_0..3)`, gated by `+(is_slt + is_slt_u)`.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_LtChip FKB ExtF) (row : ℕ) : List (FKB × List FKB) :=
-        [ (-(air.cols.values.is_slt row 0),
-            [4, 8,
+        [ ((air.cols.values.is_slt row 0),
+            [5, 8,
               2 * (air.cols.values.b_3 row 0)
                 - (air.cols.values.lt_signed.b_msb.msb row 0) * 65536,
               0, 0, 0]),
-          (-(air.cols.values.is_slt row 0),
-            [4, 8,
+          ((air.cols.values.is_slt row 0),
+            [5, 8,
               2 * (air.cols.values.c_3 row 0)
                 - (air.cols.values.lt_signed.c_msb.msb row 0) * 65536,
               0, 0, 0]),
-          (-((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)),
-            [4, 8,
+          (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)),
+            [5, 8,
               ((air.cols.values.lt_signed.result.comparison_limbs_0 row 0)
                 - (air.cols.values.lt_signed.result.comparison_limbs_1 row 0))
                 + (air.cols.values.lt_signed.result.bit row 0) * 65536,
               0, 0, 0]),
-          (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)),
-            [3,
+          (-((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)),
+            [4,
               (air.cols.values.is_slt row 0) * 8
                 + (air.cols.values.is_slt_u row 0) * 9,
               (air.cols.values.a_0 row 0),

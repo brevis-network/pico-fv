@@ -496,7 +496,7 @@ namespace MulChip.Spec
   -- =====================================================================
   -- Externality assertions for the MulChip bus row.
   -- The chip emits MulGadget byte-bus entries (all looking, multiplicity
-  -- ≤ 0) plus one chip-own looked ALU entry. Byte bus has no externals
+  -- ≥ 0) plus one chip-own looked ALU entry. Byte bus has no externals
   -- (`ByteBus`'s `externals := True`); the ALU entry's externals require
   -- `validOpcode` for the opcode `is_mul·30 + is_mulh·31 + is_mulhu·32 +
   -- is_mulhsu·33 + is_mulw·48` and (since 30..33 / 48 are all in
@@ -522,9 +522,9 @@ namespace MulChip.Spec
   --
 
   -- =====================================================================
-  -- All ByteBus entries have multiplicity `-is_real` or `-is_mulw` ∈
-  -- {0, -1}, never triggering `wf_assert_cond` (= multiplicity 1).
-  -- The single ALU entry has multiplicity `is_real ∈ {0, 1}`; when
+  -- All ByteBus entries have multiplicity `is_real` or `is_mulw` ∈
+  -- {0, 1}, never triggering `wf_assert_cond` (= multiplicity -1).
+  -- The single ALU entry has multiplicity `-is_real ∈ {0, -1}`; when
   -- `is_real = 1` exactly one selector is `1` and we dispatch to the
   -- matching `spec_*`.
   -- =====================================================================
@@ -539,8 +539,10 @@ namespace MulChip.Spec
     bus_row_wf_asrt (bus_row air row)
   := by
     have selectors := selector_breakdown air row h_constraints
+    -- The ALU entry is served with multiplicity `-(selector sum)`; keep it whole so that
+    -- `neg_inj` turns the `= -1` condition into `selector sum = 1`.
     simp [bus_row_wf_asrt, bus_row, MulChip.AbsBuses, MulGadget.AbsBuses,
-          U16ToU8GadgetSafe.AbsBuses]
+          U16ToU8GadgetSafe.AbsBuses, -neg_add_rev, neg_inj]
     refine ⟨?_, ?_⟩
     -- ALU entry: dispatch to the active spec_*
     . intro h_sum
@@ -557,7 +559,7 @@ namespace MulChip.Spec
         | (exact spec_MULHU  air row h_ext_asm h_wf_asm h_constraints hhu)
         | (exact spec_MULHSU air row h_ext_asm h_wf_asm h_constraints hhsu)
         | (exact spec_MULW   air row h_ext_asm h_wf_asm h_constraints hw)
-    -- All ByteBus entries: vacuous (multiplicity ≤ 0 never equals 1)
+    -- All ByteBus entries: vacuous (multiplicity ≥ 0 never equals -1)
     . split_ands <;> intro h <;> exfalso <;> grind
 
 end MulChip.Spec

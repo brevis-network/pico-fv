@@ -82,11 +82,11 @@ Bus interactions (12 entries):
   1 for `(c − s5_full) · inv64 < 1024` (pins `c.val mod 64 = s5_full.val`).
   4 × 2 for `(lower_limb_i, higher_limb_i)` paired against `(s4, 16 − s4)`.
 - 3 ByteBus opcode-8 (U16Range) entries (U16MSB gadgets):
-  - `(-is_sra, [8, 2·b_3 − b_msb·65536, 0, 0, 0])` — pins `b_msb = MSB(b_3)` for SRA.
-  - `(-is_sraw, [8, 2·b_1 − b_msb·65536, 0, 0, 0])` — pins `b_msb = MSB(b_1)` for SRAW.
-  - `(-(is_srlw + is_sraw), [8, 2·a_1 − srw_msb·65536, 0, 0, 0])` — pins `srw_msb = MSB(a_1)`.
+  - `(+is_sra, [8, 2·b_3 − b_msb·65536, 0, 0, 0])` — pins `b_msb = MSB(b_3)` for SRA.
+  - `(+is_sraw, [8, 2·b_1 − b_msb·65536, 0, 0, 0])` — pins `b_msb = MSB(b_1)` for SRAW.
+  - `(+(is_srlw + is_sraw), [8, 2·a_1 − srw_msb·65536, 0, 0, 0])` — pins `srw_msb = MSB(a_1)`.
 - 1 ALU entry: opcode `is_srl·6 + is_sra·7 + is_srlw·43 + is_sraw·44`,
-  multiplicity `+is_real`, carrying `(a, b, c_for_lookup)`.
+  multiplicity `-is_real`, carrying `(a, b, c_for_lookup)`.
 -/
 
 namespace ShiftRightChip.ConstraintsAndBuses
@@ -940,7 +940,7 @@ namespace ShiftRightChip.ConstraintsAndBuses
       --     - b_msb on b_1, gated by is_sraw.
       --     - srw_msb on a_1, gated by is_srlw + is_sraw.
       --   1 ALU entry: opcode `is_srl·6 + is_sra·7 + is_srlw·43 + is_sraw·44`,
-      --     gated by +is_real, carrying (a, b, c_for_lookup).
+      --     gated by -is_real, carrying (a, b, c_for_lookup).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
@@ -956,23 +956,23 @@ namespace ShiftRightChip.ConstraintsAndBuses
         let s5 : FKB :=
           s4 + (air.cols.values.c_bits_4 row 0) * 16 + (air.cols.values.c_bits_5 row 0) * 32
         [
-          (-mult, [4, 9, ((air.cols.values.c row 0) - s5) * 2097414145, 0, 10, 0]),
-          (-mult, [4, 9, (air.cols.values.lower_limb_0 row 0), 0, s4, 0]),
-          (-mult, [4, 9, (air.cols.values.higher_limb_0 row 0), 0, 16 - s4, 0]),
-          (-mult, [4, 9, (air.cols.values.lower_limb_1 row 0), 0, s4, 0]),
-          (-mult, [4, 9, (air.cols.values.higher_limb_1 row 0), 0, 16 - s4, 0]),
-          (-mult, [4, 9, (air.cols.values.lower_limb_2 row 0), 0, s4, 0]),
-          (-mult, [4, 9, (air.cols.values.higher_limb_2 row 0), 0, 16 - s4, 0]),
-          (-mult, [4, 9, (air.cols.values.lower_limb_3 row 0), 0, s4, 0]),
-          (-mult, [4, 9, (air.cols.values.higher_limb_3 row 0), 0, 16 - s4, 0]),
-          (-(air.cols.values.is_sra row 0),
-            [4, 8, 2 * (air.cols.values.b_3 row 0) - (air.cols.values.b_msb.msb row 0) * 65536, 0, 0, 0]),
-          (-(air.cols.values.is_sraw row 0),
-            [4, 8, 2 * (air.cols.values.b_1 row 0) - (air.cols.values.b_msb.msb row 0) * 65536, 0, 0, 0]),
-          (-((air.cols.values.is_srlw row 0) + (air.cols.values.is_sraw row 0)),
-            [4, 8, 2 * (air.cols.values.a_1 row 0) - (air.cols.values.srw_msb.msb row 0) * 65536, 0, 0, 0]),
-          (mult,
-            [3,
+          (mult, [5, 9, ((air.cols.values.c row 0) - s5) * 2097414145, 0, 10, 0]),
+          (mult, [5, 9, (air.cols.values.lower_limb_0 row 0), 0, s4, 0]),
+          (mult, [5, 9, (air.cols.values.higher_limb_0 row 0), 0, 16 - s4, 0]),
+          (mult, [5, 9, (air.cols.values.lower_limb_1 row 0), 0, s4, 0]),
+          (mult, [5, 9, (air.cols.values.higher_limb_1 row 0), 0, 16 - s4, 0]),
+          (mult, [5, 9, (air.cols.values.lower_limb_2 row 0), 0, s4, 0]),
+          (mult, [5, 9, (air.cols.values.higher_limb_2 row 0), 0, 16 - s4, 0]),
+          (mult, [5, 9, (air.cols.values.lower_limb_3 row 0), 0, s4, 0]),
+          (mult, [5, 9, (air.cols.values.higher_limb_3 row 0), 0, 16 - s4, 0]),
+          ((air.cols.values.is_sra row 0),
+            [5, 8, 2 * (air.cols.values.b_3 row 0) - (air.cols.values.b_msb.msb row 0) * 65536, 0, 0, 0]),
+          ((air.cols.values.is_sraw row 0),
+            [5, 8, 2 * (air.cols.values.b_1 row 0) - (air.cols.values.b_msb.msb row 0) * 65536, 0, 0, 0]),
+          (((air.cols.values.is_srlw row 0) + (air.cols.values.is_sraw row 0)),
+            [5, 8, 2 * (air.cols.values.a_1 row 0) - (air.cols.values.srw_msb.msb row 0) * 65536, 0, 0, 0]),
+          (-(mult),
+            [4,
               (air.cols.values.is_srl row 0) * 6 + (air.cols.values.is_sra row 0) * 7 +
               (air.cols.values.is_srlw row 0) * 43 + (air.cols.values.is_sraw row 0) * 44,
               (air.cols.values.a_0 row 0), (air.cols.values.a_1 row 0),
@@ -1046,7 +1046,7 @@ namespace ShiftRightChip.Interactions
     {
       Program := [],
       ALU := List.map ALUBusEntry.deserialise [
-        (mult,
+        (-(mult),
           #v[
             (air.cols.values.is_srl row 0) * 6 + (air.cols.values.is_sra row 0) * 7 +
             (air.cols.values.is_srlw row 0) * 43 + (air.cols.values.is_sraw row 0) * 44,
@@ -1058,20 +1058,20 @@ namespace ShiftRightChip.Interactions
             (air.cols.values.c_for_lookup_2 row 0), (air.cols.values.c_for_lookup_3 row 0) ])
       ],
       Byte := List.map ByteBusEntry.deserialise [
-        (-mult, #v[9, ((air.cols.values.c row 0) - s5) * 2097414145, 0, 10, 0]),
-        (-mult, #v[9, (air.cols.values.lower_limb_0 row 0), 0, s4, 0]),
-        (-mult, #v[9, (air.cols.values.higher_limb_0 row 0), 0, 16 - s4, 0]),
-        (-mult, #v[9, (air.cols.values.lower_limb_1 row 0), 0, s4, 0]),
-        (-mult, #v[9, (air.cols.values.higher_limb_1 row 0), 0, 16 - s4, 0]),
-        (-mult, #v[9, (air.cols.values.lower_limb_2 row 0), 0, s4, 0]),
-        (-mult, #v[9, (air.cols.values.higher_limb_2 row 0), 0, 16 - s4, 0]),
-        (-mult, #v[9, (air.cols.values.lower_limb_3 row 0), 0, s4, 0]),
-        (-mult, #v[9, (air.cols.values.higher_limb_3 row 0), 0, 16 - s4, 0]),
-        (-(air.cols.values.is_sra row 0),
+        (mult, #v[9, ((air.cols.values.c row 0) - s5) * 2097414145, 0, 10, 0]),
+        (mult, #v[9, (air.cols.values.lower_limb_0 row 0), 0, s4, 0]),
+        (mult, #v[9, (air.cols.values.higher_limb_0 row 0), 0, 16 - s4, 0]),
+        (mult, #v[9, (air.cols.values.lower_limb_1 row 0), 0, s4, 0]),
+        (mult, #v[9, (air.cols.values.higher_limb_1 row 0), 0, 16 - s4, 0]),
+        (mult, #v[9, (air.cols.values.lower_limb_2 row 0), 0, s4, 0]),
+        (mult, #v[9, (air.cols.values.higher_limb_2 row 0), 0, 16 - s4, 0]),
+        (mult, #v[9, (air.cols.values.lower_limb_3 row 0), 0, s4, 0]),
+        (mult, #v[9, (air.cols.values.higher_limb_3 row 0), 0, 16 - s4, 0]),
+        ((air.cols.values.is_sra row 0),
           #v[8, 2 * (air.cols.values.b_3 row 0) - (air.cols.values.b_msb.msb row 0) * 65536, 0, 0, 0]),
-        (-(air.cols.values.is_sraw row 0),
+        ((air.cols.values.is_sraw row 0),
           #v[8, 2 * (air.cols.values.b_1 row 0) - (air.cols.values.b_msb.msb row 0) * 65536, 0, 0, 0]),
-        (-((air.cols.values.is_srlw row 0) + (air.cols.values.is_sraw row 0)),
+        (((air.cols.values.is_srlw row 0) + (air.cols.values.is_sraw row 0)),
           #v[8, 2 * (air.cols.values.a_1 row 0) - (air.cols.values.srw_msb.msb row 0) * 65536, 0, 0, 0])
       ],
       State := [],

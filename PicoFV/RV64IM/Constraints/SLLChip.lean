@@ -61,9 +61,9 @@ Bus interactions (11 entries):
   `(b_i · v_0123 − lower_limb_i · v_0123 · 65535/v_0123) = …`.
   Pairs `(lower_limb_i, higher_limb_i)` against `(16 − shift, shift)`.
 - 1 ByteBus opcode-8 entry: U16MSBGadget on `b_1`,
-  `2 · a_1 − sllw_msb · 65536`, gated by `-is_sllw`.
+  `2 · a_1 − sllw_msb · 65536`, gated by `+is_sllw`.
 - 1 ALU entry: opcode `is_sll · 5 + is_sllw · 42` ∈ {5 (SLL), 42 (SLLW)},
-  gated by `+is_real`, carrying `(a, b, c)`.
+  gated by `-is_real`, carrying `(a, b, c)`.
 -/
 
 namespace SLLChip.ConstraintsAndBuses
@@ -729,9 +729,9 @@ namespace SLLChip.ConstraintsAndBuses
       --     limb-result and higher_limb values against the low-4-bit
       --     shift amount `s4 = c_bits_0..3` and `16 - s4`.
       --   1 ByteBus opcode-8 entry: U16MSBGadget on a_1
-      --     (gated by `-is_sllw`).
+      --     (gated by `+is_sllw`).
       --   1 ALU entry: opcode `is_sll · 5 + is_sllw · 42` ∈ {5, 42},
-      --     gated by `+is_real`, carrying (a, b, c).
+      --     gated by `-is_real`, carrying (a, b, c).
       -- The `inv(2)` constant in the extraction is `2097414145`
       -- (since `2 * 2097414145 ≡ 1 (mod KB_prime)`).
       -- =====================================================================
@@ -747,19 +747,19 @@ namespace SLLChip.ConstraintsAndBuses
         let s5 : FKB :=
           s4 + (air.cols.values.c_bits_4 row 0) * 16 + (air.cols.values.c_bits_5 row 0) * 32
         [
-          (-mult, [4, 9, ((air.cols.values.c_0 row 0) - s5) * 2097414145, 0, 10, 0]),
-          (-mult, [4, 9, (air.cols.values.lower_limb_0 row 0), 0, 16 - s4, 0]),
-          (-mult, [4, 9, (air.cols.values.higher_limb_0 row 0), 0, s4, 0]),
-          (-mult, [4, 9, (air.cols.values.lower_limb_1 row 0), 0, 16 - s4, 0]),
-          (-mult, [4, 9, (air.cols.values.higher_limb_1 row 0), 0, s4, 0]),
-          (-mult, [4, 9, (air.cols.values.lower_limb_2 row 0), 0, 16 - s4, 0]),
-          (-mult, [4, 9, (air.cols.values.higher_limb_2 row 0), 0, s4, 0]),
-          (-mult, [4, 9, (air.cols.values.lower_limb_3 row 0), 0, 16 - s4, 0]),
-          (-mult, [4, 9, (air.cols.values.higher_limb_3 row 0), 0, s4, 0]),
-          (-(air.cols.values.is_sllw row 0),
-            [4, 8, 2 * (air.cols.values.a_1 row 0) - (air.cols.values.sllw_msb.msb row 0) * 65536, 0, 0, 0]),
-          (mult,
-            [3,
+          (mult, [5, 9, ((air.cols.values.c_0 row 0) - s5) * 2097414145, 0, 10, 0]),
+          (mult, [5, 9, (air.cols.values.lower_limb_0 row 0), 0, 16 - s4, 0]),
+          (mult, [5, 9, (air.cols.values.higher_limb_0 row 0), 0, s4, 0]),
+          (mult, [5, 9, (air.cols.values.lower_limb_1 row 0), 0, 16 - s4, 0]),
+          (mult, [5, 9, (air.cols.values.higher_limb_1 row 0), 0, s4, 0]),
+          (mult, [5, 9, (air.cols.values.lower_limb_2 row 0), 0, 16 - s4, 0]),
+          (mult, [5, 9, (air.cols.values.higher_limb_2 row 0), 0, s4, 0]),
+          (mult, [5, 9, (air.cols.values.lower_limb_3 row 0), 0, 16 - s4, 0]),
+          (mult, [5, 9, (air.cols.values.higher_limb_3 row 0), 0, s4, 0]),
+          ((air.cols.values.is_sllw row 0),
+            [5, 8, 2 * (air.cols.values.a_1 row 0) - (air.cols.values.sllw_msb.msb row 0) * 65536, 0, 0, 0]),
+          (-(mult),
+            [4,
               (air.cols.values.is_sll row 0) * 5 + (air.cols.values.is_sllw row 0) * 42,
               (air.cols.values.a_0 row 0), (air.cols.values.a_1 row 0),
               (air.cols.values.a_2 row 0), (air.cols.values.a_3 row 0),
@@ -831,7 +831,7 @@ namespace SLLChip.Interactions
     {
       Program := [],
       ALU := List.map ALUBusEntry.deserialise [
-        (mult,
+        (-(mult),
           #v[
             (air.cols.values.is_sll row 0) * 5 + (air.cols.values.is_sllw row 0) * 42,
             (air.cols.values.a_0 row 0), (air.cols.values.a_1 row 0),
@@ -842,16 +842,16 @@ namespace SLLChip.Interactions
             (air.cols.values.c_2 row 0), (air.cols.values.c_3 row 0) ])
       ],
       Byte := List.map ByteBusEntry.deserialise [
-        (-mult, #v[9, ((air.cols.values.c_0 row 0) - s5) * 2097414145, 0, 10, 0]),
-        (-mult, #v[9, (air.cols.values.lower_limb_0 row 0), 0, 16 - s4, 0]),
-        (-mult, #v[9, (air.cols.values.higher_limb_0 row 0), 0, s4, 0]),
-        (-mult, #v[9, (air.cols.values.lower_limb_1 row 0), 0, 16 - s4, 0]),
-        (-mult, #v[9, (air.cols.values.higher_limb_1 row 0), 0, s4, 0]),
-        (-mult, #v[9, (air.cols.values.lower_limb_2 row 0), 0, 16 - s4, 0]),
-        (-mult, #v[9, (air.cols.values.higher_limb_2 row 0), 0, s4, 0]),
-        (-mult, #v[9, (air.cols.values.lower_limb_3 row 0), 0, 16 - s4, 0]),
-        (-mult, #v[9, (air.cols.values.higher_limb_3 row 0), 0, s4, 0]),
-        (-(air.cols.values.is_sllw row 0),
+        (mult, #v[9, ((air.cols.values.c_0 row 0) - s5) * 2097414145, 0, 10, 0]),
+        (mult, #v[9, (air.cols.values.lower_limb_0 row 0), 0, 16 - s4, 0]),
+        (mult, #v[9, (air.cols.values.higher_limb_0 row 0), 0, s4, 0]),
+        (mult, #v[9, (air.cols.values.lower_limb_1 row 0), 0, 16 - s4, 0]),
+        (mult, #v[9, (air.cols.values.higher_limb_1 row 0), 0, s4, 0]),
+        (mult, #v[9, (air.cols.values.lower_limb_2 row 0), 0, 16 - s4, 0]),
+        (mult, #v[9, (air.cols.values.higher_limb_2 row 0), 0, s4, 0]),
+        (mult, #v[9, (air.cols.values.lower_limb_3 row 0), 0, 16 - s4, 0]),
+        (mult, #v[9, (air.cols.values.higher_limb_3 row 0), 0, s4, 0]),
+        ((air.cols.values.is_sllw row 0),
           #v[8, 2 * (air.cols.values.a_1 row 0) - (air.cols.values.sllw_msb.msb row 0) * 65536, 0, 0, 0])
       ],
       State := [],

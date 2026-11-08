@@ -28,7 +28,7 @@ The gadget owns 4 columns (`low_bytes_0..low_bytes_3`) shared with the
 
 For each `i ∈ [0, 3]`:
 ```
-(-is_real, U8Pair{a = low_bytes_i, b = (a_i - low_bytes_i) · 2122383361})
+(+is_real, U8Pair{a = low_bytes_i, b = (a_i - low_bytes_i) · 2122383361})
 ```
 where `2122383361 = 256⁻¹ mod FKB`. The `U8Pair` opcode `(4, 7)`
 range-checks both bytes simultaneously, so 4 bus entries cover all
@@ -67,10 +67,10 @@ namespace U16ToU8GadgetSafe
       Program := [],
       ALU := [],
       Byte := List.map ByteBusEntry.deserialise [
-        (-(is_real), #v[7, 0, 0, low_bytes_0, (a_0 - low_bytes_0) * 2122383361]),
-        (-(is_real), #v[7, 0, 0, low_bytes_1, (a_1 - low_bytes_1) * 2122383361]),
-        (-(is_real), #v[7, 0, 0, low_bytes_2, (a_2 - low_bytes_2) * 2122383361]),
-        (-(is_real), #v[7, 0, 0, low_bytes_3, (a_3 - low_bytes_3) * 2122383361])
+        ((is_real), #v[7, 0, 0, low_bytes_0, (a_0 - low_bytes_0) * 2122383361]),
+        ((is_real), #v[7, 0, 0, low_bytes_1, (a_1 - low_bytes_1) * 2122383361]),
+        ((is_real), #v[7, 0, 0, low_bytes_2, (a_2 - low_bytes_2) * 2122383361]),
+        ((is_real), #v[7, 0, 0, low_bytes_3, (a_3 - low_bytes_3) * 2122383361])
       ],
       State := [],
       Memory := []

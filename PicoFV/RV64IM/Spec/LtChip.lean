@@ -14,8 +14,8 @@ and demonstrates re-use of `LtSignedGadget`'s spec:
 
 - `ext_asrt` — externality assertions on the chip's bus row.
   Vacuous: byte entries have trivial `True` externals; the ALU entry
-  is emitted with positive multiplicity `is_slt + is_slt_u`, so
-  `ext_assert_cond` (= multiplicity = -1) never fires.
+  is served with multiplicity `-(is_slt + is_slt_u)`, so
+  `ext_assert_cond` (= multiplicity = 1) never fires.
 - `spec_SLT`  — opcode 8 (signed compare). Uses
   `LtSignedGadget.Spec.gadget_spec` at `is_signed = 1` and bridges
   the resulting `bit ↔ b.toInt < c.toInt` to
@@ -25,7 +25,7 @@ and demonstrates re-use of `LtSignedGadget`'s spec:
   except `is_signed = 0` (`bit ↔ b.toNat < c.toNat`).
 - `wf_asrt` — dispatches the single ALU entry to `spec_SLT` /
   `spec_SLTU` based on which selector is active; byte entries are
-  vacuous (`-is_real ∈ {0, -1}`, never `1`).
+  vacuous (`is_real ∈ {0, 1}`, never `-1`).
 
 Re-use pattern (identical to `SubChip.Spec`):
 
@@ -280,10 +280,10 @@ namespace LtChip.Spec
   --
 
   -- =====================================================================
-  -- 3 byte entries (multiplicity `-is_slt` or `-(is_slt + is_slt_u)`,
-  -- both ∈ {0, -1}) never trigger `wf_assert_cond` (= multiplicity 1),
+  -- 3 byte entries (multiplicity `is_slt` or `is_slt + is_slt_u`,
+  -- both ∈ {0, 1}) never trigger `wf_assert_cond` (= multiplicity -1),
   -- so they're vacuously well-formed.
-  -- 1 ALU entry (multiplicity `is_slt + is_slt_u` ∈ {0, 1}) is
+  -- 1 ALU entry (multiplicity `-(is_slt + is_slt_u)` ∈ {0, -1}) is
   -- well-formed by `spec_SLT` / `spec_SLTU` based on which selector
   -- is active.
   -- =====================================================================
@@ -315,7 +315,7 @@ namespace LtChip.Spec
         have h_slt_u : air.cols.values.is_slt_u row 0 = 0 := by grind
         simp [h_slt, h_slt_u]
         exact spec_SLT air row h_ext_asm h_wf_asm h_constraints h_slt
-    -- Byte entries: vacuous (multiplicity ≤ 0, never 1).
+    -- Byte entries: vacuous (multiplicity ≥ 0, never -1).
     . split_ands <;> intro h <;> exfalso <;> grind
 
 end LtChip.Spec

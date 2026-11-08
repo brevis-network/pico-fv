@@ -1,4 +1,4 @@
---Extracted on 2026-5-11 at 15:43:27.981134638 using git commit "e1280624bd"
+--Extracted from pico commit "2acc7c1828fb4ec1bed5963511bb370870c5b608" by extractor/. Do not edit.
 import Mathlib.Data.List.Defs
 
 import LeanZKCircuit_Plonky3.Plonky3.Circuit
@@ -26,11 +26,17 @@ namespace SubChip.Extraction
   ((Circuit.main c (column := 12) (row := row) (rotation := 0)) * ((Circuit.main c (column := 12) (row := row) (rotation := 0)) - 1)) = 0
 @[extracted_constraint_definition]
 def constrain_interactions {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) :=
-  Circuit.bus c = (List.range (Circuit.last_row c + 1)).flatMap (λ row => [(-((Circuit.main c (column := 12) (row := row) (rotation := 0))), [4, 8, (Circuit.main c (column := 0) (row := row) (rotation := 0)), 0, 0, 0]),
-  (-((Circuit.main c (column := 12) (row := row) (rotation := 0))), [4, 8, (Circuit.main c (column := 1) (row := row) (rotation := 0)), 0, 0, 0]),
-  (-((Circuit.main c (column := 12) (row := row) (rotation := 0))), [4, 8, (Circuit.main c (column := 2) (row := row) (rotation := 0)), 0, 0, 0]),
-  (-((Circuit.main c (column := 12) (row := row) (rotation := 0))), [4, 8, (Circuit.main c (column := 3) (row := row) (rotation := 0)), 0, 0, 0]),
-  ((Circuit.main c (column := 12) (row := row) (rotation := 0)), [3, 1, (Circuit.main c (column := 0) (row := row) (rotation := 0)), (Circuit.main c (column := 1) (row := row) (rotation := 0)), (Circuit.main c (column := 2) (row := row) (rotation := 0)), (Circuit.main c (column := 3) (row := row) (rotation := 0)), (Circuit.main c (column := 4) (row := row) (rotation := 0)), (Circuit.main c (column := 5) (row := row) (rotation := 0)), (Circuit.main c (column := 6) (row := row) (rotation := 0)), (Circuit.main c (column := 7) (row := row) (rotation := 0)), (Circuit.main c (column := 8) (row := row) (rotation := 0)), (Circuit.main c (column := 9) (row := row) (rotation := 0)), (Circuit.main c (column := 10) (row := row) (rotation := 0)), (Circuit.main c (column := 11) (row := row) (rotation := 0))])])
+  Circuit.bus c = (List.range (Circuit.last_row c + 1)).flatMap (λ row => [
+  -- Looking Byte (Regional)
+  ((Circuit.main c (column := 12) (row := row) (rotation := 0)), [5, 8, (Circuit.main c (column := 0) (row := row) (rotation := 0)), 0, 0, 0]),
+  -- Looking Byte (Regional)
+  ((Circuit.main c (column := 12) (row := row) (rotation := 0)), [5, 8, (Circuit.main c (column := 1) (row := row) (rotation := 0)), 0, 0, 0]),
+  -- Looking Byte (Regional)
+  ((Circuit.main c (column := 12) (row := row) (rotation := 0)), [5, 8, (Circuit.main c (column := 2) (row := row) (rotation := 0)), 0, 0, 0]),
+  -- Looking Byte (Regional)
+  ((Circuit.main c (column := 12) (row := row) (rotation := 0)), [5, 8, (Circuit.main c (column := 3) (row := row) (rotation := 0)), 0, 0, 0]),
+  -- Looked Alu (Regional)
+  ((0 - (Circuit.main c (column := 12) (row := row) (rotation := 0))), [4, 1, (Circuit.main c (column := 0) (row := row) (rotation := 0)), (Circuit.main c (column := 1) (row := row) (rotation := 0)), (Circuit.main c (column := 2) (row := row) (rotation := 0)), (Circuit.main c (column := 3) (row := row) (rotation := 0)), (Circuit.main c (column := 4) (row := row) (rotation := 0)), (Circuit.main c (column := 5) (row := row) (rotation := 0)), (Circuit.main c (column := 6) (row := row) (rotation := 0)), (Circuit.main c (column := 7) (row := row) (rotation := 0)), (Circuit.main c (column := 8) (row := row) (rotation := 0)), (Circuit.main c (column := 9) (row := row) (rotation := 0)), (Circuit.main c (column := 10) (row := row) (rotation := 0)), (Circuit.main c (column := 11) (row := row) (rotation := 0))])])
 @[constraint_and_interaction_simplification]
 def constraint_list {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ)
 : List Prop :=
@@ -48,4 +54,3 @@ def allHold {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] 
   constrain_interactions c ∧
   List.Forall (·) (constraint_list c row)
 end SubChip.Extraction
-------

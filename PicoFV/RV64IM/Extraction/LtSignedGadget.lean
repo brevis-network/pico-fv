@@ -1,4 +1,4 @@
---Extracted on 2026-5-11 at 15:37:39.548660888 using git commit "e1280624bd"
+--Extracted from pico commit "2acc7c1828fb4ec1bed5963511bb370870c5b608" by extractor/. Do not edit.
 import Mathlib.Data.List.Defs
 
 import LeanZKCircuit_Plonky3.Plonky3.Circuit
@@ -62,9 +62,13 @@ namespace LtSignedGadget.Extraction
   ((Circuit.main c (column := 15) (row := row) (rotation := 0)) * ((Circuit.main c (column := 15) (row := row) (rotation := 0)) - 1)) = 0
 @[extracted_constraint_definition]
 def constrain_interactions {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) :=
-  Circuit.bus c = (List.range (Circuit.last_row c + 1)).flatMap (λ row => [(-((Circuit.main c (column := 18) (row := row) (rotation := 0))), [4, 8, ((2 * (Circuit.main c (column := 3) (row := row) (rotation := 0))) - ((Circuit.main c (column := 16) (row := row) (rotation := 0)) * 65536)), 0, 0, 0]),
-  (-((Circuit.main c (column := 18) (row := row) (rotation := 0))), [4, 8, ((2 * (Circuit.main c (column := 7) (row := row) (rotation := 0))) - ((Circuit.main c (column := 17) (row := row) (rotation := 0)) * 65536)), 0, 0, 0]),
-  (-((Circuit.main c (column := 19) (row := row) (rotation := 0))), [4, 8, (((Circuit.main c (column := 13) (row := row) (rotation := 0)) - (Circuit.main c (column := 14) (row := row) (rotation := 0))) + ((Circuit.main c (column := 15) (row := row) (rotation := 0)) * 65536)), 0, 0, 0])])
+  Circuit.bus c = (List.range (Circuit.last_row c + 1)).flatMap (λ row => [
+  -- Looking Byte (Regional)
+  ((Circuit.main c (column := 18) (row := row) (rotation := 0)), [5, 8, ((2 * (Circuit.main c (column := 3) (row := row) (rotation := 0))) - ((Circuit.main c (column := 16) (row := row) (rotation := 0)) * 65536)), 0, 0, 0]),
+  -- Looking Byte (Regional)
+  ((Circuit.main c (column := 18) (row := row) (rotation := 0)), [5, 8, ((2 * (Circuit.main c (column := 7) (row := row) (rotation := 0))) - ((Circuit.main c (column := 17) (row := row) (rotation := 0)) * 65536)), 0, 0, 0]),
+  -- Looking Byte (Regional)
+  ((Circuit.main c (column := 19) (row := row) (rotation := 0)), [5, 8, (((Circuit.main c (column := 13) (row := row) (rotation := 0)) - (Circuit.main c (column := 14) (row := row) (rotation := 0))) + ((Circuit.main c (column := 15) (row := row) (rotation := 0)) * 65536)), 0, 0, 0])])
 @[constraint_and_interaction_simplification]
 def constraint_list {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ)
 : List Prop :=
@@ -100,4 +104,3 @@ def allHold {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] 
   constrain_interactions c ∧
   List.Forall (·) (constraint_list c row)
 end LtSignedGadget.Extraction
-------
