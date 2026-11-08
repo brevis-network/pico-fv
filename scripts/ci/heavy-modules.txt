@@ -1,0 +1,8 @@
+# Modules whose elaboration needs more than 4 GiB of private memory. CI builds each one alone,
+# in this order, before the rest of its stage: the 16 GB runner cannot hold two of them while
+# Lake builds four files at once.
+PicoFV.RV64IM.Spec.MulGadgetCore
+PicoFV.RV64IM.Spec.AddGadget
+PicoFV.RV64IM.Spec.ShiftRightChip
+PicoFV.RV64IM.Spec.MemoryReadWriteChip
+PicoFV.RV64IM.Constraints.CpuChipInterpretations

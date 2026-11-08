@@ -62,10 +62,17 @@ jobs:
       - name: extraction files match the pinned Pico
         run: cargo run --release --locked -- --check ../PicoFV/RV64IM/Extraction
 
+  # A cold build takes hours, so it runs in stages and saves the builds after each one: a
+  # runner lost mid-build keeps the earlier stages, and a rerun resumes from them.
   build:
     runs-on: ubuntu-24.04
-    # A cold run builds the RISC-V specification, which Mathlib's cache does not hold.
     timeout-minutes: 360
+    env:
+      BUILDS: |
+        .lake/build
+        .lake/packages/LeanRV/.lake/build
+        .lake/packages/Sail/.lake/build
+        .lake/packages/LeanZKCircuit_Plonky3/.lake/build
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -75,30 +82,52 @@ jobs:
       # Also clones the Lake packages, which the restore below needs in place.
       - name: Mathlib cache
         run: lake exe cache get
+      - name: cache key
+        env:
+          DEPS: ${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
+        run: |
+          echo "PREFIX=picofv-build-$RUNNER_OS-$DEPS" >> "$GITHUB_ENV"
+          echo "RUN=${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
       # Only after Lake has cloned the packages: it discards a package directory that is not a
-      # checkout of the pinned revision, so restoring earlier would lose these builds.
+      # checkout of the pinned revision, so restoring earlier would lose these builds. The newest
+      # save for this commit comes first, so a rerun resumes where the last run stopped.
       - name: restore builds
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: |
-            .lake/build
-            .lake/packages/LeanRV/.lake/build
-            .lake/packages/Sail/.lake/build
-            .lake/packages/LeanZKCircuit_Plonky3/.lake/build
-          key: picofv-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-${{ github.sha }}
+          path: ${{ env.BUILDS }}
+          key: ${{ env.PREFIX }}-${{ github.sha }}
           restore-keys: |
-            picofv-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-
-      - name: build
-        run: lake build PicoFV64
-      - name: save builds
-        if: ${{ !cancelled() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/pico-v3') }}
+            ${{ env.PREFIX }}-${{ github.sha }}-
+            ${{ env.PREFIX }}-
+      - name: build the foundations
+        id: stage1
+        run: >-
+          scripts/ci/build_stage.sh PicoFV/Fundamentals PicoFV/RV64IM/Transpiler
+          PicoFV/RV64IM/RVSail PicoFV/RV64IM/Extraction PicoFV/RV64IM/Airs
+      # Kept even when the stage fails, so that a rerun does not rebuild the modules that built.
+      - name: save the foundations
+        if: ${{ !cancelled() && steps.stage1.outputs.built == 'true' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: |
-            .lake/build
-            .lake/packages/LeanRV/.lake/build
-            .lake/packages/Sail/.lake/build
-            .lake/packages/LeanZKCircuit_Plonky3/.lake/build
-          key: picofv-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-${{ github.sha }}
+          path: ${{ env.BUILDS }}
+          key: ${{ env.PREFIX }}-${{ env.RUN }}-1
+      - name: build the chip constraints and specifications
+        id: stage2
+        run: scripts/ci/build_stage.sh PicoFV/RV64IM/Constraints PicoFV/RV64IM/Spec
+      - name: save the chip constraints and specifications
+        if: ${{ !cancelled() && steps.stage2.outputs.built == 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.BUILDS }}
+          key: ${{ env.PREFIX }}-${{ env.RUN }}-2
+      - name: build the rest
+        id: stage3
+        run: scripts/ci/build_stage.sh PicoFV64
+      - name: save the builds
+        if: ${{ !cancelled() && steps.stage3.outputs.built == 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.BUILDS }}
+          key: ${{ env.PREFIX }}-${{ env.RUN }}-3
       - name: theorems
         run: scripts/fv-check/check.sh
