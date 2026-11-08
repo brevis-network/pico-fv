@@ -1,0 +1,105 @@
+# Build the proofs and check the theorems; check that the extraction files match the pinned
+# Pico; and run the checks that need no build.
+
+name: ci
+
+on:
+  push:
+    branches: [main, pico-v3]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/pico-v3' }}
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: layers
+        run: scripts/fv-check/check_layers.sh
+      # On a pull request the baseline may not rise above the base branch's.
+      - name: compiled-code tactics
+        if: ${{ !cancelled() }}
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: scripts/fv-check/check_tactics.sh ${BASE:+--against "$BASE"}
+      - name: SOUNDNESS facts
+        if: ${{ !cancelled() }}
+        run: python3 scripts/fv-check/soundness_facts.py --check
+
+  extractor:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: extractor
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # rustup reads the toolchain from extractor/rust-toolchain.toml.
+      - name: toolchain
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            extractor/target
+          key: extractor-${{ runner.os }}-${{ hashFiles('extractor/Cargo.lock', 'extractor/rust-toolchain.toml') }}
+      - name: tests
+        run: cargo test --release --locked
+      - name: extraction files match the pinned Pico
+        run: cargo run --release --locked -- --check ../PicoFV/RV64IM/Extraction
+
+  build:
+    runs-on: ubuntu-24.04
+    # A cold run builds the RISC-V specification, which Mathlib's cache does not hold.
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Installs elan and fetches Mathlib's published cache.
+      - uses: leanprover/lean-action@fe408643ea7367d8c0404a8be3975bb145f5fb64 # v1.7.0
+        with:
+          auto-config: false
+          use-mathlib-cache: true
+          use-github-cache: false
+      # Only after lean-action has cloned the packages: Lake discards a package directory that is
+      # not a checkout of the pinned revision, so restoring earlier would lose these builds.
+      - name: restore builds
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .lake/build
+            .lake/packages/LeanRV/.lake/build
+            .lake/packages/Sail/.lake/build
+            .lake/packages/LeanZKCircuit_Plonky3/.lake/build
+          key: picofv-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-${{ github.sha }}
+          restore-keys: |
+            picofv-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-
+      - name: build
+        run: lake build PicoFV64
+      - name: save builds
+        if: ${{ !cancelled() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/pico-v3') }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .lake/build
+            .lake/packages/LeanRV/.lake/build
+            .lake/packages/Sail/.lake/build
+            .lake/packages/LeanZKCircuit_Plonky3/.lake/build
+          key: picofv-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-${{ github.sha }}
+      - name: theorems
+        run: scripts/fv-check/check.sh

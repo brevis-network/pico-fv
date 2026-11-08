@@ -1,0 +1,50 @@
+# Replay every PicoFV declaration into Lean's kernel with leanchecker, to catch a declaration a
+# metaprogram added without the kernel check. It repeats the proofs' kernel work, so it runs
+# weekly and on demand, not on pull requests.
+
+name: replay
+
+on:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  leanchecker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: leanprover/lean-action@fe408643ea7367d8c0404a8be3975bb145f5fb64 # v1.7.0
+        with:
+          auto-config: false
+          use-mathlib-cache: true
+          use-github-cache: false
+      # After lean-action has cloned the packages (see ci.yml).
+      - name: restore builds
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .lake/build
+            .lake/packages/LeanRV/.lake/build
+            .lake/packages/Sail/.lake/build
+            .lake/packages/LeanZKCircuit_Plonky3/.lake/build
+          key: picofv-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-${{ github.sha }}
+          restore-keys: |
+            picofv-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-
+      - name: build
+        run: lake build PicoFV64
+      # One process per module keeps the memory of each replay bounded. The kernel cannot
+      # replay what native_decide / bv_decide computed, so the files that use them (the
+      # tactic baseline) are skipped; SOUNDNESS.md lists them.
+      - name: replay
+        run: |
+          find PicoFV -name '*.lean' | sort \
+            | grep -vxF -f <(awk '{ print $2 }' scripts/fv-check/tactic-baseline.txt) \
+            | sed 's/\.lean$//; s#/#.#g' \
+            | xargs -P 2 -I{} lake env leanchecker {}
