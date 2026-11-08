@@ -20,21 +20,21 @@ RV64IM ISA are equivalence-proven:
 
 `ECALL` is intentionally out of scope.
 
-These proofs are about the Pico revision named in the first line of each
-`PicoFV/RV64IM/Extraction/` file, which predates Pico v3.0.0. Moving them to
-v3.0.0 is in progress.
+The extraction tool in `extractor/` is pinned to Pico v3.1.1. Each proof is about the Pico
+revision named in the first line of the `PicoFV/RV64IM/Extraction/` file it uses; the files
+listed in `extractor/pending.txt` still predate v3.1.1 and are being moved chip by chip.
+[SOUNDNESS.md](SOUNDNESS.md) says what the proofs establish and what they trust.
 
 For each opcode, the equivalence theorem states: under the chip's row
 constraints, bus assumptions, and program well-formedness, executing one Sail
 step of the corresponding instruction produces the same post-state as
 applying the chip's emitted CPU-bus operations.
 
-In the course of this development, several chip-side soundness gaps
-were surfaced in the Pico implementation:
-
-13 gaps across `LtChip`, `ShiftRightChip`, `SLLChip`, `JalrChip`,
-`DivRemChip`, and `MemoryReadWriteChip`. **All 13 closed upstream** by Pico
-PR #101.
+In the course of this development, 13 chip-side soundness gaps were found in
+the Pico implementation, across `LtChip`, `ShiftRightChip`, `SLLChip`,
+`JalrChip`, `DivRemChip`, and `MemoryReadWriteChip` (see `Report.pdf`). Which
+Pico 3.x constraint closes each of them is being recorded as the chips move to
+v3.1.1.
 
 ### RV32IM (historical)
 
@@ -60,6 +60,9 @@ PicoFV/
     ├── Spec/            — hand-written chip specifications & bus equivalences
     ├── Transpiler/      — instruction → chip-row encoding
     └── Equivalence/     — per-opcode equivalence theorems, one file per instruction class
+Extensions/              — reserved for syscalls and precompiles (empty)
+extractor/               — regenerates RV64IM/Extraction/ from Pico's source
+scripts/fv-check/        — theorem, layer, tactic and SOUNDNESS checks
 ```
 
 Within `RV64IM/Spec/` (and `Constraints/`), each chip used by Pico
@@ -72,6 +75,12 @@ chip-local gadgets (`AddGadget`, `SubGadget`, `MulGadget`,
 Within `RV64IM/RVSail/Opcodes/`, every opcode has its own file
 containing the pure functional spec and the effectful Sail spec, along
 with the bridge lemmas between them.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) (and [AGENTS.md](AGENTS.md) for AI agents) first. Each
+chip's files are independent of the other chips', so a chip can be moved or extended in its own
+pull request; shared files and tooling change in separate ones.
 
 ## Building the repository
 
@@ -107,12 +116,13 @@ So a `sorry`, or an axiom of our own, fails the check. A change to a theorem's
 statement shows up as a diff of `signatures.txt` for review; once reviewed,
 `check.sh --update` records it.
 
+More checks run in CI: `check_layers.sh` (no chip imports another chip),
+`check_tactics.sh` (uses of `native_decide` / `bv_decide` / `decide +native` only go down),
+`soundness_facts.py --check` (the generated facts in `SOUNDNESS.md` are current), and
+`extractor --check` (the extraction files match the pinned Pico).
+
 ## Soundness audit
 
-The 13 RV64IM soundness bugs found during the formalisation —
-chip name, constraint reference, fix commit, and the shape of the
-failure — are documented inline in the relevant `Spec/` file headers
-(see e.g. `RV64IM/Spec/ShiftRightChip.lean`,
-`RV64IM/Spec/DivRemChip.lean`,
-`RV64IM/Spec/MemoryReadWriteChip.lean`); all 13 are closed
-upstream by Pico PR #101.
+The 13 RV64IM soundness gaps found during the formalisation are described in
+`Report.pdf` and, for the memory chip, in
+[`RV64_MemoryReadWriteChip_soundness_gaps.md`](RV64_MemoryReadWriteChip_soundness_gaps.md).
