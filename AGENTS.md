@@ -26,8 +26,8 @@ Stop and report, instead of working around it, when:
   or commit message;
 - you would need `sorry`, a new `axiom` declaration (a statement Lean accepts without proof), or
   a new `native_decide` / `bv_decide`;
-- the change would touch a framework file from a chip's pull request (CONTRIBUTING.md lists
-  them, and the registers a chip pull request does update).
+- the change would touch a framework file (CONTRIBUTING.md lists them, and the shared registers
+  that moving a chip does update).
 
 ## Pull request descriptions
 

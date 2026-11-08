@@ -1,8 +1,8 @@
 # Moving a chip to the pinned Pico
 
 This is the procedure for moving one chip's proofs onto the Pico commit `extractor/` is pinned
-to, worked through on `LtChip`. Each chip listed in `extractor/pending.txt` is moved in its own
-pull request against `pico-v3`, touching only that chip's files and its entries in the shared
+to, worked through on `LtChip`, for the chips listed in `extractor/pending.txt`. Pull requests
+target `pico-v3`. Moving a chip touches only that chip's files and its entries in the shared
 registers (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
 
 The files in `pending.txt` were extracted from a Pico development branch of the 2.x series
@@ -26,8 +26,9 @@ Compare the constraints, not only the line count. For `LtChip` the diff showed o
 (`is_cmp`), two new constraints inserted after the third (its booleanity and its zero on padding
 rows), the old `a_1 = 0` replaced by `a_1 = is_cmp * (Σ u16_flags - bit)`, and `is_cmp * 256`
 added to the opcode of the ALU-bus message. Every other constraint only moved by two places.
-Diff the bus interactions too: a changed message changes the chip's bus row below. Read the chip's Rust source (`vm/src/chips/chips/...` at
-the pinned commit) to learn what the change is for before touching the proofs.
+Diff the bus interactions too: a changed message changes the chip's bus row below. Read the
+chip's Rust source (`vm/src/chips/chips/...` at the pinned commit) to learn what the change is
+for before touching the proofs.
 
 Then remove the chip from `extractor/pending.txt` and regenerate in place
 (`cargo run --release -- ../PicoFV/RV64IM/Extraction`); regenerating leaves the other pending
@@ -65,8 +66,8 @@ A chip may now serve bus messages that the bus contract (`RVSail/Buses.lean`) do
 yet. `LtChip`'s merged branch-comparison rows serve ALU opcodes `264` / `265`, which are not in
 `ALUBus.validOpcode`. Under the current contract such a row contradicts the ALU entry's external
 assumption, so the proof splits on `is_cmp` and dismisses `is_cmp = 1` (`is_cmp_eq_zero`).
-Changing the contract to specify the new opcodes is a framework change, made in its own pull
-request; record this contract gap in the chip's issue and in `SOUNDNESS.md` (under A4).
+Changing the contract to specify the new opcodes is a framework change; record this contract
+gap in the chip's issue and in `SOUNDNESS.md` (under A4).
 
 ## 5. Check the statements did not change
 

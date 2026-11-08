@@ -79,8 +79,7 @@ with the bridge lemmas between them.
 ## Contributing
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) (and [AGENTS.md](AGENTS.md) for AI agents) first. Each
-chip's files are independent of the other chips', so a chip can be moved or extended in its own
-pull request; shared files and tooling change in separate ones.
+chip's files are independent of the other chips', so chips can be moved or extended in parallel.
 
 ## Building the repository
 
