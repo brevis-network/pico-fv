@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Checks the top-level theorems in theorems.txt: each must exist, depend only on Lean's core
+# Checks the top-level theorems listed in theorems.d/*.txt: each must exist, depend only on Lean's core
 # axioms or the RISC-V spec's declared axioms in spec-axioms.txt (so no sorryAx), and keep the
 # axioms and statement recorded in axioms.txt and signatures.txt. Run after `lake build`.
 #   scripts/fv-check/check.sh            check; exit 1 on any violation or drift
@@ -19,7 +19,7 @@ if ! lake env lean "$dir/Report.lean" > "$tmp/report"; then
 fi
 
 status=0
-expected=$(grep -c . "$dir/theorems.txt" || true)
+expected=$(cat "$dir"/theorems.d/*.txt | grep -c . || true)
 found=$(grep -c '^AXIOMS ' "$tmp/report" || true)
 if grep '^MISSING ' "$tmp/report"; then status=1; fi
 

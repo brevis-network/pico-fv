@@ -59,7 +59,7 @@ PicoFV/
     ├── RVSail/          — Sail-side glue + per-opcode pure / effectful specs
     ├── Spec/            — hand-written chip specifications & bus equivalences
     ├── Transpiler/      — instruction → chip-row encoding
-    └── Equivalence/     — per-opcode equivalence theorems
+    └── Equivalence/     — per-opcode equivalence theorems, one file per instruction class
 ```
 
 Within `RV64IM/Spec/` (and `Constraints/`), each chip used by Pico
@@ -89,8 +89,9 @@ fetching mathlib's binary cache.
 ## Checking the theorems
 
 After `lake build`, `scripts/fv-check/check.sh` checks the top-level theorems
-listed in `scripts/fv-check/theorems.txt` (the 62 opcode equivalence theorems
-and the memory chip's `spec_*` / `bus_equiv*` theorems). It fails if a theorem
+listed in `scripts/fv-check/theorems.d/` (the 62 opcode equivalence theorems,
+one file per instruction class, and the memory chip's `spec_*` / `bus_equiv*`
+theorems). It fails if a theorem
 is missing, depends on an axiom outside two lists, or its axioms or statement
 differ from the snapshots in `axioms.txt` and `signatures.txt`:
 

@@ -1,0 +1,3 @@
+Equivalence.equivalence_SLLIW
+Equivalence.equivalence_SRAIW
+Equivalence.equivalence_SRLIW

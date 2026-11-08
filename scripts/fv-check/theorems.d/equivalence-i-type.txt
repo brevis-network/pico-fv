@@ -1,0 +1,6 @@
+Equivalence.equivalence_ADDI
+Equivalence.equivalence_ANDI
+Equivalence.equivalence_ORI
+Equivalence.equivalence_SLTI
+Equivalence.equivalence_SLTIU
+Equivalence.equivalence_XORI
