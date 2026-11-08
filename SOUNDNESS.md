@@ -24,8 +24,8 @@ with their statements in `signatures.txt`. They are of two kinds.
 - **Chip specifications** (`<Chip>.Spec.*`). For a row of a non-CPU chip that satisfies its
   extracted constraints, the bus messages it serves have the meaning the bus assumptions give them
   (for example, an ALU row really computes the operation it claims). Every chip's specification
-  is built; the checked list holds the memory chip's (`MemoryReadWriteChip.Spec.*`) and
-  `LtChip`'s (`LtChip.Spec.*`) today.
+  is built; the checked list holds the memory chip's (`MemoryReadWriteChip.Spec.*`) and those of
+  the ALU chips already at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt) today.
 
 The proofs are about this Pico revision:
 
@@ -120,7 +120,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 27 |
+| kernel + compiler | 51 |
 | kernel + compiler + RISC-V spec axioms | 62 |
 <!-- end generated -->
 

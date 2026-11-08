@@ -72,7 +72,7 @@ request; record this contract gap in the chip's issue and in `SOUNDNESS.md` (und
 
 Add the chip's top-level theorems to `scripts/fv-check/theorems.d/<chip>.txt` (kebab-case, e.g.
 `lt-chip.txt`) if they are not there. The top-level theorems are the ones the bus contract relies
-on: each `spec_*` and the chip's `ext_asrt` and `wf_asrt`. Then, after `lake build PicoFV64`:
+on: each `spec` / `spec_*` and the chip's `ext_asrt` and `wf_asrt`. Then, after `lake build PicoFV64`:
 
 ```bash
 scripts/fv-check/check.sh            # the new theorems show up as additions only

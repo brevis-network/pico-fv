@@ -1,0 +1,5 @@
+BitwiseChip.Spec.spec_XOR
+BitwiseChip.Spec.spec_OR
+BitwiseChip.Spec.spec_AND
+BitwiseChip.Spec.ext_asrt
+BitwiseChip.Spec.wf_asrt
