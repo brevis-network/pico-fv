@@ -1,5 +1,3 @@
 CpuChip.lean
 DivRemChip.lean
 MemoryReadWriteChip.lean
-SLLChip.lean
-ShiftRightChip.lean

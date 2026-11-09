@@ -12,8 +12,8 @@ set_option maxHeartbeats 1_000_000_000
 
 The `ConstraintsAndBuses` namespace below restates each constraint and
 the list of bus interactions emitted by `SLLChip::eval`
-(`vm/src/chips/chips/alu/sll/constraints.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`) in terms of the
+(`vm/src/chips/chips/alu/sll/constraints.rs` at Pico v3.1.1,
+`2acc7c1828fb4ec1bed5963511bb370870c5b608`) in terms of the
 `Valid_SLLChip` air's named accessors, plus a `_equiv` lemma per
 constraint proving equality with the raw form in
 `PicoFV.RV64IM.Extraction.SLLChip`.

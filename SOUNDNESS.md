@@ -34,7 +34,7 @@ Pico commit [`2acc7c182`](https://github.com/brevis-network/pico/commit/2acc7c18
 <!-- end generated -->
 
 <!-- generated: pending -->
-5 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `CpuChip.lean`, `DivRemChip.lean`, `MemoryReadWriteChip.lean`, `SLLChip.lean`, `ShiftRightChip.lean`.
+3 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `CpuChip.lean`, `DivRemChip.lean`, `MemoryReadWriteChip.lean`.
 <!-- end generated -->
 
 ## Summary of the risks
@@ -120,7 +120,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 51 |
+| kernel + compiler | 61 |
 | kernel + compiler + RISC-V spec axioms | 62 |
 <!-- end generated -->
 

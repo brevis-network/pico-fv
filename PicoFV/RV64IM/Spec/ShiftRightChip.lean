@@ -15,20 +15,19 @@ Four ALU outputs handled (vs two for SLLChip):
 - `spec_SRLW` (opcode 43): 32-bit logical right shift, then sign-extend to 64.
 - `spec_SRAW` (opcode 44): 32-bit arithmetic right shift, then sign-extend to 64.
 
-## Soundness fixes incorporated from Pico PR #101
+## Soundness fixes present at Pico v3.1.1
 
 The two soundness gaps previously bridged by Lean-level `MISSING_*`
-axioms have been closed upstream in commit
-`0bacdaf030d4bdc812315ca2f0263410e7d6a522`
-(*fix(alu): close two soundness gaps in ShiftRight chip constraints*):
+axioms are closed by constraints of Pico v3.1.1
+(`vm/src/chips/chips/alu/sr/constraints.rs`):
 
 1. **`b[i] · v_0123 = higher_limb[i] · 65536 + lower_limb[i] · v_0123`**
-   for `i ∈ {0..3}` (Constraints 60..63) — ties the range-checked
+   for `i ∈ {0..3}` (Constraints 26..29, `:171-177`) — ties the range-checked
    `(lower_limb_i, higher_limb_i)` decomposition back to `b_i`. The
    bridge from this carry equation to the Nat-level decomposition is
    performed by the `b_decomp_from_carry` helper below.
 
-2. **`c = c_for_lookup_0`** (Constraint 59) — binds the scalar
+2. **`c = c_for_lookup_0`** (Constraint 7, `:75`) — binds the scalar
    shift-amount column to the Word low limb broadcast on the ALU bus.
 
 Both extracted constraints land in `Extraction.ShiftRightChip` /
@@ -122,7 +121,7 @@ namespace ShiftRightChip.Spec
   -- =====================================================================
   -- `b_decomp_from_carry`: bridges the per-limb carry equation
   --     b · v_0123 = higher · 65536 + lower · v_0123
-  -- (Pico PR #101 constraints 60..63) into the Nat-level decomposition
+  -- (constraints 26..29) into the Nat-level decomposition
   --     b.val = higher.val · 2^k + lower.val
   -- with `v_0123 = 2^(16 - k)` and the byte-bus bounds on (higher, lower).
   -- =====================================================================
@@ -252,24 +251,23 @@ namespace ShiftRightChip.Spec
     obtain ⟨h_c_decomp,
             ⟨_, h_lo0⟩, ⟨_, h_hi0⟩, ⟨_, h_lo1⟩, ⟨_, h_hi1⟩,
             ⟨_, h_lo2⟩, ⟨_, h_hi2⟩, ⟨_, h_lo3⟩, _, h_hi3⟩ := h_wf
-    -- Step 4: Extract all 64 constraints (post-simp with selectors).
+    -- Step 4: Extract all 65 constraints (post-simp with selectors).
     simp [constraint_and_interaction_simplification, sub_eq_zero,
           h_is_srl, h_is_sra, h_is_srlw, h_is_sraw] at h_constraints
-    obtain ⟨_, _h_imm_c_b, _h_w_imm,
+    obtain ⟨_, _h_imm_c_b, _h_w_imm, h_c_eq,
             h_cb0_b, h_cb1_b, h_cb2_b, h_cb3_b, h_cb4_b, h_cb5_b,
             h_v01, h_v012, h_v0123,
             h_su0_sel, h_su0_b, h_su1_sel, h_su1_b,
             h_su2_sel, h_su2_b, h_su3_sel, h_su3_b,
             h_su_sum,
+            h_b_carry_0, h_b_carry_1, h_b_carry_2, h_b_carry_3,
             h_lr0, h_lr1, h_lr2, h_lr3,
             _h_b_msb_b, h_b_msb_zero, h_sra_msb_v0123,
             _h_srw_msb_b, h_srw_msb_zero,
             h_su0_a0, h_su0_a1, h_su0_a2, h_su0_a3,
             h_su1_a0, h_su1_a1, h_su1_a2, h_su1_a3,
             h_su2_a0, h_su2_a1, h_su2_a2, h_su2_a3,
-            h_su3_a0, h_su3_a1, h_su3_a2, h_su3_a3,
-            h_c_eq,
-            h_b_carry_0, h_b_carry_1, h_b_carry_2, h_b_carry_3⟩ := h_constraints
+            h_su3_a0, h_su3_a1, h_su3_a2, h_su3_a3⟩ := h_constraints
     -- Step 5: Derive `v_0123 = 2^(16-k)` and `k ≤ 15` (where `k = c_bits sum`).
     set k_nat : ℕ := (air.cols.values.c_bits_0 row 0).val
                    + 2 * (air.cols.values.c_bits_1 row 0).val
@@ -283,7 +281,7 @@ namespace ShiftRightChip.Spec
     rw [h16s4_val] at h_hi0 h_hi1 h_hi2 h_hi3
     change _ < 2^(k_nat) at h_lo0 h_lo1 h_lo2 h_lo3
     change _ < 2^(16 - k_nat) at h_hi0 h_hi1 h_hi2 h_hi3
-    -- Step 7: Per-limb b-decomposition via Pico PR #101 carry constraints 60..63.
+    -- Step 7: Per-limb b-decomposition via carry constraints 26..29.
     have h_decomp_0 : (air.cols.values.b_0 row 0).val
         = (air.cols.values.higher_limb_0 row 0).val * 2^k_nat
           + (air.cols.values.lower_limb_0 row 0).val :=
@@ -418,7 +416,7 @@ namespace ShiftRightChip.Spec
       have h_c_mod64 := c_mod64 _ _ hs5_le h_c_decomp
       rw [hs5_lift] at h_c_mod64
       -- Bridge `c.val % 64 = k_nat` to `c_for_lookup_0.val % 64 = k_nat`
-      -- via `h_c_eq` (PR #101 constraint 59: `c = c_for_lookup_0`).
+      -- via `h_c_eq` (constraint 7: `c = c_for_lookup_0`).
       have h_cfl0_mod64 : (air.cols.values.c_for_lookup_0 row 0).val % 64 = k_nat := by
         rw [h_c_eq] at h_c_mod64; exact h_c_mod64
       apply BitVec.eq_of_toNat_eq
@@ -866,24 +864,23 @@ namespace ShiftRightChip.Spec
             ⟨_, h_lo0⟩, ⟨_, h_hi0⟩, ⟨_, h_lo1⟩, ⟨_, h_hi1⟩,
             ⟨_, h_lo2⟩, ⟨_, h_hi2⟩, ⟨_, h_lo3⟩, ⟨_, h_hi3⟩,
             h_msb_u16⟩ := h_wf
-    -- Step 4: Extract all 64 constraints (post-simp with selectors).
+    -- Step 4: Extract all 65 constraints (post-simp with selectors).
     simp [constraint_and_interaction_simplification, sub_eq_zero,
           h_is_srl, h_is_sra, h_is_srlw, h_is_sraw] at h_constraints
-    obtain ⟨_, _h_imm_c_b, _h_w_imm,
+    obtain ⟨_, _h_imm_c_b, _h_w_imm, h_c_eq,
             h_cb0_b, h_cb1_b, h_cb2_b, h_cb3_b, h_cb4_b, h_cb5_b,
             h_v01, h_v012, h_v0123,
             h_su0_sel, h_su0_b, h_su1_sel, h_su1_b,
             h_su2_sel, h_su2_b, h_su3_sel, h_su3_b,
             h_su_sum,
+            h_b_carry_0, h_b_carry_1, h_b_carry_2, h_b_carry_3,
             h_lr0, h_lr1, h_lr2, h_lr3,
             h_b_msb_b, h_sra_msb_v0123,
             _h_srw_msb_b, h_srw_msb_zero,
             h_su0_a0, h_su0_a1, h_su0_a2, h_su0_a3,
             h_su1_a0, h_su1_a1, h_su1_a2, h_su1_a3,
             h_su2_a0, h_su2_a1, h_su2_a2, h_su2_a3,
-            h_su3_a0, h_su3_a1, h_su3_a2, h_su3_a3,
-            h_c_eq,
-            h_b_carry_0, h_b_carry_1, h_b_carry_2, h_b_carry_3⟩ := h_constraints
+            h_su3_a0, h_su3_a1, h_su3_a2, h_su3_a3⟩ := h_constraints
     -- Step 5: Derive `v_0123 = 2^(16-k)` and `k ≤ 15` (where `k = c_bits sum`).
     set k_nat : ℕ := (air.cols.values.c_bits_0 row 0).val
                    + 2 * (air.cols.values.c_bits_1 row 0).val
@@ -897,7 +894,7 @@ namespace ShiftRightChip.Spec
     rw [h16s4_val] at h_hi0 h_hi1 h_hi2 h_hi3
     change _ < 2^(k_nat) at h_lo0 h_lo1 h_lo2 h_lo3
     change _ < 2^(16 - k_nat) at h_hi0 h_hi1 h_hi2 h_hi3
-    -- Step 7: Per-limb b-decomposition from PR #101 carry constraints.
+    -- Step 7: Per-limb b-decomposition from carry constraints 26..29.
     have h_decomp_0 : (air.cols.values.b_0 row 0).val
         = (air.cols.values.higher_limb_0 row 0).val * 2^k_nat
           + (air.cols.values.lower_limb_0 row 0).val :=
@@ -1942,20 +1939,19 @@ namespace ShiftRightChip.Spec
     -- Step 4: Extract constraints (post-simp with selectors).
     simp [constraint_and_interaction_simplification, sub_eq_zero,
           h_is_srl, h_is_sra, h_is_srlw, h_is_sraw] at h_constraints
-    obtain ⟨_, _h_imm_c_b, _h_w_imm,
+    obtain ⟨_, _h_imm_c_b, _h_w_imm, h_c_eq,
             h_cb0_b, h_cb1_b, h_cb2_b, h_cb3_b, h_cb4_b, h_cb5_b,
             h_v01, h_v012, h_v0123,
             h_su0_sel, h_su0_b, h_su1_sel, h_su1_b,
             h_su2_sel, h_su2_b, h_su3_sel, h_su3_b,
             h_su_sum,
+            h_b_carry_0, h_b_carry_1, h_b_carry_2, h_b_carry_3,
             h_lr0, h_lr1, h_lr2, h_lr3,
             _h_b_msb_b, h_b_msb_zero, h_sra_msb_v0123,
             h_srw_msb_b,
             h_su0_a0, h_su0_a1,
             h_su1_a0, h_su1_a1,
-            h_a2_msb, h_a3_msb,
-            h_c_eq,
-            h_b_carry_0, h_b_carry_1, h_b_carry_2, h_b_carry_3⟩ := h_constraints
+            h_a2_msb, h_a3_msb⟩ := h_constraints
     -- Step 5: Derive `v_0123 = 2^(16-k)` and `k ≤ 15`.
     set k_nat : ℕ := (air.cols.values.c_bits_0 row 0).val
                    + 2 * (air.cols.values.c_bits_1 row 0).val
@@ -2560,20 +2556,19 @@ namespace ShiftRightChip.Spec
     -- Step 4: constraints (b_msb_zero and srw_msb_zero both trivialize for SRAW).
     simp [constraint_and_interaction_simplification, sub_eq_zero,
           h_is_srl, h_is_sra, h_is_srlw, h_is_sraw] at h_constraints
-    obtain ⟨_, _h_imm_c_b, _h_w_imm,
+    obtain ⟨_, _h_imm_c_b, _h_w_imm, h_c_eq,
             h_cb0_b, h_cb1_b, h_cb2_b, h_cb3_b, h_cb4_b, h_cb5_b,
             h_v01, h_v012, h_v0123,
             h_su0_sel, h_su0_b, h_su1_sel, h_su1_b,
             h_su2_sel, h_su2_b, h_su3_sel, h_su3_b,
             h_su_sum,
+            h_b_carry_0, h_b_carry_1, h_b_carry_2, h_b_carry_3,
             h_lr0, h_lr1, h_lr2, h_lr3,
             h_b_msb_b, h_sra_msb_v0123,
             h_srw_msb_b,
             h_su0_a0, h_su0_a1,
             h_su1_a0, h_su1_a1,
-            h_a2_msb, h_a3_msb,
-            h_c_eq,
-            h_b_carry_0, h_b_carry_1, h_b_carry_2, h_b_carry_3⟩ := h_constraints
+            h_a2_msb, h_a3_msb⟩ := h_constraints
     -- Step 5: v_0123 cascade, k_nat ≤ 15.
     set k_nat : ℕ := (air.cols.values.c_bits_0 row 0).val
                    + 2 * (air.cols.values.c_bits_1 row 0).val

@@ -100,7 +100,7 @@ After `lake build`, `scripts/fv-check/check.sh` checks the top-level theorems
 listed in `scripts/fv-check/theorems.d/`: the 62 opcode equivalence theorems
 (one file per instruction class), the memory chip's `spec_*` / `bus_equiv*`
 theorems, and the specifications of the ALU chips already at v3.1.1 (Add, Sub,
-Addw, Subw, Bitwise, Mul, Lt). It fails if a theorem is missing,
+Addw, Subw, Bitwise, Mul, Lt, SLL, ShiftRight). It fails if a theorem is missing,
 depends on an axiom (a statement Lean accepts without proof) outside two lists,
 or its axioms or statement differ from the snapshots in `axioms.txt` and
 `signatures.txt`:
