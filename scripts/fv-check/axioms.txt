@@ -11,13 +11,13 @@ BitwiseChip.Spec.spec_XOR Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,
 BitwiseChip.Spec.wf_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 DivRemChip.Spec.ext_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 DivRemChip.Spec.spec_DIV Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
-DivRemChip.Spec.spec_DIV_REM Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 DivRemChip.Spec.spec_DIVU Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
-DivRemChip.Spec.spec_DIVU_REMU Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 DivRemChip.Spec.spec_DIVUW Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 DivRemChip.Spec.spec_DIVUW_REMUW Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+DivRemChip.Spec.spec_DIVU_REMU Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 DivRemChip.Spec.spec_DIVW Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 DivRemChip.Spec.spec_DIVW_REMW Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+DivRemChip.Spec.spec_DIV_REM Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 DivRemChip.Spec.spec_REM Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 DivRemChip.Spec.spec_REMU Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 DivRemChip.Spec.spec_REMUW Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
