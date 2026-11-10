@@ -26,7 +26,12 @@ attribute [-simp]
 
 Eight per-opcode specs deriving `ALUBus.Spec OPCODE a b c` from the
 chip's `AbsConstraints` + bus hypotheses + the active-selector
-witness:
+witness. `b` and `c` are the operands in computational form; the ALU
+bus carries the raw register values `b_raw` and `c_raw`, which agree
+with them on all limbs for 64-bit operations and on the low 32 bits
+for word operations (`operands_of_raw`). `wf_asrt` bridges the two
+(`alu_spec_word_congr` for the word opcodes, which read only the low
+32 bits).
 
 | Selector active | Opcode | Result                                                |
 |-----------------|--------|-------------------------------------------------------|
@@ -43,7 +48,7 @@ All W-form variants sign-extend their 32-bit result to 64 bits
 (RV64 ISA convention), even for the unsigned `DIVUW`/`REMUW`
 selectors. The chip encodes this via the `U16MSBGadget` on
 `quotient_1` / `remainder_1` (gated by `is_word_operation`,
-added in PR #101 commit `ddd0d96`): `quotient_2 = quotient_3 =
+`constraints.rs:635-640`): `quotient_2 = quotient_3 =
 quot_msb · 0xFFFF` (resp. `remainder_*`).
 
 ## Proof approach (signed grouped `spec_DIV_REM` — proved)
@@ -82,9 +87,9 @@ The grouped proof has six phases:
         8 carry-chain equations + `combine_MUL_MULH` lifted through
         `BitVec.toInt_inj`.
      b. **`|r| < |c|`** — uses `LtWordU16Gadget` spec; depends on
-        `remainder_lt_gadget.bit = 1`, pinned by PR #101 commit
-        `0786b8b` (`builder.when(rem_check_mult).assert_one(bit)` in
-        Pico Rust). The bridge between `ar.toNat`/`ac.toNat` and
+        `remainder_lt_gadget.bit = 1`, pinned by
+        `builder.when(remainder_check_multiplicity).assert_one(bit)`
+        (`constraints.rs:595-597`). The bridge between `ar.toNat`/`ac.toNat` and
         `|r|.natAbs` / `|c|.natAbs` goes through `U64w.msb_3_negative`
         + constraint-13 abs-value identities.
      c. **`sign(r) = sign(b) ∨ r = 0`** — by-cases on `r = 0`; else
@@ -102,8 +107,8 @@ branch) from `AbsConstraints`, derives the u16 range on `q` / `r`
 from the byte-bus, and closes `ALUBus.Spec OPCODE` by `grind`.
 
 **Status:**
-  * `spec_DIV_REM` — proven (the `bit = 1` Pico-soundness sorry
-    was closed by PR #101 commit `0786b8b`).
+  * `spec_DIV_REM` — proven (relies on the `bit = 1` pin,
+    `constraints.rs:595-597`).
   * `spec_DIVU_REMU` — proven.
   * `spec_DIVUW_REMUW` — proven.
   * `spec_DIVW_REMW` — proven.
@@ -332,8 +337,7 @@ namespace DivRemChip.Spec
   --           the 8 carry-chain equations + `combine_MUL_MULH` lifted
   --           through `BitVec.toInt_inj`.
   --        b. **`|r| < |c|`** — uses `LtWordU16Gadget` spec; depends
-  --           on `remainder_lt_gadget.bit = 1` (post-PR #101 fix to
-  --           Pico).
+  --           on `remainder_lt_gadget.bit = 1` (`constraints.rs:595-597`).
   --        c. **`sign(r) = sign(b) ∨ r = 0`** — by-cases on `r = 0`;
   --           else `Int.split_nzp` + sign-consistency constraints +
   --           the algebraic equation to rule out `b = 0` when `r ≠ 0`.
@@ -375,20 +379,16 @@ namespace DivRemChip.Spec
     have eq_divuw : air.cols.values.is_divuw row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_div_rem; grind
     have eq_remuw : air.cols.values.is_remuw row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_div_rem; grind
     clear b_divu b_remu b_divw b_remw b_divuw b_remuw h_sum
+    -- Operand bounds on b, c: the ALU bus externals bound the raw operands
+    -- it carries (`b_raw`, `c_raw`), and `b`, `c` follow from them.
+    have h_range := operand_range air row h_is_real
+    simp only [h_ext, h_constraints, true_implies] at h_range
+    obtain ⟨ -, ub_b_0, ub_b_1, ub_b_2, ub_b_3, ub_c_0, ub_c_1, ub_c_2, ub_c_3 ⟩ := h_range
     -- Move to gadget specs
     have := gadget_specs_pack air row
     simp only [h_ext, h_wf, h_constraints, h_is_real] at this
     simp [*] at this; clear h_ext h_wf h_constraints
     obtain ⟨ h_ext, h_wf, h_constraints, gadget_specs ⟩ := this
-    -- Stabilise h_ext
-    obtain ⟨ ub_b_0, ub_b_1, ub_b_2, ub_b_3, ub_c_0, ub_c_1, ub_c_2, ub_c_3 ⟩ :
-      (air.cols.values.b_0 row 0).val < 65536 ∧ (air.cols.values.b_1 row 0).val < 65536 ∧ (air.cols.values.b_2 row 0).val < 65536 ∧ (air.cols.values.b_3 row 0).val < 65536 ∧
-      (air.cols.values.c_0 row 0).val < 65536 ∧ (air.cols.values.c_1 row 0).val < 65536 ∧ (air.cols.values.c_2 row 0).val < 65536 ∧ (air.cols.values.c_3 row 0).val < 65536
-    := by
-      clear h_wf h_constraints gadget_specs
-      simp [bus_row_ext_asm, ChipExtraBuses] at h_ext; replace h_ext := h_ext.2.2
-      simp [ALUBus.externals, ALUBus.validOpcode, ALUBus.operandsInternal, ALUBus.operandRange, *] at h_ext
-      apply h_ext.2 <;> clear h_ext <;> grind
     clear h_ext
     -- Get various upper bounds and equalities
     obtain ⟨ ub_q_0, ub_q_1, ub_q_2, ub_q_3, ub_r_0, ub_r_1, ub_r_2, ub_r_3,
@@ -780,20 +780,16 @@ namespace DivRemChip.Spec
     have eq_divuw : air.cols.values.is_divuw row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divu_remu; grind
     have eq_remuw : air.cols.values.is_remuw row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divu_remu; grind
     clear b_div b_rem b_divw b_remw b_divuw b_remuw h_sum
+    -- Operand bounds on b, c: the ALU bus externals bound the raw operands
+    -- it carries (`b_raw`, `c_raw`), and `b`, `c` follow from them.
+    have h_range := operand_range air row h_is_real
+    simp only [h_ext, h_constraints, true_implies] at h_range
+    obtain ⟨ -, ub_b_0, ub_b_1, ub_b_2, ub_b_3, ub_c_0, ub_c_1, ub_c_2, ub_c_3 ⟩ := h_range
     -- Move to gadget specs
     have := gadget_specs_pack air row
     simp only [h_ext, h_wf, h_constraints, h_is_real] at this
     simp [*] at this; clear h_ext h_wf h_constraints
     obtain ⟨ h_ext, h_wf, h_constraints, gadget_specs ⟩ := this
-    -- Stabilise h_ext
-    obtain ⟨ ub_b_0, ub_b_1, ub_b_2, ub_b_3, ub_c_0, ub_c_1, ub_c_2, ub_c_3 ⟩ :
-      (air.cols.values.b_0 row 0).val < 65536 ∧ (air.cols.values.b_1 row 0).val < 65536 ∧ (air.cols.values.b_2 row 0).val < 65536 ∧ (air.cols.values.b_3 row 0).val < 65536 ∧
-      (air.cols.values.c_0 row 0).val < 65536 ∧ (air.cols.values.c_1 row 0).val < 65536 ∧ (air.cols.values.c_2 row 0).val < 65536 ∧ (air.cols.values.c_3 row 0).val < 65536
-    := by
-      clear h_wf h_constraints gadget_specs
-      simp [bus_row_ext_asm, ChipExtraBuses] at h_ext; replace h_ext := h_ext.2.2
-      simp [ALUBus.externals, ALUBus.validOpcode, ALUBus.operandsInternal, ALUBus.operandRange, *] at h_ext
-      apply h_ext.2 <;> clear h_ext <;> grind
     clear h_ext
     -- Get various upper bounds and equalities
     obtain ⟨ ub_q_0, ub_q_1, ub_q_2, ub_q_3, ub_r_0, ub_r_1, ub_r_2, ub_r_3,
@@ -1014,22 +1010,16 @@ namespace DivRemChip.Spec
     have eq_divuw : air.cols.values.is_divuw row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divw_remw; grind
     have eq_remuw : air.cols.values.is_remuw row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divw_remw; grind
     clear b_div b_divu b_rem b_remu b_divuw b_remuw h_sum
+    -- Operand bounds on b, c: the ALU bus externals bound the raw operands
+    -- it carries (`b_raw`, `c_raw`), and `b`, `c` follow from them.
+    have h_range := operand_range air row h_is_real
+    simp only [h_ext, h_constraints, true_implies] at h_range
+    obtain ⟨ -, ub_b_0, ub_b_1, ub_b_2, ub_b_3, ub_c_0, ub_c_1, ub_c_2, ub_c_3 ⟩ := h_range
     -- Step 2: Move to gadget specs via `gadget_specs_pack`.
     have := gadget_specs_pack air row
     simp only [h_ext, h_wf, h_constraints, h_is_real] at this
     simp [*] at this; clear h_ext h_wf h_constraints
     obtain ⟨ h_ext, h_wf, h_constraints, gadget_specs ⟩ := this
-    -- Step 3: Operand bounds on b, c from the chip's ALU bus externals
-    -- (opcodes 49 = DIVW and 51 = REMW are NOT in `operandsInternal`,
-    -- so externals supply the operand range).
-    obtain ⟨ ub_b_0, ub_b_1, ub_b_2, ub_b_3, ub_c_0, ub_c_1, ub_c_2, ub_c_3 ⟩ :
-      (air.cols.values.b_0 row 0).val < 65536 ∧ (air.cols.values.b_1 row 0).val < 65536 ∧ (air.cols.values.b_2 row 0).val < 65536 ∧ (air.cols.values.b_3 row 0).val < 65536 ∧
-      (air.cols.values.c_0 row 0).val < 65536 ∧ (air.cols.values.c_1 row 0).val < 65536 ∧ (air.cols.values.c_2 row 0).val < 65536 ∧ (air.cols.values.c_3 row 0).val < 65536
-    := by
-      clear h_wf h_constraints gadget_specs
-      simp [bus_row_ext_asm, ChipExtraBuses] at h_ext; replace h_ext := h_ext.2.2
-      simp [ALUBus.externals, ALUBus.validOpcode, ALUBus.operandsInternal, ALUBus.operandRange, *] at h_ext
-      apply h_ext.2 <;> clear h_ext <;> grind
     clear h_ext
     -- Step 4: u16 bounds on q, r, ac, ar via `ChipExtraBuses`' byte bus.
     obtain ⟨ ub_q_0, ub_q_1, ub_q_2, ub_q_3, ub_r_0, ub_r_1, ub_r_2, ub_r_3,
@@ -1428,7 +1418,7 @@ namespace DivRemChip.Spec
             --       `max_abs_c_or_1_i = abs_c_i` (since `is_c_0 = 0`),
             --       sec 16 `remainder_check_multiplicity = 1`, sec 16
             --       alu-event tags, sec 18 `value = 0` clamp, sec 20
-            --       PR #101 `bit = 1` pin.
+            --       `bit = 1` pin.
             --   (c) Specialize `h_abs_c` / `h_abs_rem` (the AddGadget
             --       thunks) with the alu events and `value = 0` to get
             --       `U64w[c.ext_t] + U64w[abs_c] = 0` (and same for r).
@@ -1757,23 +1747,16 @@ namespace DivRemChip.Spec
     have eq_divw  : air.cols.values.is_divw  row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divuw_remuw; grind
     have eq_remw  : air.cols.values.is_remw  row 0 = 0 := by clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum h_is_divuw_remuw; grind
     clear b_div b_divu b_rem b_remu b_divw b_remw h_sum
+    -- Operand bounds on b, c: the ALU bus externals bound the raw operands
+    -- it carries (`b_raw`, `c_raw`), and `b`, `c` follow from them.
+    have h_range := operand_range air row h_is_real
+    simp only [h_ext, h_constraints, true_implies] at h_range
+    obtain ⟨ -, ub_b_0, ub_b_1, ub_b_2, ub_b_3, ub_c_0, ub_c_1, ub_c_2, ub_c_3 ⟩ := h_range
     -- Step 2: Move to gadget specs via `gadget_specs_pack`.
     have := gadget_specs_pack air row
     simp only [h_ext, h_wf, h_constraints, h_is_real] at this
     simp [*] at this; clear h_ext h_wf h_constraints
     obtain ⟨ h_ext, h_wf, h_constraints, gadget_specs ⟩ := this
-    -- Step 3: Operand bounds on b, c from the chip's ALU bus externals
-    -- (opcode 50 = DIVUW, opcode 52 = REMUW both are in `operandsInternal` —
-    -- wait, MULW=48 is in operandsInternal; DIVUW=50 is NOT in operandsInternal,
-    -- so externals supply the operand range).
-    obtain ⟨ ub_b_0, ub_b_1, ub_b_2, ub_b_3, ub_c_0, ub_c_1, ub_c_2, ub_c_3 ⟩ :
-      (air.cols.values.b_0 row 0).val < 65536 ∧ (air.cols.values.b_1 row 0).val < 65536 ∧ (air.cols.values.b_2 row 0).val < 65536 ∧ (air.cols.values.b_3 row 0).val < 65536 ∧
-      (air.cols.values.c_0 row 0).val < 65536 ∧ (air.cols.values.c_1 row 0).val < 65536 ∧ (air.cols.values.c_2 row 0).val < 65536 ∧ (air.cols.values.c_3 row 0).val < 65536
-    := by
-      clear h_wf h_constraints gadget_specs
-      simp [bus_row_ext_asm, ChipExtraBuses] at h_ext; replace h_ext := h_ext.2.2
-      simp [ALUBus.externals, ALUBus.validOpcode, ALUBus.operandsInternal, ALUBus.operandRange, *] at h_ext
-      apply h_ext.2 <;> clear h_ext <;> grind
     clear h_ext
     -- Step 4: u16 bounds on q, r, ac, ar via `ChipExtraBuses`' byte bus.
     obtain ⟨ ub_q_0, ub_q_1, ub_q_2, ub_q_3, ub_r_0, ub_r_1, ub_r_2, ub_r_3,
@@ -1831,7 +1814,7 @@ namespace DivRemChip.Spec
     -- Residual tuple (11 top-level slots, same arity as `spec_DIVU_REMU`
     -- but with the 64-bit `IsEqualWord` × 2 and `U16MSB` × 3 swapped for
     -- the 32-bit `IsEqualWord` × 2 and `U16MSB` × 4 — note the extra
-    -- `quot_msb`-on-`q_1` thunk added by Pico PR #101). Note: `simp [*]`
+    -- `quot_msb`-on-`q_1` thunk, `constraints.rs:635-640`). Note: `simp [*]`
     -- eagerly case-splits the U16MSB disjunctions and AndSplits the
     -- inner conjuncts, so we use `all_goals` afterwards.
     obtain ⟨ h_mul_lo,
@@ -1994,14 +1977,12 @@ namespace DivRemChip.Spec
           obtain ⟨ eq_abs_c, eq_abs_rem, eq_m_0, eq_m_1, eq_m_2, eq_m_3, eq_rem_check, h_constraints ⟩ := h_constraints
           replace h_constraints := h_constraints.2.2.2.2.1
           simp [eq_rem_check] at h_constraints
+          -- `abs_remainder = remainder_comp`, the remainder zero-extended from
+          -- 32 bits, so the gadget compares the 32-bit remainder with `c`.
           simp [*] at h_rem_check
-          clear *- h_rem_check h_rem_msb_w h_r_ext_f h_c_ext_f
-          obtain h_rem_msb_w | h_rem_msb_w := h_rem_msb_w <;> simp [h_rem_msb_w] at h_rem_check
-          . rw [← U64w.toBV_toNat, ← U64w.toBV_toNat, h_r_ext_f, h_c_ext_f] at h_rem_check
-            simp at h_rem_check; exact h_rem_check
-          . exfalso; clear *- h_rem_check
-            simp [U64w.toNat] at h_rem_check
-            omega
+          clear *- h_rem_check h_r_ext_f h_c_ext_f
+          rw [← U64w.toBV_toNat, ← U64w.toBV_toNat, h_r_ext_f, h_c_ext_f] at h_rem_check
+          simp at h_rem_check; exact h_rem_check
         clear *- cond_b_eq_qc_plus_r cond_lt
         grind
 
@@ -2498,7 +2479,7 @@ namespace DivRemChip.Spec
     simp [and_assoc] at h_wf; replace h_wf := h_wf.1
     -- constraints separation
     simp [AbsConstraints] at h_constraints
-    replace h_constraints := h_constraints.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+    replace h_constraints := h_constraints.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
     have mul_spec :=
       MulGadget.Spec.gadget_spec
         (h_gadget_ext_asm := h_ext)
@@ -2524,6 +2505,18 @@ namespace DivRemChip.Spec
         ALUBus.operandRange,
         *
       ]
+
+  /-- For the word opcodes, `ALUBus.Spec` reads only the low 32 bits of the
+      operands (`setWidth 32`), so their upper limbs can be replaced. -/
+  lemma alu_spec_word_congr
+    {op a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 b_2' b_3' c_0 c_1 c_2 c_3 c_2' c_3' : FKB}
+    (h_op : op = 49 ∨ op = 50 ∨ op = 51 ∨ op = 52)
+    (h : ALUBus.Spec op a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3)
+  :
+    ALUBus.Spec op a_0 a_1 a_2 a_3 b_0 b_1 b_2' b_3' c_0 c_1 c_2' c_3'
+  := by
+    rcases h_op with rfl | rfl | rfl | rfl <;>
+      simp only [ALUBus.Spec, U64w.setWidth_32_eq_low_U32w] at h ⊢ <;> exact h
 
   --
   -- Well-formedness — every vacuously-gated bus entry is discharged
@@ -2569,6 +2562,14 @@ namespace DivRemChip.Spec
     obtain ⟨h_excl_div, h_excl_divu, h_excl_rem, h_excl_remu,
             h_excl_divw, h_excl_remw, h_excl_divuw, h_excl_remuw⟩ :=
       selector_exclusivity air row h_constraints
+    -- The served ALU entry carries the raw operands `b_raw`, `c_raw`; the
+    -- `spec_*` lemmas speak of `b`, `c`. They agree on all four limbs for
+    -- 64-bit operations and on the low two for word operations, the only
+    -- ones `ALUBus.Spec` reads there (`setWidth 32`).
+    -- (`h_ext` / `h_wf` are discharged by `simp only` rather than passed
+    -- directly: unifying them at default transparency unfolds the bus row.)
+    obtain ⟨h_b_0, h_b_1, h_c_0, h_c_1, h_not_word, -⟩ :=
+      operands_of_raw air row h_constraints
     simp [ChipExtraBuses, MulGadget.AbsBuses,
           AddGadget.AbsBuses, LtWordU16Gadget.AbsBuses,
           U16MSBGadget.AbsBuses, U16ToU8GadgetSafe.AbsBuses,
@@ -2639,56 +2640,88 @@ namespace DivRemChip.Spec
       obtain ⟨h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw⟩ :=
         h_excl_div h_div
       simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
-      apply spec_DIV air row <;> grind
+      obtain ⟨h_b_2, h_b_3, h_c_2, h_c_3⟩ :=
+        h_not_word (by simp [h_divw, h_remw, h_divuw, h_remuw])
+      have h_spec := spec_DIV air row
+      simp only [h_ext, h_wf, true_implies] at h_spec
+      rw [h_b_0, h_b_1, h_b_2, h_b_3, h_c_0, h_c_1, h_c_2, h_c_3] at h_spec
+      exact h_spec h_constraints h_is_real h_div
     rcases h_divu_b with h_divu | h_divu
     rotate_left
     . -- is_divu = 1 → opcode 35, apply spec_DIVU
       obtain ⟨_, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw⟩ :=
         h_excl_divu h_divu
       simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
-      apply spec_DIVU air row <;> grind
+      obtain ⟨h_b_2, h_b_3, h_c_2, h_c_3⟩ :=
+        h_not_word (by simp [h_divw, h_remw, h_divuw, h_remuw])
+      have h_spec := spec_DIVU air row
+      simp only [h_ext, h_wf, true_implies] at h_spec
+      rw [h_b_0, h_b_1, h_b_2, h_b_3, h_c_0, h_c_1, h_c_2, h_c_3] at h_spec
+      exact h_spec h_constraints h_is_real h_divu
     rcases h_rem_b with h_rem | h_rem
     rotate_left
     . -- is_rem = 1 → opcode 36, apply spec_REM
       obtain ⟨_, _, h_remu, h_divw, h_remw, h_divuw, h_remuw⟩ :=
         h_excl_rem h_rem
       simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
-      apply spec_REM air row <;> grind
+      obtain ⟨h_b_2, h_b_3, h_c_2, h_c_3⟩ :=
+        h_not_word (by simp [h_divw, h_remw, h_divuw, h_remuw])
+      have h_spec := spec_REM air row
+      simp only [h_ext, h_wf, true_implies] at h_spec
+      rw [h_b_0, h_b_1, h_b_2, h_b_3, h_c_0, h_c_1, h_c_2, h_c_3] at h_spec
+      exact h_spec h_constraints h_is_real h_rem
     rcases h_remu_b with h_remu | h_remu
     rotate_left
     . -- is_remu = 1 → opcode 37, apply spec_REMU
       obtain ⟨_, _, _, h_divw, h_remw, h_divuw, h_remuw⟩ :=
         h_excl_remu h_remu
       simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
-      apply spec_REMU air row <;> grind
+      obtain ⟨h_b_2, h_b_3, h_c_2, h_c_3⟩ :=
+        h_not_word (by simp [h_divw, h_remw, h_divuw, h_remuw])
+      have h_spec := spec_REMU air row
+      simp only [h_ext, h_wf, true_implies] at h_spec
+      rw [h_b_0, h_b_1, h_b_2, h_b_3, h_c_0, h_c_1, h_c_2, h_c_3] at h_spec
+      exact h_spec h_constraints h_is_real h_remu
     rcases h_divw_b with h_divw | h_divw
     rotate_left
     . -- is_divw = 1 → opcode 49, apply spec_DIVW
       obtain ⟨_, _, _, _, h_remw, h_divuw, h_remuw⟩ :=
         h_excl_divw h_divw
       simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
-      apply spec_DIVW air row <;> grind
+      have h_spec := spec_DIVW air row
+      simp only [h_ext, h_wf, true_implies] at h_spec
+      rw [h_b_0, h_b_1, h_c_0, h_c_1] at h_spec
+      exact alu_spec_word_congr (by simp) (h_spec h_constraints h_is_real h_divw)
     rcases h_remw_b with h_remw | h_remw
     rotate_left
     . -- is_remw = 1 → opcode 51, apply spec_REMW
       obtain ⟨_, _, _, _, _, h_divuw, h_remuw⟩ :=
         h_excl_remw h_remw
       simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
-      apply spec_REMW air row <;> grind
+      have h_spec := spec_REMW air row
+      simp only [h_ext, h_wf, true_implies] at h_spec
+      rw [h_b_0, h_b_1, h_c_0, h_c_1] at h_spec
+      exact alu_spec_word_congr (by simp) (h_spec h_constraints h_is_real h_remw)
     rcases h_divuw_b with h_divuw | h_divuw
     rotate_left
     . -- is_divuw = 1 → opcode 50, apply spec_DIVUW
       obtain ⟨_, _, _, _, _, _, h_remuw⟩ :=
         h_excl_divuw h_divuw
       simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
-      apply spec_DIVUW air row <;> grind
+      have h_spec := spec_DIVUW air row
+      simp only [h_ext, h_wf, true_implies] at h_spec
+      rw [h_b_0, h_b_1, h_c_0, h_c_1] at h_spec
+      exact alu_spec_word_congr (by simp) (h_spec h_constraints h_is_real h_divuw)
     -- All seven previous selectors are 0; h_sum forces is_remuw = 1.
     have h_remuw : air.cols.values.is_remuw row 0 = 1 := by
       have := h_sum
       rw [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw] at this
       simpa using this
     simp [h_div, h_divu, h_rem, h_remu, h_divw, h_remw, h_divuw, h_remuw]
-    apply spec_REMUW air row <;> grind
+    have h_spec := spec_REMUW air row
+    simp only [h_ext, h_wf, true_implies] at h_spec
+    rw [h_b_0, h_b_1, h_c_0, h_c_1] at h_spec
+    exact alu_spec_word_congr (by simp) (h_spec h_constraints h_is_real h_remuw)
 
 
 end DivRemChip.Spec

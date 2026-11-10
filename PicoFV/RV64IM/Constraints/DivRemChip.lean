@@ -17,7 +17,7 @@ set_option maxHeartbeats 1_000_000_000
 
 `DivRemChip`'s Pico Rust source is
 `vm/src/chips/chips/alu/divrem/constraints.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
+`2acc7c1828fb4ec1bed5963511bb370870c5b608` (Pico v3.1.1).
 
 The chip verifies `b = c · quotient + remainder` for each of the
 eight DIV/REM opcodes — `DIV`, `DIVU`, `REM`, `REMU`, `DIVW`, `REMW`,
@@ -45,46 +45,48 @@ Plus: division-by-zero (`is_c_0` ⇒ quotient = `u64::MAX`, remainder =
 (two `looking_alu(ADD, …)` for abs-value sub-events plus one
 `looked_alu` for the main DivRem event).
 
-## Layout (218 columns under `air.cols.values`)
+## Layout (226 columns under `air.cols.values`)
 
 | Cols      | Field                            |
 |-----------|----------------------------------|
 | 0..3      | `a_0..a_3` (output)              |
 | 4..7      | `b_0..b_3`                       |
 | 8..11     | `c_0..c_3`                       |
-| 12..15    | `quotient_0..3`                  |
-| 16..19    | `quotient_comp_0..3`             |
-| 20..23    | `remainder_comp_0..3`            |
-| 24..27    | `remainder_0..3`                 |
-| 28..31    | `abs_remainder_0..3`             |
-| 32..35    | `abs_c_0..3`                     |
-| 36..39    | `max_abs_c_or_1_0..3`            |
-| 40..47    | `c_times_quotient_0..7`          |
-| 48..92    | `c_times_quotient_lower` (45 cols, `MulGadget`) |
-| 93..137   | `c_times_quotient_upper` (45 cols, `MulGadget`) |
-| 138..145  | `remainder_lt_gadget` (8 cols, `LtWordU16Gadget`) |
-| 146..149  | `c_neg_gadget` (4 cols, `AddGadget`) |
-| 150..153  | `rem_neg_gadget` (4 cols, `AddGadget`) |
-| 154..161  | `carry_0..7`                     |
-| 162..172  | `is_c_0` (11 cols, `IsZeroWordGadget`) |
-| 173..180  | `is_div, is_divu, is_rem, is_remu, is_divw, is_remw, is_divuw, is_remuw` |
-| 181       | `is_overflow`                    |
-| 182..192  | `is_overflow_b` (11 cols, `IsEqualWordGadget`) |
-| 193..203  | `is_overflow_c` (11 cols, `IsEqualWordGadget`) |
-| 204       | `b_msb.msb`                      |
-| 205       | `r_msb.msb`                    |
-| 206       | `c_msb.msb`                      |
-| 207       | `quot_msb.msb`                   |
-| 208       | `b_neg`                          |
-| 209       | `b_neg_not_overflow`             |
-| 210       | `b_not_neg_not_overflow`         |
-| 211       | `is_real_not_word`               |
-| 212       | `rem_neg`                        |
-| 213       | `c_neg`                          |
-| 214       | `abs_c_alu_event`                |
-| 215       | `abs_rem_alu_event`              |
-| 216       | `is_real`                        |
-| 217       | `remainder_check_multiplicity`   |
+| 12..15    | `b_raw_0..b_raw_3`               |
+| 16..19    | `c_raw_0..c_raw_3`               |
+| 20..23    | `quotient_0..3`                  |
+| 24..27    | `quotient_comp_0..3`             |
+| 28..31    | `remainder_comp_0..3`            |
+| 32..35    | `remainder_0..3`                 |
+| 36..39    | `abs_remainder_0..3`             |
+| 40..43    | `abs_c_0..3`                     |
+| 44..47    | `max_abs_c_or_1_0..3`            |
+| 48..55    | `c_times_quotient_0..7`          |
+| 56..100   | `c_times_quotient_lower` (45 cols, `MulGadget`) |
+| 101..145  | `c_times_quotient_upper` (45 cols, `MulGadget`) |
+| 146..153  | `remainder_lt_gadget` (8 cols, `LtWordU16Gadget`) |
+| 154..157  | `c_neg_gadget` (4 cols, `AddGadget`) |
+| 158..161  | `rem_neg_gadget` (4 cols, `AddGadget`) |
+| 162..169  | `carry_0..7`                     |
+| 170..180  | `is_c_0` (11 cols, `IsZeroWordGadget`) |
+| 181..188  | `is_div, is_divu, is_rem, is_remu, is_divw, is_remw, is_divuw, is_remuw` |
+| 189       | `is_overflow`                    |
+| 190..200  | `is_overflow_b` (11 cols, `IsEqualWordGadget`) |
+| 201..211  | `is_overflow_c` (11 cols, `IsEqualWordGadget`) |
+| 212       | `b_msb.msb`                      |
+| 213       | `r_msb.msb`                      |
+| 214       | `c_msb.msb`                      |
+| 215       | `quot_msb.msb`                   |
+| 216       | `b_neg`                          |
+| 217       | `b_neg_not_overflow`             |
+| 218       | `b_not_neg_not_overflow`         |
+| 219       | `is_real_not_word`               |
+| 220       | `rem_neg`                        |
+| 221       | `c_neg`                          |
+| 222       | `abs_c_alu_event`                |
+| 223       | `abs_rem_alu_event`              |
+| 224       | `is_real`                        |
+| 225       | `remainder_check_multiplicity`   |
 -/
 
 namespace DivRemChip.ConstraintsAndBuses
@@ -123,6 +125,14 @@ namespace DivRemChip.ConstraintsAndBuses
     let c_1  := air.cols.values.c_1  row 0
     let c_2  := air.cols.values.c_2  row 0
     let c_3  := air.cols.values.c_3  row 0
+    let b_raw_0 := air.cols.values.b_raw_0 row 0
+    let b_raw_1 := air.cols.values.b_raw_1 row 0
+    let b_raw_2 := air.cols.values.b_raw_2 row 0
+    let b_raw_3 := air.cols.values.b_raw_3 row 0
+    let c_raw_0 := air.cols.values.c_raw_0 row 0
+    let c_raw_1 := air.cols.values.c_raw_1 row 0
+    let c_raw_2 := air.cols.values.c_raw_2 row 0
+    let c_raw_3 := air.cols.values.c_raw_3 row 0
     let q_0  := air.cols.values.quotient_0 row 0
     let q_1  := air.cols.values.quotient_1 row 0
     let q_2  := air.cols.values.quotient_2 row 0
@@ -214,23 +224,29 @@ namespace DivRemChip.ConstraintsAndBuses
     (r_msb * is_signed_type - rem_neg = 0) ∧
     (c_msb * is_signed_type - c_neg   = 0) ∧
     -- ---------------------------------------------------------------------
-    -- (3) Word-op b/c upper-limbs sign/zero-extension (Pico PR #101
-    --     commits `f35b17d` for c and `b6f2de0` for b). For
-    --     DIVW/REMW/DIVUW/REMUW, b_i and c_i (i ∈ {2,3}) must each equal
-    --     `_neg · 0xFFFF`. Without c's constraint, a prover could set
-    --     c_2 ≠ 0 while c_0 = c_1 = 0, making `is_c_0` false while the
-    --     actual 32-bit divisor is zero — bypassing the div-by-zero
-    --     clamp. Without b's constraint, a prover could pick a large
-    --     quotient `q` such that `c · q` overflows into b_2 / b_3,
-    --     satisfying `c·q + r = b` with an incorrect quotient (the upper
-    --     `MulGadget` is disabled for word ops and provides no
-    --     protection). Order matches the Rust source's inner loop
+    -- (3) `b`, `c` from the raw register values `b_raw`, `c_raw` that
+    --     the ALU bus carries (`constraints.rs:178-195`). The low 32 bits
+    --     are equal; the upper limbs are the raw ones for 64-bit
+    --     operations and `_neg · 0xFFFF` (the sign- or zero-extension of
+    --     the low 32 bits) for DIVW/REMW/DIVUW/REMUW, whose registers'
+    --     upper 32 bits RV64 leaves undefined. Without the word-op
+    --     extension of c, a prover could set c_2 ≠ 0 while c_0 = c_1 =
+    --     0, making `is_c_0` false while the actual 32-bit divisor is
+    --     zero — bypassing the div-by-zero clamp. Without b's, a prover
+    --     could pick a large quotient `q` such that `c · q` overflows
+    --     into b_2 / b_3, satisfying `c·q + r = b` with an incorrect
+    --     quotient (the upper `MulGadget` is disabled for word ops and
+    --     provides no protection). Order matches the Rust source's loops
     --     (`b_i` then `c_i` for each `i`).
     -- ---------------------------------------------------------------------
-    (is_word_operation * (b_2 - b_neg * 65535) = 0) ∧
-    (is_word_operation * (c_2 - c_neg * 65535) = 0) ∧
-    (is_word_operation * (b_3 - b_neg * 65535) = 0) ∧
-    (is_word_operation * (c_3 - c_neg * 65535) = 0) ∧
+    (b_raw_0 - b_0 = 0) ∧
+    (c_raw_0 - c_0 = 0) ∧
+    (b_raw_1 - b_1 = 0) ∧
+    (c_raw_1 - c_1 = 0) ∧
+    (b_2 - (b_raw_2 * is_not_word_operation + b_neg * is_word_operation * 65535) = 0) ∧
+    (c_2 - (c_raw_2 * is_not_word_operation + c_neg * is_word_operation * 65535) = 0) ∧
+    (b_3 - (b_raw_3 * is_not_word_operation + b_neg * is_word_operation * 65535) = 0) ∧
+    (c_3 - (c_raw_3 * is_not_word_operation + c_neg * is_word_operation * 65535) = 0) ∧
     -- ---------------------------------------------------------------------
     -- (4) `quotient_comp` setup.
     --     Lower 2 limbs (i = 0,1): `qc_i = q_i` unconditionally.
@@ -552,18 +568,19 @@ namespace DivRemChip.ConstraintsAndBuses
     (is_c_0_result * (rc_2 - b_2) = 0) ∧
     (is_c_0_result * (rc_3 - b_3) = 0) ∧
     -- ---------------------------------------------------------------------
-    -- (14) `abs(c) = c` when `¬c_neg`; `abs(remainder) = remainder` when
-    --      `¬rem_neg`. (The negative case is handled by the
-    --      `AddGadget`s below — they verify `c + abs_c = 0` etc.)
+    -- (14) `abs(c) = c` when `¬c_neg`; `abs(remainder) = remainder_comp`
+    --      when `¬rem_neg` (`constraints.rs:491-498`). (The negative case
+    --      is handled by the `AddGadget`s below — they verify
+    --      `c + abs_c = 0` etc.)
     -- ---------------------------------------------------------------------
     ((c_neg - 1) * (c_0 - ac_0) = 0) ∧
-    ((rem_neg - 1) * (r_0 - ar_0) = 0) ∧
+    ((rem_neg - 1) * (rc_0 - ar_0) = 0) ∧
     ((c_neg - 1) * (c_1 - ac_1) = 0) ∧
-    ((rem_neg - 1) * (r_1 - ar_1) = 0) ∧
+    ((rem_neg - 1) * (rc_1 - ar_1) = 0) ∧
     ((c_neg - 1) * (c_2 - ac_2) = 0) ∧
-    ((rem_neg - 1) * (r_2 - ar_2) = 0) ∧
+    ((rem_neg - 1) * (rc_2 - ar_2) = 0) ∧
     ((c_neg - 1) * (c_3 - ac_3) = 0) ∧
-    ((rem_neg - 1) * (r_3 - ar_3) = 0) ∧
+    ((rem_neg - 1) * (rc_3 - ar_3) = 0) ∧
     -- ---------------------------------------------------------------------
     -- (15) `max_abs_c_or_1 = max(abs_c, 1)`. The least significant limb
     --      gets `1` when `is_c_0`, the rest get `0`; otherwise `abs_c`.
@@ -639,8 +656,8 @@ namespace DivRemChip.ConstraintsAndBuses
     -- (20) `LtWordU16Gadget` only enforces `bit ↔ (|rem| < max(|c|, 1))`
     --       (a consistency oracle); the chip separately pins
     --       `bit = 1` whenever the gadget fires, which is what actually
-    --       enforces `|remainder| < |c|`. Added in Pico PR #101 at
-    --       commit `0786b8b` after the Lean-side soundness audit.
+    --       enforces `|remainder| < |c|` (`constraints.rs:595-597`;
+    --       absent in 2.x, gap DR-1).
     -- ---------------------------------------------------------------------
     (remainder_check_multiplicity *
        (air.cols.values.remainder_lt_gadget.bit row 0 - 1) = 0) ∧
@@ -658,10 +675,10 @@ namespace DivRemChip.ConstraintsAndBuses
     U16MSBGadget.AbsConstraints is_word_operation b_msb ∧
     U16MSBGadget.AbsConstraints is_word_operation c_msb ∧
     U16MSBGadget.AbsConstraints is_word_operation r_msb ∧
-    -- Pico PR #101 (commit `ddd0d96`): bind `quot_msb` to bit-15 of
+    -- `constraints.rs:635-640`: bind `quot_msb` to bit-15 of
     -- `quotient_1` (the high u16 of the low 32-bit half), gated by
-    -- `is_word_operation`. Closes the soundness gap where `quot_msb`
-    -- was previously unconstrained.
+    -- `is_word_operation`. Closes the 2.x gap DR-2, where `quot_msb`
+    -- was unconstrained.
     U16MSBGadget.AbsConstraints is_word_operation q_msb ∧
     -- ---------------------------------------------------------------------
     -- (22) Boolean checks: 8 carry bits + 8 selectors + `is_overflow`,
@@ -808,7 +825,8 @@ namespace DivRemChip.ConstraintsAndBuses
     (b_neg   = if (is_signed_type = 1) then b_msb else 0) ∧
     (rem_neg = if (is_signed_type = 1) then r_msb else 0) ∧
     (c_neg   = if (is_signed_type = 1) then c_msb else 0) ∧
-    -- (3) Word-op b/c upper-limbs sign/zero-extension.
+    -- (3) Word-op b/c upper-limbs sign/zero-extension. (The raw-operand
+    --     equalities of `AbsConstraints` (3) are in `operands_of_raw`.)
     (is_word_operation = 1 →
       b_2 = b_neg * 65535 ∧ c_2 = c_neg * 65535 ∧
       b_3 = b_neg * 65535 ∧ c_3 = c_neg * 65535) ∧
@@ -860,7 +878,7 @@ namespace DivRemChip.ConstraintsAndBuses
       rc_0 = b_0 ∧ rc_1 = b_1 ∧ rc_2 = b_2 ∧ rc_3 = b_3) ∧
     -- (14) Abs-values when not negative.
     (c_neg   = 0 → ac_0 = c_0 ∧ ac_1 = c_1 ∧ ac_2 = c_2 ∧ ac_3 = c_3) ∧
-    (rem_neg = 0 → ar_0 = r_0 ∧ ar_1 = r_1 ∧ ar_2 = r_2 ∧ ar_3 = r_3) ∧
+    (rem_neg = 0 → ar_0 = rc_0 ∧ ar_1 = rc_1 ∧ ar_2 = rc_2 ∧ ar_3 = rc_3) ∧
     -- (15) max_abs_c_or_1.
     (mc_0 = (is_c_0_result + (1 - is_c_0_result) * ac_0)) ∧
     (mc_1 = (1 - is_c_0_result) * ac_1) ∧
@@ -877,7 +895,7 @@ namespace DivRemChip.ConstraintsAndBuses
     (abs_rem_alu_event = 1 →
       air.cols.values.rem_neg_gadget.value_0 row 0 = 0 ∧ air.cols.values.rem_neg_gadget.value_1 row 0 = 0 ∧
       air.cols.values.rem_neg_gadget.value_2 row 0 = 0 ∧ air.cols.values.rem_neg_gadget.value_3 row 0 = 0) ∧
-    -- (20) `bit = 1` pin from Pico PR #101 — closes the LtWordU16Gadget
+    -- (20) `bit = 1` pin (`constraints.rs:595-597`) — closes the LtWordU16Gadget
     --       soundness gap (gadget only enforces `bit ↔ (a < b)`).
     (remainder_check_multiplicity = 1 →
       air.cols.values.remainder_lt_gadget.bit row 0 = 1) ∧
@@ -934,14 +952,18 @@ namespace DivRemChip.ConstraintsAndBuses
     let a_1 := air.cols.values.a_1 row 0
     let a_2 := air.cols.values.a_2 row 0
     let a_3 := air.cols.values.a_3 row 0
-    let b_0 := air.cols.values.b_0 row 0
-    let b_1 := air.cols.values.b_1 row 0
-    let b_2 := air.cols.values.b_2 row 0
-    let b_3 := air.cols.values.b_3 row 0
     let c_0 := air.cols.values.c_0 row 0
     let c_1 := air.cols.values.c_1 row 0
     let c_2 := air.cols.values.c_2 row 0
     let c_3 := air.cols.values.c_3 row 0
+    let b_raw_0 := air.cols.values.b_raw_0 row 0
+    let b_raw_1 := air.cols.values.b_raw_1 row 0
+    let b_raw_2 := air.cols.values.b_raw_2 row 0
+    let b_raw_3 := air.cols.values.b_raw_3 row 0
+    let c_raw_0 := air.cols.values.c_raw_0 row 0
+    let c_raw_1 := air.cols.values.c_raw_1 row 0
+    let c_raw_2 := air.cols.values.c_raw_2 row 0
+    let c_raw_3 := air.cols.values.c_raw_3 row 0
     let q_0 := air.cols.values.quotient_0 row 0
     let q_1 := air.cols.values.quotient_1 row 0
     let q_2 := air.cols.values.quotient_2 row 0
@@ -1017,8 +1039,8 @@ namespace DivRemChip.ConstraintsAndBuses
               + is_divw * 49 + is_divuw * 50
               + is_remw * 51 + is_remuw * 52,
               a_0, a_1, a_2, a_3,
-              b_0, b_1, b_2, b_3,
-              c_0, c_1, c_2, c_3 ])
+              b_raw_0, b_raw_1, b_raw_2, b_raw_3,
+              c_raw_0, c_raw_1, c_raw_2, c_raw_3 ])
       ],
       Byte := List.map ByteBusEntry.deserialise [
         ((is_real), #v[8, q_0, 0, 0, 0]),
@@ -1222,7 +1244,7 @@ namespace DivRemChip.ConstraintsAndBuses
     ++ U16MSBGadget.AbsBuses is_word_operation b_1 b_msb
     ++ U16MSBGadget.AbsBuses is_word_operation c_1 c_msb
     ++ U16MSBGadget.AbsBuses is_word_operation r_1 r_msb
-    -- Pico PR #101 (commit `ddd0d96`): U16Range lookup on
+    -- `constraints.rs:635-640`: U16Range lookup on
     -- `2 * q_1 - quot_msb * 65536` enforcing `quot_msb = bit-15(q_1)`.
     ++ U16MSBGadget.AbsBuses is_word_operation q_1 quot_msb
     ++
@@ -1404,6 +1426,123 @@ namespace DivRemChip.Interpretations
     refine ⟨fun _ => ?_, fun _ => ?_, fun _ => ?_, fun _ => ?_,
             fun _ => ?_, fun _ => ?_, fun _ => ?_, fun _ => ?_⟩ <;>
       refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> grind
+
+  set_option linter.constructorNameAsVariable false in
+  /-- `b` and `c` in terms of the raw operands `b_raw`, `c_raw` that the ALU
+      bus carries (`AbsConstraints` (3), `constraints.rs:178-195`): the low
+      32 bits are equal; the upper limbs are the raw ones for 64-bit
+      operations and `b_neg · 0xFFFF` / `c_neg · 0xFFFF` for word
+      operations. -/
+  lemma operands_of_raw
+    [Field F] [Field ExtF]
+    (air : Valid_DivRemChip F ExtF) (row : ℕ)
+    (h_constraints : AbsConstraints air row)
+  :
+    air.cols.values.b_0 row 0 = air.cols.values.b_raw_0 row 0 ∧
+    air.cols.values.b_1 row 0 = air.cols.values.b_raw_1 row 0 ∧
+    air.cols.values.c_0 row 0 = air.cols.values.c_raw_0 row 0 ∧
+    air.cols.values.c_1 row 0 = air.cols.values.c_raw_1 row 0 ∧
+    (air.cols.values.is_divw  row 0 + air.cols.values.is_remw  row 0 +
+     air.cols.values.is_divuw row 0 + air.cols.values.is_remuw row 0 = 0 →
+      air.cols.values.b_2 row 0 = air.cols.values.b_raw_2 row 0 ∧
+      air.cols.values.b_3 row 0 = air.cols.values.b_raw_3 row 0 ∧
+      air.cols.values.c_2 row 0 = air.cols.values.c_raw_2 row 0 ∧
+      air.cols.values.c_3 row 0 = air.cols.values.c_raw_3 row 0) ∧
+    (air.cols.values.is_divw  row 0 + air.cols.values.is_remw  row 0 +
+     air.cols.values.is_divuw row 0 + air.cols.values.is_remuw row 0 = 1 →
+      air.cols.values.b_2 row 0 = air.cols.values.b_neg row 0 * 65535 ∧
+      air.cols.values.b_3 row 0 = air.cols.values.b_neg row 0 * 65535 ∧
+      air.cols.values.c_2 row 0 = air.cols.values.c_neg row 0 * 65535 ∧
+      air.cols.values.c_3 row 0 = air.cols.values.c_neg row 0 * 65535)
+  := by
+    simp only [AbsConstraints] at h_constraints
+    obtain ⟨-, -, -, -, h_b_0, h_c_0, h_b_1, h_c_1, h_b_2, h_c_2, h_b_3, h_c_3, -⟩ :=
+      h_constraints
+    refine ⟨?_, ?_, ?_, ?_, fun h_w => ⟨?_, ?_, ?_, ?_⟩, fun h_w => ⟨?_, ?_, ?_, ?_⟩⟩
+    · linear_combination -h_b_0
+    · linear_combination -h_b_1
+    · linear_combination -h_c_0
+    · linear_combination -h_c_1
+    · linear_combination h_b_2 +
+        (air.cols.values.b_neg row 0 * 65535 - air.cols.values.b_raw_2 row 0) * h_w
+    · linear_combination h_b_3 +
+        (air.cols.values.b_neg row 0 * 65535 - air.cols.values.b_raw_3 row 0) * h_w
+    · linear_combination h_c_2 +
+        (air.cols.values.c_neg row 0 * 65535 - air.cols.values.c_raw_2 row 0) * h_w
+    · linear_combination h_c_3 +
+        (air.cols.values.c_neg row 0 * 65535 - air.cols.values.c_raw_3 row 0) * h_w
+    · linear_combination h_b_2 -
+        (air.cols.values.b_raw_2 row 0 - air.cols.values.b_neg row 0 * 65535) * h_w
+    · linear_combination h_b_3 -
+        (air.cols.values.b_raw_3 row 0 - air.cols.values.b_neg row 0 * 65535) * h_w
+    · linear_combination h_c_2 -
+        (air.cols.values.c_raw_2 row 0 - air.cols.values.c_neg row 0 * 65535) * h_w
+    · linear_combination h_c_3 -
+        (air.cols.values.c_raw_3 row 0 - air.cols.values.c_neg row 0 * 65535) * h_w
+
+  set_option linter.constructorNameAsVariable false in
+  /-- The raw operands `b_raw`, `c_raw` and the computational `b`, `c` are
+      u16 limbs on a real row. The bus contract gives the raw ones: the
+      DIV/REM opcodes are not in `ALUBus.operandsInternal`, so the ALU
+      bus externals of the chip's looked entry carry their range. `b` and
+      `c` follow by `operands_of_raw`, since `b_neg` and `c_neg` are
+      boolean. -/
+  lemma operand_range
+    [Field ExtF]
+    (air : Valid_DivRemChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.values.is_real row 0 = 1)
+    (h_ext : bus_row_ext_asm (bus_row air row))
+    (h_constraints : AbsConstraints air row)
+  :
+    ALUBus.operandRange
+      (air.cols.values.b_raw_0 row 0) (air.cols.values.b_raw_1 row 0)
+      (air.cols.values.b_raw_2 row 0) (air.cols.values.b_raw_3 row 0)
+      (air.cols.values.c_raw_0 row 0) (air.cols.values.c_raw_1 row 0)
+      (air.cols.values.c_raw_2 row 0) (air.cols.values.c_raw_3 row 0) ∧
+    ALUBus.operandRange
+      (air.cols.values.b_0 row 0) (air.cols.values.b_1 row 0)
+      (air.cols.values.b_2 row 0) (air.cols.values.b_3 row 0)
+      (air.cols.values.c_0 row 0) (air.cols.values.c_1 row 0)
+      (air.cols.values.c_2 row 0) (air.cols.values.c_3 row 0)
+  := by
+    obtain ⟨b_div, b_divu, b_rem, b_remu, b_divw, b_remw, b_divuw, b_remuw, h_sum⟩ :=
+      selector_breakdown air row h_constraints
+    obtain ⟨h_b_0, h_b_1, h_c_0, h_c_1, h_not_word, h_word⟩ :=
+      operands_of_raw air row h_constraints
+    have h_neg : (air.cols.values.b_neg row 0 = 0 ∨ air.cols.values.b_neg row 0 = 1) ∧
+        (air.cols.values.c_neg row 0 = 0 ∨ air.cols.values.c_neg row 0 = 1) := by
+      have := h_constraints
+      simp [AbsConstraints, sub_eq_zero] at this
+      clear *- this; aesop
+    have h_ext : bus_row_ext_asm (ChipExtraBuses air row) := by
+      simp [AbsBuses] at h_ext; aesop
+    simp [bus_row_ext_asm, ChipExtraBuses] at h_ext; replace h_ext := h_ext.2.2
+    simp [ALUBus.externals, ALUBus.validOpcode, ALUBus.operandsInternal,
+          ALUBus.operandRange, h_is_real] at h_ext
+    have h_raw :
+      ALUBus.operandRange
+        (air.cols.values.b_raw_0 row 0) (air.cols.values.b_raw_1 row 0)
+        (air.cols.values.b_raw_2 row 0) (air.cols.values.b_raw_3 row 0)
+        (air.cols.values.c_raw_0 row 0) (air.cols.values.c_raw_1 row 0)
+        (air.cols.values.c_raw_2 row 0) (air.cols.values.c_raw_3 row 0) := by
+      simp only [ALUBus.operandRange]
+      apply h_ext.2 <;> clear h_ext h_not_word h_word h_neg <;> grind
+    refine ⟨h_raw, ?_⟩
+    simp only [ALUBus.operandRange] at h_raw ⊢
+    rw [h_b_0, h_b_1, h_c_0, h_c_1]
+    have h_w : air.cols.values.is_divw  row 0 + air.cols.values.is_remw  row 0 +
+               air.cols.values.is_divuw row 0 + air.cols.values.is_remuw row 0 = 0 ∨
+               air.cols.values.is_divw  row 0 + air.cols.values.is_remw  row 0 +
+               air.cols.values.is_divuw row 0 + air.cols.values.is_remuw row 0 = 1 := by
+      clear *- b_div b_divu b_rem b_remu b_divw b_remw b_divuw b_remuw h_sum; grind
+    rcases h_w with h_w | h_w
+    · obtain ⟨h_b_2, h_b_3, h_c_2, h_c_3⟩ := h_not_word h_w
+      rw [h_b_2, h_b_3, h_c_2, h_c_3]; exact h_raw
+    · obtain ⟨h_b_2, h_b_3, h_c_2, h_c_3⟩ := h_word h_w
+      rw [h_b_2, h_b_3, h_c_2, h_c_3]
+      obtain ⟨h_b_neg, h_c_neg⟩ := h_neg
+      rcases h_b_neg with h_b_neg | h_b_neg <;> rcases h_c_neg with h_c_neg | h_c_neg <;>
+        simp [h_b_neg, h_c_neg, h_raw]
 
   -- =====================================================================
   -- Preprocessing lemma: bus split + gadget-spec application.
@@ -1653,9 +1792,8 @@ namespace DivRemChip.Interpretations
       let value := air.cols.values.remainder_1 row 0
       (msb = 0 ∧ value.val < 32768) ∨ (msb = 1 ∧ 32768 ≤ value.val)) ∧
     -- (20) `U16MSBGadget` thunk on `quot_msb` for `q_1` (word-variant mode).
-    --      Added in Pico PR #101 (commit `ddd0d96`) so `quot_msb` is
-    --      properly tied to bit-15 of `quotient_1` rather than being
-    --      a free witness.
+    --      (`constraints.rs:635-640`) so `quot_msb` is tied to bit-15
+    --      of `quotient_1` rather than being a free witness.
     (air.cols.values.is_divw  row 0 + air.cols.values.is_remw  row 0
        + air.cols.values.is_divuw row 0 + air.cols.values.is_remuw row 0 = 1 →
       (air.cols.values.quotient_1 row 0).val < 65536 →
@@ -1685,7 +1823,8 @@ namespace DivRemChip.Interpretations
         ⟨ eq_is_real_not_word,
           -- (2) MSB-sign pairings × 3
           eq_b_msb_neg, eq_rem_msb_neg, eq_c_msb_neg,
-          -- (3) Word-op b/c upper-limbs sign/zero-extension (4)
+          -- (3) b/c from the raw operands (8)
+          eq_b_raw_0, eq_c_raw_0, eq_b_raw_1, eq_c_raw_1,
           eq_b_2_ext, eq_c_2_ext, eq_b_3_ext, eq_c_3_ext,
           -- (4) quotient_comp setup (10)
           eq_qc_0, eq_qc_1,
@@ -1774,7 +1913,7 @@ namespace DivRemChip.Interpretations
     -- Split externals
     simp [AbsBuses, and_assoc] at h_ext_asm h_wf_asm
     simp [AbsConstraints] at h_constraints
-    replace h_constraints := h_constraints.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+    replace h_constraints := h_constraints.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
     have := MulGadget.Spec.gadget_spec
               (h_gadget_constraints := h_constraints.1)
               (h_gadget_ext_asm := h_ext_asm.1)
