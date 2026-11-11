@@ -6,142 +6,94 @@ import LeanZKCircuit_Plonky3.Plonky3.Command.Air.define_air
 import PicoFV.RV64IM.Extraction.Attributes
 import PicoFV.RV64IM.Airs.Attributes
 import PicoFV.RV64IM.Airs.SubAirs
-import PicoFV.RV64IM.Airs.IsZeroGadget
--- EcallCols.syscall_code_bytes is evaluated with both variants depending on path:
---   ecall/constraints.rs:47  → eval_u16_to_u8_safe   (main syscall path)
---   ecall/constraints.rs:296 → eval_u16_to_u8_unsafe (is_commit path)
---   ecall/constraints.rs:332 → eval_u16_to_u8_unsafe (is_commit_deferred_proofs path)
-import PicoFV.RV64IM.Airs.U16ToU8GadgetSafe
-import PicoFV.RV64IM.Airs.U16ToU8GadgetUnsafe
 
 open Plonky3
 
 set_option linter.unusedVariables false
 
 /-!
-# CpuChip (64-bit)
+# CpuChip (Pico v3.1.1, 58 columns)
 
-Lean formalisation of `CpuCols` and its sub-structures from
-`vm/src/chips/chips/riscv_cpu/...` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
+Column layout of `CpuCols` in `vm/src/chips/chips/riscv_cpu/columns.rs` at the pinned commit
+(`2acc7c1828fb`), which asserts `NUM_CPU_COLS == 58` (`columns.rs:20`).
 
-Sub-structures (from `instruction/columns.rs`, `opcode_selector/columns.rs`,
-`opcode_specific/columns.rs`, `auipc/columns.rs`, `branch/columns.rs`,
-`ecall/columns.rs`, `jump/columns.rs`):
-
-```rust
-pub struct InstructionCols<T> {
-    pub opcode: T,
-    pub op_a: Word<T>,                                    // 4
-    pub op_b: Word<T>,                                    // 4
-    pub op_c: Word<T>,                                    // 4
-    pub op_a_0: T,
-}                                                          // total: 14
-
-pub struct OpcodeSelectorCols<T> {
-    // 4 + 11 (memory) + 6 (branch) + 2 (jump) + 2 (misc) = 25 selectors
-    pub imm_b: T, pub imm_c: T, pub is_alu: T, pub is_ecall: T,
-    pub is_lb: T, pub is_lbu: T, pub is_lh: T, pub is_lhu: T,
-    pub is_lw: T, pub is_lwu: T, pub is_ld: T,
-    pub is_sb: T, pub is_sh: T, pub is_sw: T, pub is_sd: T,
-    pub is_beq: T, pub is_bne: T, pub is_blt: T, pub is_bge: T,
-    pub is_bltu: T, pub is_bgeu: T,
-    pub is_jalr: T, pub is_jal: T,
-    pub is_auipc: T, pub is_unimpl: T,
-}                                                          // total: 25
-
-pub struct BranchCols<T> { a_eq_b: T, a_gt_b: T, a_lt_b: T }    //  3
-pub struct AuipcCols<T>(PhantomData<T>);                        //  0
-pub struct JumpCols<T> { pub jalr_lsb: T }                       //  1
-pub struct EcallCols<T> {
-    pub syscall_code_bytes: U16ToU8Gadget<T>,                 //  4
-    pub is_enter_unconstrained: IsZeroGadget<T>,              //  2
-    pub is_hint_len: IsZeroGadget<T>,                         //  2
-    pub is_halt: IsZeroGadget<T>,                             //  2
-    pub is_commit: IsZeroGadget<T>,                           //  2
-    pub is_commit_deferred_proofs: IsZeroGadget<T>,           //  2
-    pub index_bitmap: [T; PV_DIGEST_NUM_WORDS],               //  8
-    pub operand_range_check_cols: FieldWordRangeChecker<T>,   // 10
-    pub operand_to_check: Word<T>,                            //  4
-}                                                              // total: 36
-
-pub union OpcodeSpecificCols<T> {                              // size = max = 36
-    branch: BranchCols<T>, jump: JumpCols<T>,
-    auipc: AuipcCols<T>, ecall: EcallCols<T>,
-}
+```text
+ 0      clk                     28-31  op_a_access.prev_value
+ 1      num_extra_clk           32-35  op_a_access.access.value
+ 2-3    pc (2 limbs)            36-37  op_a_access.access.{diff_16bit_limb, diff_hi9}
+ 4-5    next_pc (2 limbs)       38-41  op_b_access.access.value
+ 6      opcode                  42-43  op_b_access.access.{diff_16bit_limb, diff_hi9}
+ 7      op_a (register index)   44-47  op_c_access.access.value
+ 8-10   op_b (limb0, limb1, sign) 48-49 op_c_access.access.{diff_16bit_limb, diff_hi9}
+ 11-13  op_c (limb0, limb1, sign) 50   a_gt_b
+ 14     op_a_0 (rd is x0)       51     a_lt_b
+ 15-27  opcode selectors (13)   52     is_halt
+                                53     is_real
+                                54     is_last
+                                55     is_alu_not_x0
+                                56     jalr_lsb
+                                57     pc_carry
 ```
 
-Top-level `CpuCols` (132 columns total):
-```rust
-pub struct CpuCols<T> {
-    pub chunk: T,
-    pub clk: T,
-    pub clk_16bit_limb: T,
-    pub clk_8bit_limb: T,
-    pub num_extra_clk: T,
-    pub pc: Addr<T>,                          //  3
-    pub next_pc: Addr<T>,                     //  3
-    pub instruction: InstructionCols<T>,      // 14
-    pub opcode_selector: OpcodeSelectorCols<T>, // 25
-    pub op_a_access: MemoryReadWriteCols<T>,  // 13
-    pub op_b_access: MemoryReadCols<T>,       //  9
-    pub op_c_access: MemoryReadCols<T>,       //  9
-    pub opcode_specific: OpcodeSpecificCols<T>, // 36
-    pub is_real: T,
-    pub branching: T,
-    pub not_branching: T,
-    pub ecall_mul_send_to_table: T,
-    pub ecall_range_check_operand: T,
-    pub is_sequential_instr: T,
-    pub pc_carry_a: [T; 5],
-    pub pc_carry_b: [T; 4],
-}
-```
+Names follow the 2.x Lean files where the meaning is the same, so the equivalence proofs have
+less to rename: Pico's `instruction.op_a` (the register index, one column since 3.x) is
+`instruction.op_a_0`, and Pico's `instruction.op_a_0` (the "destination is x0" flag) is
+`instruction.op_a_is_x0`. `op_b` and `op_c` are Pico's `SignExtImm`: `op_b_0`, `op_b_1` are
+bits 0..16 and 16..32 and `op_b_sign` stands for bits 32..64.
 
-Layout: 5 + 3 + 3 + 14 + 25 + 13 + 9 + 9 + 36 + 6 + 5 + 4 = **132 columns**.
-This matches `Extraction/CpuChip.lean`.
+The register accesses use Pico's "lite" layouts (`riscv_memory/read_write/columns.rs:383-415`):
+no committed previous chunk or clock; the previous clock is `clk - (diff_16bit_limb +
+diff_hi9 * 2^16) - 1`. They are defined here, beside the 2.x shapes in `SubAirs.lean`, which the
+memory chip still uses.
 -/
 
 -- ============================================================================
--- InstructionCols (14 columns)
+-- Lite register-access layouts (6 and 10 columns)
+-- ============================================================================
+
+#define_subair "MemoryAccessLiteCols" using "pico_encapsulation" where
+  Column["value_0"]
+  Column["value_1"]
+  Column["value_2"]
+  Column["value_3"]
+  Column["diff_16bit_limb"]
+  Column["diff_hi9"]
+
+#define_subair "MemoryReadLiteCols" using "pico_encapsulation" where
+  SubAir["access": "MemoryAccessLiteCols" width := 6]
+
+#define_subair "MemoryReadWriteLiteCols" using "pico_encapsulation" where
+  Column["prev_value_0"]
+  Column["prev_value_1"]
+  Column["prev_value_2"]
+  Column["prev_value_3"]
+  SubAir["access": "MemoryAccessLiteCols" width := 6]
+
+-- ============================================================================
+-- InstructionCols (9 columns)
 -- ============================================================================
 
 #define_subair "InstructionCols" using "pico_encapsulation" where
   Column["opcode"]
   Column["op_a_0"]
-  Column["op_a_1"]
-  Column["op_a_2"]
-  Column["op_a_3"]
   Column["op_b_0"]
   Column["op_b_1"]
-  Column["op_b_2"]
-  Column["op_b_3"]
+  Column["op_b_sign"]
   Column["op_c_0"]
   Column["op_c_1"]
-  Column["op_c_2"]
-  Column["op_c_3"]
+  Column["op_c_sign"]
   Column["op_a_is_x0"]
 
 -- ============================================================================
--- OpcodeSelectorCols (25 columns)
+-- OpcodeSelectorCols (13 columns)
 -- ============================================================================
 
 #define_subair "OpcodeSelectorCols" using "pico_encapsulation" where
   Column["imm_b"]
   Column["imm_c"]
-  Column["is_alu"]
   Column["is_ecall"]
-  Column["is_lb"]
-  Column["is_lbu"]
-  Column["is_lh"]
-  Column["is_lhu"]
-  Column["is_lw"]
-  Column["is_lwu"]
-  Column["is_ld"]
-  Column["is_sb"]
-  Column["is_sh"]
-  Column["is_sw"]
-  Column["is_sd"]
+  Column["is_memory"]
+  Column["is_store"]
   Column["is_beq"]
   Column["is_bne"]
   Column["is_blt"]
@@ -150,103 +102,35 @@ This matches `Extraction/CpuChip.lean`.
   Column["is_bgeu"]
   Column["is_jalr"]
   Column["is_jal"]
-  Column["is_auipc"]
-  Column["is_unimpl"]
 
 -- ============================================================================
--- OpcodeSpecificCols (36 columns)
---
--- This is a Rust `union` of BranchCols(3), JumpCols(1), AuipcCols(0),
--- EcallCols(36); the layout therefore mirrors `EcallCols` (the largest member).
--- We expose it via 36 generic `specific_<i>` columns; per-variant lemmas in
--- the constraint helper files re-interpret the relevant prefix. For JALR,
--- the union's first slot (`specific_0`) carries the `jalr_lsb` witness
--- (bit 0 of `rs1 + imm`).
--- ============================================================================
-
-#define_subair "OpcodeSpecificCols" using "pico_encapsulation" where
-  Column["specific_0"]
-  Column["specific_1"]
-  Column["specific_2"]
-  Column["specific_3"]
-  Column["specific_4"]
-  Column["specific_5"]
-  Column["specific_6"]
-  Column["specific_7"]
-  Column["specific_8"]
-  Column["specific_9"]
-  Column["specific_10"]
-  Column["specific_11"]
-  Column["specific_12"]
-  Column["specific_13"]
-  Column["specific_14"]
-  Column["specific_15"]
-  Column["specific_16"]
-  Column["specific_17"]
-  Column["specific_18"]
-  Column["specific_19"]
-  Column["specific_20"]
-  Column["specific_21"]
-  Column["specific_22"]
-  Column["specific_23"]
-  Column["specific_24"]
-  Column["specific_25"]
-  Column["specific_26"]
-  Column["specific_27"]
-  Column["specific_28"]
-  Column["specific_29"]
-  Column["specific_30"]
-  Column["specific_31"]
-  Column["specific_32"]
-  Column["specific_33"]
-  Column["specific_34"]
-  Column["specific_35"]
-
--- ============================================================================
--- CpuCols (132 columns)
+-- CpuCols (58 columns)
 -- ============================================================================
 
 #define_subair "CpuCols" using "pico_encapsulation" where
-  Column["chunk"]
   Column["clk"]
-  Column["clk_16bit_limb"]
-  Column["clk_8bit_limb"]
   Column["num_extra_clk"]
-  -- pc: Addr<T> = [T; 3]
   Column["pc_0"]
   Column["pc_1"]
-  Column["pc_2"]
-  -- next_pc: Addr<T> = [T; 3]
   Column["next_pc_0"]
   Column["next_pc_1"]
-  Column["next_pc_2"]
-  SubAir["instruction": "InstructionCols" width := 14]
-  SubAir["opcode_selector": "OpcodeSelectorCols" width := 25]
-  SubAir["op_a_access": "MemoryReadWriteCols" width := 13]
-  SubAir["op_b_access": "MemoryReadCols" width := 9]
-  SubAir["op_c_access": "MemoryReadCols" width := 9]
-  SubAir["opcode_specific": "OpcodeSpecificCols" width := 36]
+  SubAir["instruction": "InstructionCols" width := 9]
+  SubAir["opcode_selector": "OpcodeSelectorCols" width := 13]
+  SubAir["op_a_access": "MemoryReadWriteLiteCols" width := 10]
+  SubAir["op_b_access": "MemoryReadLiteCols" width := 6]
+  SubAir["op_c_access": "MemoryReadLiteCols" width := 6]
+  Column["a_gt_b"]
+  Column["a_lt_b"]
+  Column["is_halt"]
   Column["is_real"]
-  Column["branching"]
-  Column["not_branching"]
-  Column["ecall_mul_send_to_table"]
-  Column["ecall_range_check_operand"]
-  Column["is_sequential_instr"]
-  -- pc_carry_a: [T; 5]
-  Column["pc_carry_a_0"]
-  Column["pc_carry_a_1"]
-  Column["pc_carry_a_2"]
-  Column["pc_carry_a_3"]
-  Column["pc_carry_a_4"]
-  -- pc_carry_b: [T; 4]
-  Column["pc_carry_b_0"]
-  Column["pc_carry_b_1"]
-  Column["pc_carry_b_2"]
-  Column["pc_carry_b_3"]
+  Column["is_last"]
+  Column["is_alu_not_x0"]
+  Column["jalr_lsb"]
+  Column["pc_carry"]
 
 -- ============================================================================
 -- Air definition
 -- ============================================================================
 
 #define_air "CpuChip" using "pico_encapsulation" where
-  MainSubAir["cols": "CpuCols" width := 132]
+  MainSubAir["cols": "CpuCols" width := 58]

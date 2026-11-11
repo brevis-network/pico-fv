@@ -103,7 +103,6 @@ import PicoFV.RV64IM.Constraints.MulChip
 import PicoFV.RV64IM.Constraints.DivRemChip
 import PicoFV.RV64IM.Constraints.MemoryReadWriteChip
 import PicoFV.RV64IM.Constraints.CpuChip
-import PicoFV.RV64IM.Constraints.CpuChipInterpretations
 
 -- Spec (semantic specifications)
 import PicoFV.RV64IM.Spec.AddGadget
@@ -132,4 +131,3 @@ import PicoFV.RV64IM.Spec.DivRemChip
 import PicoFV.RV64IM.Spec.MemoryReadWriteChip
 
 -- Equivalence (Sail ↔ Pico)
-import PicoFV.RV64IM.Equivalence.Equivalence
