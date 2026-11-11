@@ -745,12 +745,22 @@ namespace RV64IM_Interactions
         ALU_opcode ∈ Finset.Icc 30 33 ∨
         ALU_opcode = 48
 
-      /-- Set of all valid ALU bus opcodes. -/
+      /-- Set of all valid ALU bus opcodes.
+
+          `264` and `265` are the two branch-comparison opcodes,
+          `SLT + LT_CMP_OPCODE_TAG` and `SLTU + LT_CMP_OPCODE_TAG` with
+          the tag `1 <<< 8` (`alu/lt/columns.rs:22`). The CPU sends one
+          of them for every branch and reads both strict comparison bits
+          off the single reply; `LtChip` serves them on its merged rows
+          (`is_cmp = 1`). The tag keeps such a reply from pairing with a
+          plain `SLT` / `SLTU` dispatch. -/
       def ALUBus.validOpcode (ALU_opcode : FKB) : Prop :=
         ALU_opcode ∈ Finset.Icc 0 9 ∨
         ALU_opcode ∈ Finset.Icc 30 37 ∨
         ALU_opcode ∈ Finset.Icc 40 44 ∨
-        ALU_opcode ∈ Finset.Icc 48 52
+        ALU_opcode ∈ Finset.Icc 48 52 ∨
+        ALU_opcode = 264 ∨
+        ALU_opcode = 265
 
       /-- Per-entry operand u16 range (all 8 limbs). -/
       def ALUBus.operandRange
@@ -775,7 +785,14 @@ namespace RV64IM_Interactions
           - `execute_RTYPE_pure` for 64-bit R-type ALU ops `0..9`
           - `execute_RTYPEW_pure` for W-variants `40..44`
           - `execute_MUL_pure` / `execute_MULW_pure` for MUL family
-          - `execute_DIV_REM_pure` / `execute_DIVW_REMW_pure` for DIV/REM. -/
+          - `execute_DIV_REM_pure` / `execute_DIVW_REMW_pure` for DIV/REM.
+
+          The two branch-comparison opcodes `264` / `265` are the
+          exception to "`a` = one pure execute function": they carry two
+          strict comparison bits in pieces 0 and 1, so their relation is
+          stated limb by limb. Like `8` / `9`, they are not in
+          `ALUBus.operandsInternal`: `LtChip` does not range-check its
+          operands, it receives their bounds through `externals`. -/
       def ALUBus.Spec
         (ALU_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 : FKB) :=
         let a := U64w.toBV #v[a_0, a_1, a_2, a_3]
@@ -824,6 +841,16 @@ namespace RV64IM_Interactions
         | 50 => a = (RV64IM.execute_DIVW_REMW_pure (b.setWidth 32) (c.setWidth 32) .DRU).1
         | 51 => a = (RV64IM.execute_DIVW_REMW_pure (b.setWidth 32) (c.setWidth 32) .DRS).2
         | 52 => a = (RV64IM.execute_DIVW_REMW_pure (b.setWidth 32) (c.setWidth 32) .DRU).2
+        -- Branch comparisons (`LtChip`'s merged rows). The result is not
+        -- one word but two strict comparison bits: piece 0 is `[b < c]`,
+        -- piece 1 is `[c < b]`, and pieces 2 and 3 are zero. The CPU
+        -- recovers `[b = c]` as `1 - a_0 - a_1`.
+        | 264 => a_0 = (if b.slt c then 1 else 0) ∧
+                 a_1 = (if c.slt b then 1 else 0) ∧
+                 a_2 = 0 ∧ a_3 = 0
+        | 265 => a_0 = (if b.ult c then 1 else 0) ∧
+                 a_1 = (if c.ult b then 1 else 0) ∧
+                 a_2 = 0 ∧ a_3 = 0
         | _ => True
 
       /-- ALU bus externals for one entry. Active when multiplicity ≠ 0:

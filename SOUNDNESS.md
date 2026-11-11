@@ -107,12 +107,15 @@ makes are discharged by what the other chips prove relies on Pico's LogUp argume
 every bus, and on each message being served by a chip whose specification is proven. Neither is
 proven here.
 
-Messages a chip serves but the contract does not specify yet are not covered either. On a merged
-branch-comparison row `LtChip` serves ALU opcodes 264 / 265 (`SLT` / `SLTU` + 256), which are
-not in `ALUBus.validOpcode`. Under the current contract such a row contradicts the ALU entry's
-external assumption, so `LtChip`'s theorems say nothing about it. At the pinned commit Pico's
-CPU does send these opcodes for its branch comparisons, so branch outcomes computed on merged
-rows are not verified until the CPU chip moves to Pico 3.x and the contract specifies them.
+The contract now covers the merged branch-comparison rows. `ALUBus.validOpcode` contains the two
+opcodes 264 / 265 (`SLT` / `SLTU` + `LT_CMP_OPCODE_TAG`) that Pico's CPU sends for every branch,
+`ALUBus.Spec` gives them their meaning — piece 0 is `[b < c]`, piece 1 is `[c < b]`, pieces 2 and
+3 are zero — and `LtChip.Spec.spec_CMP_SLT` / `spec_CMP_SLTU` prove that `LtChip` serves them.
+What the CPU does with the two bits is not proven here: that is the CPU chip's side, and it has
+not moved to Pico 3.x yet.
+
+Messages a chip serves but the contract does not specify are still not covered in general; there
+are none among the RV64IM ALU chips at the pinned commit.
 
 ### A5. What is not covered
 
@@ -131,7 +134,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 76 |
+| kernel + compiler | 78 |
 | kernel + compiler + RISC-V spec axioms | 62 |
 | kernel only | 1 |
 <!-- end generated -->
