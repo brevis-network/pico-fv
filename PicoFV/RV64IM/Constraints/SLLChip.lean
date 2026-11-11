@@ -62,8 +62,9 @@ Bus interactions (11 entries):
 - 8 ByteBus opcode-9 entries: shift_carry verification of
   `(b_i · v_0123 − lower_limb_i · v_0123 · 65535/v_0123) = …`.
   Pairs `(lower_limb_i, higher_limb_i)` against `(16 − shift, shift)`.
-- 1 ByteBus opcode-8 entry: U16MSBGadget on `b_1`,
-  `2 · a_1 − sllw_msb · 65536`, gated by `+is_sllw`.
+- 1 ByteBus opcode-8 entry: U16MSBGadget on `a_1`
+  (`constraints.rs:160`), `2 · a_1 − sllw_msb · 65536`, gated by
+  `+is_sllw`.
 - 1 ALU entry: opcode `is_sll · 5 + is_sllw · 42` ∈ {5 (SLL), 42 (SLLW)},
   gated by `-is_real`, carrying `(a, b, c)`.
 -/
@@ -726,7 +727,9 @@ namespace SLLChip.ConstraintsAndBuses
     section row_buses
 
       -- =====================================================================
-      -- Bus interactions (per row):
+      -- Bus interactions (11 per row):
+      --   1 ByteBus opcode-9 entry: `(c_0 - s5) * inv64 < 2^10`, pinning
+      --     the shift amount `s5` to the low 6 bits of `c_0`.
       --   8 ByteBus opcode-9 entries: shift_carry verification pairing
       --     limb-result and higher_limb values against the low-4-bit
       --     shift amount `s4 = c_bits_0..3` and `16 - s4`.
@@ -818,9 +821,9 @@ namespace SLLChip.Interactions
 
   open RV64IM_Interactions
 
-  /-- The typed `BusRow` per `SLLChip` row: 9 byte-bus entries (8 for
-      the shift carry chain + 1 for the U16MSBGadget on `b_1`) plus
-      1 ALU entry. -/
+  /-- The typed `BusRow` per `SLLChip` row: 10 byte-bus entries (1 for
+      the shift-amount range check, 8 for the shift carry chain, 1 for
+      the U16MSBGadget on `a_1`) plus 1 ALU entry. -/
   def bus_row (air : Valid_SLLChip FKB ExtF) (row : ℕ) : BusRow :=
     let mult : FKB := air.cols.values.is_sll row 0 + air.cols.values.is_sllw row 0
     let s4 : FKB :=
