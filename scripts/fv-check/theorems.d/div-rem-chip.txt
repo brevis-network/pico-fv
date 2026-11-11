@@ -12,3 +12,5 @@ DivRemChip.Spec.spec_DIVUW
 DivRemChip.Spec.spec_REMUW
 DivRemChip.Spec.ext_asrt
 DivRemChip.Spec.wf_asrt
+DivRemChip.ConstraintsAndBuses.allHold_iff_allHold_simplified
+DivRemChip.Interactions.bus_row_equiv

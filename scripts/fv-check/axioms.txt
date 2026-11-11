@@ -9,6 +9,8 @@ BitwiseChip.Spec.spec_AND Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,
 BitwiseChip.Spec.spec_OR Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 BitwiseChip.Spec.spec_XOR Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 BitwiseChip.Spec.wf_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+DivRemChip.ConstraintsAndBuses.allHold_iff_allHold_simplified Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+DivRemChip.Interactions.bus_row_equiv Quot.sound,propext
 DivRemChip.Spec.ext_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 DivRemChip.Spec.spec_DIV Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 DivRemChip.Spec.spec_DIVU Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext

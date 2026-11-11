@@ -722,7 +722,7 @@ namespace DivRemChip.ConstraintsAndBuses
   /-- `AbsConstraints` with all 11 sub-gadget `AbsConstraints` calls
       stripped out (`MulGadget × 2`, `IsEqualWordGadget × 4`,
       `IsZeroWordGadget`, `AddGadget × 2`, `LtWordU16Gadget`,
-      `U16MSBGadget × 6`).
+      `U16MSBGadget × 7`).
 
       Kept in the same section order as `AbsConstraints`. This is the
       "what's left after the gadget specs have been applied" side of
@@ -929,24 +929,213 @@ namespace DivRemChip.ConstraintsAndBuses
     -- (23) Exact-one selector.
     (is_divu + is_remu + is_div + is_rem + is_divw + is_remw + is_divuw + is_remuw = 1)
 
-  /-- The chip-own bus entries (everything in `AbsBuses` after the
-      sub-gadget `AbsBuses` blocks): 32 byte-bus u16 range-check
-      entries on `quotient`, `remainder`, `c_times_quotient`, the
-      computed `c·q + rem` carry chain, `abs_c`, `abs_remainder`,
-      plus the two `looking_alu(ADD)` ALU entries for the abs-value
-      sub-events and the chip's own `looked_alu` dispatching to the
-      selector-encoded ALU opcode
-      `is_div · 34 + is_divu · 35 + is_rem · 36 + is_remu · 37
-       + is_divw · 49 + is_divuw · 50 + is_remw · 51 + is_remuw · 52`.
+  -- =====================================================================
+  -- The chip-own bus blocks. `AbsBuses` below interleaves them with the
+  -- sub-gadget `AbsBuses` blocks in the order Pico's `eval` emits them,
+  -- which is the order `raw_bus_row` (and hence the extraction) lists.
+  --
+  -- None of them is marked `@[constraint_and_interaction_simplification]`,
+  -- so that the automation splits `bus_row_ext_asm` / `bus_row_wf_asm` on
+  -- the typed bus into the sub-gadget pieces plus one opaque residual per
+  -- block, which callers unfold explicitly when they need a byte-bus u16
+  -- bound or the ALU entry's operand ranges.
+  -- =====================================================================
 
-      Factored out of `AbsBuses` (and intentionally **not** marked
-      `@[constraint_and_interaction_simplification]`) so that the
-      automation can split `bus_row_ext_asm` / `bus_row_wf_asm` on
-      the typed bus into gadget-bus pieces + a single opaque
-      `bus_row_ext_asm (ChipExtraBuses air row)` /
-      `bus_row_wf_asm (ChipExtraBuses air row)` residual that
-      callers unfold explicitly when they need to extract
-      operand-range hypotheses or byte-bus u16 bounds. -/
+  /-- u16 range checks on the eight limbs of `c · quotient + remainder`,
+      reconstructed from `c_times_quotient`, `remainder_comp` (sign-extended
+      by `rem_neg`) and the carry chain (`constraints.rs:423`). -/
+  def CarryChainBuses (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : BusRow :=
+    let rc_0 := air.cols.values.remainder_comp_0 row 0
+    let rc_1 := air.cols.values.remainder_comp_1 row 0
+    let rc_2 := air.cols.values.remainder_comp_2 row 0
+    let rc_3 := air.cols.values.remainder_comp_3 row 0
+    let cq_0 := air.cols.values.c_times_quotient_0 row 0
+    let cq_1 := air.cols.values.c_times_quotient_1 row 0
+    let cq_2 := air.cols.values.c_times_quotient_2 row 0
+    let cq_3 := air.cols.values.c_times_quotient_3 row 0
+    let cq_4 := air.cols.values.c_times_quotient_4 row 0
+    let cq_5 := air.cols.values.c_times_quotient_5 row 0
+    let cq_6 := air.cols.values.c_times_quotient_6 row 0
+    let cq_7 := air.cols.values.c_times_quotient_7 row 0
+    let cy_0 := air.cols.values.carry_0 row 0
+    let cy_1 := air.cols.values.carry_1 row 0
+    let cy_2 := air.cols.values.carry_2 row 0
+    let cy_3 := air.cols.values.carry_3 row 0
+    let cy_4 := air.cols.values.carry_4 row 0
+    let cy_5 := air.cols.values.carry_5 row 0
+    let cy_6 := air.cols.values.carry_6 row 0
+    let cy_7 := air.cols.values.carry_7 row 0
+    let rem_neg := air.cols.values.rem_neg row 0
+    let is_real := air.cols.values.is_real row 0
+    let base : FKB := 65536
+    let sign_ext := rem_neg * 65535
+    ({
+      Program := [],
+      ALU := [],
+      Byte := List.map ByteBusEntry.deserialise [
+        ((is_real), #v[8, cq_0 + rc_0     - cy_0 * base,         0, 0, 0]),
+        ((is_real), #v[8, cq_1 + rc_1     - cy_1 * base + cy_0,  0, 0, 0]),
+        ((is_real), #v[8, cq_2 + rc_2     - cy_2 * base + cy_1,  0, 0, 0]),
+        ((is_real), #v[8, cq_3 + rc_3     - cy_3 * base + cy_2,  0, 0, 0]),
+        ((is_real), #v[8, cq_4 + sign_ext - cy_4 * base + cy_3,  0, 0, 0]),
+        ((is_real), #v[8, cq_5 + sign_ext - cy_5 * base + cy_4,  0, 0, 0]),
+        ((is_real), #v[8, cq_6 + sign_ext - cy_6 * base + cy_5,  0, 0, 0]),
+        ((is_real), #v[8, cq_7 + sign_ext - cy_7 * base + cy_6,  0, 0, 0])
+      ],
+      State := [],
+      Memory := []
+    } : BusRow)
+
+  /-- The two `looking_alu(ADD, 0, …)` sub-events that pin the absolute
+      values: `c + abs_c = 0` when `c` is negative, and
+      `remainder + abs_remainder = 0` when the remainder is negative
+      (`constraints.rs:501` and `:508`). -/
+  def AbsAluEventBuses (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : BusRow :=
+    let c_0 := air.cols.values.c_0 row 0
+    let c_1 := air.cols.values.c_1 row 0
+    let c_2 := air.cols.values.c_2 row 0
+    let c_3 := air.cols.values.c_3 row 0
+    let r_0 := air.cols.values.remainder_0 row 0
+    let r_1 := air.cols.values.remainder_1 row 0
+    let r_2 := air.cols.values.remainder_2 row 0
+    let r_3 := air.cols.values.remainder_3 row 0
+    let ar_0 := air.cols.values.abs_remainder_0 row 0
+    let ar_1 := air.cols.values.abs_remainder_1 row 0
+    let ar_2 := air.cols.values.abs_remainder_2 row 0
+    let ar_3 := air.cols.values.abs_remainder_3 row 0
+    let ac_0 := air.cols.values.abs_c_0 row 0
+    let ac_1 := air.cols.values.abs_c_1 row 0
+    let ac_2 := air.cols.values.abs_c_2 row 0
+    let ac_3 := air.cols.values.abs_c_3 row 0
+    let abs_c_alu_event   := air.cols.values.abs_c_alu_event   row 0
+    let abs_rem_alu_event := air.cols.values.abs_rem_alu_event row 0
+    ({
+      Program := [],
+      ALU := List.map ALUBusEntry.deserialise [
+        ((abs_c_alu_event),
+          #v[ 0,  0, 0, 0, 0,
+              c_0,  c_1,  c_2,  c_3,
+              ac_0, ac_1, ac_2, ac_3 ]),
+        ((abs_rem_alu_event),
+          #v[ 0,  0, 0, 0, 0,
+              r_0,  r_1,  r_2,  r_3,
+              ar_0, ar_1, ar_2, ar_3 ])
+      ],
+      Byte := [],
+      State := [],
+      Memory := []
+    } : BusRow)
+
+  /-- u16 range checks on `abs_c` (`constraints.rs:559`). -/
+  def AbsCRangeBuses (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : BusRow :=
+    let is_real := air.cols.values.is_real row 0
+    ({
+      Program := [],
+      ALU := [],
+      Byte := List.map ByteBusEntry.deserialise [
+        ((is_real), #v[8, air.cols.values.abs_c_0 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.abs_c_1 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.abs_c_2 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.abs_c_3 row 0, 0, 0, 0])
+      ],
+      State := [],
+      Memory := []
+    } : BusRow)
+
+  /-- u16 range checks on `abs_remainder` (`constraints.rs:570`). -/
+  def AbsRemainderRangeBuses (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : BusRow :=
+    let is_real := air.cols.values.is_real row 0
+    ({
+      Program := [],
+      ALU := [],
+      Byte := List.map ByteBusEntry.deserialise [
+        ((is_real), #v[8, air.cols.values.abs_remainder_0 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.abs_remainder_1 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.abs_remainder_2 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.abs_remainder_3 row 0, 0, 0, 0])
+      ],
+      State := [],
+      Memory := []
+    } : BusRow)
+
+  /-- u16 range checks on `quotient`, `remainder` and `c_times_quotient`
+      (`constraints.rs:645`, `:646` and `:652`). -/
+  def SliceRangeBuses (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : BusRow :=
+    let is_real := air.cols.values.is_real row 0
+    ({
+      Program := [],
+      ALU := [],
+      Byte := List.map ByteBusEntry.deserialise [
+        ((is_real), #v[8, air.cols.values.quotient_0 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.quotient_1 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.quotient_2 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.quotient_3 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.remainder_0 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.remainder_1 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.remainder_2 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.remainder_3 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.c_times_quotient_0 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.c_times_quotient_1 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.c_times_quotient_2 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.c_times_quotient_3 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.c_times_quotient_4 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.c_times_quotient_5 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.c_times_quotient_6 row 0, 0, 0, 0]),
+        ((is_real), #v[8, air.cols.values.c_times_quotient_7 row 0, 0, 0, 0])
+      ],
+      State := [],
+      Memory := []
+    } : BusRow)
+
+  /-- The chip's own `looked_alu` entry (`constraints.rs:717`): the
+      selector-encoded ALU opcode, the output `a`, and the *raw* register
+      operands `b_raw`, `c_raw` the CPU sent. The opcode sum is written in
+      the extractor's order, so that `bus_row_equiv` closes by `dsimp`. -/
+  def LookedAluBuses (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : BusRow :=
+    let a_0 := air.cols.values.a_0 row 0
+    let a_1 := air.cols.values.a_1 row 0
+    let a_2 := air.cols.values.a_2 row 0
+    let a_3 := air.cols.values.a_3 row 0
+    let b_raw_0 := air.cols.values.b_raw_0 row 0
+    let b_raw_1 := air.cols.values.b_raw_1 row 0
+    let b_raw_2 := air.cols.values.b_raw_2 row 0
+    let b_raw_3 := air.cols.values.b_raw_3 row 0
+    let c_raw_0 := air.cols.values.c_raw_0 row 0
+    let c_raw_1 := air.cols.values.c_raw_1 row 0
+    let c_raw_2 := air.cols.values.c_raw_2 row 0
+    let c_raw_3 := air.cols.values.c_raw_3 row 0
+    let is_div    := air.cols.values.is_div    row 0
+    let is_divu   := air.cols.values.is_divu   row 0
+    let is_rem    := air.cols.values.is_rem    row 0
+    let is_remu   := air.cols.values.is_remu   row 0
+    let is_divw   := air.cols.values.is_divw   row 0
+    let is_remw   := air.cols.values.is_remw   row 0
+    let is_divuw  := air.cols.values.is_divuw  row 0
+    let is_remuw  := air.cols.values.is_remuw  row 0
+    let is_real   := air.cols.values.is_real   row 0
+    ({
+      Program := [],
+      ALU := List.map ALUBusEntry.deserialise [
+        (-(is_real),
+          #v[ is_divu * 35 + is_remu  * 37
+              + is_div * 34 + is_rem   * 36
+              + is_divw * 49 + is_remw  * 51
+              + is_divuw * 50 + is_remuw * 52,
+              a_0, a_1, a_2, a_3,
+              b_raw_0, b_raw_1, b_raw_2, b_raw_3,
+              c_raw_0, c_raw_1, c_raw_2, c_raw_3 ])
+      ],
+      Byte := [],
+      State := [],
+      Memory := []
+    } : BusRow)
+
+  /-- Everything `DivRemChip` puts on the bus itself, as opposed to through
+      a sub-gadget: the six blocks above flattened into one `BusRow`, in
+      the order they appear in `AbsBuses` (`ChipExtraBuses_split`).
+      `gadget_specs_pack` hands this back as the residual left once the
+      sub-gadget pieces are consumed; callers unfold it to read off a
+      byte-bus u16 bound or an ALU entry's assumptions. -/
   def ChipExtraBuses (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : BusRow :=
     let a_0 := air.cols.values.a_0 row 0
     let a_1 := air.cols.values.a_1 row 0
@@ -1014,14 +1203,6 @@ namespace DivRemChip.ConstraintsAndBuses
     let abs_rem_alu_event := air.cols.values.abs_rem_alu_event row 0
     let base : FKB := 65536
     let sign_ext := rem_neg * 65535
-    let cqr_0 := cq_0 + rc_0     - cy_0 * base
-    let cqr_1 := cq_1 + rc_1     - cy_1 * base + cy_0
-    let cqr_2 := cq_2 + rc_2     - cy_2 * base + cy_1
-    let cqr_3 := cq_3 + rc_3     - cy_3 * base + cy_2
-    let cqr_4 := cq_4 + sign_ext - cy_4 * base + cy_3
-    let cqr_5 := cq_5 + sign_ext - cy_5 * base + cy_4
-    let cqr_6 := cq_6 + sign_ext - cy_6 * base + cy_5
-    let cqr_7 := cq_7 + sign_ext - cy_7 * base + cy_6
     ({
       Program := [],
       ALU := List.map ALUBusEntry.deserialise [
@@ -1034,15 +1215,31 @@ namespace DivRemChip.ConstraintsAndBuses
               r_0,  r_1,  r_2,  r_3,
               ar_0, ar_1, ar_2, ar_3 ]),
         (-(is_real),
-          #v[ is_div   * 34 + is_divu  * 35
-              + is_rem * 36 + is_remu  * 37
-              + is_divw * 49 + is_divuw * 50
-              + is_remw * 51 + is_remuw * 52,
+          #v[ is_divu * 35 + is_remu  * 37
+              + is_div * 34 + is_rem   * 36
+              + is_divw * 49 + is_remw  * 51
+              + is_divuw * 50 + is_remuw * 52,
               a_0, a_1, a_2, a_3,
               b_raw_0, b_raw_1, b_raw_2, b_raw_3,
               c_raw_0, c_raw_1, c_raw_2, c_raw_3 ])
       ],
       Byte := List.map ByteBusEntry.deserialise [
+        ((is_real), #v[8, cq_0 + rc_0     - cy_0 * base,         0, 0, 0]),
+        ((is_real), #v[8, cq_1 + rc_1     - cy_1 * base + cy_0,  0, 0, 0]),
+        ((is_real), #v[8, cq_2 + rc_2     - cy_2 * base + cy_1,  0, 0, 0]),
+        ((is_real), #v[8, cq_3 + rc_3     - cy_3 * base + cy_2,  0, 0, 0]),
+        ((is_real), #v[8, cq_4 + sign_ext - cy_4 * base + cy_3,  0, 0, 0]),
+        ((is_real), #v[8, cq_5 + sign_ext - cy_5 * base + cy_4,  0, 0, 0]),
+        ((is_real), #v[8, cq_6 + sign_ext - cy_6 * base + cy_5,  0, 0, 0]),
+        ((is_real), #v[8, cq_7 + sign_ext - cy_7 * base + cy_6,  0, 0, 0]),
+        ((is_real), #v[8, ac_0, 0, 0, 0]),
+        ((is_real), #v[8, ac_1, 0, 0, 0]),
+        ((is_real), #v[8, ac_2, 0, 0, 0]),
+        ((is_real), #v[8, ac_3, 0, 0, 0]),
+        ((is_real), #v[8, ar_0, 0, 0, 0]),
+        ((is_real), #v[8, ar_1, 0, 0, 0]),
+        ((is_real), #v[8, ar_2, 0, 0, 0]),
+        ((is_real), #v[8, ar_3, 0, 0, 0]),
         ((is_real), #v[8, q_0, 0, 0, 0]),
         ((is_real), #v[8, q_1, 0, 0, 0]),
         ((is_real), #v[8, q_2, 0, 0, 0]),
@@ -1058,34 +1255,33 @@ namespace DivRemChip.ConstraintsAndBuses
         ((is_real), #v[8, cq_4, 0, 0, 0]),
         ((is_real), #v[8, cq_5, 0, 0, 0]),
         ((is_real), #v[8, cq_6, 0, 0, 0]),
-        ((is_real), #v[8, cq_7, 0, 0, 0]),
-        ((is_real), #v[8, cqr_0, 0, 0, 0]),
-        ((is_real), #v[8, cqr_1, 0, 0, 0]),
-        ((is_real), #v[8, cqr_2, 0, 0, 0]),
-        ((is_real), #v[8, cqr_3, 0, 0, 0]),
-        ((is_real), #v[8, cqr_4, 0, 0, 0]),
-        ((is_real), #v[8, cqr_5, 0, 0, 0]),
-        ((is_real), #v[8, cqr_6, 0, 0, 0]),
-        ((is_real), #v[8, cqr_7, 0, 0, 0]),
-        ((is_real), #v[8, ac_0, 0, 0, 0]),
-        ((is_real), #v[8, ac_1, 0, 0, 0]),
-        ((is_real), #v[8, ac_2, 0, 0, 0]),
-        ((is_real), #v[8, ac_3, 0, 0, 0]),
-        ((is_real), #v[8, ar_0, 0, 0, 0]),
-        ((is_real), #v[8, ar_1, 0, 0, 0]),
-        ((is_real), #v[8, ar_2, 0, 0, 0]),
-        ((is_real), #v[8, ar_3, 0, 0, 0])
+        ((is_real), #v[8, cq_7, 0, 0, 0])
       ],
       State := [],
       Memory := []
     } : BusRow)
 
+  omit [Field ExtF] in
+  /-- `ChipExtraBuses` is exactly the six chip-own blocks concatenated, in
+      the order `AbsBuses` puts them. Lets a caller turn the per-block
+      residuals `AbsBuses` produces into the single `ChipExtraBuses` one. -/
+  lemma ChipExtraBuses_split (air : Valid_DivRemChip FKB ExtF) (row : ℕ) :
+    ChipExtraBuses air row =
+      CarryChainBuses air row
+      ++ AbsAluEventBuses air row
+      ++ AbsCRangeBuses air row
+      ++ AbsRemainderRangeBuses air row
+      ++ SliceRangeBuses air row
+      ++ LookedAluBuses air row
+  := rfl
+
   /-- The bus entries `DivRemChip` contributes per row.
       Composed compositionally from the sub-gadget `AbsBuses`s
       (`MulGadget` × 2, `AddGadget` × 2, `LtWordU16Gadget`,
-      `U16MSBGadget` × 6 — `IsZeroWordGadget` / `IsEqualWordGadget`
-      contribute no bus entries), plus `ChipExtraBuses` (the
-      chip-own range checks + ALU entries). -/
+      `U16MSBGadget` × 7 — `IsZeroWordGadget` / `IsEqualWordGadget`
+      contribute no bus entries), interleaved with the chip-own blocks
+      above in the order Pico's `eval` emits them. `bus_row_equiv` proves
+      that this is the extracted interaction list, entry for entry. -/
   @[constraint_and_interaction_simplification]
   def AbsBuses (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : BusRow :=
     let b_1 := air.cols.values.b_1 row 0
@@ -1217,27 +1413,39 @@ namespace DivRemChip.ConstraintsAndBuses
       (air.cols.values.c_times_quotient_upper.c_msb row 0)
       (air.cols.values.c_times_quotient_upper.product_msb.msb row 0)
     ++
-    -- (b) `AddGadget` × 2.
+    -- (b) Chip-own: the carry-chain range checks (`constraints.rs:423`)
+    --     and the two abs-value `looking_alu(ADD)` sub-events
+    --     (`constraints.rs:501`, `:508`).
+    CarryChainBuses air row
+    ++ AbsAluEventBuses air row
+    ++
+    -- (c) `AddGadget` on `c + abs_c` (`constraints.rs:552`), then the
+    --     chip-own range checks on `abs_c` (`constraints.rs:559`).
     AddGadget.AbsBuses abs_c_alu_event
       (air.cols.values.c_neg_gadget.value_0 row 0)
       (air.cols.values.c_neg_gadget.value_1 row 0)
       (air.cols.values.c_neg_gadget.value_2 row 0)
       (air.cols.values.c_neg_gadget.value_3 row 0)
+    ++ AbsCRangeBuses air row
     ++
+    -- (d) `AddGadget` on `remainder_comp + abs_remainder`
+    --     (`constraints.rs:563`), then the range checks on
+    --     `abs_remainder` (`constraints.rs:570`).
     AddGadget.AbsBuses abs_rem_alu_event
       (air.cols.values.rem_neg_gadget.value_0 row 0)
       (air.cols.values.rem_neg_gadget.value_1 row 0)
       (air.cols.values.rem_neg_gadget.value_2 row 0)
       (air.cols.values.rem_neg_gadget.value_3 row 0)
+    ++ AbsRemainderRangeBuses air row
     ++
-    -- (c) `LtWordU16Gadget`.
+    -- (e) `LtWordU16Gadget` (`constraints.rs:586`).
     LtWordU16Gadget.AbsBuses
       remainder_check_multiplicity
       (air.cols.values.remainder_lt_gadget.comparison_limbs_0 row 0)
       (air.cols.values.remainder_lt_gadget.comparison_limbs_1 row 0)
       (air.cols.values.remainder_lt_gadget.bit row 0)
     ++
-    -- (d) `U16MSBGadget` × 6 (3 msbs × 2 gated modes).
+    -- (f) `U16MSBGadget` × 7 (3 msbs × 2 gated modes, plus `quot_msb`).
     U16MSBGadget.AbsBuses is_real_not_word b_3 b_msb
     ++ U16MSBGadget.AbsBuses is_real_not_word c_3 c_msb
     ++ U16MSBGadget.AbsBuses is_real_not_word r_3 r_msb
@@ -1248,25 +1456,363 @@ namespace DivRemChip.ConstraintsAndBuses
     -- `2 * q_1 - quot_msb * 65536` enforcing `quot_msb = bit-15(q_1)`.
     ++ U16MSBGadget.AbsBuses is_word_operation q_1 quot_msb
     ++
-    -- (e) Chip-own: 32 slice u16 range checks + 2 looking_alu(ADD)
-    --     + 1 looked_alu(main DivRem). Factored into `ChipExtraBuses`
-    --     above so `bus_row_ext_asm` / `bus_row_wf_asm` simplifications
-    --     don't unfold its 35 entries by default.
-    ChipExtraBuses air row
+    -- (g) Chip-own: the remaining 16 slice u16 range checks
+    --     (`constraints.rs:645`, `:646`, `:652`) and the chip's own
+    --     `looked_alu` entry (`constraints.rs:717`).
+    SliceRangeBuses air row
+    ++ LookedAluBuses air row
 
-  /-- `Extraction.allHold` ↔ `Extraction.constrain_interactions ∧ AbsConstraints`.
+  /-- The raw bus entries `DivRemChip` emits per row: a restatement of
+      `Extraction.constrain_interactions`'s 121-entry list with the
+      column accessors named, in the same order. The bus id is the head
+      of each entry (`4` = ALU, `5` = byte); `AbsBuses` above is the same
+      list in typed form, as `bus_row_equiv` proves. -/
+  @[constraint_and_interaction_simplification]
+  def raw_bus_row (air : Valid_DivRemChip FKB ExtF) (row : ℕ)
+  : List (FKB × List FKB) :=
+    let a_0 := air.cols.values.a_0 row 0
+    let a_1 := air.cols.values.a_1 row 0
+    let a_2 := air.cols.values.a_2 row 0
+    let a_3 := air.cols.values.a_3 row 0
+    let b_1 := air.cols.values.b_1 row 0
+    let b_3 := air.cols.values.b_3 row 0
+    let c_0 := air.cols.values.c_0 row 0
+    let c_1 := air.cols.values.c_1 row 0
+    let c_2 := air.cols.values.c_2 row 0
+    let c_3 := air.cols.values.c_3 row 0
+    let b_raw_0 := air.cols.values.b_raw_0 row 0
+    let b_raw_1 := air.cols.values.b_raw_1 row 0
+    let b_raw_2 := air.cols.values.b_raw_2 row 0
+    let b_raw_3 := air.cols.values.b_raw_3 row 0
+    let c_raw_0 := air.cols.values.c_raw_0 row 0
+    let c_raw_1 := air.cols.values.c_raw_1 row 0
+    let c_raw_2 := air.cols.values.c_raw_2 row 0
+    let c_raw_3 := air.cols.values.c_raw_3 row 0
+    let quotient_0 := air.cols.values.quotient_0 row 0
+    let quotient_1 := air.cols.values.quotient_1 row 0
+    let quotient_2 := air.cols.values.quotient_2 row 0
+    let quotient_3 := air.cols.values.quotient_3 row 0
+    let quotient_comp_0 := air.cols.values.quotient_comp_0 row 0
+    let quotient_comp_1 := air.cols.values.quotient_comp_1 row 0
+    let quotient_comp_2 := air.cols.values.quotient_comp_2 row 0
+    let quotient_comp_3 := air.cols.values.quotient_comp_3 row 0
+    let remainder_comp_0 := air.cols.values.remainder_comp_0 row 0
+    let remainder_comp_1 := air.cols.values.remainder_comp_1 row 0
+    let remainder_comp_2 := air.cols.values.remainder_comp_2 row 0
+    let remainder_comp_3 := air.cols.values.remainder_comp_3 row 0
+    let remainder_0 := air.cols.values.remainder_0 row 0
+    let remainder_1 := air.cols.values.remainder_1 row 0
+    let remainder_2 := air.cols.values.remainder_2 row 0
+    let remainder_3 := air.cols.values.remainder_3 row 0
+    let abs_remainder_0 := air.cols.values.abs_remainder_0 row 0
+    let abs_remainder_1 := air.cols.values.abs_remainder_1 row 0
+    let abs_remainder_2 := air.cols.values.abs_remainder_2 row 0
+    let abs_remainder_3 := air.cols.values.abs_remainder_3 row 0
+    let abs_c_0 := air.cols.values.abs_c_0 row 0
+    let abs_c_1 := air.cols.values.abs_c_1 row 0
+    let abs_c_2 := air.cols.values.abs_c_2 row 0
+    let abs_c_3 := air.cols.values.abs_c_3 row 0
+    let c_times_quotient_0 := air.cols.values.c_times_quotient_0 row 0
+    let c_times_quotient_1 := air.cols.values.c_times_quotient_1 row 0
+    let c_times_quotient_2 := air.cols.values.c_times_quotient_2 row 0
+    let c_times_quotient_3 := air.cols.values.c_times_quotient_3 row 0
+    let c_times_quotient_4 := air.cols.values.c_times_quotient_4 row 0
+    let c_times_quotient_5 := air.cols.values.c_times_quotient_5 row 0
+    let c_times_quotient_6 := air.cols.values.c_times_quotient_6 row 0
+    let c_times_quotient_7 := air.cols.values.c_times_quotient_7 row 0
+    let lo_carry_0 := air.cols.values.c_times_quotient_lower.carry_0 row 0
+    let lo_carry_1 := air.cols.values.c_times_quotient_lower.carry_1 row 0
+    let lo_carry_2 := air.cols.values.c_times_quotient_lower.carry_2 row 0
+    let lo_carry_3 := air.cols.values.c_times_quotient_lower.carry_3 row 0
+    let lo_carry_4 := air.cols.values.c_times_quotient_lower.carry_4 row 0
+    let lo_carry_5 := air.cols.values.c_times_quotient_lower.carry_5 row 0
+    let lo_carry_6 := air.cols.values.c_times_quotient_lower.carry_6 row 0
+    let lo_carry_7 := air.cols.values.c_times_quotient_lower.carry_7 row 0
+    let lo_carry_8 := air.cols.values.c_times_quotient_lower.carry_8 row 0
+    let lo_carry_9 := air.cols.values.c_times_quotient_lower.carry_9 row 0
+    let lo_carry_10 := air.cols.values.c_times_quotient_lower.carry_10 row 0
+    let lo_carry_11 := air.cols.values.c_times_quotient_lower.carry_11 row 0
+    let lo_carry_12 := air.cols.values.c_times_quotient_lower.carry_12 row 0
+    let lo_carry_13 := air.cols.values.c_times_quotient_lower.carry_13 row 0
+    let lo_carry_14 := air.cols.values.c_times_quotient_lower.carry_14 row 0
+    let lo_carry_15 := air.cols.values.c_times_quotient_lower.carry_15 row 0
+    let lo_product_0 := air.cols.values.c_times_quotient_lower.product_0 row 0
+    let lo_product_1 := air.cols.values.c_times_quotient_lower.product_1 row 0
+    let lo_product_2 := air.cols.values.c_times_quotient_lower.product_2 row 0
+    let lo_product_3 := air.cols.values.c_times_quotient_lower.product_3 row 0
+    let lo_product_4 := air.cols.values.c_times_quotient_lower.product_4 row 0
+    let lo_product_5 := air.cols.values.c_times_quotient_lower.product_5 row 0
+    let lo_product_6 := air.cols.values.c_times_quotient_lower.product_6 row 0
+    let lo_product_7 := air.cols.values.c_times_quotient_lower.product_7 row 0
+    let lo_product_8 := air.cols.values.c_times_quotient_lower.product_8 row 0
+    let lo_product_9 := air.cols.values.c_times_quotient_lower.product_9 row 0
+    let lo_product_10 := air.cols.values.c_times_quotient_lower.product_10 row 0
+    let lo_product_11 := air.cols.values.c_times_quotient_lower.product_11 row 0
+    let lo_product_12 := air.cols.values.c_times_quotient_lower.product_12 row 0
+    let lo_product_13 := air.cols.values.c_times_quotient_lower.product_13 row 0
+    let lo_product_14 := air.cols.values.c_times_quotient_lower.product_14 row 0
+    let lo_product_15 := air.cols.values.c_times_quotient_lower.product_15 row 0
+    let lo_b_low_0 := air.cols.values.c_times_quotient_lower.b_lower_byte.low_bytes_0 row 0
+    let lo_b_low_1 := air.cols.values.c_times_quotient_lower.b_lower_byte.low_bytes_1 row 0
+    let lo_b_low_2 := air.cols.values.c_times_quotient_lower.b_lower_byte.low_bytes_2 row 0
+    let lo_b_low_3 := air.cols.values.c_times_quotient_lower.b_lower_byte.low_bytes_3 row 0
+    let lo_c_low_0 := air.cols.values.c_times_quotient_lower.c_lower_byte.low_bytes_0 row 0
+    let lo_c_low_1 := air.cols.values.c_times_quotient_lower.c_lower_byte.low_bytes_1 row 0
+    let lo_c_low_2 := air.cols.values.c_times_quotient_lower.c_lower_byte.low_bytes_2 row 0
+    let lo_c_low_3 := air.cols.values.c_times_quotient_lower.c_lower_byte.low_bytes_3 row 0
+    let lo_b_msb := air.cols.values.c_times_quotient_lower.b_msb row 0
+    let lo_c_msb := air.cols.values.c_times_quotient_lower.c_msb row 0
+    let lo_prd_msb := air.cols.values.c_times_quotient_lower.product_msb.msb row 0
+    let hi_carry_0 := air.cols.values.c_times_quotient_upper.carry_0 row 0
+    let hi_carry_1 := air.cols.values.c_times_quotient_upper.carry_1 row 0
+    let hi_carry_2 := air.cols.values.c_times_quotient_upper.carry_2 row 0
+    let hi_carry_3 := air.cols.values.c_times_quotient_upper.carry_3 row 0
+    let hi_carry_4 := air.cols.values.c_times_quotient_upper.carry_4 row 0
+    let hi_carry_5 := air.cols.values.c_times_quotient_upper.carry_5 row 0
+    let hi_carry_6 := air.cols.values.c_times_quotient_upper.carry_6 row 0
+    let hi_carry_7 := air.cols.values.c_times_quotient_upper.carry_7 row 0
+    let hi_carry_8 := air.cols.values.c_times_quotient_upper.carry_8 row 0
+    let hi_carry_9 := air.cols.values.c_times_quotient_upper.carry_9 row 0
+    let hi_carry_10 := air.cols.values.c_times_quotient_upper.carry_10 row 0
+    let hi_carry_11 := air.cols.values.c_times_quotient_upper.carry_11 row 0
+    let hi_carry_12 := air.cols.values.c_times_quotient_upper.carry_12 row 0
+    let hi_carry_13 := air.cols.values.c_times_quotient_upper.carry_13 row 0
+    let hi_carry_14 := air.cols.values.c_times_quotient_upper.carry_14 row 0
+    let hi_carry_15 := air.cols.values.c_times_quotient_upper.carry_15 row 0
+    let hi_product_0 := air.cols.values.c_times_quotient_upper.product_0 row 0
+    let hi_product_1 := air.cols.values.c_times_quotient_upper.product_1 row 0
+    let hi_product_2 := air.cols.values.c_times_quotient_upper.product_2 row 0
+    let hi_product_3 := air.cols.values.c_times_quotient_upper.product_3 row 0
+    let hi_product_4 := air.cols.values.c_times_quotient_upper.product_4 row 0
+    let hi_product_5 := air.cols.values.c_times_quotient_upper.product_5 row 0
+    let hi_product_6 := air.cols.values.c_times_quotient_upper.product_6 row 0
+    let hi_product_7 := air.cols.values.c_times_quotient_upper.product_7 row 0
+    let hi_product_8 := air.cols.values.c_times_quotient_upper.product_8 row 0
+    let hi_product_9 := air.cols.values.c_times_quotient_upper.product_9 row 0
+    let hi_product_10 := air.cols.values.c_times_quotient_upper.product_10 row 0
+    let hi_product_11 := air.cols.values.c_times_quotient_upper.product_11 row 0
+    let hi_product_12 := air.cols.values.c_times_quotient_upper.product_12 row 0
+    let hi_product_13 := air.cols.values.c_times_quotient_upper.product_13 row 0
+    let hi_product_14 := air.cols.values.c_times_quotient_upper.product_14 row 0
+    let hi_product_15 := air.cols.values.c_times_quotient_upper.product_15 row 0
+    let hi_b_low_0 := air.cols.values.c_times_quotient_upper.b_lower_byte.low_bytes_0 row 0
+    let hi_b_low_1 := air.cols.values.c_times_quotient_upper.b_lower_byte.low_bytes_1 row 0
+    let hi_b_low_2 := air.cols.values.c_times_quotient_upper.b_lower_byte.low_bytes_2 row 0
+    let hi_b_low_3 := air.cols.values.c_times_quotient_upper.b_lower_byte.low_bytes_3 row 0
+    let hi_c_low_0 := air.cols.values.c_times_quotient_upper.c_lower_byte.low_bytes_0 row 0
+    let hi_c_low_1 := air.cols.values.c_times_quotient_upper.c_lower_byte.low_bytes_1 row 0
+    let hi_c_low_2 := air.cols.values.c_times_quotient_upper.c_lower_byte.low_bytes_2 row 0
+    let hi_c_low_3 := air.cols.values.c_times_quotient_upper.c_lower_byte.low_bytes_3 row 0
+    let hi_b_msb := air.cols.values.c_times_quotient_upper.b_msb row 0
+    let hi_c_msb := air.cols.values.c_times_quotient_upper.c_msb row 0
+    let hi_prd_msb := air.cols.values.c_times_quotient_upper.product_msb.msb row 0
+    let lt_comparison_limbs_0 := air.cols.values.remainder_lt_gadget.comparison_limbs_0 row 0
+    let lt_comparison_limbs_1 := air.cols.values.remainder_lt_gadget.comparison_limbs_1 row 0
+    let lt_bit := air.cols.values.remainder_lt_gadget.bit row 0
+    let c_neg_val_0 := air.cols.values.c_neg_gadget.value_0 row 0
+    let c_neg_val_1 := air.cols.values.c_neg_gadget.value_1 row 0
+    let c_neg_val_2 := air.cols.values.c_neg_gadget.value_2 row 0
+    let c_neg_val_3 := air.cols.values.c_neg_gadget.value_3 row 0
+    let rem_neg_val_0 := air.cols.values.rem_neg_gadget.value_0 row 0
+    let rem_neg_val_1 := air.cols.values.rem_neg_gadget.value_1 row 0
+    let rem_neg_val_2 := air.cols.values.rem_neg_gadget.value_2 row 0
+    let rem_neg_val_3 := air.cols.values.rem_neg_gadget.value_3 row 0
+    let carry_0 := air.cols.values.carry_0 row 0
+    let carry_1 := air.cols.values.carry_1 row 0
+    let carry_2 := air.cols.values.carry_2 row 0
+    let carry_3 := air.cols.values.carry_3 row 0
+    let carry_4 := air.cols.values.carry_4 row 0
+    let carry_5 := air.cols.values.carry_5 row 0
+    let carry_6 := air.cols.values.carry_6 row 0
+    let carry_7 := air.cols.values.carry_7 row 0
+    let is_div := air.cols.values.is_div row 0
+    let is_divu := air.cols.values.is_divu row 0
+    let is_rem := air.cols.values.is_rem row 0
+    let is_remu := air.cols.values.is_remu row 0
+    let is_divw := air.cols.values.is_divw row 0
+    let is_remw := air.cols.values.is_remw row 0
+    let is_divuw := air.cols.values.is_divuw row 0
+    let is_remuw := air.cols.values.is_remuw row 0
+    let b_msb := air.cols.values.b_msb.msb row 0
+    let rem_msb := air.cols.values.rem_msb.msb row 0
+    let c_msb := air.cols.values.c_msb.msb row 0
+    let quot_msb := air.cols.values.quot_msb.msb row 0
+    let is_real_not_word := air.cols.values.is_real_not_word row 0
+    let rem_neg := air.cols.values.rem_neg row 0
+    let abs_c_alu_event := air.cols.values.abs_c_alu_event row 0
+    let abs_rem_alu_event := air.cols.values.abs_rem_alu_event row 0
+    let is_real := air.cols.values.is_real row 0
+    let remainder_check_multiplicity := air.cols.values.remainder_check_multiplicity row 0
+    [
+      -- `MulGadget` on `c · quotient_comp`, low 64 bits (`constraints.rs:254`):
+      -- 8 `U16ToU8GadgetSafe` entries on `quotient_comp` and `c`, 2 MSB byte
+      -- lookups, the (unconditioned, gate 0) product-MSB entry, 16 carry
+      -- range checks and 8 product byte-pair checks.
+      (is_real, [5, 7, 0, 0, lo_b_low_0, ((quotient_comp_0 - lo_b_low_0) * 2122383361)]),
+      (is_real, [5, 7, 0, 0, lo_b_low_1, ((quotient_comp_1 - lo_b_low_1) * 2122383361)]),
+      (is_real, [5, 7, 0, 0, lo_b_low_2, ((quotient_comp_2 - lo_b_low_2) * 2122383361)]),
+      (is_real, [5, 7, 0, 0, lo_b_low_3, ((quotient_comp_3 - lo_b_low_3) * 2122383361)]),
+      (is_real, [5, 7, 0, 0, lo_c_low_0, ((c_0 - lo_c_low_0) * 2122383361)]),
+      (is_real, [5, 7, 0, 0, lo_c_low_1, ((c_1 - lo_c_low_1) * 2122383361)]),
+      (is_real, [5, 7, 0, 0, lo_c_low_2, ((c_2 - lo_c_low_2) * 2122383361)]),
+      (is_real, [5, 7, 0, 0, lo_c_low_3, ((c_3 - lo_c_low_3) * 2122383361)]),
+      (is_real, [5, 6, lo_b_msb, 0, ((quotient_comp_3 - lo_b_low_3) * 2122383361), 0]),
+      (is_real, [5, 6, lo_c_msb, 0, ((c_3 - lo_c_low_3) * 2122383361), 0]),
+      (0, [5, 8, ((2 * c_times_quotient_1) - (lo_prd_msb * 65536)), 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_0, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_1, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_2, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_3, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_4, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_5, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_6, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_7, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_8, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_9, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_10, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_11, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_12, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_13, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_14, 0, 0, 0]),
+      (is_real, [5, 8, lo_carry_15, 0, 0, 0]),
+      (is_real, [5, 7, 0, 0, lo_product_0, lo_product_1]),
+      (is_real, [5, 7, 0, 0, lo_product_2, lo_product_3]),
+      (is_real, [5, 7, 0, 0, lo_product_4, lo_product_5]),
+      (is_real, [5, 7, 0, 0, lo_product_6, lo_product_7]),
+      (is_real, [5, 7, 0, 0, lo_product_8, lo_product_9]),
+      (is_real, [5, 7, 0, 0, lo_product_10, lo_product_11]),
+      (is_real, [5, 7, 0, 0, lo_product_12, lo_product_13]),
+      (is_real, [5, 7, 0, 0, lo_product_14, lo_product_15]),
+      -- `MulGadget` on `c · quotient_comp`, high 64 bits (`constraints.rs:273`),
+      -- gated by `is_real_not_word`.
+      (is_real_not_word, [5, 7, 0, 0, hi_b_low_0, ((quotient_comp_0 - hi_b_low_0) * 2122383361)]),
+      (is_real_not_word, [5, 7, 0, 0, hi_b_low_1, ((quotient_comp_1 - hi_b_low_1) * 2122383361)]),
+      (is_real_not_word, [5, 7, 0, 0, hi_b_low_2, ((quotient_comp_2 - hi_b_low_2) * 2122383361)]),
+      (is_real_not_word, [5, 7, 0, 0, hi_b_low_3, ((quotient_comp_3 - hi_b_low_3) * 2122383361)]),
+      (is_real_not_word, [5, 7, 0, 0, hi_c_low_0, ((c_0 - hi_c_low_0) * 2122383361)]),
+      (is_real_not_word, [5, 7, 0, 0, hi_c_low_1, ((c_1 - hi_c_low_1) * 2122383361)]),
+      (is_real_not_word, [5, 7, 0, 0, hi_c_low_2, ((c_2 - hi_c_low_2) * 2122383361)]),
+      (is_real_not_word, [5, 7, 0, 0, hi_c_low_3, ((c_3 - hi_c_low_3) * 2122383361)]),
+      (is_real_not_word, [5, 6, hi_b_msb, 0, ((quotient_comp_3 - hi_b_low_3) * 2122383361), 0]),
+      (is_real_not_word, [5, 6, hi_c_msb, 0, ((c_3 - hi_c_low_3) * 2122383361), 0]),
+      (0, [5, 8, ((2 * c_times_quotient_5) - (hi_prd_msb * 65536)), 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_0, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_1, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_2, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_3, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_4, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_5, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_6, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_7, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_8, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_9, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_10, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_11, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_12, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_13, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_14, 0, 0, 0]),
+      (is_real_not_word, [5, 8, hi_carry_15, 0, 0, 0]),
+      (is_real_not_word, [5, 7, 0, 0, hi_product_0, hi_product_1]),
+      (is_real_not_word, [5, 7, 0, 0, hi_product_2, hi_product_3]),
+      (is_real_not_word, [5, 7, 0, 0, hi_product_4, hi_product_5]),
+      (is_real_not_word, [5, 7, 0, 0, hi_product_6, hi_product_7]),
+      (is_real_not_word, [5, 7, 0, 0, hi_product_8, hi_product_9]),
+      (is_real_not_word, [5, 7, 0, 0, hi_product_10, hi_product_11]),
+      (is_real_not_word, [5, 7, 0, 0, hi_product_12, hi_product_13]),
+      (is_real_not_word, [5, 7, 0, 0, hi_product_14, hi_product_15]),
+      -- u16 range checks on the `c · quotient + remainder` carry chain
+      -- (`constraints.rs:423`).
+      (is_real, [5, 8, ((c_times_quotient_0 + remainder_comp_0) - (carry_0 * 65536)), 0, 0, 0]),
+      (is_real, [5, 8, (((c_times_quotient_1 + remainder_comp_1) - (carry_1 * 65536)) + carry_0), 0, 0, 0]),
+      (is_real, [5, 8, (((c_times_quotient_2 + remainder_comp_2) - (carry_2 * 65536)) + carry_1), 0, 0, 0]),
+      (is_real, [5, 8, (((c_times_quotient_3 + remainder_comp_3) - (carry_3 * 65536)) + carry_2), 0, 0, 0]),
+      (is_real, [5, 8, (((c_times_quotient_4 + (rem_neg * 65535)) - (carry_4 * 65536)) + carry_3), 0, 0, 0]),
+      (is_real, [5, 8, (((c_times_quotient_5 + (rem_neg * 65535)) - (carry_5 * 65536)) + carry_4), 0, 0, 0]),
+      (is_real, [5, 8, (((c_times_quotient_6 + (rem_neg * 65535)) - (carry_6 * 65536)) + carry_5), 0, 0, 0]),
+      (is_real, [5, 8, (((c_times_quotient_7 + (rem_neg * 65535)) - (carry_7 * 65536)) + carry_6), 0, 0, 0]),
+      -- The two `looking_alu(ADD, 0, …)` sub-events that define `abs_c` and
+      -- `abs_remainder` by `c + abs_c = 0` / `remainder + abs_remainder = 0`
+      -- (`constraints.rs:501` and `:508`).
+      (abs_c_alu_event, [4, 0, 0, 0, 0, 0, c_0, c_1, c_2, c_3, abs_c_0, abs_c_1, abs_c_2, abs_c_3]),
+      (abs_rem_alu_event, [4, 0, 0, 0, 0, 0, remainder_0, remainder_1, remainder_2, remainder_3, abs_remainder_0, abs_remainder_1, abs_remainder_2, abs_remainder_3]),
+      -- `AddGadget` on `c + abs_c` (`constraints.rs:552`).
+      (abs_c_alu_event, [5, 8, c_neg_val_0, 0, 0, 0]),
+      (abs_c_alu_event, [5, 8, c_neg_val_1, 0, 0, 0]),
+      (abs_c_alu_event, [5, 8, c_neg_val_2, 0, 0, 0]),
+      (abs_c_alu_event, [5, 8, c_neg_val_3, 0, 0, 0]),
+      -- u16 range checks on `abs_c` (`constraints.rs:559`).
+      (is_real, [5, 8, abs_c_0, 0, 0, 0]),
+      (is_real, [5, 8, abs_c_1, 0, 0, 0]),
+      (is_real, [5, 8, abs_c_2, 0, 0, 0]),
+      (is_real, [5, 8, abs_c_3, 0, 0, 0]),
+      -- `AddGadget` on `remainder_comp + abs_remainder` (`constraints.rs:563`).
+      (abs_rem_alu_event, [5, 8, rem_neg_val_0, 0, 0, 0]),
+      (abs_rem_alu_event, [5, 8, rem_neg_val_1, 0, 0, 0]),
+      (abs_rem_alu_event, [5, 8, rem_neg_val_2, 0, 0, 0]),
+      (abs_rem_alu_event, [5, 8, rem_neg_val_3, 0, 0, 0]),
+      -- u16 range checks on `abs_remainder` (`constraints.rs:570`).
+      (is_real, [5, 8, abs_remainder_0, 0, 0, 0]),
+      (is_real, [5, 8, abs_remainder_1, 0, 0, 0]),
+      (is_real, [5, 8, abs_remainder_2, 0, 0, 0]),
+      (is_real, [5, 8, abs_remainder_3, 0, 0, 0]),
+      -- `LtWordU16Gadget` on `abs_remainder < max(abs_c, 1)`
+      -- (`constraints.rs:586`).
+      (remainder_check_multiplicity, [5, 8, ((lt_comparison_limbs_0 - lt_comparison_limbs_1) + (lt_bit * 65536)), 0, 0, 0]),
+      -- `U16MSBGadget` on the top limbs of `b`, `c`, `remainder`, for 64-bit
+      -- operations (`constraints.rs:610`).
+      (is_real_not_word, [5, 8, ((2 * b_3) - (b_msb * 65536)), 0, 0, 0]),
+      (is_real_not_word, [5, 8, ((2 * c_3) - (c_msb * 65536)), 0, 0, 0]),
+      (is_real_not_word, [5, 8, ((2 * remainder_3) - (rem_msb * 65536)), 0, 0, 0]),
+      -- `U16MSBGadget` on limb 1 of `b`, `c`, `remainder` and `quotient`, for
+      -- word operations (`constraints.rs:626` and `:635`).
+      ((((is_divw + is_remw) + is_divuw) + is_remuw), [5, 8, ((2 * b_1) - (b_msb * 65536)), 0, 0, 0]),
+      ((((is_divw + is_remw) + is_divuw) + is_remuw), [5, 8, ((2 * c_1) - (c_msb * 65536)), 0, 0, 0]),
+      ((((is_divw + is_remw) + is_divuw) + is_remuw), [5, 8, ((2 * remainder_1) - (rem_msb * 65536)), 0, 0, 0]),
+      ((((is_divw + is_remw) + is_divuw) + is_remuw), [5, 8, ((2 * quotient_1) - (quot_msb * 65536)), 0, 0, 0]),
+      -- u16 range checks on `quotient` (`constraints.rs:645`).
+      (is_real, [5, 8, quotient_0, 0, 0, 0]),
+      (is_real, [5, 8, quotient_1, 0, 0, 0]),
+      (is_real, [5, 8, quotient_2, 0, 0, 0]),
+      (is_real, [5, 8, quotient_3, 0, 0, 0]),
+      -- u16 range checks on `remainder` (`constraints.rs:646`).
+      (is_real, [5, 8, remainder_0, 0, 0, 0]),
+      (is_real, [5, 8, remainder_1, 0, 0, 0]),
+      (is_real, [5, 8, remainder_2, 0, 0, 0]),
+      (is_real, [5, 8, remainder_3, 0, 0, 0]),
+      -- u16 range checks on `c_times_quotient` (`constraints.rs:652`).
+      (is_real, [5, 8, c_times_quotient_0, 0, 0, 0]),
+      (is_real, [5, 8, c_times_quotient_1, 0, 0, 0]),
+      (is_real, [5, 8, c_times_quotient_2, 0, 0, 0]),
+      (is_real, [5, 8, c_times_quotient_3, 0, 0, 0]),
+      (is_real, [5, 8, c_times_quotient_4, 0, 0, 0]),
+      (is_real, [5, 8, c_times_quotient_5, 0, 0, 0]),
+      (is_real, [5, 8, c_times_quotient_6, 0, 0, 0]),
+      (is_real, [5, 8, c_times_quotient_7, 0, 0, 0]),
+      -- The chip's own `looked_alu` entry, with the selector-encoded opcode and
+      -- the *raw* register operands `b_raw`, `c_raw` (`constraints.rs:717`).
+      (-(is_real), [4, ((((((((is_divu * 35) + (is_remu * 37)) + (is_div * 34)) + (is_rem * 36)) + (is_divw * 49)) + (is_remw * 51)) + (is_divuw * 50)) + (is_remuw * 52)), a_0, a_1, a_2, a_3, b_raw_0, b_raw_1, b_raw_2, b_raw_3, c_raw_0, c_raw_1, c_raw_2, c_raw_3])
+    ]
+
+  @[constraint_and_interaction_simplification]
+  def constrain_interactions (air : Valid_DivRemChip FKB ExtF) : Prop :=
+    air.bus =
+      List.flatMap
+        (fun row ↦ raw_bus_row air row)
+        (List.range (air.last_row + 1))
+
+  /-- `Extraction.allHold` ↔ `constrain_interactions ∧ AbsConstraints`.
       For `MulChip` (5 selectors, 51 constraints) the analogous lemma
       closes by a single `simp` invocation. For `DivRemChip` (8
       selectors, 337 extracted constraints, 2 nested `MulGadget`s +
       `LtWordU16Gadget` + 2 `AddGadget`s + `IsZeroWordGadget` + 2
-      `IsEqualWordGadget`s + 6 `U16MSBGadget`s) it is a heavyweight
+      `IsEqualWordGadget`s + 7 `U16MSBGadget`s) it is a heavyweight
       derivation — the same simp set, but expected to be much slower.
       Drives `allHold_abs` (and via it, the chip-level `spec`s). -/
   @[constraint_and_interaction_simplification]
   def allHold_simplified
     (air : Valid_DivRemChip FKB ExtF) (row : ℕ)
   : Prop :=
-    DivRemChip.Extraction.constrain_interactions air ∧ AbsConstraints air row
+    constrain_interactions air ∧ AbsConstraints air row
 
   set_option maxRecDepth 4_000_000 in
   @[simp]
@@ -1307,6 +1853,37 @@ namespace DivRemChip.Interactions
   lemma bus_row_def (air : Valid_DivRemChip FKB ExtF) (row : ℕ) :
     bus_row air row = DivRemChip.ConstraintsAndBuses.AbsBuses air row
   := rfl
+
+  set_option maxRecDepth 4_000_000 in
+  /-- The typed `bus_row` is the extracted interaction list, entry for
+      entry: deserialising `raw_bus_row` — the restatement of
+      `Extraction.constrain_interactions`'s 121 entries that
+      `allHold_iff_allHold_simplified` ties to the extraction — gives
+      `AbsBuses`. As for `MulChip` and `LtChip`, both sides reduce to the
+      same `BusRow` by `dsimp` alone. -/
+  @[simp]
+  lemma bus_row_equiv (air : Valid_DivRemChip FKB ExtF) (row : ℕ) :
+    RV64IM_Interactions.deserialise_bus_row
+      (DivRemChip.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
+  := by
+    dsimp [
+      deserialise_bus_row,
+      constraint_and_interaction_simplification,
+      bus_row,
+      BusRow.append_eq,
+      DivRemChip.ConstraintsAndBuses.CarryChainBuses,
+      DivRemChip.ConstraintsAndBuses.AbsAluEventBuses,
+      DivRemChip.ConstraintsAndBuses.AbsCRangeBuses,
+      DivRemChip.ConstraintsAndBuses.AbsRemainderRangeBuses,
+      DivRemChip.ConstraintsAndBuses.SliceRangeBuses,
+      DivRemChip.ConstraintsAndBuses.LookedAluBuses,
+      MulGadget.AbsBuses,
+      AddGadget.AbsBuses,
+      LtWordU16Gadget.AbsBuses,
+      U16MSBGadget.AbsBuses,
+      U16ToU8GadgetSafe.AbsBuses,
+      pico_encapsulation,
+    ]
 
 end DivRemChip.Interactions
 
@@ -1514,9 +2091,9 @@ namespace DivRemChip.Interpretations
       have := h_constraints
       simp [AbsConstraints, sub_eq_zero] at this
       clear *- this; aesop
-    have h_ext : bus_row_ext_asm (ChipExtraBuses air row) := by
+    have h_ext : bus_row_ext_asm (LookedAluBuses air row) := by
       simp [AbsBuses] at h_ext; aesop
-    simp [bus_row_ext_asm, ChipExtraBuses] at h_ext; replace h_ext := h_ext.2.2
+    simp [bus_row_ext_asm, LookedAluBuses] at h_ext
     simp [ALUBus.externals, ALUBus.validOpcode, ALUBus.operandsInternal,
           ALUBus.operandRange, h_is_real] at h_ext
     have h_raw :
@@ -1549,7 +2126,7 @@ namespace DivRemChip.Interpretations
   --
   -- Every chip-level `spec_*` proof used to start with the same
   -- boilerplate:
-  --   (i)  peel `bus_row_ext_asm` / `bus_row_wf_asm` over the 11-way
+  --   (i)  peel `bus_row_ext_asm` / `bus_row_wf_asm` over the 18-way
   --        `++` chain in `AbsBuses` into one `(ext_asm, wf_asm)` pair
   --        per sub-gadget plus a residual on `ChipExtraBuses`;
   --   (ii) feed each sub-gadget's `(ext_asm, wf_asm, AbsConstraints,
@@ -1804,10 +2381,10 @@ namespace DivRemChip.Interpretations
     have h_breakdown := selector_breakdown air row h_constraints
     have h_exclusive := selector_exclusivity air row h_constraints
     have : bus_row_ext_asm (ChipExtraBuses air row) := by
-      simp [AbsBuses] at h_ext_asm; aesop
+      rw [ChipExtraBuses_split]; simp [AbsBuses] at h_ext_asm ⊢; aesop
     simp [this]; clear this
     have : bus_row_wf_asm (ChipExtraBuses air row) := by
-      simp [AbsBuses] at h_wf_asm; aesop
+      rw [ChipExtraBuses_split]; simp [AbsBuses] at h_wf_asm ⊢; aesop
     simp [this]; clear this
     have : AbsConstraints_NoGadgets air row := by
       simp [AbsConstraints] at h_constraints
@@ -1926,7 +2503,11 @@ namespace DivRemChip.Interpretations
               (h_gadget_wf_asm := h_wf_asm.1)
     simp at this
     constructor <;> [ (clear *- this; grind); clear this]
-    replace h_constraints := h_constraints.2; replace h_ext_asm := h_ext_asm.2; replace h_wf_asm := h_wf_asm.2
+    -- Past the upper `MulGadget`, the bus chain continues with the
+    -- chip-own `CarryChainBuses` and `AbsAluEventBuses`, which the
+    -- gadget specs do not consume.
+    replace h_constraints := h_constraints.2
+    replace h_ext_asm := h_ext_asm.2.2.2; replace h_wf_asm := h_wf_asm.2.2.2
     have := IsEqualWordGadget.Spec.gadget_spec (h_gadget_constraints := h_constraints.1)
     constructor <;> [ (clear *- this; grind); clear this]
     replace h_constraints := h_constraints.2
@@ -1948,13 +2529,17 @@ namespace DivRemChip.Interpretations
               (h_gadget_wf_asm := h_wf_asm.1)
     simp at this
     constructor <;> [ (clear *- this; assumption); clear this]
-    replace h_constraints := h_constraints.2; replace h_ext_asm := h_ext_asm.2; replace h_wf_asm := h_wf_asm.2
+    -- Skip the chip-own `AbsCRangeBuses` between the two `AddGadget`s.
+    replace h_constraints := h_constraints.2
+    replace h_ext_asm := h_ext_asm.2.2; replace h_wf_asm := h_wf_asm.2.2
     have := AddGadget.Spec.gadget_spec
               (h_gadget_constraints := h_constraints.1)
               (h_gadget_wf_asm := h_wf_asm.1)
     simp at this
     constructor <;> [ (clear *- this; assumption); clear this]
-    replace h_constraints := h_constraints.2.2.2.2.2.2.2.2.2; replace h_ext_asm := h_ext_asm.2; replace h_wf_asm := h_wf_asm.2
+    -- Skip the chip-own `AbsRemainderRangeBuses` before the `LtWordU16Gadget`.
+    replace h_constraints := h_constraints.2.2.2.2.2.2.2.2.2
+    replace h_ext_asm := h_ext_asm.2.2; replace h_wf_asm := h_wf_asm.2.2
     have := LtWordU16Gadget.Spec.gadget_spec
               (h_gadget_constraints := h_constraints.1)
               (h_gadget_wf_asm := h_wf_asm.1)

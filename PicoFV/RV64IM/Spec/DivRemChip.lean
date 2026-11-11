@@ -2034,7 +2034,9 @@ namespace DivRemChip.Spec
       (air.cols.values.quotient_3 row 0).val < 65536
     := by
       subst wf
-      simp [bus_row, AbsBuses, ChipExtraBuses, bus_row_wf_asm,
+      simp [bus_row, AbsBuses, CarryChainBuses, AbsAluEventBuses,
+            AbsCRangeBuses, AbsRemainderRangeBuses, SliceRangeBuses,
+            LookedAluBuses, bus_row_wf_asm,
             ByteBus.Spec, h_is_real, h_is_div, eq_divu, eq_rem,
             eq_remu, eq_divw, eq_remw, eq_divuw, eq_remuw]
         at h_wf
@@ -2090,7 +2092,9 @@ namespace DivRemChip.Spec
       (air.cols.values.remainder_3 row 0).val < 65536
     := by
       subst wf
-      simp [bus_row, AbsBuses, ChipExtraBuses, bus_row_wf_asm,
+      simp [bus_row, AbsBuses, CarryChainBuses, AbsAluEventBuses,
+            AbsCRangeBuses, AbsRemainderRangeBuses, SliceRangeBuses,
+            LookedAluBuses, bus_row_wf_asm,
             ByteBus.Spec, h_is_real, h_is_rem, eq_div, eq_divu,
             eq_remu, eq_divw, eq_remw, eq_divuw, eq_remuw]
         at h_wf
@@ -2146,7 +2150,9 @@ namespace DivRemChip.Spec
       (air.cols.values.quotient_3 row 0).val < 65536
     := by
       subst wf
-      simp [bus_row, AbsBuses, ChipExtraBuses, bus_row_wf_asm,
+      simp [bus_row, AbsBuses, CarryChainBuses, AbsAluEventBuses,
+            AbsCRangeBuses, AbsRemainderRangeBuses, SliceRangeBuses,
+            LookedAluBuses, bus_row_wf_asm,
             ByteBus.Spec, h_is_real, h_is_divu, eq_div, eq_rem,
             eq_remu, eq_divw, eq_remw, eq_divuw, eq_remuw]
         at h_wf
@@ -2202,7 +2208,9 @@ namespace DivRemChip.Spec
       (air.cols.values.remainder_3 row 0).val < 65536
     := by
       subst wf
-      simp [bus_row, AbsBuses, ChipExtraBuses, bus_row_wf_asm,
+      simp [bus_row, AbsBuses, CarryChainBuses, AbsAluEventBuses,
+            AbsCRangeBuses, AbsRemainderRangeBuses, SliceRangeBuses,
+            LookedAluBuses, bus_row_wf_asm,
             ByteBus.Spec, h_is_real, h_is_remu, eq_div, eq_divu,
             eq_rem, eq_divw, eq_remw, eq_divuw, eq_remuw]
         at h_wf
@@ -2259,7 +2267,9 @@ namespace DivRemChip.Spec
       (air.cols.values.quotient_3 row 0).val < 65536
     := by
       subst wf
-      simp [bus_row, AbsBuses, ChipExtraBuses, bus_row_wf_asm,
+      simp [bus_row, AbsBuses, CarryChainBuses, AbsAluEventBuses,
+            AbsCRangeBuses, AbsRemainderRangeBuses, SliceRangeBuses,
+            LookedAluBuses, bus_row_wf_asm,
             ByteBus.Spec, h_is_real, h_is_divw, eq_div, eq_divu, eq_rem,
             eq_remu, eq_remw, eq_divuw, eq_remuw]
         at h_wf
@@ -2316,7 +2326,9 @@ namespace DivRemChip.Spec
       (air.cols.values.remainder_3 row 0).val < 65536
     := by
       subst wf
-      simp [bus_row, AbsBuses, ChipExtraBuses, bus_row_wf_asm,
+      simp [bus_row, AbsBuses, CarryChainBuses, AbsAluEventBuses,
+            AbsCRangeBuses, AbsRemainderRangeBuses, SliceRangeBuses,
+            LookedAluBuses, bus_row_wf_asm,
             ByteBus.Spec, h_is_real, h_is_remw, eq_div, eq_divu, eq_rem,
             eq_remu, eq_divw, eq_divuw, eq_remuw]
         at h_wf
@@ -2373,7 +2385,9 @@ namespace DivRemChip.Spec
       (air.cols.values.quotient_3 row 0).val < 65536
     := by
       subst wf
-      simp [bus_row, AbsBuses, ChipExtraBuses, bus_row_wf_asm,
+      simp [bus_row, AbsBuses, CarryChainBuses, AbsAluEventBuses,
+            AbsCRangeBuses, AbsRemainderRangeBuses, SliceRangeBuses,
+            LookedAluBuses, bus_row_wf_asm,
             ByteBus.Spec, h_is_real, h_is_divuw, eq_div, eq_divu, eq_rem,
             eq_remu, eq_divw, eq_remw, eq_remuw]
         at h_wf
@@ -2430,7 +2444,9 @@ namespace DivRemChip.Spec
       (air.cols.values.remainder_3 row 0).val < 65536
     := by
       subst wf
-      simp [bus_row, AbsBuses, ChipExtraBuses, bus_row_wf_asm,
+      simp [bus_row, AbsBuses, CarryChainBuses, AbsAluEventBuses,
+            AbsCRangeBuses, AbsRemainderRangeBuses, SliceRangeBuses,
+            LookedAluBuses, bus_row_wf_asm,
             ByteBus.Spec, h_is_real, h_is_remuw, eq_div, eq_divu, eq_rem,
             eq_remu, eq_divw, eq_remw, eq_divuw]
         at h_wf
@@ -2473,10 +2489,13 @@ namespace DivRemChip.Spec
     -- h_ext separation
     simp [AbsBuses, and_assoc] at h_ext
     replace h_ext := h_ext.1
-    -- h_wf separation
-    simp [AbsBuses] at h_wf; have h_rest := h_wf.2
+    -- h_wf separation. `h_rest` collects the chip-own blocks: it is where
+    -- the u16 bounds on `abs_c` / `abs_remainder` come from, which the two
+    -- `looking_alu(ADD)` entries assert on their operands.
+    have h_rest : bus_row_wf_asm (ChipExtraBuses air row) := by
+      rw [ChipExtraBuses_split]; simp [AbsBuses] at h_wf ⊢; aesop
     simp [bus_row_wf_asm, ChipExtraBuses, ByteBus.Spec, h_is_real] at h_rest
-    simp [and_assoc] at h_wf; replace h_wf := h_wf.1
+    simp [AbsBuses, and_assoc] at h_wf; replace h_wf := h_wf.1
     -- constraints separation
     simp [AbsConstraints] at h_constraints
     replace h_constraints := h_constraints.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
@@ -2496,7 +2515,8 @@ namespace DivRemChip.Spec
       U16MSBGadget.AbsBuses,
       U16ToU8GadgetSafe.AbsBuses
     ]
-    simp [bus_row_ext_asrt, ChipExtraBuses, h_is_real]
+    simp [bus_row_ext_asrt, CarryChainBuses, AbsAluEventBuses, AbsCRangeBuses,
+          AbsRemainderRangeBuses, SliceRangeBuses, LookedAluBuses, h_is_real]
     split_ands <;> intro h_alu <;>
       simp [
         ALUBus.externals,
@@ -2570,7 +2590,8 @@ namespace DivRemChip.Spec
     -- directly: unifying them at default transparency unfolds the bus row.)
     obtain ⟨h_b_0, h_b_1, h_c_0, h_c_1, h_not_word, -⟩ :=
       operands_of_raw air row h_constraints
-    simp [ChipExtraBuses, MulGadget.AbsBuses,
+    simp [CarryChainBuses, AbsAluEventBuses, AbsCRangeBuses,
+          AbsRemainderRangeBuses, SliceRangeBuses, LookedAluBuses, MulGadget.AbsBuses,
           AddGadget.AbsBuses, LtWordU16Gadget.AbsBuses,
           U16MSBGadget.AbsBuses, U16ToU8GadgetSafe.AbsBuses,
           h_is_real]
