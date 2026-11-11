@@ -170,7 +170,7 @@ namespace RV64IM_Interactions.V3
         Layout of the `CpuChip` send (`riscv_cpu/constraints.rs:117-133`):
         `[opcode, a(4), b(4), c(4), op_a_0, is_memory, chunk, clk]`. The access width is
         no longer a selector: the memory chip derives it from the opcode
-        (`riscv_memory/read_write/constraints.rs:157-190`). `a` is the value of register `a`
+        (`riscv_memory/read_write/constraints.rs:157-191`). `a` is the value of register `a`
         after the row: the loaded value for a load, the stored value for a store. -/
     structure MemoryBusEntry where
       multiplicity : F
@@ -231,7 +231,7 @@ namespace RV64IM_Interactions.V3
         Same content as the 2.x `MemoryBus.Spec`, keyed on the opcode as before, except the
         address bound: the v3.1.1 memory chip proves `b + c` with an in-chip carry chain whose
         third and fourth result limbs are zero, so the address is below `2^32`, and its stack
-        guard keeps it at or above `2^16` (`riscv_memory/read_write/constraints.rs:209-250`).
+        guard keeps it at or above `2^16` (`riscv_memory/read_write/constraints.rs:209-255`).
         The `chunk` and `clk` fields carry no promise here; the memory chip's own proofs may
         need one. -/
     def MemoryBus.Spec
