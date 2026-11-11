@@ -57,6 +57,8 @@ Algebraic constraint breakdown (53 total):
   (`is_sllw` is a duplicate of 2; `sllw_msb` is from U16MSBGadget).
 
 Bus interactions (11 entries):
+- 1 ByteBus opcode-9 entry for `(c_0 − s5) · inv64 < 2^10`
+  (pins the shift amount `s5` to the low 6 bits of `c_0`).
 - 8 ByteBus opcode-9 entries: shift_carry verification of
   `(b_i · v_0123 − lower_limb_i · v_0123 · 65535/v_0123) = …`.
   Pairs `(lower_limb_i, higher_limb_i)` against `(16 − shift, shift)`.

@@ -80,7 +80,7 @@ Algebraic constraint breakdown (65 total):
 Constraints 7, 26..29 and 59..62 close the three ShiftRightChip gaps found in
 the 2.x series (`docs/rv64-bug-mapping.md`).
 
-Bus interactions (12 entries):
+Bus interactions (13 entries):
 - 9 ByteBus opcode-9 (BitRange) entries:
   1 for `(c − s5_full) · inv64 < 1024` (pins `c.val mod 64 = s5_full.val`).
   4 × 2 for `(lower_limb_i, higher_limb_i)` paired against `(s4, 16 − s4)`.
@@ -258,7 +258,7 @@ namespace ShiftRightChip.ConstraintsAndBuses
       -- =====================================================================
       -- Constraints 14..16: v_01, v_012, v_0123 cascade.
       --   v_01    = ((1 - c_bits_0) + 1) · 2 · ((1 - c_bits_1) · 3 + 1)
-      --           = 2^(3 - c_bits_0 - 2·c_bits_1)  (range {1, 2, 4, 8})
+      --           = 2^(4 - c_bits_0 - 2·c_bits_1)  (range {2, 4, 8, 16})
       --   v_012   = v_01 · ((1 - c_bits_2) · 15 + 1)  (multiply by 16 iff c_bits_2 = 0)
       --   v_0123  = v_012 · ((1 - c_bits_3) · 255 + 1)
       --         = 2^(16 - s4) where s4 = c_bits_0 + 2·c_bits_1 + 4·c_bits_2 + 8·c_bits_3.

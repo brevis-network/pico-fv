@@ -17,8 +17,8 @@ Four ALU outputs handled (vs two for SLLChip):
 
 ## Soundness fixes present at Pico v3.1.1
 
-The two soundness gaps previously bridged by Lean-level `MISSING_*`
-axioms are closed by constraints of Pico v3.1.1
+The three soundness gaps of the 2.x series (`docs/rv64-bug-mapping.md`)
+are closed by constraints of Pico v3.1.1
 (`vm/src/chips/chips/alu/sr/constraints.rs`):
 
 1. **`b[i] · v_0123 = higher_limb[i] · 65536 + lower_limb[i] · v_0123`**
@@ -30,7 +30,12 @@ axioms are closed by constraints of Pico v3.1.1
 2. **`c = c_for_lookup_0`** (Constraint 7, `:75`) — binds the scalar
    shift-amount column to the Word low limb broadcast on the ALU bus.
 
-Both extracted constraints land in `Extraction.ShiftRightChip` /
+3. **Word-row output limbs `a[0]`, `a[1]`** (Constraints 59..62, `:236-256`)
+   — on SRLW/SRAW rows the 32-bit result is set from `limb_result_0`,
+   `higher_limb_1`, the sign correction and the sign fill, instead of being
+   free witnesses. `spec_SRLW` and `spec_SRAW` rely on these.
+
+All these extracted constraints land in `Extraction.ShiftRightChip` /
 `ConstraintsAndBuses` and are now part of the destructured constraint
 list inside each `spec_S*` proof.
 -/
@@ -48,7 +53,7 @@ namespace ShiftRightChip.Spec
   -- =====================================================================
   -- `v_0123` cascade for SR: when `c_bits_0..3` are booleans,
   -- `v_0123 = 2^(16 - k_nat)` where `k_nat = c0.val + 2 c1.val + 4 c2.val + 8 c3.val`.
-  -- The cascade is `v_01 = ((1-c0)+1)·2 · ((1-c1)·3+1) = 2^(3 - c0 - 2·c1)`,
+  -- The cascade is `v_01 = ((1-c0)+1)·2 · ((1-c1)·3+1) = 2^(4 - c0 - 2·c1)`,
   -- and `v_0123 = 2^(16 - k_nat)`.
   -- =====================================================================
   private lemma v0123_pow_inv
@@ -1881,7 +1886,7 @@ namespace ShiftRightChip.Spec
   -- spec_SRLW — opcode 43 (32-bit logical right shift, sign-extended to
   -- 64 via `srw_msb = MSB(a_1)`).
   --
-  -- For SRLW, `b_msb` is forced to 0 by constraint 32
+  -- For SRLW, `b_msb` is forced to 0 by constraint 38
   -- (`(is_srl + is_srlw) · b_msb = 0`), so the 32-bit shift has no
   -- sign-extension within itself — only the post-shift extension from
   -- 32 → 64 bits via `srw_msb`. We case-split on (c_bits_4, c_bits_5)
