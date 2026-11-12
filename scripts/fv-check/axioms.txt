@@ -121,6 +121,16 @@ MulChip.Spec.spec_MULHSU Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Q
 MulChip.Spec.spec_MULHU Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 MulChip.Spec.spec_MULW Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 MulChip.Spec.wf_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+SLLChip.Spec.ext_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+SLLChip.Spec.spec_SLL Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+SLLChip.Spec.spec_SLLW Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+SLLChip.Spec.wf_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+ShiftRightChip.Spec.ext_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+ShiftRightChip.Spec.spec_SRA Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+ShiftRightChip.Spec.spec_SRAW Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+ShiftRightChip.Spec.spec_SRL Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+ShiftRightChip.Spec.spec_SRLW Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+ShiftRightChip.Spec.wf_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 SubChip.Spec.ext_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 SubChip.Spec.spec Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 SubChip.Spec.wf_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext

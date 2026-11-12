@@ -25,7 +25,8 @@ with their statements in `signatures.txt`. They are of two kinds.
   extracted constraints, the bus messages it serves have the meaning the bus assumptions give them
   (for example, an ALU row really computes the operation it claims). Every chip's specification
   is built; the checked list holds the memory chip's (`MemoryReadWriteChip.Spec.*`) and those of
-  the ALU chips already at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem) today.
+  the ALU chips already at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL,
+  ShiftRight) today.
 
   `DivRemChip`'s specifications are the one exception to "satisfies its extracted constraints":
   they are stated over the readable restatement `DivRemChip.ConstraintsAndBuses.AbsConstraints`
@@ -44,7 +45,7 @@ Pico commit [`2acc7c182`](https://github.com/brevis-network/pico/commit/2acc7c18
 <!-- end generated -->
 
 <!-- generated: pending -->
-4 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `CpuChip.lean`, `MemoryReadWriteChip.lean`, `SLLChip.lean`, `ShiftRightChip.lean`.
+2 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `CpuChip.lean`, `MemoryReadWriteChip.lean`.
 <!-- end generated -->
 
 ## Summary of the risks
@@ -130,7 +131,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 66 |
+| kernel + compiler | 76 |
 | kernel + compiler + RISC-V spec axioms | 62 |
 | kernel only | 1 |
 <!-- end generated -->
