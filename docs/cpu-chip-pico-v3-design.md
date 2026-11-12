@@ -1,9 +1,9 @@
 # Moving the CPU chip to Pico v3.1.1: design
 
-Draft for review. Pico at the commit `extractor/` is pinned to (`2acc7c1828fb`, v3.1.1);
-written against pico-fv at `f16f474`. The work targets `pico-v3`. The open design questions
-were settled on 12 November 2026; see "Decisions". Pico paths below are under
-`vm/src/chips/chips/` unless they say otherwise.
+The design questions were settled on 12 November 2026; see "Decisions". Pico references are
+to the commit `extractor/` pins (`2acc7c1828fb`, v3.1.1); pico-fv references are to `pico-v3`
+at `ca52d7a`, which the work targets. Pico paths below are under `vm/src/chips/chips/` unless
+they start with `vm/`; `rrs.rs` is `vm/src/compiler/riscv/disassembler/rrs.rs`.
 
 ## What changed and why it is a redesign
 
@@ -16,19 +16,19 @@ message formats changed: the instruction fetch (43 → 26 fields), the memory di
 and a new Ecall message (tag 13, 20 fields). So the CPU chip's Lean files are rewritten, not
 renumbered, and the bus contracts the chip relies on are restated.
 
-## The draft contracts
+## The contracts
 
-Branch `tommy/cpu-3x-contracts`, two new files beside the old ones:
+Two new files beside the old ones:
 
-- `PicoFV/RV64IM/Transpiler/TranspilerV3.lean`: the decoder. `transpile_op inst mult pc` maps a
-  Sail instruction at address `pc` to the 26-field Program message, following
-  `compiler/riscv/disassembler/rrs.rs` and `riscv_program/traces.rs`: the pc in two 16-bit
-  pieces; register `a` as one field; `b` and `c` as two 16-bit pieces plus a sign bit
-  (`SignExtImm`, `riscv_cpu/instruction/columns.rs:43-70`); 13 selectors; `op_a_0` is
-  `[op_a = x0]` for every instruction, stores and branches included
-  (`instruction/columns.rs:92`); `AUIPC rd, imm` is `ADD rd, imm, pc` with both immediate flags
-  (`rrs.rs:357-366`); `ECALL` reads `x5`, `x10`, `x11` (`rrs.rs:368-377`); trap instructions
-  return `none`.
+- `PicoFV/RV64IM/Transpiler/TranspilerV3.lean`: the decoder, as draft definitions; its lemmas
+  come with the full decoder. `transpile_op inst mult pc` maps a Sail instruction at address
+  `pc` to the 26-field Program message, following `rrs.rs` and `riscv_program/traces.rs`: the
+  pc in two 16-bit pieces; register `a` as one field; `b` and `c` as two 16-bit pieces plus a
+  sign bit (`SignExtImm`, `riscv_cpu/instruction/columns.rs:43-70`); 13 selectors; `op_a_0`
+  is `[op_a = x0]` for every instruction, stores and branches included
+  (`riscv_cpu/instruction/columns.rs:92`); `AUIPC rd, imm` is `ADD rd, imm, pc` with both
+  immediate flags (`rrs.rs:357-366`); `ECALL` reads `x5`, `x10`, `x11` (`rrs.rs:368-377`);
+  trap instructions return `none`.
 - `PicoFV/RV64IM/RVSail/BusesV3.lean`, namespace `RV64IM_Interactions.V3`: the Program and
   memory-dispatch entries and contracts, the row type `BusRow`, the five row predicates, the
   sorting of a raw row by tag and length, and `bus_operations`, the register and memory
@@ -51,7 +51,7 @@ It says a real row's fetch message is a row of the table Pico builds at keygen: 
 (`traces.rs:107-110`), its two 16-bit pieces, the decoded instruction, and
 `pc_carry = [pc[0] >= 0xFFFC]` (`traces.rs:121-128`). Trap rows and padding repeat row 0
 (`traces.rs:116-120, 140-150`). The CPU sends with multiplicity `is_real` and the table is
-preprocessed, so the whole message matches one such row (`riscv_cpu/constraints.rs:51-75`).
+preprocessed, so the whole message matches one such row (`riscv_cpu/constraints.rs:42-75`).
 
 The memory-dispatch contract keeps the 2.x content keyed on the opcode, since the width
 selectors are gone, with the address bound the v3.1.1 memory chip proves: `2^16 <= b + c < 2^32`
@@ -106,12 +106,15 @@ Settled on 12 November 2026.
    stands behind the promise, in 2.x or now. It holds when:
    - the Program table is one Pico's key generation builds from a loaded ELF. The loader
      rejects an unaligned segment and any instruction address above `0x7800_0000 - 4`
-     (`vm/src/compiler/riscv/disassembler/elf.rs:57-72, 129, 185`), and
+     (`vm/src/compiler/riscv/disassembler/elf.rs:26-28, 57-72, 129, 185`), and
      `generate_preprocessed` asserts the aligned base and the bound again
      (`riscv_program/traces.rs:83-87, 107-110`);
    - the lookup argument balances, which pico-fv assumes for every bus;
    - the decoder in `TranspilerV3.lean` agrees with Pico's (`rrs.rs`). Only review compares
-     the two, so the review of the full decoder compares them field by field.
+     the two, so the review of the full decoder compares them field by field. One case is
+     known to be missing: `FENCE`, which Pico decodes as the no-op `ADD x0, x0, 0`
+     (`rrs.rs:98-100, 515-517`). Its table row is the one the decoder gives
+     `ADDI x0, x0, 0`, so the promise holds for it as written.
 
    The promise is read against Pico again when the pin moves.
 2. **The memory contract is as drafted** (question 5). Two trial proofs, LW and SD, pass
@@ -155,9 +158,10 @@ itself. On the last real row the chip sets its `next_pc` to them (extracted cons
 `riscv_cpu/public_values/constraints.rs:35-50`), and nothing in the chip range-checks them. The
 trial proofs need each part: the 16-bit pieces and the alignment for the JALR addition, its
 cleared low bit and BEQ's aligned target, and a bound on the value to read the `pc + 4` and
-branch-target field equations as integer equations. The weakest bound the three trials need is `p - 4096` (`p` the KoalaBear
-prime, `4096` the largest backward branch); `0x7800_0000` is slightly stronger, is the guest
-address bound Pico itself uses, and also covers JAL's 21-bit offsets, which need `p - 2^20`.
+branch-target field equations as integer equations. The weakest bound the three trials need
+is `p - 4096` (`p` the KoalaBear prime, `4096` the largest backward branch); `0x7800_0000` is
+slightly stronger, is the guest address bound Pico itself uses, and also covers JAL's 21-bit
+offsets, which need `p - 2^20`.
 
 Where Pico enforces it, outside the chips, in the recursion circuit
 (`vm/src/mle/compiler/recursion/lowering.rs`): each chunk's final pc equals the next chunk's
