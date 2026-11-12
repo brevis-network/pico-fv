@@ -5,13 +5,13 @@ name: ci
 
 on:
   push:
-    branches: [main, pico-v3]
+    branches: [main, pico-v3, pico-v3-cpu]
   pull_request:
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/pico-v3' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/pico-v3' && github.ref != 'refs/heads/pico-v3-cpu' }}
 
 permissions:
   contents: read
@@ -62,9 +62,11 @@ jobs:
       - name: extraction files match the pinned Pico
         run: cargo run --release --locked -- --check ../PicoFV/RV64IM/Extraction
 
-  # A cold build takes hours, so it runs in stages, and on main and pico-v3 each stage saves the
-  # builds: a runner lost mid-build keeps the earlier stages, and a rerun resumes from them.
-  # Pull requests only restore, so their entries do not evict the branches' from the cache.
+  # A cold build takes hours, so it runs in stages, and on main, pico-v3 and pico-v3-cpu each
+  # stage saves the builds: a runner lost mid-build keeps the earlier stages, and a rerun resumes
+  # from them. Pull requests only restore, so their entries do not evict the branches' from the
+  # cache. A pull request can restore only what its base branch or main saved, so every branch
+  # that pull requests target must be in this list, or each of their runs is a cold build.
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 360
@@ -74,7 +76,7 @@ jobs:
         .lake/packages/LeanRV/.lake/build
         .lake/packages/Sail/.lake/build
         .lake/packages/LeanZKCircuit_Plonky3/.lake/build
-      SAVE: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/pico-v3' }}
+      SAVE: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/pico-v3' || github.ref == 'refs/heads/pico-v3-cpu' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
