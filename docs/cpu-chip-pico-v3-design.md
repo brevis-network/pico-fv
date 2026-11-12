@@ -1,8 +1,9 @@
 # Moving the CPU chip to Pico v3.1.1: design
 
 Draft for review. Pico at the commit `extractor/` is pinned to (`2acc7c1828fb`, v3.1.1);
-pico-fv branch `pico-v3-cpu` at `f16f474`. Pico paths below are under `vm/src/chips/chips/`
-unless they say otherwise.
+written against pico-fv at `f16f474`. The work targets `pico-v3`. The open design questions
+were settled on 12 November 2026; see "Decisions". Pico paths below are under
+`vm/src/chips/chips/` unless they say otherwise.
 
 ## What changed and why it is a redesign
 
@@ -63,7 +64,7 @@ instruction" fails on any trace with an `ECALL` row; and it requires an even `JA
 which RISC-V does not. The 3.x decoder gives `ECALL` its row and drops the evenness condition;
 the chip clears the low bit itself (`riscv_cpu/jump/constraints.rs:79-126`).
 
-## The eight questions
+## The seven questions
 
 1. **Where the contracts live.** In the two new files above. The 2.x `Buses.lean` and
    `Transpiler.lean` stay unchanged because the memory chip's proofs use them until the memory
@@ -73,28 +74,62 @@ the chip clears the low bit itself (`riscv_cpu/jump/constraints.rs:79-126`).
    contract above: two 16-bit pieces, 4-aligned, below `0x7800_0000`, and the carry bit's
    meaning. *Prototype:* `pc_facts` derives all four for every instruction; `next_pc_facts`
    uses them on the next row.
-3. **The stronger whole-trace assumption.** See the next section. *Prototype:* needed, and
-   sufficient for the three trial theorems.
-4. **ALU opcodes 264 and 265.** Add them to `ALUBus.validOpcode` and `ALUBus.Spec`: result piece
-   0 is `[b < c]`, piece 1 is `[b > c]` (signed for 264, unsigned for 265), and prove the
-   less-than chip meets them. *Prototype:* the BEQ trial takes the 265 case as a hypothesis
-   (`cmp_unsigned_spec`) and needs nothing else from the ALU side; pieces 2 and 3 are zeros
-   the CPU writes itself.
+3. **The stronger whole-trace assumption.** See "The whole-trace assumption". *Prototype:*
+   needed, and sufficient for the five trial theorems.
+4. **ALU opcodes 264 and 265.** In `ALUBus.validOpcode` and `ALUBus.Spec` since `ca52d7a`:
+   result piece 0 is `[b < c]`, piece 1 is `[b > c]` (signed for 264, unsigned for 265),
+   pieces 2 and 3 are zero, and the less-than chip is proved to meet them. *Prototype:*
+   written before that, so the BEQ trial takes the 265 case as a hypothesis
+   (`cmp_unsigned_spec`); it needs nothing else from the ALU side.
 5. **The memory contract.** As drafted: one predicate keyed on the opcode, address in
    `[2^16, 2^32)`, load results gated on `op_a_0 = 0`; what the CPU guarantees in return is the
    opcode, `is_memory = 1`, 16-bit operand pieces, a store's 16-bit value and `a = 0` when
-   `op_a_0 = 1`. *Prototype:* not exercised; no trial loads or stores.
+   `op_a_0 = 1`. *Prototype:* a trial load (LW) and a trial store (SD) pass against it
+   unchanged; see the last section.
 6. **The Ecall message.** Ignored when a row is sorted, as tag 8 was; ECALL stays outside the
    theorems. *Prototype:* confirmed. On every other row the chip forces `is_halt` and
    `num_extra_clk` to zero (extracted constraints 31 and 32), which is all the trials needed.
-7. **Keeping `pico-v3-cpu` buildable.** Take the 13 instruction-theorem files out of the
+7. **Keeping `pico-v3` buildable.** Take the 13 instruction-theorem files out of the
    top-level build and move their 13 lists out of `scripts/fv-check/theorems.d/` until each is
-   repaired. Only `Constraints/CpuChipInterpretations.lean` and the `Equivalence/` files import
+   repaired. `pico-v3` checks fewer theorems in the meantime; the tag `pico-v3-before-cpu`
+   (`35259d8`) marks the last commit before the CPU work, for comparing theorem statements.
+   Only `Constraints/CpuChipInterpretations.lean` and the `Equivalence/` files import
    the CPU modules, so nothing else breaks. *Prototype:* did this; see the last section for what
    was built.
-8. **CI.** Add `pico-v3-cpu` beside `main` and `pico-v3` in `.github/workflows/ci.yml`: the
-   push trigger (line 8), the cancellation rule (line 14) and the cache-save condition
-   (line 77). Not prototyped.
+
+## Decisions
+
+Settled on 12 November 2026.
+
+1. **The instruction fetch promise is as drafted** (question 2). The pc facts are part of what
+   the Program table promises, and the fetch contract's `axioms` field is `True`. No Lean proof
+   stands behind the promise, in 2.x or now. It holds when:
+   - the Program table is one Pico's key generation builds from a loaded ELF. The loader
+     rejects an unaligned segment and any instruction address above `0x7800_0000 - 4`
+     (`vm/src/compiler/riscv/disassembler/elf.rs:57-72, 129, 185`), and
+     `generate_preprocessed` asserts the aligned base and the bound again
+     (`riscv_program/traces.rs:83-87, 107-110`);
+   - the lookup argument balances, which pico-fv assumes for every bus;
+   - the decoder in `TranspilerV3.lean` agrees with Pico's (`rrs.rs`). Only review compares
+     the two, so the review of the full decoder compares them field by field.
+
+   The promise is read against Pico again when the pin moves.
+2. **The memory contract is as drafted** (question 5). Two trial proofs, LW and SD, pass
+   against it unchanged. They use the address bound `< 2^32`, the alignment clause and, for
+   LW, the sign-extension clause. They do not use the lower bound `2^16`, the 16-bit range of
+   a loaded value, or the `chunk` and `clk` fields, which stay without a promise. The
+   alignment clause is required by the Sail-side lemmas (`execute_LW_equiv`,
+   `execute_SD_equiv`). The memory chip's own proofs stay on the 2.x extraction and the 2.x
+   contract until that chip moves, so until then the 11 load and store theorems rest on a
+   promise with no Lean proof at v3.1.1; `SOUNDNESS.md` has to say so.
+3. **The whole-trace assumption takes the `0x7800_0000` bound**, as in the next section, not
+   the weakest bound the proofs need.
+4. **The CPU chip gets a theorem for what it guarantees as a sender** (`ext_asrt`). Each of
+   the ten ALU chips has one; the CPU chip has none, in 2.x or in the prototype. Only the ALU
+   and memory-dispatch contracts ask anything of the sender (`externals`). The memory chip's
+   address addition is exact only for 16-bit operand pieces, which it takes from the sender
+   (`riscv_memory/read_write/constraints.rs:208-222`), so this theorem closes a link the load
+   and store theorems lean on. It comes with the CPU chip's own files.
 
 ## The whole-trace assumption
 
@@ -136,20 +171,24 @@ final pc is either zero or a Program-table pc, which satisfies the new wording. 
 check of its own on the public value outside the chips (no range or alignment check in the
 recursion circuit or the verifiers).
 
-This strengthens a hypothesis of all 62 instruction theorems. They refer to it by name, so the
-recorded statements in `signatures.txt` will not change; the pull request has to say so.
+All 62 instruction theorems take the new wording. On `pico-v3` eight recorded statements
+already name the assumption: the six branches, JAL and JALR. Those eight change in meaning and
+not in text, because `signatures.txt` records the name and not the definition. The other 54
+gain it as a new hypothesis (the trial ADD takes it), and their recorded statements change.
+The pull requests have to list both groups. With this assumption the instruction theorems
+cover a chunk inside an accepted recursive proof, not a chunk proof checked on its own;
+`SOUNDNESS.md` has to say so.
 
 ## Framework files the real work touches
 
 - New: `RVSail/BusesV3.lean`, `Transpiler/TranspilerV3.lean`.
 - `Airs/SubAirs.lean`: the lite register-access layouts (6 and 10 columns), beside the 2.x
   ones the memory chip uses. The prototype defines them in `Airs/CpuChip.lean`.
-- `RVSail/Buses.lean`: the ALU cases 264 and 265.
 - `Equivalence/Common.lean`: the whole-trace assumption, `CPU_bus_operations` (the next pc now
   has two pieces) and the operand helpers.
 - `scripts/fv-check/theorems.d/`, `axioms.txt`, `signatures.txt`: parking and restoring the 13
-  lists; `scripts/ci/heavy-modules.txt` if the interpretations module's memory use changes.
-- `.github/workflows/ci.yml`: the branch lists.
+  lists, and a new list for the CPU chip's `ext_asrt`; `scripts/ci/heavy-modules.txt` if the
+  interpretations module's memory use changes.
 
 `Fundamentals/` and `RVSail/Operations.lean` need no change: the trials used the existing
 operation lemmas.
@@ -169,11 +208,20 @@ the Sail state as one step of the instruction does"):
 - `equivalence_JALR`: the four-carry addition `rs1 + imm = next_pc + lsb` (`jalr_sum`), the
   cleared low bit, bit 1 of the target, and the return address `pc + 4` from `pc_carry`.
 
+`Equivalence/TrialV3Mem.lean` adds two against the memory-dispatch contract:
+
+- `equivalence_LW`: the address `rs1 + imm` with the bound and the 4-byte alignment from the
+  memory promise, the sign-extended value, and the destination `x0` case, where the proof
+  needs nothing about the loaded value.
+- `equivalence_SD`: the address with the 8-byte alignment, and the stored value as the
+  register's previous value.
+
 Hypotheses: the contracts on every row, the 65 constraints on every row, the new whole-trace
-assumption, the instruction's opcode, the bus reads, and for BEQ and JALR the RISC-V state
-assumptions the Sail specifications need. BEQ also takes the 265 stand-in. All three build with
-no `sorry`, no new axiom and no `native_decide` or `bv_decide`; their axioms are exactly those
-`axioms.txt` records for the 2.x theorems of the same names. With the 13 instruction-theorem
+assumption, the instruction's opcode, the bus reads, and for BEQ, JALR, LW and SD the RISC-V
+state assumptions the Sail specifications need. BEQ also takes the 265 case as a stand-in
+hypothesis, which the ALU contract now supplies. All five build with no `sorry`, no new axiom
+and no `native_decide` or `bv_decide`; their axioms are exactly those `axioms.txt` records
+for the 2.x theorems of the same names. With the 13 instruction-theorem
 files and the 2.x interpretations file out of the build, `lake build PicoFV64` succeeds on the
 prototype branch, so the rest of the repository is unaffected. The lemmas meant to carry over to
 the interpretations file are `next_pc_facts`, `pc_facts`, `jalr_sum`, `jump_return_address`,
