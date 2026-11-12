@@ -165,4 +165,132 @@ namespace LtSignedGadget.Spec
       -- Push through
       constructor <;> grind
 
+  /-- The embedded `LtWordU16Gadget`'s flag sum is the inequality
+      indicator for this gadget's own (unshifted) operands: it is
+      boolean, and zero exactly when they are equal.
+
+      `gadget_spec` lifts the gadget's `bit` through the sign
+      adjustment because that adjustment preserves order; this lifts
+      the flag sum through it because it is a bijection, so it
+      preserves equality too. The adjusted top limb and the original
+      are related by `shifted.toNat = original.toInt + 2^63`, the same
+      bridge `gadget_spec` uses.
+
+      `LtChip` needs this on its merged branch-comparison rows: the
+      chip pins `a_1 = is_cmp · (Σ u16_flags − bit)`, which is the
+      strict `[b < a]` exactly when `Σ u16_flags = [a ≠ b]`. -/
+  lemma flags_sum_spec
+    (is_real is_signed
+     a_0 a_1 a_2 a_3
+     b_0 b_1 b_2 b_3
+     u16_flags_0 u16_flags_1 u16_flags_2 u16_flags_3
+     not_eq_inv
+     comparison_limbs_0 comparison_limbs_1
+     bit
+     b_msb c_msb : FKB)
+    (h_gadget_wf_asm :
+      bus_row_wf_asm
+        (LtSignedGadget.AbsBuses is_real is_signed a_3 b_3
+          comparison_limbs_0 comparison_limbs_1 bit b_msb c_msb))
+    (h_gadget_constraints :
+      LtSignedGadget.AbsConstraints
+        is_real is_signed
+        a_0 a_1 a_2 a_3
+        b_0 b_1 b_2 b_3
+        u16_flags_0 u16_flags_1 u16_flags_2 u16_flags_3
+        not_eq_inv comparison_limbs_0 comparison_limbs_1 bit
+        b_msb c_msb)
+    (h_is_real : is_real = 1)
+    (h_is_signed : is_signed = 0 ∨ is_signed = 1)
+    (h_a_range :
+      a_0.val < 65536 ∧ a_1.val < 65536 ∧ a_2.val < 65536 ∧ a_3.val < 65536)
+    (h_b_range :
+      b_0.val < 65536 ∧ b_1.val < 65536 ∧ b_2.val < 65536 ∧ b_3.val < 65536)
+  :
+    (u16_flags_0 + u16_flags_1 + u16_flags_2 + u16_flags_3 = 0 ∨
+     u16_flags_0 + u16_flags_1 + u16_flags_2 + u16_flags_3 = 1) ∧
+    ((u16_flags_0 + u16_flags_1 + u16_flags_2 + u16_flags_3 = 0) ↔
+      (U64w.toBV #v[a_0, a_1, a_2, a_3]).toNat
+        = (U64w.toBV #v[b_0, b_1, b_2, b_3]).toNat)
+  := by
+    simp [AbsBuses] at h_gadget_wf_asm
+    obtain ⟨⟨h_wf_msb1, h_wf_msb2⟩, _h_wf_lt⟩ := h_gadget_wf_asm
+    obtain ⟨_h_own1, h_own2, h_own3, h_msb1, h_msb2, h_lt⟩ := h_gadget_constraints
+    rcases h_is_signed with h_zero | h_one
+    . -- Unsigned: the adjustment is the identity.
+      subst h_zero
+      have hb_msb : b_msb = 0 := by grind
+      have hc_msb : c_msb = 0 := by grind
+      have h := LtWordU16Gadget.Spec.flags_sum_spec
+        is_real a_0 a_1 a_2 (a_3 + 0 * 32768 - 65536 * b_msb)
+        b_0 b_1 b_2 (b_3 + 0 * 32768 - 65536 * c_msb)
+        u16_flags_0 u16_flags_1 u16_flags_2 u16_flags_3
+        not_eq_inv comparison_limbs_0 comparison_limbs_1 bit
+        h_lt h_is_real
+        ⟨h_a_range.1, h_a_range.2.1, h_a_range.2.2.1,
+          by rw [hb_msb]; simp; exact h_a_range.2.2.2⟩
+        ⟨h_b_range.1, h_b_range.2.1, h_b_range.2.2.1,
+          by rw [hc_msb]; simp; exact h_b_range.2.2.2⟩
+      rw [hb_msb, hc_msb] at h
+      simpa using h
+    . -- Signed: bridge the msb-flipped top limb back to the original.
+      subst h_one
+      have h_a3_lt : a_3.val < 65536 := h_a_range.2.2.2
+      have h_b3_lt : b_3.val < 65536 := h_b_range.2.2.2
+      have h_b_msb_part := U16MSBGadget.Spec.gadget_spec
+        1 a_3 b_msb h_wf_msb1 h_msb1 rfl h_a3_lt
+      have h_c_msb_part := U16MSBGadget.Spec.gadget_spec
+        1 b_3 c_msb h_wf_msb2 h_msb2 rfl h_b3_lt
+      have h_shifted_a3 : (a_3 + 1 * 32768 - 65536 * b_msb : FKB).val < 65536 := by
+        rcases h_b_msb_part with ⟨h, _⟩ | ⟨h, _⟩ <;> subst h <;> grind
+      have h_shifted_b3 : (b_3 + 1 * 32768 - 65536 * c_msb : FKB).val < 65536 := by
+        rcases h_c_msb_part with ⟨h, _⟩ | ⟨h, _⟩ <;> subst h <;> grind
+      have h := LtWordU16Gadget.Spec.flags_sum_spec
+        is_real a_0 a_1 a_2 (a_3 + 1 * 32768 - 65536 * b_msb)
+        b_0 b_1 b_2 (b_3 + 1 * 32768 - 65536 * c_msb)
+        u16_flags_0 u16_flags_1 u16_flags_2 u16_flags_3
+        not_eq_inv comparison_limbs_0 comparison_limbs_1 bit
+        h_lt h_is_real
+        ⟨h_a_range.1, h_a_range.2.1, h_a_range.2.2.1, h_shifted_a3⟩
+        ⟨h_b_range.1, h_b_range.2.1, h_b_range.2.2.1, h_shifted_b3⟩
+      have h_a_bridge :
+        ((U64w.toBV #v[a_0, a_1, a_2,
+          (a_3 + 1 * 32768 - 65536 * b_msb : FKB)]).toNat : ℤ)
+        = (U64w.toBV #v[a_0, a_1, a_2, a_3]).toInt + 2^63 := by
+        simp only [U64w.toBV_toNat, U64w.toBV_toInt]
+        unfold U64w.toInt
+        simp only [← U64w.msb_3_negative, BitVec.msb_eq_decide]
+        rcases h_b_msb_part with ⟨h, h'⟩ | ⟨h, h'⟩
+        all_goals
+          subst h
+          simp only [U64w.toNat, Vector.getElem_mk, List.getElem_toArray, List.getElem_cons_zero, List.getElem_cons_succ, BitVec.toNat_ofNat]
+          repeat rw [Nat.mod_eq_of_lt (b := 65536) (by omega)]
+          grind
+      have h_b_bridge :
+        ((U64w.toBV #v[b_0, b_1, b_2,
+          (b_3 + 1 * 32768 - 65536 * c_msb : FKB)]).toNat : ℤ)
+        = (U64w.toBV #v[b_0, b_1, b_2, b_3]).toInt + 2^63 := by
+        simp only [U64w.toBV_toNat, U64w.toBV_toInt]
+        unfold U64w.toInt
+        simp only [← U64w.msb_3_negative, BitVec.msb_eq_decide]
+        rcases h_c_msb_part with ⟨h, h'⟩ | ⟨h, h'⟩
+        all_goals
+          subst h
+          simp only [U64w.toNat, Vector.getElem_mk, List.getElem_toArray, List.getElem_cons_zero, List.getElem_cons_succ, BitVec.toNat_ofNat]
+          repeat rw [Nat.mod_eq_of_lt (b := 65536) (by omega)]
+          grind
+      obtain ⟨h_sum_bool, h_iff⟩ := h
+      refine ⟨h_sum_bool, ?_⟩
+      rw [h_iff]
+      constructor <;> intro hh
+      . -- Equal adjusted operands: the bridge turns that into equal
+        -- `toInt`s, and `toInt` determines the word.
+        have h_int : (U64w.toBV #v[a_0, a_1, a_2, a_3]).toInt
+                   = (U64w.toBV #v[b_0, b_1, b_2, b_3]).toInt := by omega
+        exact congrArg BitVec.toNat (BitVec.toInt_inj.mp h_int)
+      . have h_bv : (U64w.toBV #v[a_0, a_1, a_2, a_3])
+                  = (U64w.toBV #v[b_0, b_1, b_2, b_3]) := BitVec.toNat_inj.mp hh
+        rw [h_bv] at h_a_bridge
+        omega
+
 end LtSignedGadget.Spec

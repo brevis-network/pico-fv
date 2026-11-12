@@ -23,8 +23,10 @@ expected=$(cat "$dir"/theorems.d/*.txt | grep -c . || true)
 found=$(grep -c '^AXIOMS ' "$tmp/report" || true)
 if grep '^MISSING ' "$tmp/report"; then status=1; fi
 
-{ grep '^AXIOMS ' "$tmp/report" || true; } | cut -d' ' -f2- | sort > "$tmp/axioms.txt"
-{ grep '^SIGNATURE ' "$tmp/report" || true; } | cut -d' ' -f2- | sort > "$tmp/signatures.txt"
+# Byte order, whatever the locale: a UTF-8 locale's collation ignores case and punctuation on its
+# first pass, so a plain `sort` orders the snapshots differently on a default macOS shell than on CI.
+{ grep '^AXIOMS ' "$tmp/report" || true; } | cut -d' ' -f2- | LC_ALL=C sort > "$tmp/axioms.txt"
+{ grep '^SIGNATURE ' "$tmp/report" || true; } | cut -d' ' -f2- | LC_ALL=C sort > "$tmp/signatures.txt"
 while read -r name axs; do
   for ax in ${axs//,/ }; do
     if ! [[ $ax =~ $core ]] && ! grep -qxF "$ax" "$dir/spec-axioms.txt"; then

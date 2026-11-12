@@ -25,7 +25,18 @@ with their statements in `signatures.txt`. They are of two kinds.
   extracted constraints, the bus messages it serves have the meaning the bus assumptions give them
   (for example, an ALU row really computes the operation it claims). Every chip's specification
   is built; the checked list holds the memory chip's (`MemoryReadWriteChip.Spec.*`) and those of
-  the ALU chips already at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt) today.
+  the ALU chips already at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL,
+  ShiftRight) today.
+
+  `DivRemChip`'s specifications are the one exception to "satisfies its extracted constraints":
+  they are stated over the readable restatement `DivRemChip.ConstraintsAndBuses.AbsConstraints`
+  and over `DivRemChip.Interactions.bus_row`, not over `DivRemChip.Extraction.allHold`. Two
+  checked lemmas tie those to the extraction:
+  `DivRemChip.ConstraintsAndBuses.allHold_iff_allHold_simplified`, which says the extracted
+  constraints are exactly `AbsConstraints` plus the extracted interaction list, and
+  `DivRemChip.Interactions.bus_row_equiv`, which says `bus_row` is that interaction list,
+  entry for entry. All fourteen also assume `is_real = 1`, so they say nothing about a padding
+  row, where the other ALU chips' specifications still hold.
 
 The proofs are about this Pico revision:
 
@@ -34,7 +45,7 @@ Pico commit [`2acc7c182`](https://github.com/brevis-network/pico/commit/2acc7c18
 <!-- end generated -->
 
 <!-- generated: pending -->
-5 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `CpuChip.lean`, `DivRemChip.lean`, `MemoryReadWriteChip.lean`, `SLLChip.lean`, `ShiftRightChip.lean`.
+2 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `CpuChip.lean`, `MemoryReadWriteChip.lean`.
 <!-- end generated -->
 
 ## Summary of the risks
@@ -96,12 +107,15 @@ makes are discharged by what the other chips prove relies on Pico's LogUp argume
 every bus, and on each message being served by a chip whose specification is proven. Neither is
 proven here.
 
-Messages a chip serves but the contract does not specify yet are not covered either. On a merged
-branch-comparison row `LtChip` serves ALU opcodes 264 / 265 (`SLT` / `SLTU` + 256), which are
-not in `ALUBus.validOpcode`. Under the current contract such a row contradicts the ALU entry's
-external assumption, so `LtChip`'s theorems say nothing about it. At the pinned commit Pico's
-CPU does send these opcodes for its branch comparisons, so branch outcomes computed on merged
-rows are not verified until the CPU chip moves to Pico 3.x and the contract specifies them.
+The contract now covers the merged branch-comparison rows. `ALUBus.validOpcode` contains the two
+opcodes 264 / 265 (`SLT` / `SLTU` + `LT_CMP_OPCODE_TAG`) that Pico's CPU sends for every branch,
+`ALUBus.Spec` gives them their meaning — piece 0 is `[b < c]`, piece 1 is `[c < b]`, pieces 2 and
+3 are zero — and `LtChip.Spec.spec_CMP_SLT` / `spec_CMP_SLTU` prove that `LtChip` serves them.
+What the CPU does with the two bits is not proven here: that is the CPU chip's side, and it has
+not moved to Pico 3.x yet.
+
+Messages a chip serves but the contract does not specify are still not covered in general; there
+are none among the RV64IM ALU chips at the pinned commit.
 
 ### A5. What is not covered
 
@@ -120,8 +134,9 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 51 |
+| kernel + compiler | 78 |
 | kernel + compiler + RISC-V spec axioms | 62 |
+| kernel only | 1 |
 <!-- end generated -->
 
 ### C2. Tactics that trust compiled code

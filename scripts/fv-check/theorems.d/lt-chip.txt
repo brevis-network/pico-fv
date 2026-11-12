@@ -1,4 +1,6 @@
 LtChip.Spec.spec_SLT
 LtChip.Spec.spec_SLTU
+LtChip.Spec.spec_CMP_SLT
+LtChip.Spec.spec_CMP_SLTU
 LtChip.Spec.ext_asrt
 LtChip.Spec.wf_asrt
