@@ -34,15 +34,18 @@ import PicoFV.RV64IM.Transpiler.Transpiler
       (`instruction/columns.rs:92`);
     * `AUIPC rd, imm` is `ADD rd, imm, pc` with both immediate flags (`rrs.rs:357-366`);
     * `ECALL` has a row: `op_a = x5`, `b = x10`, `c = x11`, `is_ecall = 1` (`rrs.rs:368-377`);
-    * trap instructions (`EBREAK`, `UNIMP`, CSR, `MRET`, `WFI`) have no row: the Program table
-      gives them no pc of their own (`riscv_program/traces.rs:111-120`), so the decoder returns
-      `none` for them, as for every constructor it does not list;
+    * trap instructions (`EBREAK` and `UNIMP`; Pico decodes CSR, `MRET` and `WFI` as `UNIMP`,
+      `rrs.rs:485-507, 519-525`) have no row: the Program table gives them no pc of their own
+      (`riscv_program/traces.rs:111-120`), so the decoder returns `none` for them, as for
+      every constructor it does not list;
     * no evenness side condition on the `JALR` offset: RISC-V allows an odd one, and the chip
       clears the low bit itself (`riscv_cpu/jump/constraints.rs:79-126`).
 
-    Draft: the definitions are complete for every instruction the CPU chip accepts; the
-    lemmas that relate a row back to its instruction and its operands to 64-bit values come
-    with the full decoder.                                                                  -/
+    Draft: the definitions follow Pico's decoder case by case, with one case missing: `FENCE`,
+    which Pico decodes as the no-op `ADD x0, x0, 0` with `imm_c` set (`rrs.rs:98-100,
+    515-517`). Its table row is the one this decoder gives `ADDI x0, x0, 0`. The lemmas that
+    relate a row back to its instruction and its operands to 64-bit values come with the
+    full decoder.                                                                           -/
 
 namespace Transpiler.V3
 

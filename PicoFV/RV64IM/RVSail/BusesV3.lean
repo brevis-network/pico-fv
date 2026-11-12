@@ -6,7 +6,7 @@ import PicoFV.RV64IM.RVSail.Operations
 
 set_option maxHeartbeats 1_000_000_000
 
-/-! # Bus contracts of the Pico v3.1.1 CPU chip (draft)
+/-! # Bus contracts of the Pico v3.1.1 CPU chip
 
     The Pico v3.1.1 `CpuChip` sends 17 messages per row (`riscv_cpu/constraints.rs`, extracted
     in `Extraction/CpuChip.lean`). This file states what the CPU chip may assume about the
@@ -25,9 +25,9 @@ set_option maxHeartbeats 1_000_000_000
 
     The register-access message keeps its 2.x shape `[chunk, clk, addr(3), value(4)]`
     (`machine/builder/riscv_memory.rs:174-208`), so its 2.x contract is reused: a value read
-    from the register file has four 16-bit pieces. The ALU contract gains the two comparison
-    opcodes 264 and 265 (`SLT` / `SLTU` + 256) in a separate change; until then they fall into
-    its `| _ => True` case.
+    from the register file has four 16-bit pieces. The ALU contract is reused as well: it
+    covers the two comparison opcodes 264 and 265 (`SLT` / `SLTU` + 256) that the CPU sends
+    for every branch.
 
     Open `RV64IM_Interactions.V3`, not `RV64IM_Interactions`, in a file that uses these: the
     entry, row and predicate names are the same as the 2.x ones.                           -/
@@ -124,7 +124,7 @@ namespace RV64IM_Interactions.V3
         instruction gets a copy of row 0 instead (`traces.rs:116-120`) and padding repeats row
         0 (`traces.rs:140-150`), so every row is of this form. The table is preprocessed, and
         the CPU sends with multiplicity `is_real`, so on a real row the whole message equals
-        one such row (`riscv_cpu/constraints.rs:51-75`). -/
+        one such row (`riscv_cpu/constraints.rs:42-75`). -/
     def ProgramBusEntry.operand_properties (entry : ProgramBusEntry FKB) : Prop :=
       ∃ instruction pc data props,
         pc % 4 = 0 ∧ pc < Transpiler.V3.code_address_bound ∧
@@ -170,7 +170,7 @@ namespace RV64IM_Interactions.V3
         Layout of the `CpuChip` send (`riscv_cpu/constraints.rs:117-133`):
         `[opcode, a(4), b(4), c(4), op_a_0, is_memory, chunk, clk]`. The access width is
         no longer a selector: the memory chip derives it from the opcode
-        (`riscv_memory/read_write/constraints.rs:157-191`). `a` is the value of register `a`
+        (`riscv_memory/read_write/constraints.rs:146-191`). `a` is the value of register `a`
         after the row: the loaded value for a load, the stored value for a store. -/
     structure MemoryBusEntry where
       multiplicity : F
