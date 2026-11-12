@@ -1,2 +1,1 @@
-CpuChip.lean
 MemoryReadWriteChip.lean

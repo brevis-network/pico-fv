@@ -21,6 +21,16 @@ with their statements in `signatures.txt`. They are of two kinds.
   satisfy the bus assumptions below, then one step of the Sail RISC-V specification on that
   instruction gives the same post-state as the register and memory operations the row puts on the
   bus.
+
+  **None of these 62 theorems is checked at the moment.** The CPU chip is moving to Pico
+  v3.1.1, which is a rewrite of the chip rather than a patch: 58 columns instead of 132, 65
+  constraints instead of 218 and 17 messages instead of 36. Its `Airs/` and `Constraints/`
+  files are at v3.1.1 here; the interpretations file and the 13 instruction-theorem files that
+  read the 2.x layout are out of the build until they are rewritten against it, one instruction
+  class at a time, and their 13 lists are parked in `scripts/fv-check/theorems.d/parked/`.
+  Until they return, this repository says nothing about any RV64IM opcode. The tag
+  `pico-v3-before-cpu` (`35259d8`) is the last commit at which all 62 were checked, against the
+  2.x extraction.
 - **Chip specifications** (`<Chip>.Spec.*`). For a row of a non-CPU chip that satisfies its
   extracted constraints, the bus messages it serves have the meaning the bus assumptions give them
   (for example, an ALU row really computes the operation it claims). Every chip's specification
@@ -45,7 +55,7 @@ Pico commit [`2acc7c182`](https://github.com/brevis-network/pico/commit/2acc7c18
 <!-- end generated -->
 
 <!-- generated: pending -->
-2 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `CpuChip.lean`, `MemoryReadWriteChip.lean`.
+1 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `MemoryReadWriteChip.lean`.
 <!-- end generated -->
 
 ## Summary of the risks
@@ -89,7 +99,8 @@ them, but the theorems hold for every interpretation of them.
 
 ### A3. Hypotheses of the theorems
 
-Each equivalence theorem assumes:
+Each equivalence theorem assumes (as recorded at `pico-v3-before-cpu`; none is checked while
+the CPU chip moves, and the v3.1.1 wording of the first and third items will differ):
 
 - the CPU chip's extracted constraints hold on every row;
 - the bus assumptions (`bus_row_axioms`, `bus_row_ext_asm`, `bus_row_wf_asm`, `bus_row_wf_asrt`
@@ -135,7 +146,6 @@ C2) or the specification axioms of A2.
 | Axioms the theorem depends on | Theorems |
 |---|---:|
 | kernel + compiler | 78 |
-| kernel + compiler + RISC-V spec axioms | 62 |
 | kernel only | 1 |
 <!-- end generated -->
 
@@ -173,9 +183,9 @@ branch's, so the uses only go down.
 
 A weekly CI job replays the declarations of every module into the kernel with `leanchecker`,
 except the modules listed in C2: the kernel cannot replay what those tactics computed. Today that
-excludes the files holding most of the checked theorems (the memory chip's specification and the
-equivalence files that use them), so this replay covers the supporting modules, not the top-level
-theorems.
+excludes the file holding the memory chip's specification, so this replay covers the supporting
+modules and the ALU chips' specifications, but not the memory chip's. The equivalence files it
+also used to exclude are out of the build (see "What is proved").
 
 ## D. Does the use of the results hold together?
 

@@ -103,7 +103,10 @@ import PicoFV.RV64IM.Constraints.MulChip
 import PicoFV.RV64IM.Constraints.DivRemChip
 import PicoFV.RV64IM.Constraints.MemoryReadWriteChip
 import PicoFV.RV64IM.Constraints.CpuChip
-import PicoFV.RV64IM.Constraints.CpuChipInterpretations
+-- `Constraints.CpuChipInterpretations` is out of the build while the CPU chip
+-- moves to Pico v3.1.1: it reads the 2.x 132-column layout, which this chip's
+-- `Airs`/`Constraints` files no longer define. It returns with the v3.1.1
+-- interpretations; the tag `pico-v3-before-cpu` holds the 2.x file.
 
 -- Spec (semantic specifications)
 import PicoFV.RV64IM.Spec.AddGadget
@@ -132,4 +135,6 @@ import PicoFV.RV64IM.Spec.DivRemChip
 import PicoFV.RV64IM.Spec.MemoryReadWriteChip
 
 -- Equivalence (Sail ↔ Pico)
-import PicoFV.RV64IM.Equivalence.Equivalence
+-- The 13 instruction-theorem files are out of the build for the same reason,
+-- and their 13 lists are parked in `scripts/fv-check/theorems.d/parked/`.
+-- They come back one instruction class at a time.
