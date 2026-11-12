@@ -25,7 +25,17 @@ with their statements in `signatures.txt`. They are of two kinds.
   extracted constraints, the bus messages it serves have the meaning the bus assumptions give them
   (for example, an ALU row really computes the operation it claims). Every chip's specification
   is built; the checked list holds the memory chip's (`MemoryReadWriteChip.Spec.*`) and those of
-  the ALU chips already at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt) today.
+  the ALU chips already at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem) today.
+
+  `DivRemChip`'s specifications are the one exception to "satisfies its extracted constraints":
+  they are stated over the readable restatement `DivRemChip.ConstraintsAndBuses.AbsConstraints`
+  and over `DivRemChip.Interactions.bus_row`, not over `DivRemChip.Extraction.allHold`. Two
+  checked lemmas tie those to the extraction:
+  `DivRemChip.ConstraintsAndBuses.allHold_iff_allHold_simplified`, which says the extracted
+  constraints are exactly `AbsConstraints` plus the extracted interaction list, and
+  `DivRemChip.Interactions.bus_row_equiv`, which says `bus_row` is that interaction list,
+  entry for entry. All fourteen also assume `is_real = 1`, so they say nothing about a padding
+  row, where the other ALU chips' specifications still hold.
 
 The proofs are about this Pico revision:
 
@@ -34,7 +44,7 @@ Pico commit [`2acc7c182`](https://github.com/brevis-network/pico/commit/2acc7c18
 <!-- end generated -->
 
 <!-- generated: pending -->
-5 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `CpuChip.lean`, `DivRemChip.lean`, `MemoryReadWriteChip.lean`, `SLLChip.lean`, `ShiftRightChip.lean`.
+4 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `CpuChip.lean`, `MemoryReadWriteChip.lean`, `SLLChip.lean`, `ShiftRightChip.lean`.
 <!-- end generated -->
 
 ## Summary of the risks
@@ -120,8 +130,9 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 51 |
+| kernel + compiler | 66 |
 | kernel + compiler + RISC-V spec axioms | 62 |
+| kernel only | 1 |
 <!-- end generated -->
 
 ### C2. Tactics that trust compiled code
