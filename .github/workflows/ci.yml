@@ -65,7 +65,15 @@ jobs:
   # A cold build takes hours, so it runs in stages, and on main and pico-v3 each stage saves the
   # builds: a runner lost mid-build keeps the earlier stages, and a rerun resumes from them.
   # Pull requests only restore, so their entries do not evict the branches' from the cache.
+  # A pull request can restore only what its base branch or main saved, and main saves nothing
+  # yet. So the pull request from pico-v3 into main would build from cold on every push to
+  # pico-v3, a commit that the push's own run already builds and checks; the build is skipped
+  # for a pull request whose head is main or pico-v3 in this repository.
   build:
+    if: >-
+      ${{ github.event_name != 'pull_request'
+      || github.event.pull_request.head.repo.full_name != github.repository
+      || (github.head_ref != 'main' && github.head_ref != 'pico-v3') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     env:
