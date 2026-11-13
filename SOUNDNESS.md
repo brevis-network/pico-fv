@@ -22,16 +22,22 @@ with their statements in `signatures.txt`. They are of two kinds.
   instruction gives the same post-state as the register and memory operations the row puts on the
   bus.
 
-  **None of these 62 theorems is checked at the moment.** The CPU chip is moving to Pico
+  **1 of these 62 theorems is checked at the moment**, `ADDIW`. The CPU chip is moving to Pico
   v3.1.1, which is a rewrite of the chip rather than a patch: 58 columns instead of 132, 65
-  constraints instead of 218 and 17 messages instead of 36. Its `Airs/` and `Constraints/`
-  files are at v3.1.1 here; the interpretations file and the 13 instruction-theorem files that
-  read the 2.x layout are out of the build until they are rewritten against it, one instruction
-  class at a time, and their 13 lists are parked in `scripts/fv-check/theorems.d/parked/`.
-  Until they return, this repository says nothing about any RV64IM opcode. Commit `353238a`
-  is the last at which all 62 were checked, against the 2.x CPU extraction and the bus contract
-  as it stood then (which already covered the branch-comparison opcodes). The 2.x
-  interpretations file is unchanged from the tag `pico-v3-before-cpu` (`35259d8`) to that commit.
+  constraints instead of 218 and 17 messages instead of 36. Its `Airs/`, `Constraints/` and
+  interpretations files are at v3.1.1 here, with the lemmas every instruction class shares; the
+  12 instruction-theorem files that still read the 2.x layout are out of the build until each
+  is rewritten against it, and their 12 lists are parked in
+  `scripts/fv-check/theorems.d/parked/`. Until they return, this repository says nothing about
+  the other 61 opcodes. Commit `353238a` is the last at which all 62 were checked, against the
+  2.x CPU extraction and the bus contract as it stood then (which already covered the
+  branch-comparison opcodes). The 2.x interpretations file is unchanged from the tag
+  `pico-v3-before-cpu` (`35259d8`) to that commit.
+
+  Every v3.1.1 instruction theorem also assumes the chunk's final pc is a well-formed guest
+  address (`Equivalence.pico_CpuChip_control_flow_assumptions`; see A3). Pico enforces that in
+  the recursion circuit, not in a chip, so a v3.1.1 instruction theorem describes a chunk
+  inside an accepted recursive proof rather than a chunk proof checked on its own.
 - **Chip specifications** (`<Chip>.Spec.*`). For a row of a non-CPU chip that satisfies its
   extracted constraints, the bus messages it serves have the meaning the bus assumptions give them
   (for example, an ALU row really computes the operation it claims). Every chip's specification
@@ -101,17 +107,19 @@ them, but the theorems hold for every interpretation of them.
 
 ### A3. Hypotheses of the theorems
 
-Each equivalence theorem assumes the following, as last recorded at `353238a`. None is checked
-while the CPU chip moves, and all three items change at v3.1.1: the constraints become the
-v3.1.1 CPU chip's, the bus assumptions move to the v3.1.1 contracts
-(`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`), and the theorems gain a whole-trace
-assumption, described after the list:
+Each equivalence theorem assumes:
 
 - the CPU chip's extracted constraints hold on every row;
-- the bus assumptions (`bus_row_axioms`, `bus_row_ext_asm`, `bus_row_wf_asm`, `bus_row_wf_asrt`
-  in `PicoFV/RV64IM/RVSail/Buses.lean`): what the other chips deliver for the messages this row
-  sends, and the well-formedness of what it receives;
-- the hypotheses of the operations the row emits, and `RISC_V_assumptions` on the machine state.
+- the bus assumptions (`bus_row_axioms`, `bus_row_ext_asm`, `bus_row_wf_asm`, `bus_row_wf_asrt`):
+  what the other chips deliver for the messages this row sends, and the well-formedness of what
+  it receives;
+- the hypotheses of the operations the row emits, and `RISC_V_assumptions` on the machine state;
+- at v3.1.1, the whole-trace assumption described below.
+
+`ADDIW` is the one theorem recorded at v3.1.1, against the v3.1.1 CPU constraints and the
+v3.1.1 contracts (`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`). The other 61 were last
+recorded at `353238a`, against the 2.x constraints and the contracts of `RVSail/Buses.lean`,
+and are not checked while they move.
 
 The whole-trace assumption, `pico_CpuChip_control_flow_assumptions`, bounds the chunk's final
 pc (public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The
@@ -119,8 +127,8 @@ v3.1.1 chip does not check this itself; Pico's recursion circuit makes it hold f
 of an accepted recursive proof (`docs/cpu-chip-pico-v3-design.md`, "The whole-trace
 assumption"). So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
 proof, not a chunk proof checked on its own. The eight branch and jump theorems already name the
-assumption, whose definition grows, so their recorded statements keep their text; the other 54
-gain it as a new hypothesis.
+assumption, whose definition grew, so their recorded statements will keep their text; the other
+54 gain it as a new hypothesis, as `ADDIW` has.
 
 A change that weakens or strengthens a hypothesis changes `signatures.txt`, and `check.sh` fails
 until the change is reviewed and recorded. A change to the definition behind a hypothesis's name
@@ -185,6 +193,7 @@ C2) or the specification axioms of A2.
 | Axioms the theorem depends on | Theorems |
 |---|---:|
 | kernel + compiler | 78 |
+| kernel + compiler + RISC-V spec axioms | 1 |
 | kernel only | 1 |
 <!-- end generated -->
 
@@ -223,10 +232,11 @@ branch's, so the uses only go down.
 A weekly CI job (`.github/workflows/replay.yml`) replays the declarations of every module the
 build imports into the kernel with `leanchecker`, except the modules listed in C2: the kernel
 cannot replay what those tactics computed. Today that excludes `Fundamentals/Core`,
-`Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution` and the specifications of the
-Bitwise, DivRem and memory chips; the replay covers the remaining modules, including the other
-ALU chips' specifications. Modules the build does not import, such as the parked equivalence
-files, are not replayed.
+`Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution`, `Equivalence/Addiw` and the
+specifications of the Bitwise, DivRem and memory chips; the replay covers the remaining
+modules, including the other ALU chips' specifications and the CPU chip's constraints and
+interpretations. Modules the build does not import, such as the parked equivalence files, are
+not replayed.
 
 ## D. Does the use of the results hold together?
 
