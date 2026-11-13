@@ -132,6 +132,391 @@ namespace RV64IM_Interactions.V3
         (entry = ProgramBusEntry.deserialise data) ∧
         props
 
+    /-! ### From a Program message back to its instruction
+
+        Each lemma takes the two facts `operand_properties` gives after unpacking: the decoder
+        produced `data` for `instr` at `pc`, and the message is `data`. They are stated on the
+        message, not on a chip's columns. -/
+
+    section Inversion
+
+    open Transpiler Transpiler.V3
+
+    /-- A load's row, with its opcode read off `is_unsigned` and the width. -/
+    lemma transpile_op_LOAD_row {imm : BitVec 12} {rs1 rd : regidx} {u : Bool} {wd : word_width}
+        {m : FKB} {pc : ℕ} {data : FKB × Vector FKB 26} {props : Prop}
+        (h : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, u, wd)) m pc = some (data, props)) :
+        ∃ opc : FKB,
+          ((u = false ∧ wd = 1 ∧ opc = 10) ∨ (u = true ∧ wd = 1 ∧ opc = 13) ∨
+           (u = false ∧ wd = 2 ∧ opc = 11) ∨ (u = true ∧ wd = 2 ∧ opc = 14) ∨
+           (u = false ∧ wd = 4 ∧ opc = 12) ∨ (u = true ∧ wd = 4 ∧ opc = 45) ∨
+           (u = false ∧ wd = 8 ∧ opc = 46)) ∧
+          data = (m, #v[pc_lo pc, pc_hi pc, opc, opc, reg_to_KB rd, reg_to_KB rs1, 0, 0,
+                        (imm_operand imm true)[0], (imm_operand imm true)[1],
+                        (imm_operand imm true)[2],
+                        ((if rd == regidx.Regidx 0 then 1 else 0 : ℕ) : FKB), 0, 1, 0, 1, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0, pc_carry pc]) := by
+      simp only [Transpiler.V3.transpile_op] at h
+      split at h
+      · simp at h
+      · rename_i opc hopc
+        simp only [Option.some.injEq, Prod.mk.injEq] at h
+        refine ⟨ _, ?_, h.1.symm ⟩
+        clear h
+        split at hopc <;> simp_all
+
+    /-- A store's row, with its opcode read off the width. -/
+    lemma transpile_op_STORE_row {imm : BitVec 12} {rs2 rs1 : regidx} {wd : word_width}
+        {m : FKB} {pc : ℕ} {data : FKB × Vector FKB 26} {props : Prop}
+        (h : Transpiler.V3.transpile_op (.STORE (imm, rs2, rs1, wd)) m pc = some (data, props)) :
+        ∃ opc : FKB,
+          ((wd = 1 ∧ opc = 15) ∨ (wd = 2 ∧ opc = 16) ∨ (wd = 4 ∧ opc = 17) ∨
+           (wd = 8 ∧ opc = 47)) ∧
+          data = (m, #v[pc_lo pc, pc_hi pc, opc, opc, reg_to_KB rs2, reg_to_KB rs1, 0, 0,
+                        (imm_operand imm true)[0], (imm_operand imm true)[1],
+                        (imm_operand imm true)[2],
+                        ((if rs2 == regidx.Regidx 0 then 1 else 0 : ℕ) : FKB), 0, 1, 0, 1, 1,
+                        0, 0, 0, 0, 0, 0, 0, 0, pc_carry pc]) := by
+      simp only [Transpiler.V3.transpile_op] at h
+      split at h
+      · simp at h
+      · rename_i opc hopc
+        simp only [Option.some.injEq, Prod.mk.injEq] at h
+        refine ⟨ _, ?_, h.1.symm ⟩
+        clear h
+        split at hopc <;> simp_all
+
+    set_option hygiene false in
+    /-- Splits a decoded Program-bus message by instruction: one goal per Sail constructor and
+        operation the decoder gives a row, with the message's 26 fields written out. Expects
+        `data`, `h_trans` and `h_deser` as in the lemmas below. -/
+    local macro "program_bus_cases" : tactic => `(tactic| (
+      obtain ⟨ m, v ⟩ := data
+      subst h_deser
+      simp only [ProgramBusEntry.deserialise] at h_trans ⊢
+      cases instr
+      case' RTYPE x => obtain ⟨ rs2, rs1, rd, op ⟩ := x; cases op
+      case' RTYPEW x => obtain ⟨ rs2, rs1, rd, op ⟩ := x; cases op
+      case' ITYPE x => obtain ⟨ imm, rs1, rd, op ⟩ := x; cases op
+      case' ADDIW x => obtain ⟨ imm, rs1, rd ⟩ := x
+      case' SHIFTIOP x => obtain ⟨ imm, rs1, rd, op ⟩ := x; cases op
+      case' SHIFTIWOP x => obtain ⟨ imm, rs1, rd, op ⟩ := x; cases op
+      case' LOAD x =>
+        obtain ⟨ imm, rs1, rd, u, wd ⟩ := x
+        obtain ⟨ opc, h_opc, h_v ⟩ := transpile_op_LOAD_row h_trans.symm
+        simp only [Prod.mk.injEq] at h_v
+        obtain ⟨ -, rfl ⟩ := h_v
+        clear h_trans
+        rcases h_opc with ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ |
+          ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩
+      case' STORE x =>
+        obtain ⟨ imm, rs2, rs1, wd ⟩ := x
+        obtain ⟨ opc, h_opc, h_v ⟩ := transpile_op_STORE_row h_trans.symm
+        simp only [Prod.mk.injEq] at h_v
+        obtain ⟨ -, rfl ⟩ := h_v
+        clear h_trans
+        rcases h_opc with ⟨ rfl, rfl ⟩ | ⟨ rfl, rfl ⟩ | ⟨ rfl, rfl ⟩ | ⟨ rfl, rfl ⟩
+      case' BTYPE x => obtain ⟨ imm, rs2, rs1, op ⟩ := x; cases op
+      case' JALR x => obtain ⟨ imm, rs1, rd ⟩ := x
+      case' JAL x => obtain ⟨ imm, rd ⟩ := x
+      case' UTYPE x => obtain ⟨ imm, rd, op ⟩ := x; cases op
+      case' MUL x =>
+        obtain ⟨ rs2, rs1, rd, ⟨ rp, s1, s2 ⟩ ⟩ := x
+        cases rp <;> cases s1 <;> cases s2
+      case' MULW x => obtain ⟨ rs2, rs1, rd ⟩ := x
+      case' DIV x => obtain ⟨ rs2, rs1, rd, sgn ⟩ := x; cases sgn
+      case' DIVW x => obtain ⟨ rs2, rs1, rd, sgn ⟩ := x; cases sgn
+      case' REM x => obtain ⟨ rs2, rs1, rd, sgn ⟩ := x; cases sgn
+      case' REMW x => obtain ⟨ rs2, rs1, rd, sgn ⟩ := x; cases sgn
+      all_goals (try simp [Transpiler.V3.transpile_op, opcode_of_rop, opcode_of_ropw,
+                           opcode_of_iop, opcode_of_sop, opcode_of_sopw, opcode_of_bop,
+                           -Vector.eq_mk] at h_trans)
+      all_goals (try (obtain ⟨ h_v, - ⟩ := h_trans; subst h_v))))
+
+    /-- The message's pc fields are the two pieces of the instruction's address, and its
+        `pc_carry` is that address's carry. -/
+    lemma ProgramBusEntry.inversion_pc
+      { entry : ProgramBusEntry FKB }
+      (h_trans : .some ⟨ data, props ⟩ =
+        Transpiler.V3.transpile_op instr entry.multiplicity pc)
+      (h_deser : entry = ProgramBusEntry.deserialise data)
+    :
+      entry.pc_0 = pc_lo pc ∧ entry.pc_1 = pc_hi pc ∧ entry.pc_carry = Transpiler.V3.pc_carry pc
+    := by
+      program_bus_cases
+      all_goals simp
+
+    /-- With the Program promise's conditions on the address (4-aligned, below `0x7800_0000`):
+        the pc pieces are 16-bit, the high piece is at most `0x77FF`, the low piece is
+        4-aligned, the two pieces make the address, and `pc_carry` is `[pc[0] >= 0xFFFC]`. -/
+    lemma ProgramBusEntry.inversion_pc_facts
+      { entry : ProgramBusEntry FKB }
+      (h_trans : .some ⟨ data, props ⟩ =
+        Transpiler.V3.transpile_op instr entry.multiplicity pc)
+      (h_deser : entry = ProgramBusEntry.deserialise data)
+      (h_al : pc % 4 = 0) (h_lt : pc < Transpiler.V3.code_address_bound)
+    :
+      entry.pc_0.val < 65536 ∧ entry.pc_1.val < 65536 ∧ entry.pc_1.val ≤ 0x77FF ∧
+      entry.pc_0.val % 4 = 0 ∧
+      entry.pc_0.val + 65536 * entry.pc_1.val = pc ∧ pc < 0x7800_0000 ∧
+      entry.pc_carry = (if 0xFFFC ≤ entry.pc_0.val then 1 else 0)
+    := by
+      obtain ⟨ e0, e1, e25 ⟩ := ProgramBusEntry.inversion_pc h_trans h_deser
+      obtain ⟨ hlo, hhi, hsum ⟩ := Transpiler.V3.pc_pieces h_lt
+      have h4 := Transpiler.V3.pc_lo_mod_four h_al
+      rw [e0, e1, e25, Transpiler.V3.pc_carry_eq]
+      simp only [Transpiler.V3.code_address_bound] at h_lt
+      exact ⟨ hlo, by omega, hhi, h4, hsum, h_lt, rfl ⟩
+
+    /-- The two opcode fields are equal, and the opcode is one the decoder produces: 0 to 25,
+        28, 30 to 37, or 40 to 52. There is no 26, 27, 29, 38 or 39; in particular no row has
+        the `AUIPC` opcode 27, which Pico v3.1.1 no longer emits. -/
+    lemma ProgramBusEntry.inversion_opcode_bounds
+      { entry : ProgramBusEntry FKB }
+      (h_trans : .some ⟨ data, props ⟩ =
+        Transpiler.V3.transpile_op instr entry.multiplicity pc)
+      (h_deser : entry = ProgramBusEntry.deserialise data)
+    :
+      entry.opcode' = entry.opcode ∧
+      (entry.opcode.val ≤ 25 ∨ entry.opcode.val = 28 ∨
+       (30 ≤ entry.opcode.val ∧ entry.opcode.val ≤ 37) ∨
+       (40 ≤ entry.opcode.val ∧ entry.opcode.val ≤ 52))
+    := by
+      program_bus_cases
+      all_goals simp
+
+    /-- For each opcode value, the Sail instruction the row was decoded from. Against 2.x:
+        opcode 0 with both immediate flags is `LUI` or `AUIPC` (no field tells them apart),
+        each with its operand shape; there is no opcode 27; opcode 28 is `ECALL`. -/
+    lemma ProgramBusEntry.operand_properties_inversion
+      { entry : ProgramBusEntry FKB }
+      (h_trans : .some ⟨ data, props ⟩ =
+        Transpiler.V3.transpile_op instr entry.multiplicity pc)
+      (h_deser : entry = ProgramBusEntry.deserialise data)
+    :
+      -- Opcode 0: ADD, ADDI, or one of LUI and AUIPC, which give rows of the same shape.
+      (entry.opcode = 0 →
+        (entry.imm_b = 0 ∧ entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .ADD)) ∨
+        (entry.imm_b = 0 ∧ entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .ITYPE (imm, rs1, rd, .ADDI)) ∨
+        (entry.imm_b = 1 ∧ entry.imm_c = 1 ∧ ∃ imm rd,
+          (instr = .UTYPE (imm, rd, .LUI) ∧
+            entry.b_0 = 0 ∧ entry.b_1 = 0 ∧ entry.b_sign = 0 ∧
+            entry.c_0 = (imm_operand (imm ++ 0#12) true)[0] ∧
+            entry.c_1 = (imm_operand (imm ++ 0#12) true)[1] ∧
+            entry.c_sign = (imm_operand (imm ++ 0#12) true)[2]) ∨
+          (instr = .UTYPE (imm, rd, .AUIPC) ∧
+            entry.b_0 = (imm_operand (imm ++ 0#12) true)[0] ∧
+            entry.b_1 = (imm_operand (imm ++ 0#12) true)[1] ∧
+            entry.b_sign = (imm_operand (imm ++ 0#12) true)[2] ∧
+            entry.c_0 = pc_lo pc ∧ entry.c_1 = pc_hi pc ∧ entry.c_sign = 0))) ∧
+      (entry.opcode = 1 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .SUB))) ∧
+      (entry.opcode = 2 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .XOR)) ∨
+        (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .ITYPE (imm, rs1, rd, .XORI))) ∧
+      (entry.opcode = 3 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .OR)) ∨
+        (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .ITYPE (imm, rs1, rd, .ORI))) ∧
+      (entry.opcode = 4 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .AND)) ∨
+        (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .ITYPE (imm, rs1, rd, .ANDI))) ∧
+      (entry.opcode = 5 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .SLL)) ∨
+        (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .SHIFTIOP (imm, rs1, rd, .SLLI))) ∧
+      (entry.opcode = 6 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .SRL)) ∨
+        (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .SHIFTIOP (imm, rs1, rd, .SRLI))) ∧
+      (entry.opcode = 7 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .SRA)) ∨
+        (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .SHIFTIOP (imm, rs1, rd, .SRAI))) ∧
+      (entry.opcode = 8 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .SLT)) ∨
+        (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .ITYPE (imm, rs1, rd, .SLTI))) ∧
+      (entry.opcode = 9 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, .SLTU)) ∨
+        (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .ITYPE (imm, rs1, rd, .SLTIU))) ∧
+      -- Loads and stores
+      (entry.opcode = 10 → ∃ imm rs1 rd, instr = .LOAD (imm, rs1, rd, false, 1)) ∧
+      (entry.opcode = 11 → ∃ imm rs1 rd, instr = .LOAD (imm, rs1, rd, false, 2)) ∧
+      (entry.opcode = 12 → ∃ imm rs1 rd, instr = .LOAD (imm, rs1, rd, false, 4)) ∧
+      (entry.opcode = 13 → ∃ imm rs1 rd, instr = .LOAD (imm, rs1, rd, true, 1)) ∧
+      (entry.opcode = 14 → ∃ imm rs1 rd, instr = .LOAD (imm, rs1, rd, true, 2)) ∧
+      (entry.opcode = 45 → ∃ imm rs1 rd, instr = .LOAD (imm, rs1, rd, true, 4)) ∧
+      (entry.opcode = 46 → ∃ imm rs1 rd, instr = .LOAD (imm, rs1, rd, false, 8)) ∧
+      (entry.opcode = 15 → ∃ imm rs2 rs1, instr = .STORE (imm, rs2, rs1, 1)) ∧
+      (entry.opcode = 16 → ∃ imm rs2 rs1, instr = .STORE (imm, rs2, rs1, 2)) ∧
+      (entry.opcode = 17 → ∃ imm rs2 rs1, instr = .STORE (imm, rs2, rs1, 4)) ∧
+      (entry.opcode = 47 → ∃ imm rs2 rs1, instr = .STORE (imm, rs2, rs1, 8)) ∧
+      -- Branches and jumps
+      (entry.opcode = 18 → ∃ imm rs2 rs1, instr = .BTYPE (imm, rs2, rs1, .BEQ)) ∧
+      (entry.opcode = 19 → ∃ imm rs2 rs1, instr = .BTYPE (imm, rs2, rs1, .BNE)) ∧
+      (entry.opcode = 20 → ∃ imm rs2 rs1, instr = .BTYPE (imm, rs2, rs1, .BLT)) ∧
+      (entry.opcode = 21 → ∃ imm rs2 rs1, instr = .BTYPE (imm, rs2, rs1, .BGE)) ∧
+      (entry.opcode = 22 → ∃ imm rs2 rs1, instr = .BTYPE (imm, rs2, rs1, .BLTU)) ∧
+      (entry.opcode = 23 → ∃ imm rs2 rs1, instr = .BTYPE (imm, rs2, rs1, .BGEU)) ∧
+      (entry.opcode = 24 → ∃ imm rd, instr = .JAL (imm, rd)) ∧
+      (entry.opcode = 25 → ∃ imm rs1 rd, instr = .JALR (imm, rs1, rd)) ∧
+      (entry.opcode = 28 → instr = .ECALL ()) ∧
+      -- Multiply, divide, remainder. Sail's last `DIV` / `REM` field is `is_unsigned`.
+      (entry.opcode = 30 → ∃ rs2 rs1 rd sl sr, instr = .MUL (rs2, rs1, rd, { result_part := .Low, signed_rs1 := sl, signed_rs2 := sr })) ∧
+      (entry.opcode = 31 → ∃ rs2 rs1 rd, instr = .MUL (rs2, rs1, rd, { result_part := .High, signed_rs1 := .Signed, signed_rs2 := .Signed })) ∧
+      (entry.opcode = 32 → ∃ rs2 rs1 rd, instr = .MUL (rs2, rs1, rd, { result_part := .High, signed_rs1 := .Unsigned, signed_rs2 := .Unsigned })) ∧
+      (entry.opcode = 33 → ∃ rs2 rs1 rd, instr = .MUL (rs2, rs1, rd, { result_part := .High, signed_rs1 := .Signed, signed_rs2 := .Unsigned })) ∧
+      (entry.opcode = 34 → ∃ rs2 rs1 rd, instr = .DIV (rs2, rs1, rd, false)) ∧
+      (entry.opcode = 35 → ∃ rs2 rs1 rd, instr = .DIV (rs2, rs1, rd, true)) ∧
+      (entry.opcode = 36 → ∃ rs2 rs1 rd, instr = .REM (rs2, rs1, rd, false)) ∧
+      (entry.opcode = 37 → ∃ rs2 rs1 rd, instr = .REM (rs2, rs1, rd, true)) ∧
+      -- Word ALU
+      (entry.opcode = 40 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPEW (rs2, rs1, rd, .ADDW)) ∨
+        (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .ADDIW (imm, rs1, rd))) ∧
+      (entry.opcode = 41 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPEW (rs2, rs1, rd, .SUBW))) ∧
+      (entry.opcode = 42 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPEW (rs2, rs1, rd, .SLLW)) ∨
+        (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .SHIFTIWOP (imm, rs1, rd, .SLLIW))) ∧
+      (entry.opcode = 43 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPEW (rs2, rs1, rd, .SRLW)) ∨
+        (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .SHIFTIWOP (imm, rs1, rd, .SRLIW))) ∧
+      (entry.opcode = 44 →
+        (entry.imm_c = 0 ∧ ∃ rs2 rs1 rd, instr = .RTYPEW (rs2, rs1, rd, .SRAW)) ∨
+        (entry.imm_c = 1 ∧ ∃ imm rs1 rd, instr = .SHIFTIWOP (imm, rs1, rd, .SRAIW))) ∧
+      -- Word multiply, divide, remainder
+      (entry.opcode = 48 → ∃ rs2 rs1 rd, instr = .MULW (rs2, rs1, rd)) ∧
+      (entry.opcode = 49 → ∃ rs2 rs1 rd, instr = .DIVW (rs2, rs1, rd, false)) ∧
+      (entry.opcode = 50 → ∃ rs2 rs1 rd, instr = .DIVW (rs2, rs1, rd, true)) ∧
+      (entry.opcode = 51 → ∃ rs2 rs1 rd, instr = .REMW (rs2, rs1, rd, false)) ∧
+      (entry.opcode = 52 → ∃ rs2 rs1 rd, instr = .REMW (rs2, rs1, rd, true))
+    := by
+      program_bus_cases
+      all_goals simp
+
+    /-- For each opcode value, the class selectors, and the immediate flags the opcode
+        forces. Where two instruction shapes share an opcode (an ALU operation with a register
+        or an immediate third operand, and opcode 0) the flag that varies is left out; its
+        value is in `operand_properties_inversion`. -/
+    lemma ProgramBusEntry.inversion_opcode_selectors
+      { entry : ProgramBusEntry FKB }
+      (h_trans : .some ⟨ data, props ⟩ =
+        Transpiler.V3.transpile_op instr entry.multiplicity pc)
+      (h_deser : entry = ProgramBusEntry.deserialise data)
+    :
+      -- ALU, opcode 0: ADD, ADDI, LUI, AUIPC; both immediate flags vary
+      (entry.opcode = 0 → ( entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      -- SUB: registers only
+      (entry.opcode = 1 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      -- ALU with a register or an immediate third operand: `imm_c` varies
+      (entry.opcode = 2 → ( entry.imm_b, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 3 → ( entry.imm_b, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 4 → ( entry.imm_b, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 5 → ( entry.imm_b, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 6 → ( entry.imm_b, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 7 → ( entry.imm_b, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 8 → ( entry.imm_b, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 9 → ( entry.imm_b, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      -- loads
+      (entry.opcode = 10 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 11 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 12 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 13 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 14 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      -- stores
+      (entry.opcode = 15 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 16 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 17 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      -- branches
+      (entry.opcode = 18 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 19 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 20 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 21 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 22 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 )) ∧
+      (entry.opcode = 23 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 )) ∧
+      -- jumps
+      (entry.opcode = 24 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 )) ∧
+      (entry.opcode = 25 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 )) ∧
+      -- ECALL
+      (entry.opcode = 28 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      -- multiply, divide, remainder
+      (entry.opcode = 30 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 31 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 32 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 33 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 34 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 35 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 36 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 37 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      -- word ALU; `imm_c` varies except for SUBW
+      (entry.opcode = 40 → ( entry.imm_b, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 41 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 42 → ( entry.imm_b, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 43 → ( entry.imm_b, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 44 → ( entry.imm_b, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      -- LWU, LD, SD
+      (entry.opcode = 45 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 46 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 47 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      -- word multiply, divide, remainder
+      (entry.opcode = 48 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 49 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 50 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 51 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )) ∧
+      (entry.opcode = 52 → ( entry.imm_b, entry.imm_c, entry.is_ecall, entry.is_memory, entry.is_store, entry.is_beq, entry.is_bne, entry.is_blt, entry.is_bge, entry.is_bltu, entry.is_bgeu, entry.is_jalr, entry.is_jal ) = ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ))
+    := by
+      program_bus_cases
+      all_goals simp
+
+    /-- Every flag and selector is 0 or 1, at most one instruction class is set, and a store
+        is a memory instruction. -/
+    lemma ProgramBusEntry.inversion_selectors_one_hot
+      { entry : ProgramBusEntry FKB }
+      (h_trans : .some ⟨ data, props ⟩ =
+        Transpiler.V3.transpile_op instr entry.multiplicity pc)
+      (h_deser : entry = ProgramBusEntry.deserialise data)
+    :
+      (entry.imm_b = 0 ∨ entry.imm_b = 1) ∧ (entry.imm_c = 0 ∨ entry.imm_c = 1) ∧
+      (entry.is_ecall = 0 ∨ entry.is_ecall = 1) ∧ (entry.is_memory = 0 ∨ entry.is_memory = 1) ∧
+      (entry.is_store = 0 ∨ entry.is_store = 1) ∧
+      (entry.is_beq = 0 ∨ entry.is_beq = 1) ∧ (entry.is_bne = 0 ∨ entry.is_bne = 1) ∧
+      (entry.is_blt = 0 ∨ entry.is_blt = 1) ∧ (entry.is_bge = 0 ∨ entry.is_bge = 1) ∧
+      (entry.is_bltu = 0 ∨ entry.is_bltu = 1) ∧ (entry.is_bgeu = 0 ∨ entry.is_bgeu = 1) ∧
+      (entry.is_jalr = 0 ∨ entry.is_jalr = 1) ∧ (entry.is_jal = 0 ∨ entry.is_jal = 1) ∧
+      (entry.is_ecall + entry.is_memory + entry.is_beq + entry.is_bne + entry.is_blt +
+        entry.is_bge + entry.is_bltu + entry.is_bgeu + entry.is_jalr + entry.is_jal = 0 ∨
+       entry.is_ecall + entry.is_memory + entry.is_beq + entry.is_bne + entry.is_blt +
+        entry.is_bge + entry.is_bltu + entry.is_bgeu + entry.is_jalr + entry.is_jal = 1) ∧
+      (entry.is_store = 1 → entry.is_memory = 1)
+    := by
+      program_bus_cases
+      all_goals simp
+
+    /-- Operand facts: `op_a` is a register index and `op_a_0` is `[op_a = 0]`; an operand
+        whose immediate flag is 0 is a register index (second piece and sign 0); every piece
+        is 16-bit and every sign is 0 or 1. -/
+    lemma ProgramBusEntry.inversion_operands
+      { entry : ProgramBusEntry FKB }
+      (h_trans : .some ⟨ data, props ⟩ =
+        Transpiler.V3.transpile_op instr entry.multiplicity pc)
+      (h_deser : entry = ProgramBusEntry.deserialise data)
+    :
+      entry.op_a.val < 32 ∧ entry.op_a_0 = (if entry.op_a = 0 then 1 else 0) ∧
+      (entry.imm_b = 0 → entry.b_0.val < 32 ∧ entry.b_1 = 0 ∧ entry.b_sign = 0) ∧
+      (entry.imm_c = 0 → entry.c_0.val < 32 ∧ entry.c_1 = 0 ∧ entry.c_sign = 0) ∧
+      entry.b_0.val < 65536 ∧ entry.b_1.val < 65536 ∧ (entry.b_sign = 0 ∨ entry.b_sign = 1) ∧
+      entry.c_0.val < 65536 ∧ entry.c_1.val < 65536 ∧ (entry.c_sign = 0 ∨ entry.c_sign = 1)
+    := by
+      program_bus_cases
+      all_goals simp [reg_to_KB_lt]
+      all_goals (repeat' apply And.intro)
+      all_goals first
+        | exact reg_is_x0 _
+        | exact lt_trans (reg_to_KB_lt _) (by norm_num)
+        | exact (imm_operand_limbs _ _).1
+        | exact (imm_operand_limbs _ _).2.1
+        | exact (imm_operand_limbs _ _).2.2
+        | omega
+
+    end Inversion
+
     @[simp, grind]
     instance ProgramBusEntryInstance
     : BusEntry FKB (ProgramBusEntry FKB) :=
