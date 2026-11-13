@@ -1,6 +1,6 @@
-# Replay every PicoFV declaration into Lean's kernel with leanchecker, to catch a declaration a
-# metaprogram added without the kernel check. It repeats the proofs' kernel work, so it runs
-# weekly and on demand, not on pull requests.
+# Replay every built PicoFV declaration into Lean's kernel with leanchecker, to catch a
+# declaration a metaprogram added without the kernel check. It repeats the proofs' kernel work,
+# so it runs weekly and on demand, not on pull requests.
 
 name: replay
 
@@ -39,12 +39,13 @@ jobs:
             picofv-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-
       - name: build
         run: lake build PicoFV64
-      # One process per module keeps the memory of each replay bounded. The kernel cannot
-      # replay what native_decide / bv_decide computed, so the files that use them (the
+      # One process per module keeps the memory of each replay bounded. Only the modules the
+      # build imports are replayed: a file nothing imports has no build to replay. The kernel
+      # cannot replay what native_decide / bv_decide computed, so the files that use them (the
       # tactic baseline) are skipped; SOUNDNESS.md lists them.
       - name: replay
         run: |
-          find PicoFV -name '*.lean' | sort \
+          python3 scripts/ci/imported_modules.py \
             | grep -vxF -f <(awk '{ print $2 }' scripts/fv-check/tactic-baseline.txt) \
             | sed 's/\.lean$//; s#/#.#g' \
             | xargs -P 2 -I{} lake env leanchecker {}
