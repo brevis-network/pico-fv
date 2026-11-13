@@ -68,6 +68,7 @@ Pico commit [`2acc7c182`](https://github.com/brevis-network/pico/commit/2acc7c18
 | A3 | A theorem holds only under a hypothesis | Hypotheses are part of each statement, snapshotted in `signatures.txt` |
 | A4 | The chips' bus messages do not compose as assumed | None yet: not proven (see A4) |
 | A5 | A part of Pico is not covered | Listed in A5 |
+| A6 | The Lean model of Pico's v3.1.1 instruction decoder differs from Pico's | Compared line by line in review; Pico's decoder tests restated as Lean `example`s |
 | C1 | The Lean kernel or its axioms are unsound | None |
 | C2 | A proof trusts compiled code | Ratchet in `check_tactics.sh`; listed in C2 |
 | C3 | A declaration reached the environment unchecked | Weekly kernel replay in CI, except the modules of C2 |
@@ -148,6 +149,28 @@ are none among the RV64IM ALU chips at the pinned commit.
 
 `ECALL` and syscalls, the precompile chips, the program, global memory and memory
 initialisation chips, the recursion layers, and Pico's proof system itself.
+
+### A6. The instruction decoder (Pico v3.1.1)
+
+The Pico v3.1.1 Program contract
+(`RV64IM_Interactions.V3.ProgramBusEntry.operand_properties` in
+`PicoFV/RV64IM/RVSail/BusesV3.lean`; the 2.x contract of the same short name is in `Buses.lean`)
+says that a fetched instruction is the row the Lean decoder `Transpiler.V3.transpile_op`
+(`PicoFV/RV64IM/Transpiler/TranspilerV3.lean`) gives some Sail instruction at a 4-aligned
+address below `0x7800_0000`. That decoder models Pico's decoder
+(`vm/src/compiler/riscv/disassembler/rrs.rs`) and Program table builder
+(`vm/src/chips/chips/riscv_program/traces.rs`) at the pinned commit. Only review compares the
+Lean decoder with the Rust one; Pico's own decoder tests are restated as `example`s at the end
+of `TranspilerV3.lean`. The decoder starts from an already-decoded Sail instruction, not from
+the 32-bit word: that a word decodes to the same instruction in Sail and in Pico is not
+modelled.
+
+The fences have no row of their own. Pico runs every fence word (`fence`, `fence.tso` and
+`pause`) as the no-op `ADD x0, x0, 0`, the row of `ADDI x0, x0, 0`. Sail decodes them as three
+other instructions, `FENCE`, `FENCE_TSO` and `PAUSE`, and `PicoFV/RV64IM/RVSail/Opcodes/fence.lean`
+proves that each executes exactly as `ADDI x0, x0, 0`: `PAUSE` and `FENCE_TSO` in every state,
+`FENCE` in machine mode (assumption A1.1 of `RISC_V_assumptions`, which every instruction
+theorem already makes).
 
 ## C. Is each proof sound?
 
