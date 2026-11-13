@@ -21,15 +21,16 @@ set_option maxHeartbeats 1_000_000_000
     * The state bus' single `ptr` field becomes 3 u16 limbs for the 48-bit
       register/memory address.
 
-    Bus tag → payload length (from `Extraction/CpuChip.lean`):
+    Bus tag → payload length, from the 2.x `Extraction/CpuChip.lean` at
+    the tag `pico-v3-before-cpu` (the v3.1.1 formats are in `BusesV3.lean`):
 
-    | bus | tag | data length |
+    | bus | tag (Pico `LookupType`) | data length |
     |-----|-----|-------------|
-    | State   | 0 | 9   |
-    | Program | 1 | 43  |
-    | ALU     | 3 | 13  |
-    | Byte    | 4 | 5   |
-    | Memory  | 0 | 25  |
+    | State   | 1 (Memory) | 9   |
+    | Program | 2          | 43  |
+    | ALU     | 4 (Alu)    | 13  |
+    | Byte    | 5          | 5   |
+    | Memory  | 1 (Memory) | 25  |
                                                                               -/
 
 namespace RV64IM_Interactions
@@ -47,7 +48,7 @@ namespace RV64IM_Interactions
       /-- Program bus entry — payload size 43 (`3 + 1 + 14 + 25`).
 
           Layout matches the `CpuChip` program-bus emit at
-          `Extraction/CpuChip.lean:451`:
+          `Extraction/CpuChip.lean:453` at the tag `pico-v3-before-cpu` (2.x):
           `[pc[0..2], opcode, opcode, a[0..3], b[0..3], c[0..3], a_is_0,
             imm_b, imm_c, is_alu, is_ecall,
             is_lb..is_ld (7),
@@ -745,12 +746,22 @@ namespace RV64IM_Interactions
         ALU_opcode ∈ Finset.Icc 30 33 ∨
         ALU_opcode = 48
 
-      /-- Set of all valid ALU bus opcodes. -/
+      /-- Set of all valid ALU bus opcodes.
+
+          `264` and `265` are the two branch-comparison opcodes,
+          `SLT + LT_CMP_OPCODE_TAG` and `SLTU + LT_CMP_OPCODE_TAG` with
+          the tag `1 <<< 8` (`alu/lt/columns.rs:22`). The CPU sends one
+          of them for every branch and reads both strict comparison bits
+          off the single reply; `LtChip` serves them on its merged rows
+          (`is_cmp = 1`). The tag keeps such a reply from pairing with a
+          plain `SLT` / `SLTU` dispatch. -/
       def ALUBus.validOpcode (ALU_opcode : FKB) : Prop :=
         ALU_opcode ∈ Finset.Icc 0 9 ∨
         ALU_opcode ∈ Finset.Icc 30 37 ∨
         ALU_opcode ∈ Finset.Icc 40 44 ∨
-        ALU_opcode ∈ Finset.Icc 48 52
+        ALU_opcode ∈ Finset.Icc 48 52 ∨
+        ALU_opcode = 264 ∨
+        ALU_opcode = 265
 
       /-- Per-entry operand u16 range (all 8 limbs). -/
       def ALUBus.operandRange
@@ -775,7 +786,14 @@ namespace RV64IM_Interactions
           - `execute_RTYPE_pure` for 64-bit R-type ALU ops `0..9`
           - `execute_RTYPEW_pure` for W-variants `40..44`
           - `execute_MUL_pure` / `execute_MULW_pure` for MUL family
-          - `execute_DIV_REM_pure` / `execute_DIVW_REMW_pure` for DIV/REM. -/
+          - `execute_DIV_REM_pure` / `execute_DIVW_REMW_pure` for DIV/REM.
+
+          The two branch-comparison opcodes `264` / `265` are the
+          exception to "`a` = one pure execute function": they carry two
+          strict comparison bits in pieces 0 and 1, so their relation is
+          stated limb by limb. Like `8` / `9`, they are not in
+          `ALUBus.operandsInternal`: `LtChip` does not range-check its
+          operands, it receives their bounds through `externals`. -/
       def ALUBus.Spec
         (ALU_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 : FKB) :=
         let a := U64w.toBV #v[a_0, a_1, a_2, a_3]
@@ -824,6 +842,16 @@ namespace RV64IM_Interactions
         | 50 => a = (RV64IM.execute_DIVW_REMW_pure (b.setWidth 32) (c.setWidth 32) .DRU).1
         | 51 => a = (RV64IM.execute_DIVW_REMW_pure (b.setWidth 32) (c.setWidth 32) .DRS).2
         | 52 => a = (RV64IM.execute_DIVW_REMW_pure (b.setWidth 32) (c.setWidth 32) .DRU).2
+        -- Branch comparisons (`LtChip`'s merged rows). The result is not
+        -- one word but two strict comparison bits: piece 0 is `[b < c]`,
+        -- piece 1 is `[c < b]`, and pieces 2 and 3 are zero. The CPU
+        -- recovers `[b = c]` as `1 - a_0 - a_1`.
+        | 264 => a_0 = (if b.slt c then 1 else 0) ∧
+                 a_1 = (if c.slt b then 1 else 0) ∧
+                 a_2 = 0 ∧ a_3 = 0
+        | 265 => a_0 = (if b.ult c then 1 else 0) ∧
+                 a_1 = (if c.ult b then 1 else 0) ∧
+                 a_2 = 0 ∧ a_3 = 0
         | _ => True
 
       /-- ALU bus externals for one entry. Active when multiplicity ≠ 0:
@@ -954,7 +982,7 @@ namespace RV64IM_Interactions
 
       /-- State bus entry — payload size 9.
 
-          Layout (from `Extraction/CpuChip.lean:460-461`):
+          Layout (from `Extraction/CpuChip.lean:462-463` at the tag `pico-v3-before-cpu`, 2.x):
           `[chunk, clk, ptr_0, ptr_1, ptr_2, x_0, x_1, x_2, x_3]`.
 
           Differences vs RV32 (7-field payload):
@@ -1025,7 +1053,7 @@ namespace RV64IM_Interactions
 
       /-- Memory bus entry — payload size 25.
 
-          Layout (from `Extraction/CpuChip.lean:470`):
+          Layout (from `Extraction/CpuChip.lean:472` at the tag `pico-v3-before-cpu`, 2.x):
           `[mem_opcode, a[0..3], b[0..3], c[0..3], a_is_0,
             is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld,
             is_sb, is_sh, is_sw, is_sd]`.
@@ -1213,15 +1241,15 @@ namespace RV64IM_Interactions
       State : List (StateBusEntry FKB)
       Memory : List (MemoryBusEntry FKB)
 
-    /-- Filter a `BusRow` to keep only entries with negative multiplicity (= -1).
+    /-- Filter a `BusRow` to keep only entries with multiplicity 1 (Pico's `looking` side).
         These are the "read" entries: the chip assumes them and sends them
         to other chips for verification via the bus argument. -/
     def BusRow.readEntries (br : BusRow) : BusRow :=
-      { Program := br.Program.filter (fun e => e.multiplicity = -1)
-        ALU     := br.ALU.filter     (fun e => e.multiplicity = -1)
-        Byte    := br.Byte.filter    (fun e => e.multiplicity = -1)
-        State   := br.State.filter   (fun e => e.multiplicity = -1)
-        Memory  := br.Memory.filter  (fun e => e.multiplicity = -1) }
+      { Program := br.Program.filter (fun e => e.multiplicity = 1)
+        ALU     := br.ALU.filter     (fun e => e.multiplicity = 1)
+        Byte    := br.Byte.filter    (fun e => e.multiplicity = 1)
+        State   := br.State.filter   (fun e => e.multiplicity = 1)
+        Memory  := br.Memory.filter  (fun e => e.multiplicity = 1) }
 
     /-- Concatenate two `BusRow`s pointwise on each of the five lists. -/
     def BusRow.append (r1 r2 : BusRow) : BusRow :=
@@ -1332,10 +1360,11 @@ namespace RV64IM_Interactions
       tauto
 
     /-- Deserialise a raw bus row (list of (multiplicity, [bus_id, ...data])
-        tuples) into a typed `BusRow`. Bus tag layout matches RV32 exactly;
-        the per-bus data lengths change to (State 9, Program 43, ALU 13,
-        Byte 5, Memory 25). State and Memory both use tag `0` and are
-        disambiguated by payload length. -/
+        tuples) into a typed `BusRow`. Bus tags are Pico's `LookupType`
+        discriminants (Memory 1, Program 2, Alu 4, Byte 5); the per-bus data
+        lengths are (State 9, Program 43, ALU 13, Byte 5, Memory 25). State
+        and Memory are both `LookupType::Memory` and are disambiguated by
+        payload length. -/
     def deserialise_bus_row (row : List (FKB × List FKB)) : BusRow :=
       let initial_bus_row : BusRow :=
         { Program := [], ALU := [], Byte := [], State := [], Memory := [] }
@@ -1344,7 +1373,7 @@ namespace RV64IM_Interactions
           let bus_id := entry.head!
           let entry_data := entry.tail!
           match bus_id with
-          | 0 =>
+          | 1 =>
               if _ : entry_data.length = 9 then
                 let entry_data_vector : Vector FKB 9 := ⟨ entry_data.toArray, by simp; omega ⟩
                 let bus_entry := StateBusEntry.deserialise (multiplicity, entry_data_vector)
@@ -1356,19 +1385,19 @@ namespace RV64IM_Interactions
                   { result with Memory := result.Memory ++ [ bus_entry ] }
                 else result
               )
-          | 1 =>
+          | 2 =>
             if _ : entry_data.length = 43 then
               let entry_data_vector : Vector FKB 43 := ⟨ entry_data.toArray, by simp; omega ⟩
               let bus_entry := ProgramBusEntry.deserialise (multiplicity, entry_data_vector)
               { result with Program := result.Program ++ [ bus_entry ] }
             else result
-          | 3 =>
+          | 4 =>
               if _ : entry_data.length = 13 then
                 let entry_data_vector : Vector FKB 13 := ⟨ entry_data.toArray, by simp; omega ⟩
                 let bus_entry := ALUBusEntry.deserialise (multiplicity, entry_data_vector)
                 { result with ALU := result.ALU ++ [ bus_entry ] }
               else result
-          | 4 =>
+          | 5 =>
             if _ : entry_data.length = 5 then
               let entry_data_vector : Vector FKB 5 := ⟨ entry_data.toArray, by simp; omega ⟩
               let bus_entry := ByteBusEntry.deserialise (multiplicity, entry_data_vector)

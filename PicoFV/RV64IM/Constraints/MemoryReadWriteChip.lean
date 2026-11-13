@@ -83,19 +83,19 @@ Semantic grouping (from the Rust eval, C1..C8):
   per-selector sign extension into `op_a_access.value`.
 
 The bus interactions are 16 entries:
-- 1 looked Instruction bus entry (`+is_mem`, opcode 0): supplies the
+- 1 looked Instruction bus entry (`-is_mem`, opcode 0): supplies the
   decoded instruction back to `CpuChip`.
-- 1 looking ALU ADD (`-is_mem`): addr = op_b + op_c.
-- 3 looking ByteBus u16-range (`-is_mem`): `addr_word_2/3` (well, 1/2/3).
-- 1 looking ByteBus BitRange-13 (`-is_mem`): `(addr_word_0 - offset_word) / 8`.
-- 1 looking ByteBus u16-range (`-is_mem`): `addr_top_two_limb_inv` (stack-guard helper).
-- 1 looking ByteBus u8-range (`-is_mem`): `addr_top_two_limb_inv * 65535` / similar helper.
-- 1 looked Regional bus (`+is_mem`, opcode 0): timestamp monotonicity.
-- 1 looking Regional bus (`-(is_lb + is_lbu)`): timestamp helper.
-- 1 looking ByteBus MSB (`-is_lb`): `selected_byte` msb.
-- 1 looking ByteBus u16-range (`-is_lh`): `2·selected_limb - msb·2^16`.
-- 1 looking ByteBus u16-range (`-is_lw`): `2·selected_word_1 - msb·2^16`.
-- 2 looking ByteBus u8-range (`-is_sb`): byte split of `op_a_0`.
+- 1 looking ALU ADD (`+is_mem`): addr = op_b + op_c.
+- 3 looking ByteBus u16-range (`+is_mem`): `addr_word_2/3` (well, 1/2/3).
+- 1 looking ByteBus BitRange-13 (`+is_mem`): `(addr_word_0 - offset_word) / 8`.
+- 1 looking ByteBus u16-range (`+is_mem`): `addr_top_two_limb_inv` (stack-guard helper).
+- 1 looking ByteBus u8-range (`+is_mem`): `addr_top_two_limb_inv * 65535` / similar helper.
+- 1 looked Regional bus (`-is_mem`, opcode 0): timestamp monotonicity.
+- 1 looking Regional bus (`+(is_lb + is_lbu)`): timestamp helper.
+- 1 looking ByteBus MSB (`+is_lb`): `selected_byte` msb.
+- 1 looking ByteBus u16-range (`+is_lh`): `2·selected_limb - msb·2^16`.
+- 1 looking ByteBus u16-range (`+is_lw`): `2·selected_word_1 - msb·2^16`.
+- 2 looking ByteBus u8-range (`+is_sb`): byte split of `op_a_0`.
 -/
 
 namespace MemoryReadWriteChip.ConstraintsAndBuses
@@ -967,22 +967,22 @@ namespace MemoryReadWriteChip.ConstraintsAndBuses
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_MemoryReadWriteChip FKB ExtF) (row : ℕ) : List (FKB × List FKB) :=
-        [ (((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0))), [0, (air.cols.values.instruction.opcode row 0), (air.cols.values.instruction.op_a_access.access.value_0 row 0), (air.cols.values.instruction.op_a_access.access.value_1 row 0), (air.cols.values.instruction.op_a_access.access.value_2 row 0), (air.cols.values.instruction.op_a_access.access.value_3 row 0), (air.cols.values.instruction.op_b_access_0 row 0), (air.cols.values.instruction.op_b_access_1 row 0), (air.cols.values.instruction.op_b_access_2 row 0), (air.cols.values.instruction.op_b_access_3 row 0), (air.cols.values.instruction.op_c_access_0 row 0), (air.cols.values.instruction.op_c_access_1 row 0), (air.cols.values.instruction.op_c_access_2 row 0), (air.cols.values.instruction.op_c_access_3 row 0), (air.cols.values.instruction.op_a_0 row 0), (air.cols.values.instruction.is_lb row 0), (air.cols.values.instruction.is_lbu row 0), (air.cols.values.instruction.is_lh row 0), (air.cols.values.instruction.is_lhu row 0), (air.cols.values.instruction.is_lw row 0), (air.cols.values.instruction.is_lwu row 0), (air.cols.values.instruction.is_ld row 0), (air.cols.values.instruction.is_sb row 0), (air.cols.values.instruction.is_sh row 0), (air.cols.values.instruction.is_sw row 0), (air.cols.values.instruction.is_sd row 0)]),
-          (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [3, 0, (air.cols.values.addr_word_0 row 0), (air.cols.values.addr_word_1 row 0), (air.cols.values.addr_word_2 row 0), (air.cols.values.addr_word_3 row 0), (air.cols.values.instruction.op_b_access_0 row 0), (air.cols.values.instruction.op_b_access_1 row 0), (air.cols.values.instruction.op_b_access_2 row 0), (air.cols.values.instruction.op_b_access_3 row 0), (air.cols.values.instruction.op_c_access_0 row 0), (air.cols.values.instruction.op_c_access_1 row 0), (air.cols.values.instruction.op_c_access_2 row 0), (air.cols.values.instruction.op_c_access_3 row 0)]),
-          (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [4, 8, (air.cols.values.addr_word_0 row 0), 0, 0, 0]),
-          (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [4, 8, (air.cols.values.addr_word_1 row 0), 0, 0, 0]),
-          (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [4, 8, (air.cols.values.addr_word_2 row 0), 0, 0, 0]),
-          (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [4, 9, (((0 + (air.cols.values.addr_word_0 row 0)) - (((0 + (air.cols.values.offset_bit_0 row 0)) + (2 * (air.cols.values.offset_bit_1 row 0))) + (4 * (air.cols.values.offset_bit_2 row 0)))) * 1864368129), 0, 13, 0]),
-          (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [4, 8, (air.cols.values.memory_access.access.diff_16bit_limb row 0), 0, 0, 0]),
-          (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [4, 7, 0, 0, (air.cols.values.memory_access.access.diff_8bit_limb row 0), 0]),
-          (-(((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [0, (air.cols.values.memory_access.access.prev_chunk row 0), (air.cols.values.memory_access.access.prev_clk row 0), ((air.cols.values.addr_word_0 row 0) - ((0 + (air.cols.values.offset_bit_0 row 0)) + 2 * (air.cols.values.offset_bit_1 row 0) + 4 * (air.cols.values.offset_bit_2 row 0))), (air.cols.values.addr_word_1 row 0), (air.cols.values.addr_word_2 row 0), (air.cols.values.memory_access.prev_value_0 row 0), (air.cols.values.memory_access.prev_value_1 row 0), (air.cols.values.memory_access.prev_value_2 row 0), (air.cols.values.memory_access.prev_value_3 row 0)]),
-          (((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0))), [0, (air.cols.values.chunk row 0), ((air.cols.values.clk row 0) + 0), ((air.cols.values.addr_word_0 row 0) - ((0 + (air.cols.values.offset_bit_0 row 0)) + 2 * (air.cols.values.offset_bit_1 row 0) + 4 * (air.cols.values.offset_bit_2 row 0))), (air.cols.values.addr_word_1 row 0), (air.cols.values.addr_word_2 row 0), (air.cols.values.memory_access.access.value_0 row 0), (air.cols.values.memory_access.access.value_1 row 0), (air.cols.values.memory_access.access.value_2 row 0), (air.cols.values.memory_access.access.value_3 row 0)]),
-          (-(((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0))), [4, 7, 0, 0, (air.cols.values.selected_limb_low_byte row 0), (((0 + (air.cols.values.selected_limb row 0)) - (air.cols.values.selected_limb_low_byte row 0)) * 2122383361)]),
-          (-((air.cols.values.instruction.is_lb row 0)), [4, 6, (air.cols.values.msb row 0), 0, (air.cols.values.selected_byte row 0), 0]),
-          (-((air.cols.values.instruction.is_lh row 0)), [4, 8, (((2 * (air.cols.values.selected_limb row 0)) - 0) - ((air.cols.values.msb row 0) * 65536)), 0, 0, 0]),
-          (-((air.cols.values.instruction.is_lw row 0)), [4, 8, (((2 * (air.cols.values.selected_word_1 row 0)) - 0) - ((air.cols.values.msb row 0) * 65536)), 0, 0, 0]),
-          (-((air.cols.values.instruction.is_sb row 0)), [4, 7, 0, 0, (air.cols.values.register_low_byte row 0), (((0 + (air.cols.values.instruction.op_a_access.access.value_0 row 0)) - (air.cols.values.register_low_byte row 0)) * 2122383361)]),
-          (-((air.cols.values.instruction.is_sb row 0)), [4, 7, 0, 0, (air.cols.values.mem_limb_low_byte row 0), (((0 + (air.cols.values.selected_limb row 0)) - (air.cols.values.mem_limb_low_byte row 0)) * 2122383361)]) ]
+        [ (-((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0))), [1, (air.cols.values.instruction.opcode row 0), (air.cols.values.instruction.op_a_access.access.value_0 row 0), (air.cols.values.instruction.op_a_access.access.value_1 row 0), (air.cols.values.instruction.op_a_access.access.value_2 row 0), (air.cols.values.instruction.op_a_access.access.value_3 row 0), (air.cols.values.instruction.op_b_access_0 row 0), (air.cols.values.instruction.op_b_access_1 row 0), (air.cols.values.instruction.op_b_access_2 row 0), (air.cols.values.instruction.op_b_access_3 row 0), (air.cols.values.instruction.op_c_access_0 row 0), (air.cols.values.instruction.op_c_access_1 row 0), (air.cols.values.instruction.op_c_access_2 row 0), (air.cols.values.instruction.op_c_access_3 row 0), (air.cols.values.instruction.op_a_0 row 0), (air.cols.values.instruction.is_lb row 0), (air.cols.values.instruction.is_lbu row 0), (air.cols.values.instruction.is_lh row 0), (air.cols.values.instruction.is_lhu row 0), (air.cols.values.instruction.is_lw row 0), (air.cols.values.instruction.is_lwu row 0), (air.cols.values.instruction.is_ld row 0), (air.cols.values.instruction.is_sb row 0), (air.cols.values.instruction.is_sh row 0), (air.cols.values.instruction.is_sw row 0), (air.cols.values.instruction.is_sd row 0)]),
+          ((((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [4, 0, (air.cols.values.addr_word_0 row 0), (air.cols.values.addr_word_1 row 0), (air.cols.values.addr_word_2 row 0), (air.cols.values.addr_word_3 row 0), (air.cols.values.instruction.op_b_access_0 row 0), (air.cols.values.instruction.op_b_access_1 row 0), (air.cols.values.instruction.op_b_access_2 row 0), (air.cols.values.instruction.op_b_access_3 row 0), (air.cols.values.instruction.op_c_access_0 row 0), (air.cols.values.instruction.op_c_access_1 row 0), (air.cols.values.instruction.op_c_access_2 row 0), (air.cols.values.instruction.op_c_access_3 row 0)]),
+          ((((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [5, 8, (air.cols.values.addr_word_0 row 0), 0, 0, 0]),
+          ((((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [5, 8, (air.cols.values.addr_word_1 row 0), 0, 0, 0]),
+          ((((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [5, 8, (air.cols.values.addr_word_2 row 0), 0, 0, 0]),
+          ((((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [5, 9, (((0 + (air.cols.values.addr_word_0 row 0)) - (((0 + (air.cols.values.offset_bit_0 row 0)) + (2 * (air.cols.values.offset_bit_1 row 0))) + (4 * (air.cols.values.offset_bit_2 row 0)))) * 1864368129), 0, 13, 0]),
+          ((((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [5, 8, (air.cols.values.memory_access.access.diff_16bit_limb row 0), 0, 0, 0]),
+          ((((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [5, 7, 0, 0, (air.cols.values.memory_access.access.diff_8bit_limb row 0), 0]),
+          ((((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0)))), [1, (air.cols.values.memory_access.access.prev_chunk row 0), (air.cols.values.memory_access.access.prev_clk row 0), ((air.cols.values.addr_word_0 row 0) - ((0 + (air.cols.values.offset_bit_0 row 0)) + 2 * (air.cols.values.offset_bit_1 row 0) + 4 * (air.cols.values.offset_bit_2 row 0))), (air.cols.values.addr_word_1 row 0), (air.cols.values.addr_word_2 row 0), (air.cols.values.memory_access.prev_value_0 row 0), (air.cols.values.memory_access.prev_value_1 row 0), (air.cols.values.memory_access.prev_value_2 row 0), (air.cols.values.memory_access.prev_value_3 row 0)]),
+          (-((((((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0)) + (air.cols.values.instruction.is_lh row 0)) + (air.cols.values.instruction.is_lhu row 0)) + (air.cols.values.instruction.is_lw row 0)) + (air.cols.values.instruction.is_lwu row 0)) + (air.cols.values.instruction.is_ld row 0)) + ((((air.cols.values.instruction.is_sb row 0) + (air.cols.values.instruction.is_sh row 0)) + (air.cols.values.instruction.is_sw row 0)) + (air.cols.values.instruction.is_sd row 0))), [1, (air.cols.values.chunk row 0), ((air.cols.values.clk row 0) + 0), ((air.cols.values.addr_word_0 row 0) - ((0 + (air.cols.values.offset_bit_0 row 0)) + 2 * (air.cols.values.offset_bit_1 row 0) + 4 * (air.cols.values.offset_bit_2 row 0))), (air.cols.values.addr_word_1 row 0), (air.cols.values.addr_word_2 row 0), (air.cols.values.memory_access.access.value_0 row 0), (air.cols.values.memory_access.access.value_1 row 0), (air.cols.values.memory_access.access.value_2 row 0), (air.cols.values.memory_access.access.value_3 row 0)]),
+          ((((air.cols.values.instruction.is_lb row 0) + (air.cols.values.instruction.is_lbu row 0))), [5, 7, 0, 0, (air.cols.values.selected_limb_low_byte row 0), (((0 + (air.cols.values.selected_limb row 0)) - (air.cols.values.selected_limb_low_byte row 0)) * 2122383361)]),
+          (((air.cols.values.instruction.is_lb row 0)), [5, 6, (air.cols.values.msb row 0), 0, (air.cols.values.selected_byte row 0), 0]),
+          (((air.cols.values.instruction.is_lh row 0)), [5, 8, (((2 * (air.cols.values.selected_limb row 0)) - 0) - ((air.cols.values.msb row 0) * 65536)), 0, 0, 0]),
+          (((air.cols.values.instruction.is_lw row 0)), [5, 8, (((2 * (air.cols.values.selected_word_1 row 0)) - 0) - ((air.cols.values.msb row 0) * 65536)), 0, 0, 0]),
+          (((air.cols.values.instruction.is_sb row 0)), [5, 7, 0, 0, (air.cols.values.register_low_byte row 0), (((0 + (air.cols.values.instruction.op_a_access.access.value_0 row 0)) - (air.cols.values.register_low_byte row 0)) * 2122383361)]),
+          (((air.cols.values.instruction.is_sb row 0)), [5, 7, 0, 0, (air.cols.values.mem_limb_low_byte row 0), (((0 + (air.cols.values.selected_limb row 0)) - (air.cols.values.mem_limb_low_byte row 0)) * 2122383361)]) ]
 
       @[constraint_and_interaction_simplification]
       def constrain_interactions (air : Valid_MemoryReadWriteChip FKB ExtF) : Prop :=
@@ -1094,60 +1094,60 @@ namespace MemoryReadWriteChip.ConstraintsAndBuses
     {
       Program := [],
       ALU := List.map ALUBusEntry.deserialise [
-        -- ALU ADD: addr_word = op_b + op_c (gated by -is_mem).
-        (-(is_mem), #v[0,
+        -- ALU ADD: addr_word = op_b + op_c (gated by +is_mem).
+        ((is_mem), #v[0,
                       addr_word_0, addr_word_1, addr_word_2, addr_word_3,
                       b_0, b_1, b_2, b_3,
                       c_0, c_1, c_2, c_3])
       ],
       Byte := List.map ByteBusEntry.deserialise [
-        -- u16 range checks on addr_word_0..2 (gated by -is_mem).
-        (-(is_mem), #v[8, addr_word_0, 0, 0, 0]),
-        (-(is_mem), #v[8, addr_word_1, 0, 0, 0]),
-        (-(is_mem), #v[8, addr_word_2, 0, 0, 0]),
+        -- u16 range checks on addr_word_0..2 (gated by +is_mem).
+        ((is_mem), #v[8, addr_word_0, 0, 0, 0]),
+        ((is_mem), #v[8, addr_word_1, 0, 0, 0]),
+        ((is_mem), #v[8, addr_word_2, 0, 0, 0]),
         -- BitRange-13 on (addr_word_0 - offset_decoded) / 8, binding
-        -- offset_bits to addr_word_0's low 3 bits (-is_mem).
-        (-(is_mem), #v[9,
+        -- offset_bits to addr_word_0's low 3 bits (+is_mem).
+        ((is_mem), #v[9,
                       ((0 + addr_word_0) - ((0 + offset_bit_0) +
                           2 * offset_bit_1 + 4 * offset_bit_2)) * 1864368129,
                       0, 13, 0]),
-        -- u16 range on diff_16bit_limb (memory access metadata, -is_mem).
-        (-(is_mem), #v[8, diff_16, 0, 0, 0]),
-        -- u8 range on diff_8bit_limb (memory access metadata, -is_mem).
-        (-(is_mem), #v[7, 0, 0, diff_8, 0]),
+        -- u16 range on diff_16bit_limb (memory access metadata, +is_mem).
+        ((is_mem), #v[8, diff_16, 0, 0, 0]),
+        -- u8 range on diff_8bit_limb (memory access metadata, +is_mem).
+        ((is_mem), #v[7, 0, 0, diff_8, 0]),
         -- Two-byte range check on the (low, high) decomposition of `selected_limb`
-        -- (Pico PR #101 commit `fc197c0b`, gated by -(is_lb + is_lbu)).
-        (-(is_lb + is_lbu), #v[7, 0, 0, selected_limb_low_byte,
+        -- (Pico PR #101 commit `fc197c0b`, gated by is_lb + is_lbu).
+        ((is_lb + is_lbu), #v[7, 0, 0, selected_limb_low_byte,
                               ((0 + selected_limb) - selected_limb_low_byte) * 2122383361]),
-        -- MSB lookup: verify `msb` is bit-7 of selected_byte (-is_lb).
-        (-(is_lb), #v[6, msb, 0, selected_byte, 0]),
+        -- MSB lookup: verify `msb` is bit-7 of selected_byte (+is_lb).
+        ((is_lb), #v[6, msb, 0, selected_byte, 0]),
         -- U16MSB on selected_limb: 2·selected_limb - msb·2^16 ∈ [0, 2^16)
-        -- (-is_lh).
-        (-(is_lh), #v[8, ((2 * selected_limb) - 0) - (msb * 65536), 0, 0, 0]),
+        -- (+is_lh).
+        ((is_lh), #v[8, ((2 * selected_limb) - 0) - (msb * 65536), 0, 0, 0]),
         -- U16MSB on selected_word_1: 2·selected_word_1 - msb·2^16 ∈
-        -- [0, 2^16) (-is_lw).
-        (-(is_lw), #v[8, ((2 * selected_word_1) - 0) - (msb * 65536), 0, 0, 0]),
-        -- SB byte split of `op_a_value_0`: low+high byte pair (-is_sb).
-        (-(is_sb), #v[7, 0, 0, register_low_byte,
+        -- [0, 2^16) (+is_lw).
+        ((is_lw), #v[8, ((2 * selected_word_1) - 0) - (msb * 65536), 0, 0, 0]),
+        -- SB byte split of `op_a_value_0`: low+high byte pair (+is_sb).
+        ((is_sb), #v[7, 0, 0, register_low_byte,
                      ((0 + a_0) - register_low_byte) * 2122383361]),
-        -- SB byte split of `selected_limb`: low+high byte pair (-is_sb).
-        (-(is_sb), #v[7, 0, 0, mem_limb_low_byte,
+        -- SB byte split of `selected_limb`: low+high byte pair (+is_sb).
+        ((is_sb), #v[7, 0, 0, mem_limb_low_byte,
                      ((0 + selected_limb) - mem_limb_low_byte) * 2122383361])
       ],
       State := List.map StateBusEntry.deserialise [
-        -- Previous memory access at addr_aligned (-is_mem).
-        (-(is_mem), #v[prev_chunk, prev_clk,
+        -- Previous memory access at addr_aligned (+is_mem).
+        ((is_mem), #v[prev_chunk, prev_clk,
                       addr_aligned_0, addr_aligned_1, addr_aligned_2,
                       mem_prev_0, mem_prev_1, mem_prev_2, mem_prev_3]),
-        -- Current memory access at addr_aligned (+is_mem).
-        (is_mem, #v[chunk, clk + 0,
+        -- Current memory access at addr_aligned (-is_mem).
+        (-(is_mem), #v[chunk, clk + 0,
                      addr_aligned_0, addr_aligned_1, addr_aligned_2,
                      mem_val_0, mem_val_1, mem_val_2, mem_val_3])
       ],
       Memory := List.map MemoryBusEntry.deserialise [
         -- Receive the decoded load/store instruction from CpuChip
-        -- (+is_mem looked from this chip's side).
-        (is_mem, #v[opcode,
+        -- (-is_mem looked from this chip's side).
+        (-(is_mem), #v[opcode,
                      a_0, a_1, a_2, a_3,
                      b_0, b_1, b_2, b_3,
                      c_0, c_1, c_2, c_3,

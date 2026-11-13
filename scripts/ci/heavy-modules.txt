@@ -1,0 +1,8 @@
+# Modules whose elaboration needs more than 3 GiB of private memory. CI builds them first, each
+# in a Lake run of its own, in this order: the 16 GB runner cannot hold two of them while Lake
+# builds four files at once. List a module after any listed module it imports.
+PicoFV.Fundamentals.Word
+PicoFV.RV64IM.Spec.MulGadgetCore
+PicoFV.RV64IM.Spec.AddGadget
+PicoFV.RV64IM.Spec.ShiftRightChip
+PicoFV.RV64IM.Spec.MemoryReadWriteChip

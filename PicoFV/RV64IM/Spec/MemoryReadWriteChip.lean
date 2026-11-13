@@ -374,7 +374,7 @@ namespace MemoryReadWriteChip.Spec
     simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
           h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_wf
     -- For LBU, the byte-bus MSB lookup on `selected_byte` (gated by
-    -- `-is_lb`) is vacuous, so `h_wf` has 11 conjuncts (vs 12 for LB).
+    -- `+is_lb`) is vacuous, so `h_wf` has 11 conjuncts (vs 12 for LB).
     obtain ⟨ h_alu_addr, _h_byte_aw0, _h_byte_aw1, _h_byte_aw2, _h_bit13, _h_byte_d16, _h_byte_d8, h_byte_sl_low,
              ub_mpv0, ub_mpv1, ub_mpv2, ub_mpv3 ⟩ := h_wf
     simp [ALUBus.Spec] at h_alu_addr
@@ -546,7 +546,7 @@ namespace MemoryReadWriteChip.Spec
              _neg_op_10, h_ext_lh_x0, _neg_op_12, _neg_op_13, _neg_op_14, _neg_op_45, _neg_op_46,
              _neg_op_15, _neg_op_16, _neg_op_17, _neg_op_47 ⟩ := h_ext
     -- For LH, h_wf has 12 conjuncts (vs 11 for LD/LHU): adds the U16MSB
-    -- byte-bus check on `selected_limb` (gated by `-is_lh`).
+    -- byte-bus check on `selected_limb` (gated by `+is_lh`).
     simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
           h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_wf
     obtain ⟨ h_alu_addr, _h_byte_aw0, _h_byte_aw1, _h_byte_aw2, h_bit13, _h_byte_d16, _h_byte_d8, h_u16msb_sl,
@@ -1177,7 +1177,7 @@ namespace MemoryReadWriteChip.Spec
     obtain ⟨ _opcode_range, _ub_b0, _ub_b1, _ub_b2, _ub_b3, _ub_c0, _ub_c1, _ub_c2, _ub_c3,
              _neg_op_10, _neg_op_11, h_ext_lw_x0, _neg_op_13, _neg_op_14, _neg_op_45, _neg_op_46,
              _neg_op_15, _neg_op_16, _neg_op_17, _neg_op_47 ⟩ := h_ext
-    -- h_wf for LW: U16MSB on selected_word_1 active (gated by -is_lw).
+    -- h_wf for LW: U16MSB on selected_word_1 active (gated by +is_lw).
     simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
           h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_wf
     obtain ⟨ h_alu_addr, _h_byte_aw0, _h_byte_aw1, _h_byte_aw2, h_bit13, _h_byte_d16, _h_byte_d8, h_u16msb_sw1,
@@ -1956,7 +1956,7 @@ namespace MemoryReadWriteChip.Spec
              _neg_op_10, _neg_op_11, _neg_op_12, _neg_op_13, _neg_op_14, _neg_op_45, _neg_op_46,
              _neg_op_16, _neg_op_17, _neg_op_47 ⟩ := h_ext
     -- h_wf for SB: 6 byte (incl. BitRange + diffs) + 2 SB byte-split
-    -- (active, gated -is_sb) + 4 state + 1 ALU = 13 conjuncts.
+    -- (active, gated +is_sb) + 4 state + 1 ALU = 13 conjuncts.
     simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
           h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_wf
     obtain ⟨ h_alu_addr, _h_byte_aw0, _h_byte_aw1, _h_byte_aw2, _h_bit13, _h_byte_d16, _h_byte_d8,
@@ -2044,7 +2044,7 @@ namespace MemoryReadWriteChip.Spec
     obtain ⟨ _opcode_range, _ub_b0, _ub_b1, _ub_b2, _ub_b3, _ub_c0, _ub_c1, _ub_c2, _ub_c3,
              _neg_op_10, _neg_op_11, _neg_op_12, _neg_op_13, _neg_op_14, _neg_op_45, _neg_op_46,
              _neg_op_15, _neg_op_17, _neg_op_47 ⟩ := h_ext
-    -- h_wf for SH: 6 byte + 4 state + 1 ALU = 11 conjuncts. SB byte splits are gated by `-is_sb`, vacuous for SH.
+    -- h_wf for SH: 6 byte + 4 state + 1 ALU = 11 conjuncts. SB byte splits are gated by `+is_sb`, vacuous for SH.
     simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw, h_is_lwu, h_is_ld,
           h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_wf
     obtain ⟨ h_alu_addr, _h_byte_aw0, _h_byte_aw1, _h_byte_aw2, h_bit13, _h_byte_d16, _h_byte_d8,
@@ -2490,7 +2490,7 @@ namespace MemoryReadWriteChip.Spec
     :
       Prop
     :=
-      let memory_row := { (bus_row air row).Memory[0]! with multiplicity := -1 }
+      let memory_row := { (bus_row air row).Memory[0]! with multiplicity := 1 }
       let memory_bus : BusRow := {
         Program := [], ALU := [], Byte := [], State := [], Memory := [ memory_row ]
       }
@@ -6868,7 +6868,7 @@ namespace MemoryReadWriteChip.Spec
         simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
               h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_wf
         -- For LBU h_wf has 11 conjuncts; `h_byte_sl_low` is the ByteBus check on
-        -- `selected_limb_low_byte` (entry 11 in the abstract bus, gated by `-(is_lb + is_lbu)`).
+        -- `selected_limb_low_byte` (entry 11 in the abstract bus, gated by `is_lb + is_lbu`).
         obtain ⟨ h_alu_addr, _h_byte_aw0, _h_byte_aw1, _h_byte_aw2, h_bit13, _h_byte_d16, _h_byte_d8,
                  h_byte_sl_low, ub_mpv0, ub_mpv1, ub_mpv2, ub_mpv3 ⟩ := h_wf
         simp [ALUBus.Spec] at h_alu_addr
@@ -8299,7 +8299,7 @@ namespace MemoryReadWriteChip.Spec
         simp [bus_row_wf_asm, bus_row, AbsBuses, h_is_lb, h_is_lbu, h_is_lh, h_is_lhu, h_is_lw,
               h_is_lwu, h_is_ld, h_is_sb, h_is_sh, h_is_sw, h_is_sd, h_is_real] at h_wf
         -- For LB h_wf has 12 conjuncts (vs 11 for LBU): the byte-bus MSB lookup is active
-        -- (entry 6, gated by `-is_lb`). It produces `selected_byte.val < 256` plus
+        -- (entry 6, gated by `+is_lb`). It produces `selected_byte.val < 256` plus
         -- `msb ∈ {0, 1}` (depending on whether `selected_byte < 128`).
         obtain ⟨ h_alu_addr, _h_byte_aw0, _h_byte_aw1, _h_byte_aw2, h_bit13, _h_byte_d16, _h_byte_d8,
                  h_byte_sl_low, h_byte_lb_msb, ub_mpv0, ub_mpv1, ub_mpv2, ub_mpv3 ⟩ := h_wf

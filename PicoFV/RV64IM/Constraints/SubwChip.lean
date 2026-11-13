@@ -43,10 +43,10 @@ The 5+1 algebraic constraints emitted by the chip are:
 - `msb ∈ {0, 1}`.
 
 The bus interactions are:
-- 3 ByteBus entries (opcode 4, sub-op 8) — u16 range-check
+- 3 ByteBus entries (opcode 5, sub-op 8) — u16 range-check
   `value_0`, `value_1`, and `2 * value_1 - msb * 65536` (this third
   one pins `msb` to bit-15 of `value_1`).
-- 1 ALU entry (opcode 3, sub-op 41 = `Opcode::SUBW`) — issued only
+- 1 ALU entry (opcode 4, sub-op 41 = `Opcode::SUBW`) — issued only
   when `is_subw = 1` and carries
   `(value_0, value_1, msb*65535, msb*65535, operand_1, operand_2)`.
   The high-two result limbs are filled in by the chip directly as
@@ -74,7 +74,7 @@ namespace SubwChip
     ({
       Program := [],
       ALU := List.map ALUBusEntry.deserialise [
-        (is_subw,
+        (-(is_subw),
           #v[ 41,
               value_0, value_1, msb * 65535, msb * 65535,
               operand_1_0, operand_1_1, operand_1_2, operand_1_3,
@@ -218,11 +218,11 @@ namespace SubwChip.ConstraintsAndBuses
 
       -- =====================================================================
       -- Bus interactions emitted by `SubwChip::eval` (per row):
-      -- 3 ByteBus entries (opcode 4, sub-op 8): u16 range-check
+      -- 3 ByteBus entries (opcode 5, sub-op 8): u16 range-check
       --   `value_0`, `value_1`, and `2 * value_1 - msb * 65536`, all
-      --   gated by `-is_subw`.
-      -- 1 ALU entry (opcode 3, sub-op 41 = Opcode::SUBW): carry the
-      --   operation, gated by `+is_subw`. Format: [3, opcode_field=41,
+      --   gated by `+is_subw`.
+      -- 1 ALU entry (opcode 4, sub-op 41 = Opcode::SUBW): carry the
+      --   operation, gated by `-is_subw`. Format: [4, opcode_field=41,
       --                                            value_0, value_1,
       --                                            msb*65535, msb*65535,
       --                                            operand_1_0..3 (b),
@@ -231,17 +231,17 @@ namespace SubwChip.ConstraintsAndBuses
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_SubwChip FKB ExtF) (row : ℕ) : List (FKB × List FKB) :=
-        [ (-(air.cols.values.is_subw row 0),
-            [4, 8, (air.cols.values.subw_operation.value_0 row 0), 0, 0, 0]),
-          (-(air.cols.values.is_subw row 0),
-            [4, 8, (air.cols.values.subw_operation.value_1 row 0), 0, 0, 0]),
-          (-(air.cols.values.is_subw row 0),
-            [4, 8,
+        [ ((air.cols.values.is_subw row 0),
+            [5, 8, (air.cols.values.subw_operation.value_0 row 0), 0, 0, 0]),
+          ((air.cols.values.is_subw row 0),
+            [5, 8, (air.cols.values.subw_operation.value_1 row 0), 0, 0, 0]),
+          ((air.cols.values.is_subw row 0),
+            [5, 8,
               2 * (air.cols.values.subw_operation.value_1 row 0)
                 - (air.cols.values.subw_operation.msb.msb row 0) * 65536,
               0, 0, 0]),
-          ((air.cols.values.is_subw row 0),
-            [3, 41,
+          (-(air.cols.values.is_subw row 0),
+            [4, 41,
               (air.cols.values.subw_operation.value_0 row 0),
               (air.cols.values.subw_operation.value_1 row 0),
               (air.cols.values.subw_operation.msb.msb row 0) * 65535,

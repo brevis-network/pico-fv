@@ -1,0 +1,17 @@
+[package]
+name = "pico-fv-extractor"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[dependencies]
+pico-vm = { git = "https://github.com/brevis-network/pico.git", rev = "2acc7c1828fb4ec1bed5963511bb370870c5b608" }
+pico-mle-core = { git = "https://github.com/brevis-network/pico.git", rev = "2acc7c1828fb4ec1bed5963511bb370870c5b608" }
+
+# Same Plonky3 fork and rev as the pinned pico, so the field and AIR types unify.
+p3-air = { git = "https://github.com/brevis-network/Plonky3.git", rev = "da6ca12c" }
+p3-field = { git = "https://github.com/brevis-network/Plonky3.git", rev = "da6ca12c" }
+p3-koala-bear = { git = "https://github.com/brevis-network/Plonky3.git", rev = "da6ca12c" }
+
+[workspace]

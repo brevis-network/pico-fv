@@ -15,8 +15,8 @@ set_option linter.unusedVariables false
 # LtChip (64-bit)
 
 Lean formalisation of `LtCols` / `LtValueCols` from
-`vm/src/chips/chips/alu/lt/columns.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
+`vm/src/chips/chips/alu/lt/columns.rs` at Pico v3.1.1
+(`2acc7c1828fb4ec1bed5963511bb370870c5b608`).
 
 ```rust
 pub struct LtCols<F: Copy> {
@@ -30,15 +30,17 @@ pub struct LtValueCols<F: Copy> {
     pub b: Word<F>,
     pub c: Word<F>,
     pub lt_signed: LtSignedGadget<F>,
+    pub is_cmp: F,
 }
 ```
 
-Layout: 1 + 1 + 4 + 4 + 4 + 10 (`LtSignedGadget`) = 24 columns. This matches
-the extraction at `Extraction/LtChip.lean`.
+Layout: 1 + 1 + 4 + 4 + 4 + 10 (`LtSignedGadget`) + 1 = 25 columns. This matches
+the extraction at `Extraction/LtChip.lean`. `is_cmp` marks a merged branch-comparison row,
+which also puts `[b > c]` in `a_1` and adds `LT_CMP_OPCODE_TAG = 256` to the ALU-bus opcode.
 -/
 
 -- ============================================================================
--- LtValueCols (24 columns)
+-- LtValueCols (25 columns)
 -- ============================================================================
 
 #define_subair "LtValueCols" using "pico_encapsulation" where
@@ -57,20 +59,21 @@ the extraction at `Extraction/LtChip.lean`.
   Column["c_2"]
   Column["c_3"]
   SubAir["lt_signed": "LtSignedGadget" width := 10]
+  Column["is_cmp"]
 
 -- ============================================================================
--- LtCols (24 columns)
+-- LtCols (25 columns)
 -- ============================================================================
 
 #define_subair "LtCols" using "pico_encapsulation" where
-  SubAir["values": "LtValueCols" width := 24]
+  SubAir["values": "LtValueCols" width := 25]
 
 -- ============================================================================
 -- Air definition
 -- ============================================================================
 
 #define_air "LtChip" using "pico_encapsulation" where
-  MainSubAir["cols": "LtCols" width := 24]
+  MainSubAir["cols": "LtCols" width := 25]
 
 -- ============================================================================
 -- Computed values

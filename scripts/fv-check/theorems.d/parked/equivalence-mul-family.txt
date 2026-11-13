@@ -1,0 +1,5 @@
+Equivalence.equivalence_MUL
+Equivalence.equivalence_MULH
+Equivalence.equivalence_MULHSU
+Equivalence.equivalence_MULHU
+Equivalence.equivalence_MULW

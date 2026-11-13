@@ -135,7 +135,7 @@ namespace AddChip.Spec
   -- The chip emits only `ByteBus` and `ALUBus` entries. `ByteBus` has no
   -- chip-external constraints; for `ALUBus`, the externals (opcode-range
   -- + conditional operand-range for shifts/MUL/DIV/W-variants) don't
-  -- apply when the chip asserts an entry (multiplicity = +is_add), so
+  -- apply when the chip asserts an entry (multiplicity = -is_add), so
   -- `ext_assert` is trivially `True`.
   -- =====================================================================
 
@@ -159,7 +159,7 @@ namespace AddChip.Spec
 
   -- =====================================================================
   -- Mirrors `RV32IM.AddSubAir.Spec.wf_asrt`:
-  --   * 4 byte entries (multiplicity `-is_add` ∈ {0, -1}) never trigger
+  --   * 4 byte entries (multiplicity `+is_add` ∈ {0, 1}) never trigger
   --     `wf_assert_cond` (= multiplicity 1), so they're vacuously
   --     well-formed.
   --   * 1 ALU entry (multiplicity `is_add` ∈ {0, 1}) is well-formed by
@@ -182,7 +182,7 @@ namespace AddChip.Spec
     -- ALU entry: apply spec when is_add = 1
     . intro h_is_add
       exact spec air row h_ext_asm h_wf_asm h_constraints h_is_add
-    -- Byte entries: vacuous (multiplicity = -is_add never equals 1)
+    -- Byte entries: vacuous (multiplicity = +is_add never equals -1)
     . split_ands <;> intro h <;> exfalso <;> grind
 
 end AddChip.Spec

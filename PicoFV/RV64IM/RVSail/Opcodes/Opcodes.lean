@@ -15,6 +15,7 @@ import PicoFV.RV64IM.RVSail.Opcodes.div
 import PicoFV.RV64IM.RVSail.Opcodes.divu
 import PicoFV.RV64IM.RVSail.Opcodes.divuw
 import PicoFV.RV64IM.RVSail.Opcodes.divw
+import PicoFV.RV64IM.RVSail.Opcodes.fence
 import PicoFV.RV64IM.RVSail.Opcodes.jal
 import PicoFV.RV64IM.RVSail.Opcodes.jalr
 import PicoFV.RV64IM.RVSail.Opcodes.lui

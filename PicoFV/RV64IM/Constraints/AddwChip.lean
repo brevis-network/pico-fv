@@ -42,10 +42,10 @@ The 5+1 algebraic constraints emitted by the chip are:
 - `msb ∈ {0, 1}`.
 
 The bus interactions are:
-- 3 ByteBus entries (opcode 4, sub-op 8) — u16 range-check
+- 3 ByteBus entries (opcode 5, sub-op 8) — u16 range-check
   `value_0`, `value_1`, and `2 * value_1 - msb * 65536` (this third
   one pins `msb` to bit-15 of `value_1`).
-- 1 ALU entry (opcode 3, sub-op 40 = `Opcode::ADDW`) — issued only
+- 1 ALU entry (opcode 4, sub-op 40 = `Opcode::ADDW`) — issued only
   when `is_addw = 1` and carries
   `(value_0, value_1, msb*65535, msb*65535, operand_1, operand_2)`.
   The high-two result limbs are filled in by the chip directly as
@@ -73,7 +73,7 @@ namespace AddwChip
     ({
       Program := [],
       ALU := List.map ALUBusEntry.deserialise [
-        (is_addw,
+        (-(is_addw),
           #v[ 40,
               value_0, value_1, msb * 65535, msb * 65535,
               operand_1_0, operand_1_1, operand_1_2, operand_1_3,
@@ -217,11 +217,11 @@ namespace AddwChip.ConstraintsAndBuses
 
       -- =====================================================================
       -- Bus interactions emitted by `AddwChip::eval` (per row):
-      -- 3 ByteBus entries (opcode 4, sub-op 8): u16 range-check
+      -- 3 ByteBus entries (opcode 5, sub-op 8): u16 range-check
       --   `value_0`, `value_1`, and `2 * value_1 - msb * 65536`, all
-      --   gated by `-is_addw`.
-      -- 1 ALU entry (opcode 3, sub-op 40 = Opcode::ADDW): carry the
-      --   operation, gated by `+is_addw`. Format: [3, opcode_field=40,
+      --   gated by `+is_addw`.
+      -- 1 ALU entry (opcode 4, sub-op 40 = Opcode::ADDW): carry the
+      --   operation, gated by `-is_addw`. Format: [4, opcode_field=40,
       --                                            value_0, value_1,
       --                                            msb*65535, msb*65535,
       --                                            operand_1_0..3 (b),
@@ -230,17 +230,17 @@ namespace AddwChip.ConstraintsAndBuses
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_AddwChip FKB ExtF) (row : ℕ) : List (FKB × List FKB) :=
-        [ (-(air.cols.values.is_addw row 0),
-            [4, 8, (air.cols.values.addw_operation.value_0 row 0), 0, 0, 0]),
-          (-(air.cols.values.is_addw row 0),
-            [4, 8, (air.cols.values.addw_operation.value_1 row 0), 0, 0, 0]),
-          (-(air.cols.values.is_addw row 0),
-            [4, 8,
+        [ ((air.cols.values.is_addw row 0),
+            [5, 8, (air.cols.values.addw_operation.value_0 row 0), 0, 0, 0]),
+          ((air.cols.values.is_addw row 0),
+            [5, 8, (air.cols.values.addw_operation.value_1 row 0), 0, 0, 0]),
+          ((air.cols.values.is_addw row 0),
+            [5, 8,
               2 * (air.cols.values.addw_operation.value_1 row 0)
                 - (air.cols.values.addw_operation.msb.msb row 0) * 65536,
               0, 0, 0]),
-          ((air.cols.values.is_addw row 0),
-            [3, 40,
+          (-(air.cols.values.is_addw row 0),
+            [4, 40,
               (air.cols.values.addw_operation.value_0 row 0),
               (air.cols.values.addw_operation.value_1 row 0),
               (air.cols.values.addw_operation.msb.msb row 0) * 65535,

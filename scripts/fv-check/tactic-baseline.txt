@@ -1,0 +1,16 @@
+7 PicoFV/Fundamentals/Core.lean
+1 PicoFV/Fundamentals/KoalaBear.lean
+39 PicoFV/Fundamentals/Word.lean
+1 PicoFV/RV64IM/Equivalence/Addiw.lean
+6 PicoFV/RV64IM/Equivalence/BType.lean
+6 PicoFV/RV64IM/Equivalence/IType.lean
+8 PicoFV/RV64IM/Equivalence/Jumps.lean
+7 PicoFV/RV64IM/Equivalence/Loads.lean
+3 PicoFV/RV64IM/Equivalence/ShiftIOp.lean
+3 PicoFV/RV64IM/Equivalence/ShiftIWOp.lean
+4 PicoFV/RV64IM/Equivalence/Stores.lean
+2 PicoFV/RV64IM/Equivalence/UType.lean
+3 PicoFV/RV64IM/RVSail/Execution.lean
+1 PicoFV/RV64IM/Spec/BitwiseChip.lean
+1 PicoFV/RV64IM/Spec/DivRemChip.lean
+73 PicoFV/RV64IM/Spec/MemoryReadWriteChip.lean

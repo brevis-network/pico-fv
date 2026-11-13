@@ -456,15 +456,15 @@ namespace RV64IM
                       + 65536 * 65536 * state_row.ptr_2.val
             if _ : addr < 32 then
               let register : regidx := .Regidx (BitVec.ofNatLT (w := 5) addr (by omega))
-              if (state_row.multiplicity = -1) then
+              if (state_row.multiplicity = 1) then
                 .some (.ReadReg register value)
-              else if (state_row.multiplicity = 1) then
+              else if (state_row.multiplicity = -1) then
                 .some (.WriteReg register value)
               else .none
             else
-              if (state_row.multiplicity = -1) then
+              if (state_row.multiplicity = 1) then
                 .some (.ReadMem addr .Double value)
-              else if (state_row.multiplicity = 1) then
+              else if (state_row.multiplicity = -1) then
                 .some (.WriteMem addr .Double value)
               else .none
         ) row.State

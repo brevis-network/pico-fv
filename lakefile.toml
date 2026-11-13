@@ -1,7 +1,7 @@
 name = "pico-fv"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["PicoFV32"]
+defaultTargets = ["PicoFV64"]
 moreLeanArgs = ["--tstack=400000"]
 
 [leanOptions]
@@ -24,9 +24,6 @@ rev = "v4.28.0-rc1"
 
 [[lean_lib]]
 name = "PicoFV"
-
-[[lean_lib]]
-name = "PicoFV32"
 
 [[lean_lib]]
 name = "PicoFV64"

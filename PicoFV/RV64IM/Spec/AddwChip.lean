@@ -134,7 +134,7 @@ namespace AddwChip.Spec
   -- The chip emits only `ByteBus` and `ALUBus` entries. `ByteBus` has no
   -- chip-external constraints; for `ALUBus`, the externals (opcode-range
   -- + conditional operand-range for shifts/MUL/DIV/W-variants) don't
-  -- apply when the chip asserts an entry (multiplicity = +is_addw), so
+  -- apply when the chip asserts an entry (multiplicity = -is_addw), so
   -- `ext_assert` is trivially `True`.
   -- =====================================================================
 
@@ -159,7 +159,7 @@ namespace AddwChip.Spec
 
   -- =====================================================================
   -- Mirrors `AddChip.Spec.wf_asrt`:
-  --   * 3 byte entries (multiplicity `-is_addw` ∈ {0, -1}) never trigger
+  --   * 3 byte entries (multiplicity `+is_addw` ∈ {0, 1}) never trigger
   --     `wf_assert_cond` (= multiplicity 1), so they're vacuously
   --     well-formed.
   --   * 1 ALU entry (multiplicity `is_addw` ∈ {0, 1}) is well-formed by
@@ -183,7 +183,7 @@ namespace AddwChip.Spec
     -- ALU entry: apply spec when is_addw = 1
     . intro h_is_addw
       exact spec air row h_ext_asm h_wf_asm h_constraints h_is_addw
-    -- Byte entries: vacuous (multiplicity = -is_addw never equals 1)
+    -- Byte entries: vacuous (multiplicity = +is_addw never equals -1)
     . split_ands <;> intro h <;> exfalso <;> grind
 
 end AddwChip.Spec

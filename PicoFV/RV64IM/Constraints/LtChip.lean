@@ -12,8 +12,8 @@ set_option maxHeartbeats 1_000_000_000
 
 The `ConstraintsAndBuses` namespace below restates each constraint and
 the list of bus interactions emitted by `LtChip::eval`
-(`vm/src/chips/chips/alu/lt/constraints.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`) in terms of the
+(`vm/src/chips/chips/alu/lt/constraints.rs` at Pico v3.1.1,
+`2acc7c1828fb4ec1bed5963511bb370870c5b608`) in terms of the
 `Valid_LtChip` air's named accessors, plus a `_equiv` lemma per
 constraint proving equality with the raw form in
 `PicoFV.RV64IM.Extraction.LtChip`.
@@ -24,7 +24,7 @@ The chip layout (matching `LtValueCols<F>`) is:
 |--------|-----------------------------------------------------------|
 | 0      | `is_slt`                                                  |
 | 1      | `is_slt_u`                                                |
-| 2..5   | `a_0..a_3` (result word — only `a_0` is the bit)          |
+| 2..5   | `a_0..a_3` (result: `a_0` = bit; `a_1` = `[b > c]` if `is_cmp`) |
 | 6..9   | `b_0..b_3` (first operand)                                |
 | 10..13 | `c_0..c_3` (second operand)                               |
 | 14..17 | `lt_signed.result.u16_flags_0..3`                         |
@@ -34,15 +34,18 @@ The chip layout (matching `LtValueCols<F>`) is:
 | 21     | `lt_signed.result.bit`                                    |
 | 22     | `lt_signed.b_msb.msb`                                     |
 | 23     | `lt_signed.c_msb.msb`                                     |
+| 24     | `is_cmp`                                                  |
 
 The chip dispatches `LtSignedGadget` with `is_signed = is_slt` and
 `is_real = is_slt + is_slt_u`, with the gadget's `a` = chip's `b` and
 gadget's `b` = chip's `c`. The chip's own substantive constraints are
-`a_1 = a_2 = a_3 = 0` and `(is_slt + is_slt_u) * (a_0 - bit) = 0`,
-plus chip-level booleans on `is_slt`, `is_slt_u`, and their sum.
+`a_1 = is_cmp * (Σ u16_flags - bit)`, `a_2 = a_3 = 0` and
+`(is_slt + is_slt_u) * (a_0 - bit) = 0`, plus chip-level booleans on
+`is_slt`, `is_slt_u`, their sum and `is_cmp` (zero on padding rows).
 
 The bus interactions are 3 byte entries (from the gadget) plus one ALU
-entry (opcode 3, sub-op `is_slt*8 + is_slt_u*9` ∈ {8 (SLT), 9 (SLTU)}).
+entry (opcode 4, sub-op `is_slt*8 + is_slt_u*9 + is_cmp*256`: 8 (SLT) and
+9 (SLTU), or 264 / 265 on a merged branch-comparison row).
 -/
 
 namespace LtChip
@@ -54,9 +57,10 @@ namespace LtChip
       (the 3 byte-bus entries: the two `U16MSBGadget` consistency
       checks on `b_3`/`c_3`, plus the `LtWordU16Gadget` Δ + bit·65536
       comparison entry) concatenated with the chip-specific `ALUBus`
-      entry for SLT/SLTU. -/
+      entry for SLT/SLTU (opcode plus `LT_CMP_OPCODE_TAG = 256` on a merged
+      branch-comparison row). -/
   def AbsBuses
-    (is_slt is_slt_u
+    (is_slt is_slt_u is_cmp
      a_0 a_1 a_2 a_3
      b_0 b_1 b_2 b_3
      c_0 c_1 c_2 c_3
@@ -70,8 +74,8 @@ namespace LtChip
     ({
       Program := [],
       ALU := List.map ALUBusEntry.deserialise [
-        (is_slt + is_slt_u,
-          #v[ is_slt * 8 + is_slt_u * 9,
+        (-(is_slt + is_slt_u),
+          #v[ is_slt * 8 + is_slt_u * 9 + is_cmp * 256,
               a_0, a_1, a_2, a_3,
               b_0, b_1, b_2, b_3,
               c_0, c_1, c_2, c_3 ])
@@ -132,14 +136,12 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 3: is_slt boolean (duplicate from LtSignedGadget's
-      -- `(is_real - 1) * is_signed = 0` flattened with the booleans
-      -- emitted by the inner gadgets — Pico re-emits is_slt boolean).
+      -- Constraint 3: is_cmp is boolean (merged branch-comparison row).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_3 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.values.is_slt row 0) * ((air.cols.values.is_slt row 0) - 1)) = 0
+        ((air.cols.values.is_cmp row 0) * ((air.cols.values.is_cmp row 0) - 1)) = 0
 
       @[simp]
       lemma constraint_3_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -147,13 +149,13 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 4: is_real = is_slt + is_slt_u boolean (duplicate of 2).
+      -- Constraint 4: is_cmp is zero on padding rows (`is_real = 0`).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_4 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) *
-          (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) - 1)) = 0
+        ((((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) - 1) *
+          (air.cols.values.is_cmp row 0)) = 0
 
       @[simp]
       lemma constraint_4_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -161,14 +163,13 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 5: `(is_real - 1) * is_signed = 0`
-      -- (LtSignedGadget's own constraint: signed compares are only real rows).
+      -- Constraint 5: is_slt boolean (LtSignedGadget's
+      -- `assert_bool(is_signed)`, with `is_signed = is_slt`).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_5 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        ((((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) - 1) *
-          (air.cols.values.is_slt row 0)) = 0
+        ((air.cols.values.is_slt row 0) * ((air.cols.values.is_slt row 0) - 1)) = 0
 
       @[simp]
       lemma constraint_5_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -176,13 +177,14 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 6: is_slt boolean (duplicate — U16MSBGadget's
-      -- `is_real * (is_real - 1) = 0` with is_real = is_signed = is_slt).
+      -- Constraint 6: is_real = is_slt + is_slt_u boolean (LtSignedGadget's
+      -- `assert_bool(is_real)`).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_6 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.values.is_slt row 0) * ((air.cols.values.is_slt row 0) - 1)) = 0
+        (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) *
+          (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) - 1)) = 0
 
       @[simp]
       lemma constraint_6_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -190,12 +192,14 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 7: b_msb is boolean (from first U16MSBGadget).
+      -- Constraint 7: `(is_real - 1) * is_signed = 0`
+      -- (LtSignedGadget's own constraint: signed compares are only real rows).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_7 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.values.lt_signed.b_msb.msb row 0) * ((air.cols.values.lt_signed.b_msb.msb row 0) - 1)) = 0
+        ((((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) - 1) *
+          (air.cols.values.is_slt row 0)) = 0
 
       @[simp]
       lemma constraint_7_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -203,8 +207,8 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 8: is_slt boolean (duplicate — second U16MSBGadget's
-      -- own `is_real * (is_real - 1) = 0`).
+      -- Constraint 8: is_slt boolean (duplicate — U16MSBGadget's
+      -- `is_real * (is_real - 1) = 0` with is_real = is_signed = is_slt).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
@@ -217,12 +221,12 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 9: c_msb is boolean (from second U16MSBGadget).
+      -- Constraint 9: b_msb is boolean (from first U16MSBGadget).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_9 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.values.lt_signed.c_msb.msb row 0) * ((air.cols.values.lt_signed.c_msb.msb row 0) - 1)) = 0
+        ((air.cols.values.lt_signed.b_msb.msb row 0) * ((air.cols.values.lt_signed.b_msb.msb row 0) - 1)) = 0
 
       @[simp]
       lemma constraint_9_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -230,13 +234,13 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 10: `(is_signed - 1) * b_msb = 0`
-      -- (LtSignedGadget's own: unsigned compares zero out b_msb).
+      -- Constraint 10: is_slt boolean (duplicate — second U16MSBGadget's
+      -- own `is_real * (is_real - 1) = 0`).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_10 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        (((air.cols.values.is_slt row 0) - 1) * (air.cols.values.lt_signed.b_msb.msb row 0)) = 0
+        ((air.cols.values.is_slt row 0) * ((air.cols.values.is_slt row 0) - 1)) = 0
 
       @[simp]
       lemma constraint_10_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -244,12 +248,12 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 11: `(is_signed - 1) * c_msb = 0`.
+      -- Constraint 11: c_msb is boolean (from second U16MSBGadget).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_11 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        (((air.cols.values.is_slt row 0) - 1) * (air.cols.values.lt_signed.c_msb.msb row 0)) = 0
+        ((air.cols.values.lt_signed.c_msb.msb row 0) * ((air.cols.values.lt_signed.c_msb.msb row 0) - 1)) = 0
 
       @[simp]
       lemma constraint_11_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -257,14 +261,13 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 12: is_real = is_slt + is_slt_u boolean (duplicate from
-      -- LtWordU16Gadget's first `is_real * (is_real - 1) = 0`).
+      -- Constraint 12: `(is_signed - 1) * b_msb = 0`
+      -- (LtSignedGadget's own: unsigned compares zero out b_msb).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_12 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) *
-          (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) - 1)) = 0
+        (((air.cols.values.is_slt row 0) - 1) * (air.cols.values.lt_signed.b_msb.msb row 0)) = 0
 
       @[simp]
       lemma constraint_12_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -272,33 +275,41 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraints 13..16: `u16_flags_i ∈ {0, 1}` for i = 0..3.
+      -- Constraint 13: `(is_signed - 1) * c_msb = 0`.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_13 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.values.lt_signed.result.u16_flags_0 row 0) *
-          ((air.cols.values.lt_signed.result.u16_flags_0 row 0) - 1)) = 0
+        (((air.cols.values.is_slt row 0) - 1) * (air.cols.values.lt_signed.c_msb.msb row 0)) = 0
 
       @[simp]
       lemma constraint_13_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
       : LtChip.Extraction.constraint_13 air row ↔ constraint_13 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- =====================================================================
+      -- Constraint 14: is_real = is_slt + is_slt_u boolean (duplicate from
+      -- LtWordU16Gadget's first `is_real * (is_real - 1) = 0`).
+      -- =====================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_14 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.values.lt_signed.result.u16_flags_1 row 0) *
-          ((air.cols.values.lt_signed.result.u16_flags_1 row 0) - 1)) = 0
+        (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) *
+          (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) - 1)) = 0
 
       @[simp]
       lemma constraint_14_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
       : LtChip.Extraction.constraint_14 air row ↔ constraint_14 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      -- =====================================================================
+      -- Constraints 15..18: `u16_flags_i ∈ {0, 1}` for i = 0..3.
+      -- =====================================================================
+
       @[constraint_and_interaction_simplification]
       def constraint_15 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.values.lt_signed.result.u16_flags_2 row 0) *
-          ((air.cols.values.lt_signed.result.u16_flags_2 row 0) - 1)) = 0
+        ((air.cols.values.lt_signed.result.u16_flags_0 row 0) *
+          ((air.cols.values.lt_signed.result.u16_flags_0 row 0) - 1)) = 0
 
       @[simp]
       lemma constraint_15_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -307,20 +318,40 @@ namespace LtChip.ConstraintsAndBuses
 
       @[constraint_and_interaction_simplification]
       def constraint_16 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.values.lt_signed.result.u16_flags_3 row 0) *
-          ((air.cols.values.lt_signed.result.u16_flags_3 row 0) - 1)) = 0
+        ((air.cols.values.lt_signed.result.u16_flags_1 row 0) *
+          ((air.cols.values.lt_signed.result.u16_flags_1 row 0) - 1)) = 0
 
       @[simp]
       lemma constraint_16_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
       : LtChip.Extraction.constraint_16 air row ↔ constraint_16 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      @[constraint_and_interaction_simplification]
+      def constraint_17 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
+        ((air.cols.values.lt_signed.result.u16_flags_2 row 0) *
+          ((air.cols.values.lt_signed.result.u16_flags_2 row 0) - 1)) = 0
+
+      @[simp]
+      lemma constraint_17_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
+      : LtChip.Extraction.constraint_17 air row ↔ constraint_17 air row
+      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      @[constraint_and_interaction_simplification]
+      def constraint_18 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
+        ((air.cols.values.lt_signed.result.u16_flags_3 row 0) *
+          ((air.cols.values.lt_signed.result.u16_flags_3 row 0) - 1)) = 0
+
+      @[simp]
+      lemma constraint_18_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
+      : LtChip.Extraction.constraint_18 air row ↔ constraint_18 air row
+      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
       -- =====================================================================
-      -- Constraint 17: `(Σ u16_flags) ∈ {0, 1}` — one-hot.
+      -- Constraint 19: `(Σ u16_flags) ∈ {0, 1}` — one-hot.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
-      def constraint_17 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
+      def constraint_19 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
         (((((air.cols.values.lt_signed.result.u16_flags_0 row 0) +
               (air.cols.values.lt_signed.result.u16_flags_1 row 0)) +
              (air.cols.values.lt_signed.result.u16_flags_2 row 0)) +
@@ -331,18 +362,18 @@ namespace LtChip.ConstraintsAndBuses
             (air.cols.values.lt_signed.result.u16_flags_3 row 0) - 1)) = 0
 
       @[simp]
-      lemma constraint_17_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
-      : LtChip.Extraction.constraint_17 air row ↔ constraint_17 air row
+      lemma constraint_19_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
+      : LtChip.Extraction.constraint_19 air row ↔ constraint_19 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 18: limb-3 MSDL check:
+      -- Constraint 20: limb-3 MSDL check:
       --   `(is_real - u16_flags_3) * (shifted_b_3 - shifted_c_3) = 0`
       -- where `shifted_x_3 = x_3 + is_slt*32768 - 65536*x_msb`.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
-      def constraint_18 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
+      def constraint_20 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
         ((((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) -
             (0 + (air.cols.values.lt_signed.result.u16_flags_3 row 0))) *
           ((((air.cols.values.b_3 row 0) + ((air.cols.values.is_slt row 0) * 32768)) -
@@ -351,34 +382,34 @@ namespace LtChip.ConstraintsAndBuses
             (65536 * (air.cols.values.lt_signed.c_msb.msb row 0))))) = 0
 
       @[simp]
-      lemma constraint_18_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
-      : LtChip.Extraction.constraint_18 air row ↔ constraint_18 air row
+      lemma constraint_20_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
+      : LtChip.Extraction.constraint_20 air row ↔ constraint_20 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 19: limb-2 MSDL check
+      -- Constraint 21: limb-2 MSDL check
       --   `(is_real - (u16_flags_3 + u16_flags_2)) * (b_2 - c_2) = 0`.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
-      def constraint_19 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
+      def constraint_21 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
         ((((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) -
             ((0 + (air.cols.values.lt_signed.result.u16_flags_3 row 0)) +
              (air.cols.values.lt_signed.result.u16_flags_2 row 0))) *
           ((air.cols.values.b_2 row 0) - (air.cols.values.c_2 row 0))) = 0
 
       @[simp]
-      lemma constraint_19_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
-      : LtChip.Extraction.constraint_19 air row ↔ constraint_19 air row
+      lemma constraint_21_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
+      : LtChip.Extraction.constraint_21 air row ↔ constraint_21 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 20: limb-1 MSDL check
+      -- Constraint 22: limb-1 MSDL check
       --   `(is_real - (u16_flags_3 + u16_flags_2 + u16_flags_1)) * (b_1 - c_1) = 0`.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
-      def constraint_20 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
+      def constraint_22 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
         ((((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) -
             (((0 + (air.cols.values.lt_signed.result.u16_flags_3 row 0)) +
               (air.cols.values.lt_signed.result.u16_flags_2 row 0)) +
@@ -386,17 +417,17 @@ namespace LtChip.ConstraintsAndBuses
           ((air.cols.values.b_1 row 0) - (air.cols.values.c_1 row 0))) = 0
 
       @[simp]
-      lemma constraint_20_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
-      : LtChip.Extraction.constraint_20 air row ↔ constraint_20 air row
+      lemma constraint_22_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
+      : LtChip.Extraction.constraint_22 air row ↔ constraint_22 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 21: limb-0 MSDL check
+      -- Constraint 23: limb-0 MSDL check
       --   `(is_real - Σ u16_flags) * (b_0 - c_0) = 0`.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
-      def constraint_21 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
+      def constraint_23 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
         ((((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) -
             ((((0 + (air.cols.values.lt_signed.result.u16_flags_3 row 0)) +
                (air.cols.values.lt_signed.result.u16_flags_2 row 0)) +
@@ -405,17 +436,17 @@ namespace LtChip.ConstraintsAndBuses
           ((air.cols.values.b_0 row 0) - (air.cols.values.c_0 row 0))) = 0
 
       @[simp]
-      lemma constraint_21_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
-      : LtChip.Extraction.constraint_21 air row ↔ constraint_21 air row
+      lemma constraint_23_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
+      : LtChip.Extraction.constraint_23 air row ↔ constraint_23 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 22: `comparison_limbs_0 = Σ shifted_b_i · u16_flags_i`
+      -- Constraint 24: `comparison_limbs_0 = Σ shifted_b_i · u16_flags_i`
       -- (with shifted_b_3 = b_3 + is_slt*32768 - 65536*b_msb, others = b_i).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
-      def constraint_22 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
+      def constraint_24 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
         (((((0 +
               ((((air.cols.values.b_3 row 0) + ((air.cols.values.is_slt row 0) * 32768)) -
                  (65536 * (air.cols.values.lt_signed.b_msb.msb row 0))) *
@@ -426,16 +457,16 @@ namespace LtChip.ConstraintsAndBuses
           (air.cols.values.lt_signed.result.comparison_limbs_0 row 0)) = 0
 
       @[simp]
-      lemma constraint_22_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
-      : LtChip.Extraction.constraint_22 air row ↔ constraint_22 air row
+      lemma constraint_24_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
+      : LtChip.Extraction.constraint_24 air row ↔ constraint_24 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 23: `comparison_limbs_1 = Σ shifted_c_i · u16_flags_i`.
+      -- Constraint 25: `comparison_limbs_1 = Σ shifted_c_i · u16_flags_i`.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
-      def constraint_23 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
+      def constraint_25 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
         (((((0 +
               ((((air.cols.values.c_3 row 0) + ((air.cols.values.is_slt row 0) * 32768)) -
                  (65536 * (air.cols.values.lt_signed.c_msb.msb row 0))) *
@@ -446,17 +477,17 @@ namespace LtChip.ConstraintsAndBuses
           (air.cols.values.lt_signed.result.comparison_limbs_1 row 0)) = 0
 
       @[simp]
-      lemma constraint_23_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
-      : LtChip.Extraction.constraint_23 air row ↔ constraint_23 air row
+      lemma constraint_25_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
+      : LtChip.Extraction.constraint_25 air row ↔ constraint_25 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 24: differing-limb inverse witness
+      -- Constraint 26: differing-limb inverse witness
       --   `(1 - Σ u16_flags - 1) * (not_eq_inv * (comp_0 - comp_1) - is_real) = 0`.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
-      def constraint_24 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
+      def constraint_26 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
         (((1 -
             ((((air.cols.values.lt_signed.result.u16_flags_0 row 0) +
                 (air.cols.values.lt_signed.result.u16_flags_1 row 0)) +
@@ -468,46 +499,19 @@ namespace LtChip.ConstraintsAndBuses
             ((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)))) = 0
 
       @[simp]
-      lemma constraint_24_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
-      : LtChip.Extraction.constraint_24 air row ↔ constraint_24 air row
-      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
-
-      -- =====================================================================
-      -- Constraint 25: is_real = is_slt + is_slt_u boolean (duplicate from
-      -- LtWordU16Gadget's second `is_real * (is_real - 1) = 0`).
-      -- =====================================================================
-
-      @[constraint_and_interaction_simplification]
-      def constraint_25 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) *
-          (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) - 1)) = 0
-
-      @[simp]
-      lemma constraint_25_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
-      : LtChip.Extraction.constraint_25 air row ↔ constraint_25 air row
-      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
-
-      -- =====================================================================
-      -- Constraint 26: bit ∈ {0, 1} (from LtWordU16Gadget).
-      -- =====================================================================
-
-      @[constraint_and_interaction_simplification]
-      def constraint_26 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        ((air.cols.values.lt_signed.result.bit row 0) *
-          ((air.cols.values.lt_signed.result.bit row 0) - 1)) = 0
-
-      @[simp]
       lemma constraint_26_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
       : LtChip.Extraction.constraint_26 air row ↔ constraint_26 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 27: `a_1 = 0` (chip's own — only `a_0` is the bit).
+      -- Constraint 27: is_real = is_slt + is_slt_u boolean (duplicate from
+      -- LtWordU16Gadget's second `is_real * (is_real - 1) = 0`).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_27 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        (air.cols.values.a_1 row 0) = 0
+        (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) *
+          (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) - 1)) = 0
 
       @[simp]
       lemma constraint_27_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -515,12 +519,13 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 28: `a_2 = 0`.
+      -- Constraint 28: bit ∈ {0, 1} (from LtWordU16Gadget).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_28 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        (air.cols.values.a_2 row 0) = 0
+        ((air.cols.values.lt_signed.result.bit row 0) *
+          ((air.cols.values.lt_signed.result.bit row 0) - 1)) = 0
 
       @[simp]
       lemma constraint_28_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -528,12 +533,19 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 29: `a_3 = 0`.
+      -- Constraint 29: `a_1 = is_cmp * (Σ u16_flags - bit)`: the strict
+      -- "greater than" bit on merged branch-comparison rows, zero otherwise.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_29 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        (air.cols.values.a_3 row 0) = 0
+        ((air.cols.values.a_1 row 0) -
+          ((air.cols.values.is_cmp row 0) *
+            (((((air.cols.values.lt_signed.result.u16_flags_0 row 0)
+                + (air.cols.values.lt_signed.result.u16_flags_1 row 0))
+                + (air.cols.values.lt_signed.result.u16_flags_2 row 0))
+                + (air.cols.values.lt_signed.result.u16_flags_3 row 0))
+              - (air.cols.values.lt_signed.result.bit row 0)))) = 0
 
       @[simp]
       lemma constraint_29_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -541,14 +553,12 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Constraint 30: `(is_slt + is_slt_u) * (a_0 - bit) = 0` — when
-      -- `is_real = 1`, `a_0` equals the gadget's compare bit.
+      -- Constraint 30: `a_2 = 0`.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def constraint_30 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
-        (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) *
-          ((air.cols.values.a_0 row 0) - (air.cols.values.lt_signed.result.bit row 0))) = 0
+        (air.cols.values.a_2 row 0) = 0
 
       @[simp]
       lemma constraint_30_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
@@ -556,23 +566,51 @@ namespace LtChip.ConstraintsAndBuses
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
       -- =====================================================================
-      -- Aggregate list of all 31 row constraints.
+      -- Constraint 31: `a_3 = 0`.
+      -- =====================================================================
+
+      @[constraint_and_interaction_simplification]
+      def constraint_31 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
+        (air.cols.values.a_3 row 0) = 0
+
+      @[simp]
+      lemma constraint_31_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
+      : LtChip.Extraction.constraint_31 air row ↔ constraint_31 air row
+      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- =====================================================================
+      -- Constraint 32: `(is_slt + is_slt_u) * (a_0 - bit) = 0` — when
+      -- `is_real = 1`, `a_0` equals the gadget's compare bit.
+      -- =====================================================================
+
+      @[constraint_and_interaction_simplification]
+      def constraint_32 (air : Valid_LtChip F ExtF) (row : ℕ) : Prop :=
+        (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)) *
+          ((air.cols.values.a_0 row 0) - (air.cols.values.lt_signed.result.bit row 0))) = 0
+
+      @[simp]
+      lemma constraint_32_equiv (air : Valid_LtChip F ExtF) (row : ℕ)
+      : LtChip.Extraction.constraint_32 air row ↔ constraint_32 air row
+      := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
+
+      -- =====================================================================
+      -- Aggregate list of all 33 row constraints.
       -- =====================================================================
 
       @[simp]
       def row_constraint_list (air : Valid_LtChip F ExtF) (row : ℕ) : List Prop :=
         [
           constraint_0 air row, constraint_1 air row, constraint_2 air row,
-          constraint_3 air row, constraint_4 air row, constraint_5 air row,
-          constraint_6 air row, constraint_7 air row, constraint_8 air row,
-          constraint_9 air row, constraint_10 air row, constraint_11 air row,
-          constraint_12 air row, constraint_13 air row, constraint_14 air row,
-          constraint_15 air row, constraint_16 air row, constraint_17 air row,
-          constraint_18 air row, constraint_19 air row, constraint_20 air row,
-          constraint_21 air row, constraint_22 air row, constraint_23 air row,
-          constraint_24 air row, constraint_25 air row, constraint_26 air row,
-          constraint_27 air row, constraint_28 air row, constraint_29 air row,
-          constraint_30 air row
+          constraint_3 air row, constraint_4 air row, constraint_5 air row, constraint_6 air row, constraint_7 air row,
+          constraint_8 air row, constraint_9 air row, constraint_10 air row,
+          constraint_11 air row, constraint_12 air row, constraint_13 air row,
+          constraint_14 air row, constraint_15 air row, constraint_16 air row,
+          constraint_17 air row, constraint_18 air row, constraint_19 air row,
+          constraint_20 air row, constraint_21 air row, constraint_22 air row,
+          constraint_23 air row, constraint_24 air row, constraint_25 air row,
+          constraint_26 air row, constraint_27 air row, constraint_28 air row,
+          constraint_29 air row, constraint_30 air row, constraint_31 air row,
+          constraint_32 air row
         ]
 
     end row_constraints
@@ -581,37 +619,38 @@ namespace LtChip.ConstraintsAndBuses
 
       -- =====================================================================
       -- Bus interactions emitted by `LtChip::eval` (per row):
-      -- 2 ByteBus entries (opcode 4, sub-op 8): U16Range on the two
+      -- 2 ByteBus entries (opcode 5, sub-op 8): U16Range on the two
       --   shifted top limbs `2*b_3 - b_msb*65536` and `2*c_3 - c_msb*65536`,
-      --   gated by `-is_slt` (U16MSBGadget #1 and #2 emit these).
+      --   gated by `+is_slt` (U16MSBGadget #1 and #2 emit these).
       -- 1 ByteBus entry: the comparison entry from LtWordU16Gadget,
-      --   `(comp_0 - comp_1) + bit*65536`, gated by `-(is_slt + is_slt_u)`.
-      -- 1 ALU entry (opcode 3, sub-op `is_slt*8 + is_slt_u*9` ∈ {8, 9}):
+      --   `(comp_0 - comp_1) + bit*65536`, gated by `is_slt + is_slt_u`.
+      -- 1 ALU entry (opcode 4, sub-op `is_slt*8 + is_slt_u*9 + is_cmp*256`):
       --   carries `(a_0..3, b_0..3, c_0..3)`, gated by `+(is_slt + is_slt_u)`.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_LtChip FKB ExtF) (row : ℕ) : List (FKB × List FKB) :=
-        [ (-(air.cols.values.is_slt row 0),
-            [4, 8,
+        [ ((air.cols.values.is_slt row 0),
+            [5, 8,
               2 * (air.cols.values.b_3 row 0)
                 - (air.cols.values.lt_signed.b_msb.msb row 0) * 65536,
               0, 0, 0]),
-          (-(air.cols.values.is_slt row 0),
-            [4, 8,
+          ((air.cols.values.is_slt row 0),
+            [5, 8,
               2 * (air.cols.values.c_3 row 0)
                 - (air.cols.values.lt_signed.c_msb.msb row 0) * 65536,
               0, 0, 0]),
-          (-((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)),
-            [4, 8,
+          (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)),
+            [5, 8,
               ((air.cols.values.lt_signed.result.comparison_limbs_0 row 0)
                 - (air.cols.values.lt_signed.result.comparison_limbs_1 row 0))
                 + (air.cols.values.lt_signed.result.bit row 0) * 65536,
               0, 0, 0]),
-          (((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)),
-            [3,
+          (-((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0)),
+            [4,
               (air.cols.values.is_slt row 0) * 8
-                + (air.cols.values.is_slt_u row 0) * 9,
+                + (air.cols.values.is_slt_u row 0) * 9
+                + (air.cols.values.is_cmp row 0) * 256,
               (air.cols.values.a_0 row 0),
               (air.cols.values.a_1 row 0),
               (air.cols.values.a_2 row 0),
@@ -635,28 +674,29 @@ namespace LtChip.ConstraintsAndBuses
     end row_buses
 
     -- =====================================================================
-    -- Identification: constraints 3..26 conjoin to
+    -- Identification: constraints 5..28 conjoin to
     -- `LtSignedGadget.AbsConstraints` instantiated at the chip's accessors
     -- with `is_real ↦ is_slt + is_slt_u`, `is_signed ↦ is_slt`,
     -- `a_i ↦ b_i`, `b_i ↦ c_i`, and the gadget's bit/flags/limbs taken from
     -- `lt_signed.result.*` / `lt_signed.b_msb.msb` / `lt_signed.c_msb.msb`.
-    -- Constraints 0..2 (chip-level booleans on `is_slt`, `is_slt_u`,
-    -- their sum) and 27..30 (chip's own substantive: `a_1=a_2=a_3=0`,
-    -- `a_0 = bit`) are chip-specific.
+    -- Constraints 0..4 (chip-level booleans on `is_slt`, `is_slt_u`,
+    -- their sum and `is_cmp`, and `is_cmp = 0` on padding rows) and 29..32 (chip's own substantive:
+    -- `a_1 = is_cmp * (Σ flags - bit)`, `a_2 = a_3 = 0`, `a_0 = bit`) are
+    -- chip-specific.
     -- =====================================================================
 
     omit [Field ExtF] in
     @[simp]
     lemma constraint_subset_iff_gadget
       (air : Valid_LtChip F ExtF) (row : ℕ)
-    : (constraint_3 air row ∧ constraint_4 air row ∧ constraint_5 air row
-        ∧ constraint_6 air row ∧ constraint_7 air row ∧ constraint_8 air row
-        ∧ constraint_9 air row ∧ constraint_10 air row ∧ constraint_11 air row
-        ∧ constraint_12 air row ∧ constraint_13 air row ∧ constraint_14 air row
-        ∧ constraint_15 air row ∧ constraint_16 air row ∧ constraint_17 air row
-        ∧ constraint_18 air row ∧ constraint_19 air row ∧ constraint_20 air row
-        ∧ constraint_21 air row ∧ constraint_22 air row ∧ constraint_23 air row
-        ∧ constraint_24 air row ∧ constraint_25 air row ∧ constraint_26 air row)
+    : (constraint_5 air row ∧ constraint_6 air row ∧ constraint_7 air row
+        ∧ constraint_8 air row ∧ constraint_9 air row ∧ constraint_10 air row
+        ∧ constraint_11 air row ∧ constraint_12 air row ∧ constraint_13 air row
+        ∧ constraint_14 air row ∧ constraint_15 air row ∧ constraint_16 air row
+        ∧ constraint_17 air row ∧ constraint_18 air row ∧ constraint_19 air row
+        ∧ constraint_20 air row ∧ constraint_21 air row ∧ constraint_22 air row
+        ∧ constraint_23 air row ∧ constraint_24 air row ∧ constraint_25 air row
+        ∧ constraint_26 air row ∧ constraint_27 air row ∧ constraint_28 air row)
       ↔
       LtSignedGadget.AbsConstraints
         ((air.cols.values.is_slt row 0) + (air.cols.values.is_slt_u row 0))
@@ -717,6 +757,7 @@ namespace LtChip.Interactions
     LtChip.AbsBuses
       (air.cols.values.is_slt row 0)
       (air.cols.values.is_slt_u row 0)
+      (air.cols.values.is_cmp row 0)
       (air.cols.values.a_0 row 0) (air.cols.values.a_1 row 0)
       (air.cols.values.a_2 row 0) (air.cols.values.a_3 row 0)
       (air.cols.values.b_0 row 0) (air.cols.values.b_1 row 0)
@@ -790,15 +831,16 @@ namespace LtChip.Interpretations
     clear *- h_selectors
     grind
 
-  /-- Abstracting the gadget used. Follows the template
-      `allHold → preceding ∧ AbsConstraints ∧ following`:
+  /-- Abstracting the gadget used: `allHold → AbsConstraints ∧ following`
+      (the chip-level booleans `constraint_0..2` come from
+      `selector_breakdown` instead):
 
-      * Preceding: the chip's own booleans on `is_slt`, `is_slt_u`, and
-        their sum (`constraint_0`, `constraint_1`, `constraint_2`).
       * `LtSignedGadget.AbsConstraints` instantiated at the chip's
-        accessors (covers `constraint_3` through `constraint_26`).
+        accessors (covers `constraint_5` through `constraint_28`).
       * Following: the chip's own substantive constraints
-        (`a_1 = a_2 = a_3 = 0` and `(is_real) * (a_0 - bit) = 0`). -/
+        (`a_1 = is_cmp * (Σ flags - bit)`, `a_2 = a_3 = 0`,
+        `(is_real) * (a_0 - bit) = 0`), then `is_cmp`'s booleanity and its
+        zero on padding rows (`constraint_3`, `constraint_4`). -/
   lemma allHold_abs
     [Field ExtF]
     (air : Valid_LtChip FKB ExtF)
@@ -822,10 +864,12 @@ namespace LtChip.Interpretations
       (air.cols.values.lt_signed.result.bit row 0)
       (air.cols.values.lt_signed.b_msb.msb row 0)
       (air.cols.values.lt_signed.c_msb.msb row 0)
-    ∧ constraint_27 air row
-    ∧ constraint_28 air row
     ∧ constraint_29 air row
     ∧ constraint_30 air row
+    ∧ constraint_31 air row
+    ∧ constraint_32 air row
+    ∧ constraint_3 air row
+    ∧ constraint_4 air row
   := by
     simp [
       LtSignedGadget.AbsConstraints,
@@ -848,6 +892,7 @@ namespace LtChip.Interpretations
     LtChip.AbsBuses
       (air.cols.values.is_slt row 0)
       (air.cols.values.is_slt_u row 0)
+      (air.cols.values.is_cmp row 0)
       (air.cols.values.a_0 row 0) (air.cols.values.a_1 row 0)
       (air.cols.values.a_2 row 0) (air.cols.values.a_3 row 0)
       (air.cols.values.b_0 row 0) (air.cols.values.b_1 row 0)
