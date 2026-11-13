@@ -41,13 +41,14 @@ import PicoFV.RV64IM.Transpiler.Transpiler
     * no evenness side condition on the `JALR` offset: RISC-V allows an odd one, and the chip
       clears the low bit itself (`riscv_cpu/jump/constraints.rs:79-126`).
 
-    `FENCE` has no case of its own. Pico decodes every `FENCE` word (`fence.tso` and `pause`
-    included) as the no-op `ADD x0, x0, 0` with `imm_c` set (`rrs.rs:95-100, 509-517`), which
-    is exactly the row this decoder gives `ADDI x0, x0, 0`. The Program promise in
-    `BusesV3.lean` therefore holds for a `FENCE` row as written, and an instruction theorem,
+    The fences have no case of their own. Pico decodes every fence word (`fence`, `fence.tso`
+    and `pause`) as the no-op `ADD x0, x0, 0` with `imm_c` set (`rrs.rs:95-100, 509-517`),
+    which is exactly the row this decoder gives `ADDI x0, x0, 0`. The Program promise in
+    `BusesV3.lean` therefore holds for a fence's row as written, and an instruction theorem,
     which rebuilds the instruction from the row's columns, reads that row as
-    `ADDI x0, x0, 0`. That the no-op row does what Sail's `FENCE` and `FENCE_TSO` do is not
-    proved here.
+    `ADDI x0, x0, 0`. Sail decodes the three words as `FENCE`, `FENCE_TSO` and `PAUSE`;
+    `RVSail/Opcodes/fence.lean` proves that each executes exactly as `ADDI x0, x0, 0`
+    (`FENCE` in machine mode, the standing assumption A1.1 of `RISC_V_assumptions`).
 
     The lemmas below relate the decoder's pc pieces and operands to natural numbers and
     64-bit values; the lemmas that go from a Program-bus message back to its instruction are

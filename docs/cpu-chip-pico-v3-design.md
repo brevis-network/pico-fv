@@ -21,8 +21,9 @@ renumbered, and the bus contracts the chip relies on are restated.
 Two new files beside the old ones:
 
 - `PicoFV/RV64IM/Transpiler/TranspilerV3.lean`: the decoder, with its operand and pc lemmas;
-  the lemmas from a Program message back to its instruction are in `BusesV3.lean`. `transpile_op inst mult pc` maps a Sail instruction at address
-  `pc` to the 26-field Program message, following `rrs.rs` and `riscv_program/traces.rs`: the
+  the lemmas from a Program message back to its instruction are in `BusesV3.lean`.
+  `transpile_op inst mult pc` maps a Sail instruction at address `pc` to the 26-field Program
+  message, following `rrs.rs` and `riscv_program/traces.rs`: the
   pc in two 16-bit pieces; register `a` as one field; `b` and `c` as two 16-bit pieces plus a
   sign bit (`SignExtImm`, `riscv_cpu/instruction/columns.rs:43-70`); 13 selectors; `op_a_0`
   is `[op_a = x0]` for every instruction, stores and branches included
@@ -111,11 +112,12 @@ Settled on 12 November 2026.
      (`riscv_program/traces.rs:83-87, 107-110`);
    - the lookup argument balances, which pico-fv assumes for every bus;
    - the decoder in `TranspilerV3.lean` agrees with Pico's (`rrs.rs`). Only review compares
-     the two; the review of the full decoder compared them field by field. `FENCE` has no
-     case of its own, by design: Pico decodes every `FENCE` as the no-op `ADD x0, x0, 0`
-     (`rrs.rs:95-100, 509-517`), whose table row is the one the decoder gives
-     `ADDI x0, x0, 0`, so the promise holds for it as written. That the no-op does what Sail's
-     `FENCE` does is not proved.
+     the two; the review of the full decoder compared them field by field. The fences have no
+     case of their own, by design: Pico decodes every fence word (`fence`, `fence.tso`,
+     `pause`) as the no-op `ADD x0, x0, 0` (`rrs.rs:95-100, 509-517`), whose table row is the
+     one the decoder gives `ADDI x0, x0, 0`, so the promise holds for it as written.
+     `RVSail/Opcodes/fence.lean` proves that Sail's `FENCE`, `FENCE_TSO` and `PAUSE` execute
+     as `ADDI x0, x0, 0` (`FENCE` in machine mode, the standing assumption).
 
    The promise is read against Pico again when the pin moves.
 2. **The memory contract is as drafted** (question 5). Two trial proofs, LW and SD, pass
@@ -230,4 +232,5 @@ for the 2.x theorems of the same names. With the 13 instruction-theorem
 files and the 2.x interpretations file out of the build, `lake build PicoFV64` succeeds on the
 prototype branch, so the rest of the repository is unaffected. The lemmas meant to carry over to
 the interpretations file are `next_pc_facts`, `pc_facts`, `jalr_sum`, `jump_return_address`,
-`branch_target_arith`, `imm_operand_sext`, `clear_low_bit` and `bit_one_zero`.
+`branch_target_arith`, `clear_low_bit` and `bit_one_zero`; `imm_operand_sext` has already moved
+to `TranspilerV3.lean`.
