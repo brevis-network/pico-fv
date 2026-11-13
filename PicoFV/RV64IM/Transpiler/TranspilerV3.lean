@@ -655,8 +655,10 @@ namespace Transpiler.V3
 
   /-! ## Pico's decoder tests
 
-      The unit tests of `rrs.rs` (`:577-648`), restated on this decoder's message, with
-      multiplicity 1, plus the `LUI` / `AUIPC` coincidence noted at the `UTYPE` case. -/
+      The four unit tests of `rrs.rs` (`:577-669`), restated on this decoder's message with
+      multiplicity 1: each of their five row checks, and the no-op row their `FENCE` test
+      compares every fence word with. Also the `LUI` / `AUIPC` coincidence noted at the `UTYPE`
+      case. The slot addresses are Pico's `PC_BASE = 0x10000` plus 4 per slot. -/
 
   section Examples
 
@@ -670,8 +672,18 @@ namespace Transpiler.V3
             pc_carry, reg_to_KB, regidx_to_fin]
       decide
 
+    /-- `auipc x2, 0` in the next slot, `0x10004`, gives `ADD x2, 0, 0x10004` (`rrs.rs:596-600`):
+        the folded address is the slot's own. -/
+    example :
+        (transpile_op (.UTYPE (0#20, regidx.Regidx 2#5, .AUIPC)) 1 0x10004).map (·.1) =
+        some (1, #v[4, 1, 0,  0, 2,  0, 0, 0,  4, 1, 0,  0,  1, 1,
+                    0, 0, 0,  0, 0, 0, 0, 0, 0,  0, 0,  0]) := by
+      have h : (uop.AUIPC == uop.AUIPC) = true := rfl
+      simp [transpile_op, h, imm_operand, imm_to_KB, U64w.fromNat, BitVec.extend, pc_lo, pc_hi,
+            pc_carry, reg_to_KB, regidx_to_fin]
+
     /-- `auipc x3, 0xfffff` at `0x10000`: the immediate `-0x1000` is the pieces `0xF000`,
-        `0xFFFF` and sign 1 (`rrs.rs:607-622`). -/
+        `0xFFFF` and sign 1 (`rrs.rs:612-615`). -/
     example :
         (transpile_op (.UTYPE (0xFFFFF#20, regidx.Regidx 3#5, .AUIPC)) 1 0x10000).map (·.1) =
         some (1, #v[0, 1, 0,  0, 3,  0xF000, 0xFFFF, 1,  0, 1, 0,  0,  1, 1,
@@ -681,15 +693,39 @@ namespace Transpiler.V3
             pc_carry, reg_to_KB, regidx_to_fin]
       decide
 
-    /-- `lui x4, 0x2` gives `ADD x4, 0, 0x2000`, whatever its address (`rrs.rs:638-642`). -/
-    example :
-        (transpile_op (.UTYPE (0x2#20, regidx.Regidx 4#5, .LUI)) 1 0x10000).map (·.1) =
-        some (1, #v[0, 1, 0,  0, 4,  0, 0, 0,  0x2000, 0, 0,  0,  1, 1,
-                    0, 0, 0,  0, 0, 0, 0, 0, 0,  0, 0,  0]) := by
+    /-- `lui x4, 0x2` gives `ADD x4, 0, 0x2000` at every address (`rrs.rs:638-642`): no operand
+        holds the pc. -/
+    example (pc : ℕ) :
+        (transpile_op (.UTYPE (0x2#20, regidx.Regidx 4#5, .LUI)) 1 pc).map (·.1) =
+        some (1, #v[pc_lo pc, pc_hi pc, 0,  0, 4,  0, 0, 0,  0x2000, 0, 0,  0,  1, 1,
+                    0, 0, 0,  0, 0, 0, 0, 0, 0,  0, 0,  pc_carry pc]) := by
       have h : (uop.LUI == uop.AUIPC) = false := rfl
+      simp [transpile_op, h, imm_operand, imm_to_KB, U64w.fromNat, BitVec.extend, reg_to_KB,
+            regidx_to_fin]
+      decide
+
+    /-- `auipc x5, 0x1` in slot 2, `0x10008`, after a `LUI` and a no-op, gives
+        `ADD x5, 0x1000, 0x10008` (`rrs.rs:643-647`). -/
+    example :
+        (transpile_op (.UTYPE (0x1#20, regidx.Regidx 5#5, .AUIPC)) 1 0x10008).map (·.1) =
+        some (1, #v[8, 1, 0,  0, 5,  0x1000, 0, 0,  8, 1, 0,  0,  1, 1,
+                    0, 0, 0,  0, 0, 0, 0, 0, 0,  0, 0,  0]) := by
+      have h : (uop.AUIPC == uop.AUIPC) = true := rfl
       simp [transpile_op, h, imm_operand, imm_to_KB, U64w.fromNat, BitVec.extend, pc_lo, pc_hi,
             pc_carry, reg_to_KB, regidx_to_fin]
       decide
+
+    /-- `ADDI x0, x0, 0` gives Pico's no-op row `ADD x0, x0, 0` with `imm_c` set
+        (`Instruction::nop`, `rrs.rs:95-100`) at every address. Pico's `FENCE` test
+        (`rrs.rs:652-669`) checks that every fence word (`fence rw,rw`, `fence.tso`, `pause`,
+        `fence 0,0`, `fence iorw,iorw`) transpiles to this row. -/
+    example (pc : ℕ) :
+        (transpile_op (.ITYPE (0#12, regidx.Regidx 0#5, regidx.Regidx 0#5, .ADDI)) 1 pc).map
+          (·.1) =
+        some (1, #v[pc_lo pc, pc_hi pc, 0,  0, 0,  0, 0, 0,  0, 0, 0,  1,  0, 1,
+                    0, 0, 0,  0, 0, 0, 0, 0, 0,  0, 0,  pc_carry pc]) := by
+      simp [transpile_op, opcode_of_iop, imm_operand, imm_to_KB, U64w.fromNat, BitVec.extend,
+            reg_to_KB, regidx_to_fin]
 
     /-- `LUI rd, 0x10` and `AUIPC rd, 0` at `0x10000` give the same message. -/
     example (rd : regidx) :
