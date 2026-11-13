@@ -28,9 +28,10 @@ with their statements in `signatures.txt`. They are of two kinds.
   files are at v3.1.1 here; the interpretations file and the 13 instruction-theorem files that
   read the 2.x layout are out of the build until they are rewritten against it, one instruction
   class at a time, and their 13 lists are parked in `scripts/fv-check/theorems.d/parked/`.
-  Until they return, this repository says nothing about any RV64IM opcode. The tag
-  `pico-v3-before-cpu` (`35259d8`) is the last commit at which all 62 were checked, against the
-  2.x extraction.
+  Until they return, this repository says nothing about any RV64IM opcode. Commit `353238a`
+  is the last at which all 62 were checked, against the 2.x CPU extraction and the bus contract
+  as it stood then (which already covered the branch-comparison opcodes). The 2.x
+  interpretations file is unchanged from the tag `pico-v3-before-cpu` (`35259d8`) to that commit.
 - **Chip specifications** (`<Chip>.Spec.*`). For a row of a non-CPU chip that satisfies its
   extracted constraints, the bus messages it serves have the meaning the bus assumptions give them
   (for example, an ALU row really computes the operation it claims). Every chip's specification
@@ -99,8 +100,11 @@ them, but the theorems hold for every interpretation of them.
 
 ### A3. Hypotheses of the theorems
 
-Each equivalence theorem assumes (as recorded at `pico-v3-before-cpu`; none is checked while
-the CPU chip moves, and the v3.1.1 wording of the first and third items will differ):
+Each equivalence theorem assumes the following, as last recorded at `353238a`. None is checked
+while the CPU chip moves, and all three items change at v3.1.1: the constraints become the
+v3.1.1 CPU chip's, the bus assumptions move to the v3.1.1 contracts
+(`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`), and the theorems gain a whole-trace
+assumption, described after the list:
 
 - the CPU chip's extracted constraints hold on every row;
 - the bus assumptions (`bus_row_axioms`, `bus_row_ext_asm`, `bus_row_wf_asm`, `bus_row_wf_asrt`
@@ -108,8 +112,18 @@ the CPU chip moves, and the v3.1.1 wording of the first and third items will dif
   sends, and the well-formedness of what it receives;
 - the hypotheses of the operations the row emits, and `RISC_V_assumptions` on the machine state.
 
+The whole-trace assumption, `pico_CpuChip_control_flow_assumptions`, bounds the chunk's final
+pc (public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The
+v3.1.1 chip does not check this itself; Pico's recursion circuit makes it hold for every chunk
+of an accepted recursive proof (`docs/cpu-chip-pico-v3-design.md`, "The whole-trace
+assumption"). So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
+proof, not a chunk proof checked on its own. The eight branch and jump theorems already name the
+assumption, whose definition grows, so their recorded statements keep their text; the other 54
+gain it as a new hypothesis.
+
 A change that weakens or strengthens a hypothesis changes `signatures.txt`, and `check.sh` fails
-until the change is reviewed and recorded.
+until the change is reviewed and recorded. A change to the definition behind a hypothesis's name
+does not, so it has to be listed in the pull request that makes it.
 
 ### A4. Composition of the chips (not proven)
 
@@ -122,8 +136,10 @@ The contract now covers the merged branch-comparison rows. `ALUBus.validOpcode` 
 opcodes 264 / 265 (`SLT` / `SLTU` + `LT_CMP_OPCODE_TAG`) that Pico's CPU sends for every branch,
 `ALUBus.Spec` gives them their meaning — piece 0 is `[b < c]`, piece 1 is `[c < b]`, pieces 2 and
 3 are zero — and `LtChip.Spec.spec_CMP_SLT` / `spec_CMP_SLTU` prove that `LtChip` serves them.
-What the CPU does with the two bits is not proven here: that is the CPU chip's side, and it has
-not moved to Pico 3.x yet.
+What the CPU does with the two bits is not proven here: that is the CPU chip's side. Its
+v3.1.1 constraints, including the comparison message and the taken-branch condition, are
+restated in `Constraints/CpuChip.lean`, but the branch theorems that use them are parked while
+the CPU chip moves.
 
 Messages a chip serves but the contract does not specify are still not covered in general; there
 are none among the RV64IM ALU chips at the pinned commit.
@@ -181,11 +197,13 @@ branch's, so the uses only go down.
 
 ### C3. Declarations the kernel did not check
 
-A weekly CI job replays the declarations of every module into the kernel with `leanchecker`,
-except the modules listed in C2: the kernel cannot replay what those tactics computed. Today that
-excludes the file holding the memory chip's specification, so this replay covers the supporting
-modules and the ALU chips' specifications, but not the memory chip's. The equivalence files it
-also used to exclude are out of the build (see "What is proved").
+A weekly CI job (`.github/workflows/replay.yml`) replays the declarations of every module the
+build imports into the kernel with `leanchecker`, except the modules listed in C2: the kernel
+cannot replay what those tactics computed. Today that excludes `Fundamentals/Core`,
+`Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution` and the specifications of the
+Bitwise, DivRem and memory chips; the replay covers the remaining modules, including the other
+ALU chips' specifications. Modules the build does not import, such as the parked equivalence
+files, are not replayed.
 
 ## D. Does the use of the results hold together?
 

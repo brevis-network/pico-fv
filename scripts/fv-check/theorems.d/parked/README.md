@@ -5,22 +5,45 @@ The 13 lists here name the 62 instruction theorems of
 `check.sh` — while the CPU chip moves to Pico v3.1.1.
 
 The chip's column layout changed shape (58 columns instead of 132), so the 2.x
-`Constraints/CpuChipInterpretations.lean` and the 13 `Equivalence/` files that
-rest on it no longer compile. They are rewritten against the v3.1.1 layout one
-instruction class at a time; each list moves back up a directory with the file
-it names, and `check.sh --update` records its theorems again.
+`Constraints/CpuChipInterpretations.lean` and the `Equivalence/` files that
+rest on it no longer compile. `PicoFV64.lean` no longer imports
+`Constraints.CpuChipInterpretations` or `Equivalence.Equivalence`, and the
+interpretations file is deleted (CI builds every file under `Constraints/`);
+the tag `pico-v3-before-cpu` holds it.
 
-The statements to restore them to are the ones recorded at the tag
-`pico-v3-before-cpu` (`35259d8`), the last commit before the CPU work:
+## Restoring an instruction class
 
-```bash
-git show pico-v3-before-cpu:scripts/fv-check/signatures.txt
-git show pico-v3-before-cpu:scripts/fv-check/axioms.txt
-```
+The files are rewritten against the v3.1.1 layout one instruction class at a
+time. For each class:
 
-Eight of the 62 — the six branches, `JAL` and `JALR` — already name
-`pico_CpuChip_control_flow_assumptions`, whose definition gains three
-conjuncts in the move. Their recorded statements do not change, because
-`signatures.txt` records the name and not the definition; the other 54 gain the
-assumption as a new hypothesis and their recorded statements do change. See
+1. Rewrite its `Equivalence/` file, and the rewritten interpretations file and
+   `Equivalence/Common.lean` it needs.
+2. Make `PicoFV64.lean` import the rewritten modules again. `check.sh` reads
+   the theorems through `Report.lean`, which imports only `PicoFV64`, so a
+   theorem whose module is not imported there is reported missing.
+3. Move the class's list back up a directory and run `check.sh --update` to
+   record its theorems.
+4. Compare the new lines of `signatures.txt` and `axioms.txt` with the ones
+   last checked, at commit `353238a`:
+
+   ```bash
+   git show 353238a:scripts/fv-check/signatures.txt
+   git show 353238a:scripts/fv-check/axioms.txt
+   ```
+
+## How the restored statements may differ
+
+They are expected to differ from those at `353238a` in two ways. The bus
+assumptions name the v3.1.1 contracts (`RV64IM_Interactions.V3` in
+`RVSail/BusesV3.lean`) instead of the 2.x ones. And the whole-trace assumption
+`pico_CpuChip_control_flow_assumptions` gains three conjuncts in its
+definition:
+
+- the eight theorems that already name it (the six branches, `JAL` and `JALR`)
+  keep their recorded text, because `signatures.txt` records the name and not
+  the definition, but their meaning changes;
+- the other 54 gain it as a new hypothesis, so their recorded statements change.
+
+Any other difference in a statement, and any new name in `axioms.txt`, is a
+change in what the theorem assumes and must be listed in the pull request. See
 `docs/cpu-chip-pico-v3-design.md`, "The whole-trace assumption".

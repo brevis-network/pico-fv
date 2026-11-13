@@ -5,8 +5,11 @@ RISC-V zkVM and end-to-end equivalence proofs between every Pico chip's
 constraint system and the corresponding [Official Lean RISC-V
 specification](https://github.com/NethermindEth/sail-riscv-lean/tree/v4.28.0-rc1).
 
-The development covers the **RV64IM** variant of Pico. All 62 opcodes in the
-RV64IM ISA are equivalence-proven:
+The development covers the **RV64IM** variant of Pico. Its 62 opcodes were
+equivalence-proven against Pico 2.x. On the `pico-v3` branch those proofs are
+paused while the CPU chip moves to Pico v3.1.1: they are out of the build and
+`check.sh` does not check them, so for now the branch proves nothing about any
+RV64IM opcode (see [SOUNDNESS.md](SOUNDNESS.md)). The 62 opcodes:
   - 27 ALU opcodes: `ADD`, `ADDI`, `SUB`, `XOR`, `XORI`, `OR`, `ORI`, `AND`,
     `ANDI`, `SLT`, `SLTI`, `SLTU`, `SLTIU`, `SLL`, `SLLI`, `SRL`, `SRLI`, `SRA`,
     `SRAI`, `MUL`, `MULH`, `MULHU`, `MULHSU`, `DIV`, `DIVU`, `REM`, `REMU`;
@@ -97,10 +100,11 @@ fetching mathlib's binary cache.
 ## Checking the theorems
 
 After `lake build`, `scripts/fv-check/check.sh` checks the top-level theorems
-listed in `scripts/fv-check/theorems.d/`: the 62 opcode equivalence theorems
-(one file per instruction class), the memory chip's `spec_*` / `bus_equiv*`
+listed in `scripts/fv-check/theorems.d/`: the memory chip's `spec_*` / `bus_equiv*`
 theorems, and the specifications of the ALU chips already at v3.1.1 (Add, Sub,
-Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight). It fails if a theorem is missing,
+Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight). The lists of the 62
+opcode equivalence theorems are parked in `theorems.d/parked/` while the CPU
+chip moves (see the README there). It fails if a theorem is missing,
 depends on an axiom (a statement Lean accepts without proof) outside two lists,
 or its axioms or statement differ from the snapshots in `axioms.txt` and
 `signatures.txt`:
