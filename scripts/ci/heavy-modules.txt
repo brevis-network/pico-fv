@@ -6,4 +6,3 @@ PicoFV.RV64IM.Spec.MulGadgetCore
 PicoFV.RV64IM.Spec.AddGadget
 PicoFV.RV64IM.Spec.ShiftRightChip
 PicoFV.RV64IM.Spec.MemoryReadWriteChip
-PicoFV.RV64IM.Constraints.CpuChipInterpretations

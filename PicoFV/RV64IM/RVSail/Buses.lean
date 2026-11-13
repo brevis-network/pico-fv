@@ -21,7 +21,8 @@ set_option maxHeartbeats 1_000_000_000
     * The state bus' single `ptr` field becomes 3 u16 limbs for the 48-bit
       register/memory address.
 
-    Bus tag → payload length (from `Extraction/CpuChip.lean`):
+    Bus tag → payload length, from the 2.x `Extraction/CpuChip.lean` at
+    the tag `pico-v3-before-cpu` (the v3.1.1 formats are in `BusesV3.lean`):
 
     | bus | tag (Pico `LookupType`) | data length |
     |-----|-----|-------------|
@@ -47,7 +48,7 @@ namespace RV64IM_Interactions
       /-- Program bus entry — payload size 43 (`3 + 1 + 14 + 25`).
 
           Layout matches the `CpuChip` program-bus emit at
-          `Extraction/CpuChip.lean:451`:
+          `Extraction/CpuChip.lean:453` at the tag `pico-v3-before-cpu` (2.x):
           `[pc[0..2], opcode, opcode, a[0..3], b[0..3], c[0..3], a_is_0,
             imm_b, imm_c, is_alu, is_ecall,
             is_lb..is_ld (7),
@@ -981,7 +982,7 @@ namespace RV64IM_Interactions
 
       /-- State bus entry — payload size 9.
 
-          Layout (from `Extraction/CpuChip.lean:460-461`):
+          Layout (from `Extraction/CpuChip.lean:462-463` at the tag `pico-v3-before-cpu`, 2.x):
           `[chunk, clk, ptr_0, ptr_1, ptr_2, x_0, x_1, x_2, x_3]`.
 
           Differences vs RV32 (7-field payload):
@@ -1052,7 +1053,7 @@ namespace RV64IM_Interactions
 
       /-- Memory bus entry — payload size 25.
 
-          Layout (from `Extraction/CpuChip.lean:470`):
+          Layout (from `Extraction/CpuChip.lean:472` at the tag `pico-v3-before-cpu`, 2.x):
           `[mem_opcode, a[0..3], b[0..3], c[0..3], a_is_0,
             is_lb, is_lbu, is_lh, is_lhu, is_lw, is_lwu, is_ld,
             is_sb, is_sh, is_sw, is_sd]`.
