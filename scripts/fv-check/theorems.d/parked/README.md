@@ -1,15 +1,17 @@
 # Parked theorem lists
 
-The 13 lists here name the 62 instruction theorems of
+The 12 lists here name 61 of the 62 instruction theorems of
 `PicoFV/RV64IM/Equivalence/`. They sit out of `theorems.d/` — and so out of
 `check.sh` — while the CPU chip moves to Pico v3.1.1.
 
 The chip's column layout changed shape (58 columns instead of 132), so the 2.x
 `Constraints/CpuChipInterpretations.lean` and the `Equivalence/` files that
-rest on it no longer compile. `PicoFV64.lean` no longer imports
-`Constraints.CpuChipInterpretations` or `Equivalence.Equivalence`, and the
-interpretations file is deleted (CI builds every file under `Constraints/`);
-the tag `pico-v3-before-cpu` holds it.
+rest on it no longer compile. The interpretations file and
+`Equivalence/Common.lean` are now rewritten at v3.1.1, holding the lemmas every
+instruction class shares, and `equivalence-addiw.txt` has moved back up a
+directory with `Equivalence/Addiw.lean`. `PicoFV64.lean` still does not import
+`Equivalence.Equivalence`, which pulls in all 13 class files; it returns with
+the last of them. The tag `pico-v3-before-cpu` holds the 2.x versions.
 
 ## Restoring an instruction class
 
@@ -42,7 +44,8 @@ definition:
 - the eight theorems that already name it (the six branches, `JAL` and `JALR`)
   keep their recorded text, because `signatures.txt` records the name and not
   the definition, but their meaning changes;
-- the other 54 gain it as a new hypothesis, so their recorded statements change.
+- the other 54 gain it as a new hypothesis, so their recorded statements change,
+  as `ADDIW`'s already has.
 
 Any other difference in a statement, and any new name in `axioms.txt`, is a
 change in what the theorem assumes and must be listed in the pull request. See
