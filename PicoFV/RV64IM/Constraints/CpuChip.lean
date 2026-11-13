@@ -1,5 +1,4 @@
-import PicoFV.RV64IM.RVSail.Operations
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.Fundamentals.KoalaBear
 import PicoFV.RV64IM.Extraction.CpuChip
 import PicoFV.RV64IM.Airs.CpuChip
 
@@ -161,7 +160,9 @@ namespace CpuChip.ConstraintsAndBuses
 
       -- ======================================================================
       -- `is_real` is boolean (12)
-      -- `constraints.rs:340`. Stated twice by the chip; constraint 44 is the same assertion.
+      -- `register/constraints.rs:80-90`. The op_a register access is gated by `is_real`, and
+      -- `eval_memory_access_lite` asserts its gate boolean (`machine/builder/riscv_memory.rs:137`).
+      -- Stated twice by the chip: constraint 44 is the same assertion from `constraints.rs:340`.
       -- ======================================================================
 
       @[constraint_and_interaction_simplification]
@@ -234,7 +235,7 @@ namespace CpuChip.ConstraintsAndBuses
 
       -- ======================================================================
       -- Branch rows (18-19)
-      -- `branch/constraints.rs:75-80`. A branch takes its offset as an immediate, and on a taken
+      -- `branch/constraints.rs:74-86`. A branch takes its offset as an immediate, and on a taken
       -- branch the next pc is `pc + offset`, read over the two-limb pc. The taken predicate is
       -- `is_beq * (1 - a_lt_b - a_gt_b) + is_bne * (a_lt_b + a_gt_b) + (is_blt + is_bltu) * a_lt_b
       -- + (is_bge + is_bgeu) * (1 - a_lt_b)`, using `a_eq_b = 1 - a_lt_b - a_gt_b`.
@@ -260,7 +261,8 @@ namespace CpuChip.ConstraintsAndBuses
 
       -- ======================================================================
       -- Jump return address (20-23)
-      -- `register/constraints.rs:100-110` and `jump/constraints.rs:45-46`. On a jump that writes a
+      -- `jump/constraints.rs:29-38` (the gadget is `Pc::add_limb_with_carry`, `compiler/addr.rs:321`)
+      -- and `jump/constraints.rs:43-46`. On a jump that writes a
       -- register, `op_a = pc + 4` through `Pc::add_limb_with_carry`: `pc_carry` is the carry out
       -- of limb 0, limb 1 absorbs it, and limbs 2 and 3 are zero. Limb 3 is zeroed on every jump.
       -- ======================================================================
@@ -449,7 +451,7 @@ namespace CpuChip.ConstraintsAndBuses
 
       -- ======================================================================
       -- Sequential and branch-not-taken rows (37)
-      -- `constraints.rs:320-326`. One field equation `next_pc = pc + 4`, gated by
+      -- `constraints.rs:318-326`. One field equation `next_pc = pc + 4`, gated by
       -- `is_real - taken - is_jal - is_jalr - is_halt`. A pc fits in two limbs, so the addition
       -- stays inside `[0, p)` and needs no carry witness.
       -- ======================================================================
@@ -806,12 +808,13 @@ namespace CpuChip.ConstraintsAndBuses
       -- entry: 1 Memory, 2 Program, 4 ALU, 5 Byte, 13 Ecall.
       --
       --   * Program (1): the instruction fetch, 26 fields, multiplicity
-      --     `is_real` (`constraints.rs:42-75`).
+      --     `is_real` (`constraints.rs:42-49`, built at `:465-480`).
       --   * op_b register read (4): two timestamp range checks, the previous
       --     access and this one, gated by `1 - imm_b`
-      --     (`register/constraints.rs:13-33`).
-      --   * op_c register read (4): the same at `clk + 1`.
-      --   * op_a register access (4): the same at `clk + 3`, on every real row.
+      --     (`register/constraints.rs:49-59`).
+      --   * op_c register read (4): the same at `clk + 1` (`register/constraints.rs:61-71`).
+      --   * op_a register access (4): the same at `clk + 3`, on every real row
+      --     (`register/constraints.rs:80-90`).
       --   * memory dispatch (1): gated by `is_memory`, 17 fields.
       --   * ALU dispatch (1): gated by `is_alu_not_x0` (`constraints.rs:147`).
       --   * ALU compare (1): one merged branch comparison for every branch
