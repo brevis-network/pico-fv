@@ -122,6 +122,20 @@ are none among the RV64IM ALU chips at the pinned commit.
 `ECALL` and syscalls, the precompile chips, the program, global memory and memory
 initialisation chips, the recursion layers, and Pico's proof system itself.
 
+### A6. The instruction decoder (Pico 3.x)
+
+The Pico 3.x Program contract (`ProgramBusEntry.operand_properties` in
+`PicoFV/RV64IM/RVSail/BusesV3.lean`) says that a fetched instruction is the row the Lean decoder
+`Transpiler.V3.transpile_op` (`PicoFV/RV64IM/Transpiler/TranspilerV3.lean`) gives some Sail
+instruction at a 4-aligned address below `0x7800_0000`. That decoder models Pico's decoder
+(`vm/src/compiler/riscv/disassembler/rrs.rs`) and Program table builder
+(`vm/src/chips/chips/riscv_program/traces.rs`) at the pinned commit. Only review compares the
+Lean decoder with the Rust one. The decoder starts from an already-decoded Sail instruction, not
+from the 32-bit word: that a word decodes to the same instruction in Sail and in Pico is not
+modelled. `FENCE` has no row of its own: Pico runs every `FENCE` as the no-op `ADD x0, x0, 0`,
+the row of `ADDI x0, x0, 0`, and no theorem states that this no-op does what Sail's `FENCE`
+does.
+
 ## C. Is each proof sound?
 
 ### C1. Kernel and axioms

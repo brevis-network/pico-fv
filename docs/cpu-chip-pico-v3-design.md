@@ -20,8 +20,8 @@ renumbered, and the bus contracts the chip relies on are restated.
 
 Two new files beside the old ones:
 
-- `PicoFV/RV64IM/Transpiler/TranspilerV3.lean`: the decoder, as draft definitions; its lemmas
-  come with the full decoder. `transpile_op inst mult pc` maps a Sail instruction at address
+- `PicoFV/RV64IM/Transpiler/TranspilerV3.lean`: the decoder, with its operand and pc lemmas;
+  the lemmas from a Program message back to its instruction are in `BusesV3.lean`. `transpile_op inst mult pc` maps a Sail instruction at address
   `pc` to the 26-field Program message, following `rrs.rs` and `riscv_program/traces.rs`: the
   pc in two 16-bit pieces; register `a` as one field; `b` and `c` as two 16-bit pieces plus a
   sign bit (`SignExtImm`, `riscv_cpu/instruction/columns.rs:43-70`); 13 selectors; `op_a_0`
@@ -111,10 +111,11 @@ Settled on 12 November 2026.
      (`riscv_program/traces.rs:83-87, 107-110`);
    - the lookup argument balances, which pico-fv assumes for every bus;
    - the decoder in `TranspilerV3.lean` agrees with Pico's (`rrs.rs`). Only review compares
-     the two, so the review of the full decoder compares them field by field. One case is
-     known to be missing: `FENCE`, which Pico decodes as the no-op `ADD x0, x0, 0`
-     (`rrs.rs:98-100, 515-517`). Its table row is the one the decoder gives
-     `ADDI x0, x0, 0`, so the promise holds for it as written.
+     the two; the review of the full decoder compared them field by field. `FENCE` has no
+     case of its own, by design: Pico decodes every `FENCE` as the no-op `ADD x0, x0, 0`
+     (`rrs.rs:95-100, 509-517`), whose table row is the one the decoder gives
+     `ADDI x0, x0, 0`, so the promise holds for it as written. That the no-op does what Sail's
+     `FENCE` does is not proved.
 
    The promise is read against Pico again when the pin moves.
 2. **The memory contract is as drafted** (question 5). Two trial proofs, LW and SD, pass
