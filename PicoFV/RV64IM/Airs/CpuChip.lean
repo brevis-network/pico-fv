@@ -112,46 +112,11 @@ Layout: 1 + 1 + 2 + 2 + 9 + 13 + 10 + 6 + 6 + 8 = **58 columns**.
 This matches `Extraction/CpuChip.lean`, which uses every index in
 `0..57`.
 
-The lite access layouts are defined here rather than in
-`Airs/SubAirs.lean`: the memory chip's proofs still use the 2.x
-`MemoryAccessCols` / `MemoryReadCols` / `MemoryReadWriteCols` from
-that file until that chip moves, so the new shapes sit beside them
-instead of replacing them.
+The three register accesses use the lite layouts `MemoryReadWriteLiteCols`
+(10 columns) and `MemoryReadLiteCols` (6), defined in `Airs/SubAirs.lean`
+beside the 2.x layouts, because Pico's memory chip uses the same lite
+layout (`riscv_memory/read_write/columns.rs:73`).
 -/
-
--- ============================================================================
--- MemoryAccessLiteCols (6 columns)
---
--- `riscv_memory/read_write/columns.rs:404-415`. No committed `prev_clk`:
--- the AIR defines it as `clk - (diff_16bit_limb + diff_hi9 * 2^16) - 1`,
--- so the two difference limbs carry the timestamp argument alone.
--- ============================================================================
-
-#define_subair "MemoryAccessLiteCols" using "pico_encapsulation" where
-  Column["value_0"]
-  Column["value_1"]
-  Column["value_2"]
-  Column["value_3"]
-  Column["diff_16bit_limb"]
-  Column["diff_hi9"]
-
--- ============================================================================
--- MemoryReadLiteCols (6 columns) — same shape as MemoryAccessLiteCols
--- ============================================================================
-
-#define_subair "MemoryReadLiteCols" using "pico_encapsulation" where
-  SubAir["access": "MemoryAccessLiteCols" width := 6]
-
--- ============================================================================
--- MemoryReadWriteLiteCols (10 columns)
--- ============================================================================
-
-#define_subair "MemoryReadWriteLiteCols" using "pico_encapsulation" where
-  Column["prev_value_0"]
-  Column["prev_value_1"]
-  Column["prev_value_2"]
-  Column["prev_value_3"]
-  SubAir["access": "MemoryAccessLiteCols" width := 6]
 
 -- ============================================================================
 -- InstructionCols (9 columns)
