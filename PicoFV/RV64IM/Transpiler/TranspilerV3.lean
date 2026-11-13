@@ -1,6 +1,6 @@
 import PicoFV.RV64IM.Transpiler.Transpiler
 
-/-! # Instruction decoder for the Pico v3.1.1 Program table (draft)
+/-! # Instruction decoder for the Pico v3.1.1 Program table
 
     The Pico v3.1.1 `CpuChip` fetches its instruction with one 26-field message on the
     Program bus (tag 2). This file maps a Sail `instruction` at address `pc` to that message,
@@ -41,11 +41,17 @@ import PicoFV.RV64IM.Transpiler.Transpiler
     * no evenness side condition on the `JALR` offset: RISC-V allows an odd one, and the chip
       clears the low bit itself (`riscv_cpu/jump/constraints.rs:79-126`).
 
-    Draft: the definitions follow Pico's decoder case by case, with one case missing: `FENCE`,
-    which Pico decodes as the no-op `ADD x0, x0, 0` with `imm_c` set (`rrs.rs:98-100,
-    515-517`). Its table row is the one this decoder gives `ADDI x0, x0, 0`. The lemmas that
-    relate a row back to its instruction and its operands to 64-bit values come with the
-    full decoder.                                                                           -/
+    `FENCE` has no case of its own. Pico decodes every `FENCE` word (`fence.tso` and `pause`
+    included) as the no-op `ADD x0, x0, 0` with `imm_c` set (`rrs.rs:95-100, 509-517`), which
+    is exactly the row this decoder gives `ADDI x0, x0, 0`. The Program promise in
+    `BusesV3.lean` therefore holds for a `FENCE` row as written, and an instruction theorem,
+    which rebuilds the instruction from the row's columns, reads that row as
+    `ADDI x0, x0, 0`. That the no-op row does what Sail's `FENCE` and `FENCE_TSO` do is not
+    proved here.
+
+    The lemmas below relate the decoder's pc pieces and operands to natural numbers and
+    64-bit values; the lemmas that go from a Program-bus message back to its instruction are
+    in `BusesV3.lean`.                                                                     -/
 
 namespace Transpiler.V3
 
@@ -305,6 +311,9 @@ namespace Transpiler.V3
         is_register (reg_to_KB rd) ∧ imm % 2 = 0 )
     -- LUI is `ADD rd, 0, imm`; AUIPC is `ADD rd, imm, pc`; both immediate flags
     -- (`rrs.rs:342-366`). Sail's `imm` is the upper 20 bits.
+    -- The two give rows of the same shape, and no selector tells them apart; they can even
+    -- give the same row (`LUI rd, 0x10` and `AUIPC rd, 0` at `0x10000` both give
+    -- `ADD rd, 0, 0x10000`). A row of this shape is one of the two, not a particular one.
     | .UTYPE (imm, rd, op) =>
       let opcode : FKB := 0
       let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
@@ -430,5 +439,55 @@ namespace Transpiler.V3
         is_register (reg_to_KB rd) ∧ is_register (reg_to_KB rs1) ∧ is_register (reg_to_KB rs2) )
     -- Traps and every constructor not listed: no Program-table row.
     | _ => .none
+
+  /-! ## Pico's decoder tests
+
+      The unit tests of `rrs.rs` (`:577-648`), restated on this decoder's message, with
+      multiplicity 1, plus the `LUI` / `AUIPC` coincidence noted at the `UTYPE` case. -/
+
+  section Examples
+
+    /-- `auipc x1, 0x1000` at `0x10000` gives `ADD x1, 0x0100_0000, 0x10000` (`rrs.rs:589-593`). -/
+    example :
+        (transpile_op (.UTYPE (0x1000#20, regidx.Regidx 1#5, .AUIPC)) 1 0x10000).map (·.1) =
+        some (1, #v[0, 1, 0,  0, 1,  0, 0x0100, 0,  0, 1, 0,  0,  1, 1,
+                    0, 0, 0,  0, 0, 0, 0, 0, 0,  0, 0,  0]) := by
+      have h : (uop.AUIPC == uop.AUIPC) = true := rfl
+      simp [transpile_op, h, imm_operand, imm_to_KB, U64w.fromNat, BitVec.extend, pc_lo, pc_hi,
+            pc_carry, reg_to_KB, regidx_to_fin]
+      decide
+
+    /-- `auipc x3, 0xfffff` at `0x10000`: the immediate `-0x1000` is the pieces `0xF000`,
+        `0xFFFF` and sign 1 (`rrs.rs:607-622`). -/
+    example :
+        (transpile_op (.UTYPE (0xFFFFF#20, regidx.Regidx 3#5, .AUIPC)) 1 0x10000).map (·.1) =
+        some (1, #v[0, 1, 0,  0, 3,  0xF000, 0xFFFF, 1,  0, 1, 0,  0,  1, 1,
+                    0, 0, 0,  0, 0, 0, 0, 0, 0,  0, 0,  0]) := by
+      have h : (uop.AUIPC == uop.AUIPC) = true := rfl
+      simp [transpile_op, h, imm_operand, imm_to_KB, U64w.fromNat, BitVec.extend, pc_lo, pc_hi,
+            pc_carry, reg_to_KB, regidx_to_fin]
+      decide
+
+    /-- `lui x4, 0x2` gives `ADD x4, 0, 0x2000`, whatever its address (`rrs.rs:638-642`). -/
+    example :
+        (transpile_op (.UTYPE (0x2#20, regidx.Regidx 4#5, .LUI)) 1 0x10000).map (·.1) =
+        some (1, #v[0, 1, 0,  0, 4,  0, 0, 0,  0x2000, 0, 0,  0,  1, 1,
+                    0, 0, 0,  0, 0, 0, 0, 0, 0,  0, 0,  0]) := by
+      have h : (uop.LUI == uop.AUIPC) = false := rfl
+      simp [transpile_op, h, imm_operand, imm_to_KB, U64w.fromNat, BitVec.extend, pc_lo, pc_hi,
+            pc_carry, reg_to_KB, regidx_to_fin]
+      decide
+
+    /-- `LUI rd, 0x10` and `AUIPC rd, 0` at `0x10000` give the same message. -/
+    example (rd : regidx) :
+        (transpile_op (.UTYPE (0x10#20, rd, .LUI)) 1 0x10000).map (·.1) =
+        (transpile_op (.UTYPE (0#20, rd, .AUIPC)) 1 0x10000).map (·.1) := by
+      have h1 : (uop.LUI == uop.AUIPC) = false := rfl
+      have h2 : (uop.AUIPC == uop.AUIPC) = true := rfl
+      simp [transpile_op, h1, h2, imm_operand, imm_to_KB, U64w.fromNat, BitVec.extend, pc_lo,
+            pc_hi]
+      decide
+
+  end Examples
 
 end Transpiler.V3
