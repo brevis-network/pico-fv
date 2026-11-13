@@ -74,20 +74,20 @@ namespace Transpiler.V3
       builds (`riscv_program/traces.rs:107-110`). -/
   def code_address_bound : ℕ := 0x7800_0000
 
-  @[simp] lemma pc_lo_val (pc : ℕ) : (pc_lo pc).val = pc % 65536 := rfl
+  @[simp] lemma val_pc_lo (pc : ℕ) : (pc_lo pc).val = pc % 65536 := rfl
 
-  @[simp] lemma pc_hi_val (pc : ℕ) : (pc_hi pc).val = pc / 65536 % 65536 := rfl
+  @[simp] lemma val_pc_hi (pc : ℕ) : (pc_hi pc).val = pc / 65536 % 65536 := rfl
 
   /-- A guest address is its two 16-bit pieces, and its high piece is at most `0x77FF`. -/
   lemma pc_pieces {pc : ℕ} (h_lt : pc < code_address_bound) :
       (pc_lo pc).val < 65536 ∧ (pc_hi pc).val ≤ 0x77FF ∧
       (pc_lo pc).val + 65536 * (pc_hi pc).val = pc := by
-    simp only [pc_lo_val, pc_hi_val, code_address_bound] at *
+    simp only [val_pc_lo, val_pc_hi, code_address_bound] at *
     omega
 
   /-- The low piece of a 4-aligned pc is 4-aligned. -/
   lemma pc_lo_mod_four {pc : ℕ} (h_al : pc % 4 = 0) : (pc_lo pc).val % 4 = 0 := by
-    simp only [pc_lo_val]; omega
+    simp only [val_pc_lo]; omega
 
   /-- `pc_carry` is 1 exactly when the low piece is at least `0xFFFC`. -/
   lemma pc_carry_eq (pc : ℕ) :
@@ -123,67 +123,6 @@ namespace Transpiler.V3
     simp only [imm_operand]
     split <;> simp
 
-  /-- For a signed immediate of at most 32 bits, pieces 2 and 3 of the 64-bit value are the
-      sign fill `sign * 65535`. -/
-  lemma imm_operand_fill {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
-      (imm_to_KB imm true)[2] = (imm_operand imm true)[2] * 65535 ∧
-      (imm_to_KB imm true)[3] = (imm_operand imm true)[2] * 65535 := by
-    have h_w : 2^w ≤ 2^32 := Nat.pow_le_pow_right (by norm_num) hw
-    have h_lt : imm.toNat < 2^w := imm.isLt
-    have h_half : 2^w = 2 * 2^(w-1) := by
-      rw [← Nat.pow_succ']; congr 1; omega
-    have h_sx : (BitVec.signExtend 64 imm).toNat =
-        imm.toNat + if imm.msb then 2^64 - 2^w else 0 := by
-      simp only [BitVec.toNat_signExtend, BitVec.toNat_setWidth]
-      rw [Nat.mod_eq_of_lt (by omega)]
-    have h_msb : imm.msb = decide (2^(w-1) ≤ imm.toNat) := BitVec.msb_eq_decide imm
-    have h_msb64 : (BitVec.signExtend 64 imm).msb =
-        decide (2^63 ≤ (BitVec.signExtend 64 imm).toNat) := BitVec.msb_eq_decide _
-    simp only [imm_operand, imm_to_KB, BitVec.extend, U64w.fromNat, ite_true, h_msb64]
-    by_cases hm : imm.msb
-    · simp [hm] at h_sx h_msb
-      have h63 : 2^63 ≤ (BitVec.signExtend 64 imm).toNat := by omega
-      simp only [h63, decide_true, ite_true]
-      simp [Fin.ext_iff]
-      omega
-    · simp [hm] at h_sx h_msb
-      have h63 : ¬ 2^63 ≤ (BitVec.signExtend 64 imm).toNat := by omega
-      simp only [h63, decide_false, Bool.false_eq_true, ite_false]
-      simp [Fin.ext_iff]
-      omega
-
-  /-! ### Signed immediates (sgn = true)
-
-      The 64-bit operand is `[o[0], o[1], o[2] * 65535, o[2] * 65535]`, the form the CPU
-      chip's immediate constraints give its operand value (`value_2 = sign * 65535`,
-      `value_3 = sign * 65535`). The product is taken in the field. -/
-
-  lemma imm_operand_BV_sgn {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
-      let o := imm_operand imm true
-      U64w.toBV #v[o[0], o[1], (o[2] * 65535 : FKB), (o[2] * 65535 : FKB)] =
-      BitVec.signExtend 64 imm := by
-    intro o
-    obtain ⟨ h2, h3 ⟩ := imm_operand_fill imm hw0 hw
-    obtain ⟨ h0, h1 ⟩ := imm_operand_low imm true
-    have h := imm_to_KB_BV_sgn imm
-    simp only at h
-    simp only [o, h0, h1]
-    rw [← h2]
-    nth_rewrite 2 [show (imm_to_KB imm true)[2] = (imm_to_KB imm true)[3] from h2.trans h3.symm]
-    exact h
-
-  lemma imm_operand_Nat_sgn {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
-      let o := imm_operand imm true
-      U64w.toNat #v[o[0], o[1], (o[2] * 65535 : FKB), (o[2] * 65535 : FKB)] =
-      (BitVec.signExtend 64 imm).toNat := by
-    simp [← imm_operand_BV_sgn imm hw0 hw]
-
-  lemma imm_operand_Int_sgn {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
-      let o := imm_operand imm true
-      U64w.toInt #v[o[0], o[1], (o[2] * 65535 : FKB), (o[2] * 65535 : FKB)] =
-      (BitVec.signExtend 64 imm).toInt := by
-    simp [← imm_operand_BV_sgn imm hw0 hw]
-
   /-- The split form: the two low pieces of the sign-extended value, and a sign that is 0 for
       a value below `2^31` and 1 for a value in the top `2^31` of the 64-bit range. -/
   lemma imm_operand_sext {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
@@ -216,6 +155,56 @@ namespace Transpiler.V3
       refine ⟨ ?_, by omega ⟩
       omega
 
+  /-- For a signed immediate of at most 32 bits, pieces 2 and 3 of the 64-bit value are the
+      sign fill `sign * 65535`: both 0 for a non-negative value, both `0xFFFF` for a negative
+      one. -/
+  lemma imm_operand_fill {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
+      (imm_to_KB imm true)[2] = (imm_operand imm true)[2] * 65535 ∧
+      (imm_to_KB imm true)[3] = (imm_operand imm true)[2] * 65535 := by
+    have h := imm_operand_sext imm hw0 hw
+    simp only at h
+    obtain ⟨ -, -, h_s ⟩ := h
+    have h2 : ((imm_to_KB imm true)[2]).val =
+        (BitVec.signExtend 64 imm).toNat / 4294967296 % 65536 := by
+      simp [imm_to_KB, BitVec.extend, U64w.fromNat]
+    have h3 : ((imm_to_KB imm true)[3]).val =
+        (BitVec.signExtend 64 imm).toNat / 281474976710656 % 65536 := by
+      simp [imm_to_KB, BitVec.extend, U64w.fromNat]
+    rcases h_s with ⟨ hs, h_lt ⟩ | ⟨ hs, h_ge, h_lt ⟩ <;> rw [hs] <;>
+      simp only [Fin.ext_iff, h2, h3] <;> norm_num <;> omega
+
+  /-! ### Signed immediates (sgn = true)
+
+      The 64-bit operand is `[o[0], o[1], o[2] * 65535, o[2] * 65535]`, the form the CPU
+      chip's immediate constraints give its operand value (`value_2 = sign * 65535`,
+      `value_3 = sign * 65535`). The product is taken in the field. -/
+
+  lemma imm_operand_toBV_sgn {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
+      let o := imm_operand imm true
+      U64w.toBV #v[o[0], o[1], (o[2] * 65535 : FKB), (o[2] * 65535 : FKB)] =
+      BitVec.signExtend 64 imm := by
+    intro o
+    obtain ⟨ h2, h3 ⟩ := imm_operand_fill imm hw0 hw
+    obtain ⟨ h0, h1 ⟩ := imm_operand_low imm true
+    have h := imm_to_KB_BV_sgn imm
+    simp only at h
+    simp only [o, h0, h1]
+    rw [← h2]
+    nth_rewrite 2 [show (imm_to_KB imm true)[2] = (imm_to_KB imm true)[3] from h2.trans h3.symm]
+    exact h
+
+  lemma imm_operand_toNat_sgn {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
+      let o := imm_operand imm true
+      U64w.toNat #v[o[0], o[1], (o[2] * 65535 : FKB), (o[2] * 65535 : FKB)] =
+      (BitVec.signExtend 64 imm).toNat := by
+    simp [← imm_operand_toBV_sgn imm hw0 hw]
+
+  lemma imm_operand_toInt_sgn {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
+      let o := imm_operand imm true
+      U64w.toInt #v[o[0], o[1], (o[2] * 65535 : FKB), (o[2] * 65535 : FKB)] =
+      (BitVec.signExtend 64 imm).toInt := by
+    simp [← imm_operand_toBV_sgn imm hw0 hw]
+
   /-! ### Unsigned immediates (sgn = false): shift amounts -/
 
   lemma imm_operand_usgn {w : ℕ} (imm : BitVec w) (hw : w ≤ 32) :
@@ -227,7 +216,7 @@ namespace Transpiler.V3
     simp [Fin.ext_iff, BitVec.msb_eq_decide]
     omega
 
-  lemma imm_operand_BV_usgn {w : ℕ} (imm : BitVec w) (hw : w ≤ 32) :
+  lemma imm_operand_toBV_usgn {w : ℕ} (imm : BitVec w) (hw : w ≤ 32) :
       let o := imm_operand imm false
       o[2] = 0 ∧ U64w.toBV #v[o[0], o[1], 0, 0] = BitVec.zeroExtend 64 imm := by
     intro o
@@ -240,53 +229,54 @@ namespace Transpiler.V3
     simp only [o, h0, h1]
     exact h
 
-  lemma imm_operand_Nat_usgn {w : ℕ} (imm : BitVec w) (hw : w ≤ 32) :
+  lemma imm_operand_toNat_usgn {w : ℕ} (imm : BitVec w) (hw : w ≤ 32) :
       let o := imm_operand imm false
       o[2] = 0 ∧ U64w.toNat #v[o[0], o[1], 0, 0] = (BitVec.zeroExtend 64 imm).toNat := by
-    obtain ⟨ h_s, h ⟩ := imm_operand_BV_usgn imm hw
+    obtain ⟨ h_s, h ⟩ := imm_operand_toBV_usgn imm hw
     exact ⟨ h_s, by simp [← h] ⟩
 
-  lemma imm_operand_Int_usgn {w : ℕ} (imm : BitVec w) (hw : w ≤ 32) :
+  lemma imm_operand_toInt_usgn {w : ℕ} (imm : BitVec w) (hw : w ≤ 32) :
       let o := imm_operand imm false
       o[2] = 0 ∧ U64w.toInt #v[o[0], o[1], 0, 0] = (BitVec.zeroExtend 64 imm).toInt := by
-    obtain ⟨ h_s, h ⟩ := imm_operand_BV_usgn imm hw
+    obtain ⟨ h_s, h ⟩ := imm_operand_toBV_usgn imm hw
     exact ⟨ h_s, by simp [← h] ⟩
 
   /-! ### 32-bit (W) values: the two low pieces alone -/
 
-  lemma immw_operand_BV_sgn {w : ℕ} (imm : BitVec w) :
+  lemma immw_operand_toBV_sgn {w : ℕ} (imm : BitVec w) :
       let o := imm_operand imm true
       U32w.toBV #v[o[0], o[1]] = BitVec.signExtend 32 imm :=
     immw_to_KB_BV_sgn imm
 
-  lemma immw_operand_Nat_sgn {w : ℕ} (imm : BitVec w) :
+  lemma immw_operand_toNat_sgn {w : ℕ} (imm : BitVec w) :
       let o := imm_operand imm true
       U32w.toNat #v[o[0], o[1]] = (BitVec.signExtend 32 imm).toNat :=
     immw_to_KB_Nat_sgn imm
 
-  lemma immw_operand_Int_sgn {w : ℕ} (imm : BitVec w) :
+  lemma immw_operand_toInt_sgn {w : ℕ} (imm : BitVec w) :
       let o := imm_operand imm true
       U32w.toInt #v[o[0], o[1]] = (BitVec.signExtend 32 imm).toInt :=
     immw_to_KB_Int_sgn imm
 
-  lemma immw_operand_BV_usgn {w : ℕ} (imm : BitVec w) :
+  lemma immw_operand_toBV_usgn {w : ℕ} (imm : BitVec w) :
       let o := imm_operand imm false
       U32w.toBV #v[o[0], o[1]] = BitVec.setWidth 32 imm :=
     immw_to_KB_BV_usgn imm
 
-  lemma immw_operand_Nat_usgn {w : ℕ} (imm : BitVec w) :
+  lemma immw_operand_toNat_usgn {w : ℕ} (imm : BitVec w) :
       let o := imm_operand imm false
       U32w.toNat #v[o[0], o[1]] = (BitVec.setWidth 32 imm).toNat :=
     immw_to_KB_Nat_usgn imm
 
-  lemma immw_operand_Int_usgn {w : ℕ} (imm : BitVec w) :
+  lemma immw_operand_toInt_usgn {w : ℕ} (imm : BitVec w) :
       let o := imm_operand imm false
       U32w.toInt #v[o[0], o[1]] = (BitVec.setWidth 32 imm).toInt :=
     immw_to_KB_Int_usgn imm
 
   /-! ### Register operands -/
 
-  /-- `op_a_0` as the decoder writes it is `[op_a = 0]` on the register index. -/
+  /-- `op_a_0` as the decoder writes it, on every row, is `[op_a = 0]` on the register index.
+      The decoder types the flag as a field element, so `rw` finds this form on every row. -/
   lemma reg_is_x0 (rd : regidx) :
       (if (rd == regidx.Regidx 0) then (1 : FKB) else 0) =
       if reg_to_KB rd = 0 then 1 else 0 := by
@@ -304,8 +294,12 @@ namespace Transpiler.V3
       · rfl
 
   /-- A register index is below 32. -/
-  lemma reg_to_KB_lt (rd : regidx) : (reg_to_KB rd).val < 32 := by
+  lemma val_reg_to_KB_lt (rd : regidx) : (reg_to_KB rd).val < 32 := by
     simp [reg_to_KB]
+
+  /-- A register index is below any bound of at least 32, such as an operand piece's `2^16`. -/
+  lemma val_reg_to_KB_lt_of_le {n : ℕ} (rd : regidx) (h : 32 ≤ n) : (reg_to_KB rd).val < n :=
+    lt_of_lt_of_le (val_reg_to_KB_lt rd) h
 
   /-! ## Decoding -/
 
@@ -321,7 +315,7 @@ namespace Transpiler.V3
     -- R-type ALU: `op_b = rs1`, `op_c = rs2`, no immediate (`rrs.rs:13-22`).
     | .RTYPE (rs2, rs1, rd, op) =>
       let opcode := opcode_of_rop op
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         ( multiplicity,
           #v[ pc_lo pc, pc_hi pc, opcode,
@@ -337,7 +331,7 @@ namespace Transpiler.V3
         is_register (reg_to_KB rd) ∧ is_register (reg_to_KB rs1) ∧ is_register (reg_to_KB rs2) )
     | .RTYPEW (rs2, rs1, rd, op) =>
       let opcode := opcode_of_ropw op
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         ( multiplicity,
           #v[ pc_lo pc, pc_hi pc, opcode,
@@ -351,7 +345,7 @@ namespace Transpiler.V3
     -- I-type ALU: `op_c` is the sign-extended immediate, `imm_c = 1` (`rrs.rs:26-35`).
     | .ITYPE (imm, rs1, rd, op) =>
       let opcode := opcode_of_iop op
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       let oc := imm_operand imm true
       .some (
         ( multiplicity,
@@ -366,7 +360,7 @@ namespace Transpiler.V3
         is_register (reg_to_KB rd) ∧ is_register (reg_to_KB rs1) )
     | .ADDIW (imm, rs1, rd) =>
       let opcode : FKB := 40
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       let oc := imm_operand imm true
       .some (
         ( multiplicity,
@@ -382,7 +376,7 @@ namespace Transpiler.V3
     -- Shift by an immediate: the shift amount is zero-extended (`rrs.rs:39-61`).
     | .SHIFTIOP (imm, rs1, rd, op) =>
       let opcode := opcode_of_sop op
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       let oc := imm_operand imm false
       .some (
         ( multiplicity,
@@ -397,7 +391,7 @@ namespace Transpiler.V3
         is_register (reg_to_KB rd) ∧ is_register (reg_to_KB rs1) )
     | .SHIFTIWOP (imm, rs1, rd, op) =>
       let opcode := opcode_of_sopw op
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       let oc := imm_operand imm false
       .some (
         ( multiplicity,
@@ -425,7 +419,7 @@ namespace Transpiler.V3
       match opcode with
       | 0 => .none
       | opcode =>
-        let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+        let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
         let oc := imm_operand imm true
         .some (
           ( multiplicity,
@@ -453,7 +447,7 @@ namespace Transpiler.V3
       match opcode with
       | 0 => .none
       | opcode =>
-        let a_is_0 := if (rs2 == regidx.Regidx 0) then 1 else 0
+        let a_is_0 : FKB := if (rs2 == regidx.Regidx 0) then 1 else 0
         let oc := imm_operand imm true
         .some (
           ( multiplicity,
@@ -472,7 +466,7 @@ namespace Transpiler.V3
     -- `op_a_0` is `[rs1 = x0]` (`rrs.rs:78-87`).
     | .BTYPE (imm, rs2, rs1, op) =>
       let opcode := opcode_of_bop op
-      let a_is_0 := if (rs1 == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rs1 == regidx.Regidx 0) then 1 else 0
       let oc := imm_operand imm true
       .some (
         ( multiplicity,
@@ -495,7 +489,7 @@ namespace Transpiler.V3
     -- JALR: `op_b = rs1`, `op_c = offset`, `imm_c = 1` (`rrs.rs:331-340`).
     | .JALR (imm, rs1, rd) =>
       let opcode : FKB := 25
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       let oc := imm_operand imm true
       .some (
         ( multiplicity,
@@ -513,7 +507,7 @@ namespace Transpiler.V3
     -- JAL: `op_b = offset`, `op_c = 0`, both immediate flags (`rrs.rs:320-329`).
     | .JAL (imm, rd) =>
       let opcode : FKB := 24
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       let ob := imm_operand imm true
       .some (
         ( multiplicity,
@@ -535,7 +529,7 @@ namespace Transpiler.V3
     -- `ADD rd, 0, 0x10000`). A row of this shape is one of the two, not a particular one.
     | .UTYPE (imm, rd, op) =>
       let opcode : FKB := 0
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       let u := imm_operand (imm ++ 0#12) true
       let ob : Vector FKB 3 := if op == .AUIPC then u else #v[0, 0, 0]
       let oc : Vector FKB 3 := if op == .AUIPC then #v[pc_lo pc, pc_hi pc, 0] else u
@@ -578,7 +572,7 @@ namespace Transpiler.V3
       match opcode with
       | 0 => .none
       | opcode =>
-        let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+        let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
         .some (
           ( multiplicity,
             #v[ pc_lo pc, pc_hi pc, opcode,
@@ -591,7 +585,7 @@ namespace Transpiler.V3
           is_register (reg_to_KB rd) ∧ is_register (reg_to_KB rs1) ∧ is_register (reg_to_KB rs2) )
     | .MULW (rs2, rs1, rd) =>
       let opcode : FKB := 48
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         ( multiplicity,
           #v[ pc_lo pc, pc_hi pc, opcode,
@@ -606,7 +600,7 @@ namespace Transpiler.V3
     -- DIVW 49 / DIVUW 50, REMW 51 / REMUW 52.
     | .DIV (rs2, rs1, rd, sgn) =>
       let opcode : FKB := match sgn with | true => 35 | false => 34
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         ( multiplicity,
           #v[ pc_lo pc, pc_hi pc, opcode,
@@ -619,7 +613,7 @@ namespace Transpiler.V3
         is_register (reg_to_KB rd) ∧ is_register (reg_to_KB rs1) ∧ is_register (reg_to_KB rs2) )
     | .DIVW (rs2, rs1, rd, sgn) =>
       let opcode : FKB := match sgn with | true => 50 | false => 49
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         ( multiplicity,
           #v[ pc_lo pc, pc_hi pc, opcode,
@@ -632,7 +626,7 @@ namespace Transpiler.V3
         is_register (reg_to_KB rd) ∧ is_register (reg_to_KB rs1) ∧ is_register (reg_to_KB rs2) )
     | .REM (rs2, rs1, rd, sgn) =>
       let opcode : FKB := match sgn with | true => 37 | false => 36
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         ( multiplicity,
           #v[ pc_lo pc, pc_hi pc, opcode,
@@ -645,7 +639,7 @@ namespace Transpiler.V3
         is_register (reg_to_KB rd) ∧ is_register (reg_to_KB rs1) ∧ is_register (reg_to_KB rs2) )
     | .REMW (rs2, rs1, rd, sgn) =>
       let opcode : FKB := match sgn with | true => 52 | false => 51
-      let a_is_0 := if (rd == regidx.Regidx 0) then 1 else 0
+      let a_is_0 : FKB := if (rd == regidx.Regidx 0) then 1 else 0
       .some (
         ( multiplicity,
           #v[ pc_lo pc, pc_hi pc, opcode,
