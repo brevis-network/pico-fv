@@ -74,6 +74,25 @@ namespace Transpiler.V3
       builds (`riscv_program/traces.rs:107-110`). -/
   def code_address_bound : ℕ := 0x7800_0000
 
+  @[simp] lemma pc_lo_val (pc : ℕ) : (pc_lo pc).val = pc % 65536 := rfl
+
+  @[simp] lemma pc_hi_val (pc : ℕ) : (pc_hi pc).val = pc / 65536 % 65536 := rfl
+
+  /-- A guest address is its two 16-bit pieces, and its high piece is at most `0x77FF`. -/
+  lemma pc_pieces {pc : ℕ} (h_lt : pc < code_address_bound) :
+      (pc_lo pc).val < 65536 ∧ (pc_hi pc).val ≤ 0x77FF ∧
+      (pc_lo pc).val + 65536 * (pc_hi pc).val = pc := by
+    simp only [pc_lo_val, pc_hi_val, code_address_bound] at *
+    omega
+
+  /-- The low piece of a 4-aligned pc is 4-aligned. -/
+  lemma pc_lo_mod_four {pc : ℕ} (h_al : pc % 4 = 0) : (pc_lo pc).val % 4 = 0 := by
+    simp only [pc_lo_val]; omega
+
+  /-- `pc_carry` is 1 exactly when the low piece is at least `0xFFFC`. -/
+  lemma pc_carry_eq (pc : ℕ) :
+      pc_carry pc = if 0xFFFC ≤ (pc_lo pc).val then 1 else 0 := rfl
+
   /-! ## Operands
 
       An operand in the Program message is `SignExtImm`: bits 0..16, bits 16..32 and one sign
@@ -87,6 +106,206 @@ namespace Transpiler.V3
   def imm_operand {w : ℕ} (imm : BitVec w) (sgn : Bool) : Vector FKB 3 :=
     let limbs := imm_to_KB imm sgn
     #v[limbs[0], limbs[1], if (BitVec.extend imm 64 sgn).msb then 1 else 0]
+
+  /-- The two low pieces of an operand are those of `imm_to_KB`. -/
+  lemma imm_operand_low {w : ℕ} (imm : BitVec w) (sgn : Bool) :
+      (imm_operand imm sgn)[0] = (imm_to_KB imm sgn)[0] ∧
+      (imm_operand imm sgn)[1] = (imm_to_KB imm sgn)[1] := by
+    simp [imm_operand]
+
+  /-- An operand's two pieces are 16-bit and its sign is 0 or 1. -/
+  lemma imm_operand_limbs {w : ℕ} (imm : BitVec w) (sgn : Bool) :
+      (imm_operand imm sgn)[0].val < 65536 ∧ (imm_operand imm sgn)[1].val < 65536 ∧
+      ((imm_operand imm sgn)[2] = 0 ∨ (imm_operand imm sgn)[2] = 1) := by
+    have h := imm_to_KB_limbs imm sgn
+    simp only [Fin.lt_def] at h
+    refine ⟨ h.1, h.2.1, ?_ ⟩
+    simp only [imm_operand]
+    split <;> simp
+
+  /-- For a signed immediate of at most 32 bits, pieces 2 and 3 of the 64-bit value are the
+      sign fill `sign * 65535`. -/
+  lemma imm_operand_fill {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
+      (imm_to_KB imm true)[2] = (imm_operand imm true)[2] * 65535 ∧
+      (imm_to_KB imm true)[3] = (imm_operand imm true)[2] * 65535 := by
+    have h_w : 2^w ≤ 2^32 := Nat.pow_le_pow_right (by norm_num) hw
+    have h_lt : imm.toNat < 2^w := imm.isLt
+    have h_half : 2^w = 2 * 2^(w-1) := by
+      rw [← Nat.pow_succ']; congr 1; omega
+    have h_sx : (BitVec.signExtend 64 imm).toNat =
+        imm.toNat + if imm.msb then 2^64 - 2^w else 0 := by
+      simp only [BitVec.toNat_signExtend, BitVec.toNat_setWidth]
+      rw [Nat.mod_eq_of_lt (by omega)]
+    have h_msb : imm.msb = decide (2^(w-1) ≤ imm.toNat) := BitVec.msb_eq_decide imm
+    have h_msb64 : (BitVec.signExtend 64 imm).msb =
+        decide (2^63 ≤ (BitVec.signExtend 64 imm).toNat) := BitVec.msb_eq_decide _
+    simp only [imm_operand, imm_to_KB, BitVec.extend, U64w.fromNat, ite_true, h_msb64]
+    by_cases hm : imm.msb
+    · simp [hm] at h_sx h_msb
+      have h63 : 2^63 ≤ (BitVec.signExtend 64 imm).toNat := by omega
+      simp only [h63, decide_true, ite_true]
+      simp [Fin.ext_iff]
+      omega
+    · simp [hm] at h_sx h_msb
+      have h63 : ¬ 2^63 ≤ (BitVec.signExtend 64 imm).toNat := by omega
+      simp only [h63, decide_false, Bool.false_eq_true, ite_false]
+      simp [Fin.ext_iff]
+      omega
+
+  /-! ### Signed immediates (sgn = true)
+
+      The 64-bit operand is `[o[0], o[1], o[2] * 65535, o[2] * 65535]`, the form the CPU
+      chip's immediate constraints give its operand value (`value_2 = sign * 65535`,
+      `value_3 = sign * 65535`). The product is taken in the field. -/
+
+  lemma imm_operand_BV_sgn {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
+      let o := imm_operand imm true
+      U64w.toBV #v[o[0], o[1], (o[2] * 65535 : FKB), (o[2] * 65535 : FKB)] =
+      BitVec.signExtend 64 imm := by
+    intro o
+    obtain ⟨ h2, h3 ⟩ := imm_operand_fill imm hw0 hw
+    obtain ⟨ h0, h1 ⟩ := imm_operand_low imm true
+    have h := imm_to_KB_BV_sgn imm
+    simp only at h
+    simp only [o, h0, h1]
+    rw [← h2]
+    nth_rewrite 2 [show (imm_to_KB imm true)[2] = (imm_to_KB imm true)[3] from h2.trans h3.symm]
+    exact h
+
+  lemma imm_operand_Nat_sgn {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
+      let o := imm_operand imm true
+      U64w.toNat #v[o[0], o[1], (o[2] * 65535 : FKB), (o[2] * 65535 : FKB)] =
+      (BitVec.signExtend 64 imm).toNat := by
+    simp [← imm_operand_BV_sgn imm hw0 hw]
+
+  lemma imm_operand_Int_sgn {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
+      let o := imm_operand imm true
+      U64w.toInt #v[o[0], o[1], (o[2] * 65535 : FKB), (o[2] * 65535 : FKB)] =
+      (BitVec.signExtend 64 imm).toInt := by
+    simp [← imm_operand_BV_sgn imm hw0 hw]
+
+  /-- The split form: the two low pieces of the sign-extended value, and a sign that is 0 for
+      a value below `2^31` and 1 for a value in the top `2^31` of the 64-bit range. -/
+  lemma imm_operand_sext {w : ℕ} (imm : BitVec w) (hw0 : 0 < w) (hw : w ≤ 32) :
+      let o := imm_operand imm true
+      let sx := (BitVec.signExtend 64 imm).toNat
+      o[0].val = sx % 65536 ∧ o[1].val = sx / 65536 % 65536 ∧
+      ((o[2] = 0 ∧ sx < 2^31) ∨ (o[2] = 1 ∧ 2^64 - 2^31 ≤ sx ∧ sx < 2^64)) := by
+    intro o sx
+    have h_w : 2^w ≤ 2^32 := Nat.pow_le_pow_right (by norm_num) hw
+    have h_lt : imm.toNat < 2^w := imm.isLt
+    have h_half : 2^w = 2 * 2^(w-1) := by
+      rw [← Nat.pow_succ']; congr 1; omega
+    have h_sx : sx = imm.toNat + if imm.msb then 2^64 - 2^w else 0 := by
+      simp only [sx, BitVec.toNat_signExtend, BitVec.toNat_setWidth]
+      rw [Nat.mod_eq_of_lt (by omega)]
+    have h_msb : imm.msb = decide (2^(w-1) ≤ imm.toNat) := BitVec.msb_eq_decide imm
+    have h_sx_lt : sx < 2^64 := (BitVec.signExtend 64 imm).isLt
+    have h_msb64 : (BitVec.signExtend 64 imm).msb = decide (2^63 ≤ sx) := BitVec.msb_eq_decide _
+    simp only [o, imm_operand, imm_to_KB, BitVec.extend, U64w.fromNat]
+    simp only [ite_true, h_msb64]
+    simp
+    refine ⟨ rfl, rfl, ?_ ⟩
+    by_cases hm : imm.msb
+    · simp [hm] at h_sx h_msb
+      right
+      refine ⟨ ?_, by omega, h_sx_lt ⟩
+      omega
+    · simp [hm] at h_sx h_msb
+      left
+      refine ⟨ ?_, by omega ⟩
+      omega
+
+  /-! ### Unsigned immediates (sgn = false): shift amounts -/
+
+  lemma imm_operand_usgn {w : ℕ} (imm : BitVec w) (hw : w ≤ 32) :
+      (imm_operand imm false)[2] = 0 ∧
+      (imm_to_KB imm false)[2] = 0 ∧ (imm_to_KB imm false)[3] = 0 := by
+    have h_w : 2^w ≤ 2^32 := Nat.pow_le_pow_right (by norm_num) hw
+    have h_lt : imm.toNat < 2^w := imm.isLt
+    simp only [imm_operand, imm_to_KB, BitVec.extend, U64w.fromNat]
+    simp [Fin.ext_iff, BitVec.msb_eq_decide]
+    omega
+
+  lemma imm_operand_BV_usgn {w : ℕ} (imm : BitVec w) (hw : w ≤ 32) :
+      let o := imm_operand imm false
+      o[2] = 0 ∧ U64w.toBV #v[o[0], o[1], 0, 0] = BitVec.zeroExtend 64 imm := by
+    intro o
+    obtain ⟨ h_s, h2, h3 ⟩ := imm_operand_usgn imm hw
+    refine ⟨ h_s, ?_ ⟩
+    obtain ⟨ h0, h1 ⟩ := imm_operand_low imm false
+    have h := imm_to_KB_BV_usgn imm
+    simp only at h
+    rw [h2, h3] at h
+    simp only [o, h0, h1]
+    exact h
+
+  lemma imm_operand_Nat_usgn {w : ℕ} (imm : BitVec w) (hw : w ≤ 32) :
+      let o := imm_operand imm false
+      o[2] = 0 ∧ U64w.toNat #v[o[0], o[1], 0, 0] = (BitVec.zeroExtend 64 imm).toNat := by
+    obtain ⟨ h_s, h ⟩ := imm_operand_BV_usgn imm hw
+    exact ⟨ h_s, by simp [← h] ⟩
+
+  lemma imm_operand_Int_usgn {w : ℕ} (imm : BitVec w) (hw : w ≤ 32) :
+      let o := imm_operand imm false
+      o[2] = 0 ∧ U64w.toInt #v[o[0], o[1], 0, 0] = (BitVec.zeroExtend 64 imm).toInt := by
+    obtain ⟨ h_s, h ⟩ := imm_operand_BV_usgn imm hw
+    exact ⟨ h_s, by simp [← h] ⟩
+
+  /-! ### 32-bit (W) values: the two low pieces alone -/
+
+  lemma immw_operand_BV_sgn {w : ℕ} (imm : BitVec w) :
+      let o := imm_operand imm true
+      U32w.toBV #v[o[0], o[1]] = BitVec.signExtend 32 imm :=
+    immw_to_KB_BV_sgn imm
+
+  lemma immw_operand_Nat_sgn {w : ℕ} (imm : BitVec w) :
+      let o := imm_operand imm true
+      U32w.toNat #v[o[0], o[1]] = (BitVec.signExtend 32 imm).toNat :=
+    immw_to_KB_Nat_sgn imm
+
+  lemma immw_operand_Int_sgn {w : ℕ} (imm : BitVec w) :
+      let o := imm_operand imm true
+      U32w.toInt #v[o[0], o[1]] = (BitVec.signExtend 32 imm).toInt :=
+    immw_to_KB_Int_sgn imm
+
+  lemma immw_operand_BV_usgn {w : ℕ} (imm : BitVec w) :
+      let o := imm_operand imm false
+      U32w.toBV #v[o[0], o[1]] = BitVec.setWidth 32 imm :=
+    immw_to_KB_BV_usgn imm
+
+  lemma immw_operand_Nat_usgn {w : ℕ} (imm : BitVec w) :
+      let o := imm_operand imm false
+      U32w.toNat #v[o[0], o[1]] = (BitVec.setWidth 32 imm).toNat :=
+    immw_to_KB_Nat_usgn imm
+
+  lemma immw_operand_Int_usgn {w : ℕ} (imm : BitVec w) :
+      let o := imm_operand imm false
+      U32w.toInt #v[o[0], o[1]] = (BitVec.setWidth 32 imm).toInt :=
+    immw_to_KB_Int_usgn imm
+
+  /-! ### Register operands -/
+
+  /-- `op_a_0` as the decoder writes it is `[op_a = 0]` on the register index. -/
+  lemma reg_is_x0 (rd : regidx) :
+      (if (rd == regidx.Regidx 0) then (1 : FKB) else 0) =
+      if reg_to_KB rd = 0 then 1 else 0 := by
+    obtain ⟨ r ⟩ := rd
+    have h : (regidx.Regidx r == regidx.Regidx 0) = (r == 0) := rfl
+    rw [h]
+    simp only [reg_to_KB, regidx_to_fin, Fin.ext_iff, Fin.val_zero]
+    by_cases hr : r = 0
+    · subst hr; simp
+    · have : r.toNat ≠ 0 := by
+        intro h0; apply hr; exact BitVec.eq_of_toNat_eq (by simpa using h0)
+      simp only [this, if_false]
+      split
+      · rename_i hb; exfalso; apply this; simp at hb; subst hb; rfl
+      · rfl
+
+  /-- A register index is below 32. -/
+  lemma reg_to_KB_lt (rd : regidx) : (reg_to_KB rd).val < 32 := by
+    simp [reg_to_KB]
 
   /-! ## Decoding -/
 
