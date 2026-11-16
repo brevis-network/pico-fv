@@ -363,6 +363,22 @@ namespace RV64IM
       simp [Sail.writeReg, PreSail.writeReg]; congr
       rw [ExtDHashMap.insert_eq_self]; assumption
 
+    /-- Writing to `x0` leaves the state alone, whatever the value. The v3.1.1 CPU chip sends
+        no ALU message on a row whose destination is `x0`, so each instruction theorem closes
+        that row by cancelling the two writes rather than by comparing their values. -/
+    lemma operation_list_effect_state_writeReg_x0
+      {reg : regidx} {val : BitVec 64} {ops : List Operation}
+      {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+      (h_zero : (regidx_to_fin reg).val = 0)
+    :
+      (operation_list_effect (.WriteReg reg val :: ops) state).state
+        =
+      (operation_list_effect ops state).state
+    := by
+      simp [operation_list_effect]; congr
+      simp [operation_effect]; exists ()
+      simp [write_xreg, h_zero]
+
     lemma operation_list_effect_state_swap_writePC_writeReg
     :
       (operation_list_effect (.WritePC pc_val :: .WriteReg reg val :: ops) state).state
