@@ -1,6 +1,6 @@
 # Parked theorem lists
 
-The 12 lists here name 61 of the 62 instruction theorems of
+The 11 lists here name 56 of the 62 instruction theorems of
 `PicoFV/RV64IM/Equivalence/`. They sit out of `theorems.d/` — and so out of
 `check.sh` — while the CPU chip moves to Pico v3.1.1.
 
@@ -8,8 +8,9 @@ The chip's column layout changed shape (58 columns instead of 132), so the 2.x
 `Constraints/CpuChipInterpretations.lean` and the `Equivalence/` files that
 rest on it no longer compile. The interpretations file and
 `Equivalence/Common.lean` are now rewritten at v3.1.1, holding the lemmas every
-instruction class shares, and `equivalence-addiw.txt` has moved back up a
-directory with `Equivalence/Addiw.lean`. `PicoFV64.lean` still does not import
+instruction class shares, and `equivalence-addiw.txt` and
+`equivalence-r-type-w.txt` have moved back up a directory with
+`Equivalence/Addiw.lean` and `Equivalence/RTypeW.lean`. `PicoFV64.lean` still does not import
 `Equivalence.Equivalence`, which pulls in all 13 class files; it returns with
 the last of them. The tag `pico-v3-before-cpu` holds the 2.x versions.
 

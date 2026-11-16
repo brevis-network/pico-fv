@@ -135,7 +135,8 @@ import PicoFV.RV64IM.Spec.CpuChip
 -- Equivalence (Sail ↔ Pico)
 import PicoFV.RV64IM.Equivalence.Common
 import PicoFV.RV64IM.Equivalence.Addiw
--- The other 12 instruction-theorem files still read the 2.x CPU layout and are
+import PicoFV.RV64IM.Equivalence.RTypeW
+-- The other 11 instruction-theorem files still read the 2.x CPU layout and are
 -- out of the build, with their lists parked in
 -- `scripts/fv-check/theorems.d/parked/`. They come back one class at a time;
 -- `Equivalence/Equivalence.lean`, which imported all 13, returns with the last.

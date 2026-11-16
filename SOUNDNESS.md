@@ -229,7 +229,7 @@ C2) or the specification axioms of A2.
 | Axioms the theorem depends on | Theorems |
 |---|---:|
 | kernel + compiler | 80 |
-| kernel + compiler + RISC-V spec axioms | 1 |
+| kernel + compiler + RISC-V spec axioms | 6 |
 | kernel only | 1 |
 <!-- end generated -->
 
