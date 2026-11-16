@@ -1,6 +1,6 @@
 # Parked theorem lists
 
-The 12 lists here name 61 of the 62 instruction theorems of
+The 11 lists here name 56 of the 62 instruction theorems of
 `PicoFV/RV64IM/Equivalence/`. They sit out of `theorems.d/` — and so out of
 `check.sh` — while the CPU chip moves to Pico v3.1.1.
 
@@ -8,10 +8,11 @@ The chip's column layout changed shape (58 columns instead of 132), so the 2.x
 `Constraints/CpuChipInterpretations.lean` and the `Equivalence/` files that
 rest on it no longer compile. The interpretations file and
 `Equivalence/Common.lean` are now rewritten at v3.1.1, holding the lemmas every
-instruction class shares, and `equivalence-addiw.txt` has moved back up a
-directory with `Equivalence/Addiw.lean`. `PicoFV64.lean` still does not import
-`Equivalence.Equivalence`, which pulls in all 13 class files; it returns with
-the last of them. The tag `pico-v3-before-cpu` holds the 2.x versions.
+instruction class shares, and `equivalence-addiw.txt` and
+`equivalence-r-type-w.txt` have moved back up a directory with
+`Equivalence/Addiw.lean` and `Equivalence/RTypeW.lean`. `PicoFV64.lean` still
+does not import `Equivalence.Equivalence`, which pulls in all 13 class files;
+it returns with the last of them. The tag `pico-v3-before-cpu` holds the 2.x versions.
 
 ## Restoring an instruction class
 
@@ -35,7 +36,8 @@ time. For each class:
 
 ## How the restored statements may differ
 
-They are expected to differ from those at `353238a` in three ways. The bus
+They are expected to differ from those at `353238a` in three ways, plus the
+dropped hypotheses described at the end of this section. The bus
 assumptions name the v3.1.1 contracts (`RV64IM_Interactions.V3` in
 `RVSail/BusesV3.lean`) instead of the 2.x ones. The destination register is
 read from `instruction.op_a` instead of `instruction.op_a_0`: v3.1.1 keeps the
@@ -47,7 +49,12 @@ gains three conjuncts in its definition:
   keep their recorded text, because `signatures.txt` records the name and not
   the definition, but their meaning changes;
 - the other 54 gain it as a new hypothesis, so their recorded statements change,
-  as `ADDIW`'s already has.
+  as those of the six already restored have.
+
+A restored statement may also drop an immediate-flag hypothesis that the v3.1.1
+decoder already fixes for its opcode (`imm_b_of_opcode`, `imm_c_of_opcode` in
+`RVSail/BusesV3.lean`): `ADDIW` no longer takes `imm_b = 0`, and `SUBW` no
+longer takes `imm_c = 0`. Dropping a hypothesis makes the theorem stronger.
 
 Two definitions every statement names were also rewritten at v3.1.1, and
 `signatures.txt` shows only their names: `Equivalence.CPU_bus_operations` (the

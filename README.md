@@ -8,8 +8,9 @@ specification](https://github.com/NethermindEth/sail-riscv-lean/tree/v4.28.0-rc1
 The development covers the **RV64IM** variant of Pico. Its 62 opcodes were
 equivalence-proven against Pico 2.x. On the `pico-v3` branch those proofs are
 being rewritten one instruction class at a time while the CPU chip moves to
-Pico v3.1.1. For now the branch proves one of them, `ADDIW`, against the v3.1.1
-chip; the other 61 are out of the build and `check.sh` does not check them (see
+Pico v3.1.1. For now the branch proves six of them against the v3.1.1 chip:
+`ADDIW`, `ADDW`, `SUBW`, `SLLW`, `SRLW` and `SRAW`. The other 56 are out of the
+build and `check.sh` does not check them (see
 [SOUNDNESS.md](SOUNDNESS.md)). The 62 opcodes:
   - 27 ALU opcodes: `ADD`, `ADDI`, `SUB`, `XOR`, `XORI`, `OR`, `ORI`, `AND`,
     `ANDI`, `SLT`, `SLTI`, `SLTU`, `SLTIU`, `SLL`, `SLLI`, `SRL`, `SRLI`, `SRA`,
@@ -103,9 +104,10 @@ fetching mathlib's binary cache.
 After `lake build`, `scripts/fv-check/check.sh` checks the top-level theorems
 listed in `scripts/fv-check/theorems.d/`: the memory chip's `spec_*` / `bus_equiv*`
 theorems, and the specifications of the ALU chips already at v3.1.1 (Add, Sub,
-Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight), and the `ADDIW`
-equivalence theorem. The lists of the other 61 opcode equivalence theorems are
-parked in `theorems.d/parked/` while the CPU chip moves (see the README there). It fails if a theorem is missing,
+Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight), and the equivalence
+theorems of `ADDIW`, `ADDW`, `SUBW`, `SLLW`, `SRLW` and `SRAW`. The lists of
+the other 56 opcode equivalence theorems are parked in `theorems.d/parked/`
+while the CPU chip moves (see the README there). It fails if a theorem is missing,
 depends on an axiom (a statement Lean accepts without proof) outside two lists,
 or its axioms or statement differ from the snapshots in `axioms.txt` and
 `signatures.txt`:
