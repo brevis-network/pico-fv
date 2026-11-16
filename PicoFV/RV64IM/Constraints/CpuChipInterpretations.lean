@@ -23,9 +23,10 @@ places:
   `ProgramBusEntry.operand_properties` and `inversion_pc_facts` (`pc_facts` below).
 - **The next pc** is not checked either. On an internal row it is the next row's pc, which the
   Program table bounds; on the chunk's last real row it is public values 43 and 44, which only
-  the whole-trace assumption bounds. `next_pc_facts` takes that assumption's four parts as
-  hypotheses, and `Equivalence/Common.lean` packages them as
-  `pico_CpuChip_control_flow_assumptions`.
+  the whole-trace assumption bounds. That assumption,
+  `Equivalence.pico_CpuChip_control_flow_assumptions`, is defined at the top of this file so
+  that `next_pc_facts` and the lemmas built on it can take it whole; the instruction theorems
+  name it in their statements.
 - **The class selectors** come from the Program message as functions of the opcode
   (`class_selectors_of_opcode`, `imm_b_of_opcode`, `imm_c_of_opcode`), not from chip
   constraints.
@@ -36,10 +37,57 @@ Names are the 2.x ones wherever the meaning is unchanged, so the instruction-the
 less to rewrite.
 -/
 
+namespace Equivalence
+
+  /-- The one assumption the instruction theorems make about the whole trace: the chunk's
+      final pc, public values 43 and 44, is a 4-aligned address of two 16-bit pieces inside
+      the guest address space. The chip pins public value 45 to zero itself (constraint 43)
+      and range-checks none of the three.
+
+      Pico enforces this outside the chips, in the recursion circuit
+      (`vm/src/mle/compiler/recursion/lowering.rs`): each chunk's final pc is the next
+      chunk's first pc (`assert_child_continuity`, 1081-1090), a chunk with no CPU rows
+      passes its pc through (1436-1440), and the root requires the last chunk's final pc to
+      be zero (`assert_root_complete`, 1748-1754). A chunk's first pc is its row 0's pc
+      (`riscv_cpu/public_values/constraints.rs:26-33`), row 0 is real
+      (`riscv_cpu/constraints.rs:340-341`), and its fetch matches the Program table, whose
+      addresses are 4-aligned and below `0x7800_0000` (`riscv_program/traces.rs:83-110`). So
+      in an accepted recursive proof the final pc is either zero or a Program-table address,
+      and either satisfies this. With it the theorems describe a chunk inside an accepted
+      proof, not a chunk proof checked on its own.
+
+      It lives here, under its `Equivalence` name, so that the interpretations lemmas below
+      can take it as one hypothesis. -/
+  def pico_CpuChip_control_flow_assumptions {ExtF : Type} [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) : Prop :=
+    (air.public_values 43).val % 4 = 0 ∧
+    (air.public_values 43).val < 65536 ∧
+    (air.public_values 44).val < 65536 ∧
+    (air.public_values 43).val + 65536 * (air.public_values 44).val < 0x7800_0000
+
+end Equivalence
+
 namespace CpuChip.Interpretations
 
   open CpuChip.ConstraintsAndBuses
   open RV64IM_Interactions.V3
+
+  -- ============================================================================
+  -- One constraint of a row
+  -- ============================================================================
+
+  /-- Constraint `k` of a row whose constraints all hold. `constraint_at h 37 (by norm_num)`
+      has type `constraint_37 air row` up to unfolding the list, so a proof reads one
+      constraint without searching all 65. -/
+  lemma constraint_at
+    [Field ExtF]
+    {air : Valid_CpuChip FKB ExtF} {row : ℕ}
+    (h : CpuChip.Extraction.allHold air row) (k : ℕ) (hk : k < 65)
+  :
+    (row_constraint_list air row)[k]'(by simpa [row_constraint_list] using hk)
+  := by
+    rw [allHold_iff_allHold_simplified] at h
+    exact List.forall_iff_forall_mem.mp h.2 _ (List.getElem_mem _)
 
   -- ============================================================================
   -- The row's messages, its pc and its next pc
@@ -132,83 +180,59 @@ namespace CpuChip.Interpretations
   --
   -- `cols.X row rotation = cols.X ((row + rotation) % (last_row + 1)) 0`, from `air.isValid`'s
   -- `valid_circuit` clause at the column's index in the main grid. Only the three columns the
-  -- cross-row arguments read are needed: `pc_0` (2), `pc_1` (3) and `is_real` (53).
+  -- cross-row arguments read are needed: `pc_0` (2), `pc_1` (3) and `is_real` (53). A branch
+  -- or jump class that needs another column adds one line with `column_rotation`.
   -- ============================================================================
+
+  set_option hygiene false in
+  open Lean in
+  /-- Proves `cols.X row rotation = cols.X ((row + rotation) % (last_row + 1)) 0` for the
+      column `X` (given as its `Valid_CpuCols` accessor) at index `n` of the main grid. The
+      proof needs the binders to be named `air`, `row` and `rotation`. -/
+  local macro "column_rotation " field:ident n:num : tactic => do
+    let col := s!"col_{n.getNat}"
+    let rawChipCol := mkIdent (Name.mkStr `Raw_CpuChip col)
+    let rawColsCol := mkIdent (Name.mkStr `Raw_CpuCols col)
+    `(tactic| (
+      obtain ⟨ air, is_valid ⟩ := air
+      unfold $field:ident Valid_CpuChip.cols Valid_CpuChip.last_row; simp
+      obtain ⟨ valid_circuit, valid_cols, _ ⟩ := is_valid
+      replace valid_circuit : ∀ (column row rotation : ℕ),
+        air.main column row rotation = air.main column ((row + rotation) % (air.last_row + 1)) 0 :=
+        by aesop
+      specialize valid_circuit $n row rotation
+      have valid_col : ∀ row rotation, $rawChipCol:ident air row rotation := by aesop
+      unfold $rawChipCol:ident at valid_col
+      iterate 2 rw [valid_col] at valid_circuit
+      clear valid_col
+      obtain ⟨ bus, challenge, main, permutation, preprocessed, public_values, last_row, cols ⟩ := air
+      simp_all
+      unfold Raw_CpuCols.isValid at valid_cols
+      replace valid_cols : ∀ (row rotation : ℕ), $rawColsCol:ident cols row rotation := by aesop
+      unfold $rawColsCol:ident at valid_cols
+      clear *- valid_circuit valid_cols
+      grind))
 
   /-- `pc_0` rotation invariance (column 2). -/
   lemma pc_0_rotation
       (air : Valid_CpuChip FKB ExtF)
       (row rotation : ℕ)
     : air.cols.pc_0 row rotation = air.cols.pc_0 ((row + rotation) % (air.last_row + 1)) 0
-    := by
-      obtain ⟨ air, is_valid ⟩ := air
-      unfold Valid_CpuCols.pc_0 Valid_CpuChip.cols Valid_CpuChip.last_row; simp
-      obtain ⟨ valid_circuit, valid_cols, _ ⟩ := is_valid
-      replace valid_circuit : ∀ (column row rotation : ℕ),
-        air.main column row rotation = air.main column ((row + rotation) % (air.last_row + 1)) 0 :=
-        by aesop
-      specialize valid_circuit 2 row rotation
-      have valid_col_2 : ∀ row rotation, air.col_2 row rotation := by aesop
-      unfold Raw_CpuChip.col_2 at valid_col_2
-      iterate 2 rw [valid_col_2] at valid_circuit
-      clear valid_col_2
-      obtain ⟨ bus, challenge, main, permutation, preprocessed, public_values, last_row, cols ⟩ := air
-      simp_all
-      unfold Raw_CpuCols.isValid at valid_cols
-      replace valid_cols : ∀ (row rotation : ℕ), cols.col_2 row rotation := by aesop
-      unfold Raw_CpuCols.col_2 at valid_cols
-      clear *- valid_circuit valid_cols
-      grind
+    := by column_rotation Valid_CpuCols.pc_0 2
 
   /-- `pc_1` rotation invariance (column 3). -/
   lemma pc_1_rotation
       (air : Valid_CpuChip FKB ExtF)
       (row rotation : ℕ)
     : air.cols.pc_1 row rotation = air.cols.pc_1 ((row + rotation) % (air.last_row + 1)) 0
-    := by
-      obtain ⟨ air, is_valid ⟩ := air
-      unfold Valid_CpuCols.pc_1 Valid_CpuChip.cols Valid_CpuChip.last_row; simp
-      obtain ⟨ valid_circuit, valid_cols, _ ⟩ := is_valid
-      replace valid_circuit : ∀ (column row rotation : ℕ),
-        air.main column row rotation = air.main column ((row + rotation) % (air.last_row + 1)) 0 :=
-        by aesop
-      specialize valid_circuit 3 row rotation
-      have valid_col_3 : ∀ row rotation, air.col_3 row rotation := by aesop
-      unfold Raw_CpuChip.col_3 at valid_col_3
-      iterate 2 rw [valid_col_3] at valid_circuit
-      clear valid_col_3
-      obtain ⟨ bus, challenge, main, permutation, preprocessed, public_values, last_row, cols ⟩ := air
-      simp_all
-      unfold Raw_CpuCols.isValid at valid_cols
-      replace valid_cols : ∀ (row rotation : ℕ), cols.col_3 row rotation := by aesop
-      unfold Raw_CpuCols.col_3 at valid_cols
-      clear *- valid_circuit valid_cols
-      grind
+    := by column_rotation Valid_CpuCols.pc_1 3
 
   /-- `is_real` rotation invariance (column 53). -/
   lemma is_real_rotation
       (air : Valid_CpuChip FKB ExtF)
       (row rotation : ℕ)
     : air.cols.is_real row rotation = air.cols.is_real ((row + rotation) % (air.last_row + 1)) 0
-    := by
-      obtain ⟨ air, is_valid ⟩ := air
-      unfold Valid_CpuCols.is_real Valid_CpuChip.cols Valid_CpuChip.last_row; simp
-      obtain ⟨ valid_circuit, valid_cols, _ ⟩ := is_valid
-      replace valid_circuit : ∀ (column row rotation : ℕ),
-        air.main column row rotation = air.main column ((row + rotation) % (air.last_row + 1)) 0 :=
-        by aesop
-      specialize valid_circuit 53 row rotation
-      have valid_col_53 : ∀ row rotation, air.col_53 row rotation := by aesop
-      unfold Raw_CpuChip.col_53 at valid_col_53
-      iterate 2 rw [valid_col_53] at valid_circuit
-      clear valid_col_53
-      obtain ⟨ bus, challenge, main, permutation, preprocessed, public_values, last_row, cols ⟩ := air
-      simp_all
-      unfold Raw_CpuCols.isValid at valid_cols
-      replace valid_cols : ∀ (row rotation : ℕ), cols.col_53 row rotation := by aesop
-      unfold Raw_CpuCols.col_53 at valid_cols
-      clear *- valid_circuit valid_cols
-      grind
+    := by column_rotation Valid_CpuCols.is_real 53
 
   -- ============================================================================
   -- The Program message
@@ -230,8 +254,9 @@ namespace CpuChip.Interpretations
     simp [bus_row, deserialise_bus_row, raw_bus_row, h_is_real] at h_wf
     simpa [program_bus_entry, ProgramBusEntry.deserialise, h_is_real]
 
-  /-- The two opcode fields agree, and the opcode is one the decoder produces: 0 to 25, 28,
-      30 to 37, or 40 to 52. In particular no row carries the 2.x `AUIPC` opcode 27. -/
+  /-- The opcode is one the decoder produces: 0 to 25, 28, 30 to 37, or 40 to 52. In
+      particular no row carries the 2.x `AUIPC` opcode 27. (The chip sends the same column as
+      both opcode fields of the message, so their agreement says nothing about the row.) -/
   lemma selector_breakdown
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -369,8 +394,8 @@ namespace CpuChip.Interpretations
     rw [hsum]
     simpa [Transpiler.V3.code_address_bound] using h_lt
 
-  /-- `pc_facts` in the packed form the equivalence proofs use: the row's `U64w` pc really is
-      the address the Program table holds, and it is 4-aligned. -/
+  /-- The row's packed `U64w` pc is 4-aligned. Only the alignment: that the packed pc is the
+      Program table's address needs `pc_facts`' bounds. -/
   lemma pc_mod_four_eq_zero
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -387,8 +412,8 @@ namespace CpuChip.Interpretations
       The chip does not check this: on an internal row the next pc is the next row's pc, which
       the Program table bounds (constraints 46 and 47); on the chunk's last real row it is
       public values 43 and 44 (constraints 41 and 42, through `is_last` from 50 and 51), which
-      only the whole-trace assumption bounds. The four `h_pv_*` hypotheses are that assumption;
-      `Equivalence/Common.lean` packages them. -/
+      only the whole-trace assumption bounds. Its alignment part is not used: this lemma gives
+      the bounds only, not that the next pc is a multiple of 4. -/
   lemma next_pc_facts
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -396,30 +421,27 @@ namespace CpuChip.Interpretations
     (h_is_real : air.cols.is_real row 0 = 1)
     (h_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
     (h_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
-    (h_pv_lo : (air.public_values 43).val < 65536)
-    (h_pv_hi : (air.public_values 44).val < 65536)
-    (h_pv_bound : (air.public_values 43).val + 65536 * (air.public_values 44).val < 0x7800_0000)
+    (pico_assumptions : Equivalence.pico_CpuChip_control_flow_assumptions air)
   :
     (air.cols.next_pc_0 row 0).val < 65536 ∧
     (air.cols.next_pc_1 row 0).val < 65536 ∧
     (air.cols.next_pc_0 row 0).val + 65536 * (air.cols.next_pc_1 row 0).val < 0x7800_0000
   := by
+    obtain ⟨ -, h_pv_lo, h_pv_hi, h_pv_bound ⟩ := pico_assumptions
     have h_cs := h_constraints row h_row
-    rw [allHold_iff_allHold_simplified] at h_cs
-    simp only [allHold_simplified, row_constraint_list, List.Forall] at h_cs
     -- The chunk's final pc: `is_last = 1` pins `next_pc` to public values 43 and 44.
     have h_final :
         air.cols.is_last row 0 = 1 →
         air.cols.next_pc_0 row 0 = air.public_values 43 ∧
         air.cols.next_pc_1 row 0 = air.public_values 44 := by
       intro h_last
-      obtain ⟨ h_c41, h_c42 ⟩ : constraint_41 air row ∧ constraint_42 air row := by
-        clear *- h_cs; aesop
+      have h_c41 : constraint_41 air row := constraint_at h_cs 41 (by norm_num)
+      have h_c42 : constraint_42 air row := constraint_at h_cs 42 (by norm_num)
       simp [constraint_and_interaction_simplification, h_last, sub_eq_zero] at h_c41 h_c42
       exact ⟨ h_c41.symm, h_c42.symm ⟩
     by_cases h_transition : Circuit.isTransitionRow air row = 0
     · -- Last physical row: constraint 51 makes it the last real row.
-      have h_c51 : constraint_51 air row := by clear *- h_cs; aesop
+      have h_c51 : constraint_51 air row := constraint_at h_cs 51 (by norm_num)
       simp [Circuit.isTransitionRow] at h_transition
       simp [constraint_and_interaction_simplification, Circuit.isLastRow, ← h_transition,
             h_is_real, sub_eq_zero] at h_c51
@@ -432,25 +454,22 @@ namespace CpuChip.Interpretations
       have h_mod : (row + 1) % (air.last_row + 1) = row + 1 := Nat.mod_eq_of_lt (by omega)
       by_cases h_real_next : air.cols.is_real row 1 = 0
       · -- The last real row: constraint 50 makes `is_last` the drop in `is_real`.
-        have h_c50 : constraint_50 air row := by clear *- h_cs; aesop
+        have h_c50 : constraint_50 air row := constraint_at h_cs 50 (by norm_num)
         simp [constraint_and_interaction_simplification, h_trans, h_is_real, h_real_next,
               sub_eq_zero] at h_c50
         obtain ⟨ h0, h1 ⟩ := h_final (by simpa using h_c50)
         rw [h0, h1]; exact ⟨ h_pv_lo, h_pv_hi, h_pv_bound ⟩
       · -- An internal row: the next row is real, and its pc is this row's next pc.
         have h_real_next' : air.cols.is_real row 1 = 1 := by
-          have h_c44 : constraint_44 air (row + 1) := by
-            have h := h_constraints (row + 1) h_row_next
-            rw [allHold_iff_allHold_simplified] at h
-            simp only [allHold_simplified, row_constraint_list, List.Forall] at h
-            clear *- h; aesop
+          have h_c44 : constraint_44 air (row + 1) :=
+            constraint_at (h_constraints (row + 1) h_row_next) 44 (by norm_num)
           have h_eq : air.cols.is_real row 1 = air.cols.is_real (row + 1) 0 := by
             rw [is_real_rotation]; simp [h_mod]
           rw [h_eq] at h_real_next ⊢
           simp [constraint_and_interaction_simplification, sub_eq_zero] at h_c44
           grind
-        obtain ⟨ h_c46, h_c47 ⟩ : constraint_46 air row ∧ constraint_47 air row := by
-          clear *- h_cs; aesop
+        have h_c46 : constraint_46 air row := constraint_at h_cs 46 (by norm_num)
+        have h_c47 : constraint_47 air row := constraint_at h_cs 47 (by norm_num)
         simp [constraint_and_interaction_simplification, h_trans, h_real_next',
               sub_eq_zero] at h_c46 h_c47
         -- `h_c46 : pc_0 row 1 = next_pc_0 row 0`, and the same for piece 1.
@@ -479,13 +498,10 @@ namespace CpuChip.Interpretations
     air.cols.op_b_access.access.value_2 row 0 = air.cols.instruction.op_b_sign row 0 * 65535 ∧
     air.cols.op_b_access.access.value_3 row 0 = air.cols.instruction.op_b_sign row 0 * 65535
   := by
-    rw [allHold_iff_allHold_simplified] at h_constraints
-    simp only [allHold_simplified, row_constraint_list, List.Forall] at h_constraints
-    obtain ⟨ h_c0, h_c1, h_c2, h_c3 ⟩
-    : constraint_0 air row ∧ constraint_1 air row ∧
-      constraint_2 air row ∧ constraint_3 air row := by
-      clear *- h_constraints; aesop
-    clear h_constraints
+    have h_c0 : constraint_0 air row := constraint_at h_constraints 0 (by norm_num)
+    have h_c1 : constraint_1 air row := constraint_at h_constraints 1 (by norm_num)
+    have h_c2 : constraint_2 air row := constraint_at h_constraints 2 (by norm_num)
+    have h_c3 : constraint_3 air row := constraint_at h_constraints 3 (by norm_num)
     simp [constraint_and_interaction_simplification, h_imm_b, one_mul, sub_eq_zero]
       at h_c0 h_c1 h_c2 h_c3
     exact ⟨ h_c0, h_c1, h_c2, h_c3 ⟩
@@ -502,13 +518,10 @@ namespace CpuChip.Interpretations
     air.cols.op_c_access.access.value_2 row 0 = air.cols.instruction.op_c_sign row 0 * 65535 ∧
     air.cols.op_c_access.access.value_3 row 0 = air.cols.instruction.op_c_sign row 0 * 65535
   := by
-    rw [allHold_iff_allHold_simplified] at h_constraints
-    simp only [allHold_simplified, row_constraint_list, List.Forall] at h_constraints
-    obtain ⟨ h_c4, h_c5, h_c6, h_c7 ⟩
-    : constraint_4 air row ∧ constraint_5 air row ∧
-      constraint_6 air row ∧ constraint_7 air row := by
-      clear *- h_constraints; aesop
-    clear h_constraints
+    have h_c4 : constraint_4 air row := constraint_at h_constraints 4 (by norm_num)
+    have h_c5 : constraint_5 air row := constraint_at h_constraints 5 (by norm_num)
+    have h_c6 : constraint_6 air row := constraint_at h_constraints 6 (by norm_num)
+    have h_c7 : constraint_7 air row := constraint_at h_constraints 7 (by norm_num)
     simp [constraint_and_interaction_simplification, h_imm_c, one_mul, sub_eq_zero]
       at h_c4 h_c5 h_c6 h_c7
     exact ⟨ h_c4, h_c5, h_c6, h_c7 ⟩
@@ -556,9 +569,9 @@ namespace CpuChip.Interpretations
   -- Sequential rows
   -- ============================================================================
 
-  /-- Pure arithmetic: a two-piece address and its successor four bytes on, both inside the
-      guest address space, satisfy the field equation of constraint 37 exactly when they
-      satisfy the 64-bit addition. No chip dependencies. -/
+  /-- Pure arithmetic: if two two-piece addresses inside the guest address space satisfy the
+      field equation of constraint 37 (the second is the first plus four), they satisfy the
+      64-bit addition. One direction only. No chip dependencies. -/
   lemma two_piece_plus_four_implies_sum
     (p_0 p_1 n_0 n_1 : FKB)
     (h_p_0 : p_0.val < 65536) (h_p_1 : p_1.val < 65536)
@@ -582,16 +595,18 @@ namespace CpuChip.Interpretations
   :
     air.cols.is_halt row 0 = 0
   := by
-    rw [allHold_iff_allHold_simplified] at h_constraints
-    simp only [allHold_simplified, row_constraint_list, List.Forall] at h_constraints
-    have h_c31 : constraint_31 air row := by clear *- h_constraints; aesop
+    have h_c31 : constraint_31 air row := constraint_at h_constraints 31 (by norm_num)
     simp [constraint_and_interaction_simplification, h_no_ecall] at h_c31
     exact h_c31
 
-  /-- A row that takes no branch and is neither a jump nor a halt advances the pc by four:
-      constraint 37's gate is `is_real` and its field equation reads as a 64-bit addition once
-      the pc and next-pc pieces are bounded. `pc_facts` and `next_pc_facts` supply the bounds,
-      so this lemma inherits the whole-trace assumption through `h_pv_*`. -/
+  /-- A row of an instruction outside the branch and jump classes, not a halt, advances the pc
+      by four: constraint 37's gate is `is_real` and its field equation reads as a 64-bit
+      addition once the pc and next-pc pieces are bounded. `pc_facts` and `next_pc_facts`
+      supply the bounds, so this lemma inherits the whole-trace assumption.
+
+      It needs all six branch selectors to be zero, so it does not cover a branch row whose
+      branch is not taken, even though constraint 37 moves that row on by four as well; the
+      branch theorems need their own not-taken lemma. -/
   lemma is_sequential_active_constraints
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -599,9 +614,7 @@ namespace CpuChip.Interpretations
     (h_is_real : air.cols.is_real row 0 = 1)
     (h_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
     (h_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
-    (h_pv_lo : (air.public_values 43).val < 65536)
-    (h_pv_hi : (air.public_values 44).val < 65536)
-    (h_pv_bound : (air.public_values 43).val + 65536 * (air.public_values 44).val < 0x7800_0000)
+    (pico_assumptions : Equivalence.pico_CpuChip_control_flow_assumptions air)
     (h_no_branch : air.cols.opcode_selector.is_beq row 0 = 0 ∧
                    air.cols.opcode_selector.is_bne row 0 = 0 ∧
                    air.cols.opcode_selector.is_blt row 0 = 0 ∧
@@ -615,19 +628,86 @@ namespace CpuChip.Interpretations
     U64w.toBV (next_pc air row) = U64w.toBV (pc air row) + 4#64
   := by
     obtain ⟨ h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu ⟩ := h_no_branch
-    have h_cs := h_constraints row h_row
-    have h_c37 : constraint_37 air row := by
-      rw [allHold_iff_allHold_simplified] at h_cs
-      simp only [allHold_simplified, row_constraint_list, List.Forall] at h_cs
-      clear *- h_cs; aesop
+    have h_c37 : constraint_37 air row := constraint_at (h_constraints row h_row) 37 (by norm_num)
     simp [constraint_and_interaction_simplification, h_is_real, h_beq, h_bne, h_blt, h_bge,
           h_bltu, h_bgeu, h_no_jal, h_no_jalr, h_no_halt, sub_eq_zero] at h_c37
     -- `h_c37` is the field equation `next_pc_0 + 65536 * next_pc_1 = pc_0 + 65536 * pc_1 + 4`.
     obtain ⟨ h_pc_0, h_pc_1, _, h_pc_bound, _ ⟩ := pc_facts air row h_is_real (h_wf row h_row)
     obtain ⟨ h_np_0, h_np_1, h_np_bound ⟩ :=
-      next_pc_facts air row h_row h_is_real h_wf h_constraints h_pv_lo h_pv_hi h_pv_bound
+      next_pc_facts air row h_row h_is_real h_wf h_constraints pico_assumptions
     simp only [next_pc, pc]
     exact two_piece_plus_four_implies_sum _ _ _ _ h_pc_0 (by omega) h_np_0 h_np_1
       (by omega) h_np_bound (by linear_combination h_c37)
+
+  -- ============================================================================
+  -- ALU rows: the destination register and the ALU message
+  -- ============================================================================
+
+  /-- `op_a_is_x0` is `[op_a = 0]`: the Program table writes it so for every instruction. -/
+  lemma op_a_is_x0_eq
+    [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_wf : bus_row_wf_asm (bus_row air row))
+  :
+    air.cols.instruction.op_a_is_x0 row 0 =
+      if air.cols.instruction.op_a row 0 = 0 then 1 else 0
+  := by
+    have h_prog := program_bus_operand_properties air row h_is_real h_wf
+    obtain ⟨ instr, pc', data, props, _, _, h_trans, h_deser, _ ⟩ := h_prog
+    have h := (ProgramBusEntry.inversion_operands h_trans h_deser).2.1
+    rw [deserialise_program_bus_entry] at h
+    simpa using h
+
+  /-- On a real row with no class selector set, the ALU message's multiplicity
+      `is_alu_not_x0` is 1 when the destination is not `x0` and 0 when it is
+      (constraint 17). The v3.1.1 chip sends no ALU message for a write to `x0`. -/
+  lemma is_alu_not_x0_eq
+    [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : CpuChip.Extraction.allHold air row)
+    (h_class : class_selectors_of_opcode (air.cols.instruction.opcode row 0).val =
+      #v[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+  :
+    air.cols.is_alu_not_x0 row 0 = if air.cols.instruction.op_a row 0 = 0 then 0 else 1
+  := by
+    obtain ⟨ h_ecall, h_mem, -, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_jalr, h_jal ⟩ :=
+      alu_class_selectors_zero air row h_is_real h_wf h_class
+    have h_c17 : constraint_17 air row := constraint_at h_constraints 17 (by norm_num)
+    simp [constraint_and_interaction_simplification, h_is_real, h_beq, h_bne, h_blt, h_bge,
+          h_bltu, h_bgeu, h_ecall, h_mem, h_jal, h_jalr, sub_eq_zero] at h_c17
+    rw [h_c17, op_a_is_x0_eq air row h_is_real h_wf]
+    split_ifs <;> simp
+
+  /-- On a real ALU-class row whose destination is not `x0`, the chip sends its ALU message
+      with multiplicity 1, so the ALU chip's promise `ALUBus.Spec` holds for the row's opcode,
+      result (`op_a`) and operands (`op_b`, `op_c`). A row whose destination is `x0` sends no
+      ALU message; its instruction theorem cancels the two writes to `x0` instead
+      (`operation_list_effect_state_writeReg_x0`). -/
+  lemma alu_message_spec
+    [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_constraints : CpuChip.Extraction.allHold air row)
+    (h_class : class_selectors_of_opcode (air.cols.instruction.opcode row 0).val =
+      #v[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    (h_rd : air.cols.instruction.op_a row 0 ≠ 0)
+  :
+    RV64IM_Interactions.ALUBus.Spec (air.cols.instruction.opcode row 0)
+      (air.cols.op_a_access.access.value_0 row 0) (air.cols.op_a_access.access.value_1 row 0)
+      (air.cols.op_a_access.access.value_2 row 0) (air.cols.op_a_access.access.value_3 row 0)
+      (air.cols.op_b_access.access.value_0 row 0) (air.cols.op_b_access.access.value_1 row 0)
+      (air.cols.op_b_access.access.value_2 row 0) (air.cols.op_b_access.access.value_3 row 0)
+      (air.cols.op_c_access.access.value_0 row 0) (air.cols.op_c_access.access.value_1 row 0)
+      (air.cols.op_c_access.access.value_2 row 0) (air.cols.op_c_access.access.value_3 row 0)
+  := by
+    have h_alu := is_alu_not_x0_eq air row h_is_real h_wf h_constraints h_class
+    rw [if_neg h_rd] at h_alu
+    have h := h_wf
+    simp [bus_row_wf_asm, bus_row, deserialise_bus_row, raw_bus_row, h_is_real] at h
+    exact h.2.1 (by simp [h_alu])
 
 end CpuChip.Interpretations

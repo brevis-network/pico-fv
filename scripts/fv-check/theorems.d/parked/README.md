@@ -35,17 +35,26 @@ time. For each class:
 
 ## How the restored statements may differ
 
-They are expected to differ from those at `353238a` in two ways. The bus
+They are expected to differ from those at `353238a` in three ways. The bus
 assumptions name the v3.1.1 contracts (`RV64IM_Interactions.V3` in
-`RVSail/BusesV3.lean`) instead of the 2.x ones. And the whole-trace assumption
-`pico_CpuChip_control_flow_assumptions` gains three conjuncts in its
-definition:
+`RVSail/BusesV3.lean`) instead of the 2.x ones. The destination register is
+read from `instruction.op_a` instead of `instruction.op_a_0`: v3.1.1 keeps the
+5-bit index in one column, so every theorem whose `rd` reads it shows this
+rename. And the whole-trace assumption `pico_CpuChip_control_flow_assumptions`
+gains three conjuncts in its definition:
 
 - the eight theorems that already name it (the six branches, `JAL` and `JALR`)
   keep their recorded text, because `signatures.txt` records the name and not
   the definition, but their meaning changes;
 - the other 54 gain it as a new hypothesis, so their recorded statements change,
   as `ADDIW`'s already has.
+
+Two definitions every statement names were also rewritten at v3.1.1, and
+`signatures.txt` shows only their names: `Equivalence.CPU_bus_operations` (the
+operations the row's messages stand for, now with a two-piece pc and the
+memory width and direction taken from the opcode) and
+`CpuChip.Interpretations.bus_row` (which sorts the row's messages with the
+v3.1.1 deserialiser). Their meaning changed for every restored theorem at once.
 
 Any other difference in a statement, and any new name in `axioms.txt`, is a
 change in what the theorem assumes and must be listed in the pull request. See

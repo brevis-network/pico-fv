@@ -119,7 +119,11 @@ Each equivalence theorem assumes:
 `ADDIW` is the one theorem recorded at v3.1.1, against the v3.1.1 CPU constraints and the
 v3.1.1 contracts (`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`). The other 61 were last
 recorded at `353238a`, against the 2.x constraints and the contracts of `RVSail/Buses.lean`,
-and are not checked while they move.
+and are not checked while they move. Two definitions every instruction theorem names were
+rewritten at v3.1.1 behind unchanged names: `Equivalence.CPU_bus_operations`, the operations
+the theorem compares the Sail step against (now a two-piece pc, with the memory width and
+direction taken from the opcode), and `CpuChip.Interpretations.bus_row`, which sorts the row's
+messages (now with the v3.1.1 deserialiser).
 
 The whole-trace assumption, `pico_CpuChip_control_flow_assumptions`, bounds the chunk's final
 pc (public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The
@@ -207,12 +211,11 @@ A proof that uses them also trusts the Lean compiler and runtime.
 branch's, so the uses only go down.
 
 <!-- generated: tactics -->
-165 uses of `native_decide`, `bv_decide` or `decide +native` in 16 files:
+164 uses of `native_decide`, `bv_decide` or `decide +native` in 15 files:
 
 - `PicoFV/Fundamentals/Core.lean`: 7
 - `PicoFV/Fundamentals/KoalaBear.lean`: 1
 - `PicoFV/Fundamentals/Word.lean`: 39
-- `PicoFV/RV64IM/Equivalence/Addiw.lean`: 1
 - `PicoFV/RV64IM/Equivalence/BType.lean`: 6
 - `PicoFV/RV64IM/Equivalence/IType.lean`: 6
 - `PicoFV/RV64IM/Equivalence/Jumps.lean`: 8
@@ -232,11 +235,11 @@ branch's, so the uses only go down.
 A weekly CI job (`.github/workflows/replay.yml`) replays the declarations of every module the
 build imports into the kernel with `leanchecker`, except the modules listed in C2: the kernel
 cannot replay what those tactics computed. Today that excludes `Fundamentals/Core`,
-`Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution`, `Equivalence/Addiw` and the
-specifications of the Bitwise, DivRem and memory chips; the replay covers the remaining
-modules, including the other ALU chips' specifications and the CPU chip's constraints and
-interpretations. Modules the build does not import, such as the parked equivalence files, are
-not replayed.
+`Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution` and the specifications of
+the Bitwise, DivRem and memory chips; the replay covers the remaining modules, including the
+other ALU chips' specifications, the CPU chip's constraints and interpretations, and
+`Equivalence/Addiw`. Modules the build does not import, such as the parked equivalence files,
+are not replayed.
 
 ## D. Does the use of the results hold together?
 
