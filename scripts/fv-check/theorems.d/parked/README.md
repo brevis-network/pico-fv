@@ -36,7 +36,8 @@ time. For each class:
 
 ## How the restored statements may differ
 
-They are expected to differ from those at `353238a` in three ways. The bus
+They are expected to differ from those at `353238a` in three ways, plus the
+dropped hypotheses described at the end of this section. The bus
 assumptions name the v3.1.1 contracts (`RV64IM_Interactions.V3` in
 `RVSail/BusesV3.lean`) instead of the 2.x ones. The destination register is
 read from `instruction.op_a` instead of `instruction.op_a_0`: v3.1.1 keeps the
@@ -48,7 +49,12 @@ gains three conjuncts in its definition:
   keep their recorded text, because `signatures.txt` records the name and not
   the definition, but their meaning changes;
 - the other 54 gain it as a new hypothesis, so their recorded statements change,
-  as `ADDIW`'s already has.
+  as those of the six already restored have.
+
+A restored statement may also drop an immediate-flag hypothesis that the v3.1.1
+decoder already fixes for its opcode (`imm_b_of_opcode`, `imm_c_of_opcode` in
+`RVSail/BusesV3.lean`): `ADDIW` no longer takes `imm_b = 0`, and `SUBW` no
+longer takes `imm_c = 0`. Dropping a hypothesis makes the theorem stronger.
 
 Two definitions every statement names were also rewritten at v3.1.1, and
 `signatures.txt` shows only their names: `Equivalence.CPU_bus_operations` (the

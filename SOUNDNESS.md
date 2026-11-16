@@ -22,14 +22,15 @@ with their statements in `signatures.txt`. They are of three kinds.
   instruction gives the same post-state as the register and memory operations the row puts on the
   bus.
 
-  **1 of these 62 theorems is checked at the moment**, `ADDIW`. The CPU chip is moving to Pico
+  **6 of these 62 theorems are checked at the moment**: `ADDIW` and the five 32-bit
+  register-register opcodes `ADDW`, `SUBW`, `SLLW`, `SRLW` and `SRAW`. The CPU chip is moving to Pico
   v3.1.1, which is a rewrite of the chip rather than a patch: 58 columns instead of 132, 65
   constraints instead of 218 and 17 messages instead of 36. Its `Airs/`, `Constraints/` and
   interpretations files are at v3.1.1 here, with the lemmas every instruction class shares; the
-  12 instruction-theorem files that still read the 2.x layout are out of the build until each
-  is rewritten against it, and their 12 lists are parked in
+  11 instruction-theorem files that still read the 2.x layout are out of the build until each
+  is rewritten against it, and their 11 lists are parked in
   `scripts/fv-check/theorems.d/parked/`. Until they return, this repository says nothing about
-  the other 61 opcodes. Commit `353238a` is the last at which all 62 were checked, against the
+  the other 56 opcodes. Commit `353238a` is the last at which all 62 were checked, against the
   2.x CPU extraction and the bus contract as it stood then (which already covered the
   branch-comparison opcodes). The 2.x interpretations file is unchanged from the tag
   `pico-v3-before-cpu` (`35259d8`) to that commit.
@@ -138,8 +139,10 @@ Each equivalence theorem assumes:
 - the hypotheses of the operations the row emits, and `RISC_V_assumptions` on the machine state;
 - at v3.1.1, the whole-trace assumption described below.
 
-`ADDIW` is the one theorem recorded at v3.1.1, against the v3.1.1 CPU constraints and the
-v3.1.1 contracts (`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`). The other 61 were last
+`ADDIW`, `ADDW`, `SUBW`, `SLLW`, `SRLW` and `SRAW` are the six theorems recorded at v3.1.1,
+against the v3.1.1 CPU constraints and the v3.1.1 contracts (`RV64IM_Interactions.V3` in
+`RVSail/BusesV3.lean`). `ADDIW` no longer assumes `imm_b = 0` and `SUBW` no longer assumes
+`imm_c = 0`: the v3.1.1 decoder fixes both flags for those opcodes. The other 56 were last
 recorded at `353238a`, against the 2.x constraints and the contracts of `RVSail/Buses.lean`,
 and are not checked while they move. Two definitions every instruction theorem names were
 rewritten at v3.1.1 behind unchanged names: `Equivalence.CPU_bus_operations`, the operations
@@ -154,7 +157,7 @@ of an accepted recursive proof (`docs/cpu-chip-pico-v3-design.md`, "The whole-tr
 assumption"). So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
 proof, not a chunk proof checked on its own. The eight branch and jump theorems already name the
 assumption, whose definition grew, so their recorded statements will keep their text; the other
-54 gain it as a new hypothesis, as `ADDIW` has.
+54 gain it as a new hypothesis, as the six recorded at v3.1.1 have.
 
 A change that weakens or strengthens a hypothesis changes `signatures.txt`, and `check.sh` fails
 until the change is reviewed and recorded. A change to the definition behind a hypothesis's name
@@ -270,7 +273,7 @@ cannot replay what those tactics computed. Today that excludes `Fundamentals/Cor
 `Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution` and the specifications of
 the Bitwise, DivRem and memory chips; the replay covers the remaining modules, including the
 other ALU chips' specifications, the CPU chip's constraints and interpretations, and
-`Equivalence/Addiw`. Modules the build does not import, such as the parked equivalence files,
+`Equivalence/Common`, `Equivalence/Addiw` and `Equivalence/RTypeW`. Modules the build does not import, such as the parked equivalence files,
 are not replayed.
 
 ## D. Does the use of the results hold together?
