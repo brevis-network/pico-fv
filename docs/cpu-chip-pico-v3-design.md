@@ -191,14 +191,19 @@ cover a chunk inside an accepted recursive proof, not a chunk proof checked on i
 - New: `RVSail/BusesV3.lean`, `Transpiler/TranspilerV3.lean`.
 - `Airs/SubAirs.lean`: the lite register-access layouts (6 and 10 columns), beside the 2.x
   ones the memory chip uses. The prototype defines them in `Airs/CpuChip.lean`.
-- `Equivalence/Common.lean`: the whole-trace assumption, `CPU_bus_operations` (the next pc now
-  has two pieces) and the operand helpers.
+- `Equivalence/Common.lean`: `CPU_bus_operations` (the next pc now has two pieces), the
+  operand helpers and the ALU-row facts. The whole-trace assumption keeps its name,
+  `Equivalence.pico_CpuChip_control_flow_assumptions`, but is defined at the top of
+  `Constraints/CpuChipInterpretations.lean` so that the next-pc lemmas there can take it
+  (#12).
 - `scripts/fv-check/theorems.d/`, `axioms.txt`, `signatures.txt`: parking and restoring the 13
   lists, and a new list for the CPU chip's `ext_asrt`; `scripts/ci/heavy-modules.txt` if the
   interpretations module's memory use changes.
 
-`Fundamentals/` and `RVSail/Operations.lean` need no change: the trials used the existing
-operation lemmas.
+`Fundamentals/` needs no change. `RVSail/Operations.lean` gains one lemma,
+`operation_list_effect_state_writeReg_x0` (a write to `x0` leaves the state alone), which the
+ALU theorems use on a row whose destination is `x0`, where the v3.1.1 chip sends no ALU
+message (#12).
 
 ## The prototype
 
