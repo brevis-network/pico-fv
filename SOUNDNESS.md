@@ -14,7 +14,7 @@ repository; CI fails when one is out of date. The rest of the text is reviewed b
 ## What is proved
 
 The theorems checked by `scripts/fv-check/check.sh` are listed in `scripts/fv-check/theorems.d/`,
-with their statements in `signatures.txt`. They are of two kinds.
+with their statements in `signatures.txt`. They are of three kinds.
 
 - **Opcode equivalence** (`Equivalence.equivalence_*`, one per RV64IM opcode except `ECALL`). For
   a CPU chip row that satisfies its extracted constraints, if the bus messages the row exchanges
@@ -54,6 +54,23 @@ with their statements in `signatures.txt`. They are of two kinds.
   `DivRemChip.Interactions.bus_row_equiv`, which says `bus_row` is that interaction list,
   entry for entry. All fourteen also assume `is_real = 1`, so they say nothing about a padding
   row, where the other ALU chips' specifications still hold.
+- **The CPU chip's duties as a sender** (`CpuChip.Spec.ext_asrt`). For any row of the v3.1.1
+  CPU chip, real or padding, that satisfies its extracted constraints and whose received
+  messages satisfy the bus assumptions (`bus_row_wf_asm`), every message it sends with
+  multiplicity 1 gives the receiver what the contract lets the receiver assume of a sender
+  (`externals` in `RVSail/Buses.lean` and `RVSail/BusesV3.lean`):
+  - the ALU dispatch carries a valid ALU opcode and 16-bit operand pieces;
+  - the branch comparison carries opcode 264 or 265 and 16-bit operand pieces;
+  - the memory dispatch carries a load or store opcode, `is_memory = 1`, 16-bit pieces for the
+    base and the offset, 16-bit pieces for a store's value, and a zero value when the
+    destination register is `x0`.
+
+  The proof uses only the row: its constraints, the Program table's facts about its
+  instruction and the register values it reads. It needs neither the whole-trace assumption
+  nor the next row. The Program, byte-range and register-access messages ask nothing of the
+  sender, and the Ecall message has no contract. The memory chip's address addition `b + c` is
+  exact only for 16-bit pieces, which it takes from the sender, so the meaning of the load and
+  store theorems rests on this theorem.
 
 The proofs are about this Pico revision:
 
@@ -145,6 +162,13 @@ makes are discharged by what the other chips prove relies on Pico's LogUp argume
 every bus, and on each message being served by a chip whose specification is proven. Neither is
 proven here.
 
+One side of each CPU link is proven: what a chip serving the CPU may assume of the CPU as a
+sender (`bus_row_ext_asm` in the ALU chips' specifications) is what `CpuChip.Spec.ext_asrt`
+proves the v3.1.1 CPU chip sends. The memory chip's specification still states its
+assumptions against the 2.x memory contract (`RVSail/Buses.lean`); the v3.1.1 contract it
+will assume (`MemoryBus.externals` in `RVSail/BusesV3.lean`) is the one the CPU is proven to
+meet.
+
 The contract now covers the merged branch-comparison rows. `ALUBus.validOpcode` contains the two
 opcodes 264 / 265 (`SLT` / `SLTU` + `LT_CMP_OPCODE_TAG`) that Pico's CPU sends for every branch,
 `ALUBus.Spec` gives them their meaning — piece 0 is `[b < c]`, piece 1 is `[c < b]`, pieces 2 and
@@ -196,7 +220,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 78 |
+| kernel + compiler | 79 |
 | kernel + compiler + RISC-V spec axioms | 1 |
 | kernel only | 1 |
 <!-- end generated -->
