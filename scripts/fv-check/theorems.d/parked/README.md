@@ -10,9 +10,9 @@ rest on it no longer compile. The interpretations file and
 `Equivalence/Common.lean` are now rewritten at v3.1.1, holding the lemmas every
 instruction class shares, and `equivalence-addiw.txt` and
 `equivalence-r-type-w.txt` have moved back up a directory with
-`Equivalence/Addiw.lean` and `Equivalence/RTypeW.lean`. `PicoFV64.lean` still does not import
-`Equivalence.Equivalence`, which pulls in all 13 class files; it returns with
-the last of them. The tag `pico-v3-before-cpu` holds the 2.x versions.
+`Equivalence/Addiw.lean` and `Equivalence/RTypeW.lean`. `PicoFV64.lean` still
+does not import `Equivalence.Equivalence`, which pulls in all 13 class files;
+it returns with the last of them. The tag `pico-v3-before-cpu` holds the 2.x versions.
 
 ## Restoring an instruction class
 

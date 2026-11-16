@@ -23,12 +23,12 @@ with their statements in `signatures.txt`. They are of three kinds.
   bus.
 
   **6 of these 62 theorems are checked at the moment**: `ADDIW` and the five 32-bit
-  register-register opcodes `ADDW`, `SUBW`, `SLLW`, `SRLW` and `SRAW`. The CPU chip is moving to Pico
-  v3.1.1, which is a rewrite of the chip rather than a patch: 58 columns instead of 132, 65
-  constraints instead of 218 and 17 messages instead of 36. Its `Airs/`, `Constraints/` and
-  interpretations files are at v3.1.1 here, with the lemmas every instruction class shares; the
-  11 instruction-theorem files that still read the 2.x layout are out of the build until each
-  is rewritten against it, and their 11 lists are parked in
+  register-register opcodes `ADDW`, `SUBW`, `SLLW`, `SRLW` and `SRAW`. The CPU chip is moving
+  to Pico v3.1.1, which is a rewrite of the chip rather than a patch: 58 columns instead of
+  132, 65 constraints instead of 218 and 17 messages instead of 36. Its `Airs/`, `Constraints/`
+  and interpretations files are at v3.1.1 here, with the lemmas every instruction class shares;
+  the 11 instruction-theorem files that still read the 2.x layout are out of the build until
+  each is rewritten against it, and their 11 lists are parked in
   `scripts/fv-check/theorems.d/parked/`. Until they return, this repository says nothing about
   the other 56 opcodes. Commit `353238a` is the last at which all 62 were checked, against the
   2.x CPU extraction and the bus contract as it stood then (which already covered the
@@ -273,8 +273,8 @@ cannot replay what those tactics computed. Today that excludes `Fundamentals/Cor
 `Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution` and the specifications of
 the Bitwise, DivRem and memory chips; the replay covers the remaining modules, including the
 other ALU chips' specifications, the CPU chip's constraints and interpretations, and
-`Equivalence/Common`, `Equivalence/Addiw` and `Equivalence/RTypeW`. Modules the build does not import, such as the parked equivalence files,
-are not replayed.
+`Equivalence/Common`, `Equivalence/Addiw` and `Equivalence/RTypeW`. Modules the build does not
+import, such as the parked equivalence files, are not replayed.
 
 ## D. Does the use of the results hold together?
 

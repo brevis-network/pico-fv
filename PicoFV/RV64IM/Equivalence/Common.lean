@@ -143,7 +143,7 @@ namespace Equivalence
     :
       air.cols.opcode_selector.imm_b row 0 = 0
     :=
-      (selector_exclusivity air row h_is_real h_wf).2.1 0 h_op
+      (selector_exclusivity air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)).2.1 0 h_op
 
     /-- `imm_c` is 0 on a real row whose opcode the decoder always gives a register `op_c`
         (`imm_c_of_opcode` is `some 0`: an ALU opcode no immediate form shares, such as `SUBW`'s
@@ -157,7 +157,7 @@ namespace Equivalence
     :
       air.cols.opcode_selector.imm_c row 0 = 0
     :=
-      (selector_exclusivity air row h_is_real h_wf).2.2 0 h_op
+      (selector_exclusivity air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)).2.2 0 h_op
 
     /-- The register indices the decoder writes: `op_a` is below 32, and so is each operand
         whose immediate flag is 0 (`ProgramBusEntry.inversion_operands`). -/

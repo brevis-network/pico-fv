@@ -106,8 +106,8 @@ listed in `scripts/fv-check/theorems.d/`: the memory chip's `spec_*` / `bus_equi
 theorems, and the specifications of the ALU chips already at v3.1.1 (Add, Sub,
 Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight), and the equivalence
 theorems of `ADDIW`, `ADDW`, `SUBW`, `SLLW`, `SRLW` and `SRAW`. The lists of
-the other 56 opcode equivalence theorems are
-parked in `theorems.d/parked/` while the CPU chip moves (see the README there). It fails if a theorem is missing,
+the other 56 opcode equivalence theorems are parked in `theorems.d/parked/`
+while the CPU chip moves (see the README there). It fails if a theorem is missing,
 depends on an axiom (a statement Lean accepts without proof) outside two lists,
 or its axioms or statement differ from the snapshots in `axioms.txt` and
 `signatures.txt`:
