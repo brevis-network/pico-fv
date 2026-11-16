@@ -137,6 +137,15 @@ Settled on 12 November 2026.
    (`riscv_memory/read_write/constraints.rs:208-222`), so this theorem closes a link the load
    and store theorems lean on. It comes with the CPU chip's own files.
 
+   It landed as `CpuChip.Spec.ext_asrt` in `Spec/CpuChip.lean` (#14), checked through
+   `scripts/fv-check/theorems.d/cpu-chip.txt` with `CpuChip.Spec.multiplicity_eq_zero_or_one`,
+   which shows the three messages that carry a duty are sent 0 or 1 times. Unlike the ALU
+   chips' theorems it does not take the whole-row assumption `bus_row_wf_asm`: that would
+   include the ALU and memory chips' promises on the very messages whose duties it proves.
+   It takes `CpuChip.Interpretations.bus_row_reads_asm`, the Program table's and the register
+   file's promises only. The facts about one row it uses are in
+   `Constraints/CpuChipInterpretations.lean`.
+
 ## The whole-trace assumption
 
 Before (`Equivalence/Common.lean:68-71`):

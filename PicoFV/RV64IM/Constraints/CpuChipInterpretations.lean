@@ -32,6 +32,10 @@ places:
   constraints.
 - **`next_pc = pc + 4`** on a sequential row is the single field equation of constraint 37,
   with no carry witness; reading it as a 64-bit addition needs the pc and next-pc bounds above.
+- **Which promises a lemma assumes.** A lemma that needs only the Program table's promise or
+  the register file's takes `bus_row_reads_asm`, that part of `bus_row_wf_asm`; the sender
+  theorem `CpuChip.Spec.ext_asrt` can then use it without assuming the promises of the chips
+  it sends to. A caller holding `bus_row_wf_asm` passes `bus_row_reads_asm_of_wf_asm h_wf`.
 
 Names are the 2.x ones wherever the meaning is unchanged, so the instruction-theorem files have
 less to rewrite.
@@ -98,6 +102,24 @@ namespace CpuChip.Interpretations
       `bus_row_wf_asm (bus_row air row)` hypothesis, as the other chips do. -/
   def bus_row {ExtF : Type} [Field ExtF] (air : Valid_CpuChip FKB ExtF) (row : ℕ) : BusRow :=
     deserialise_bus_row (CpuChip.ConstraintsAndBuses.raw_bus_row air row)
+
+  /-- The part of `bus_row_wf_asm` that a row's own facts rest on: the Program table's promise
+      on the Program message and the register file's promise on the register-access messages.
+      It leaves out the ALU and memory chips' promises on the dispatch and comparison
+      messages, so a theorem about what the CPU sends on those messages
+      (`CpuChip.Spec.ext_asrt`) can take it without assuming what their receivers prove. -/
+  def bus_row_reads_asm (r : BusRow) : Prop :=
+    List.Forall id
+      (r.Program.map (Interaction.BusEntry.wf_assume FKB) ++
+       r.State.map (Interaction.BusEntry.wf_assume FKB))
+
+  /-- The whole-row assumption contains the reads assumption. -/
+  lemma bus_row_reads_asm_of_wf_asm {r : BusRow} (h : bus_row_wf_asm r) :
+      bus_row_reads_asm r := by
+    simp only [bus_row_wf_asm, bus_row_reads_asm, List.forall_iff_forall_mem,
+      List.mem_append] at h ⊢
+    intro x hx
+    exact h x (by tauto)
 
   /-- The Program-bus message the chip sends on each row: the `(multiplicity, payload)` pair
       that `ProgramBusEntry.deserialise` reads. It mirrors the first entry of `raw_bus_row`,
@@ -241,6 +263,20 @@ namespace CpuChip.Interpretations
   /-- On a real row the chip's Program message carries the Program table's promise: it is the
       row the table holds for some instruction at some 4-aligned address below
       `0x7800_0000`. -/
+  lemma program_bus_operand_properties_of_reads
+    [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_reads : bus_row_reads_asm (bus_row air row))
+  :
+    ProgramBusEntry.operand_properties
+      (ProgramBusEntry.deserialise (program_bus_entry air row))
+  := by
+    simp [bus_row_reads_asm] at h_reads; replace h_reads := h_reads.1
+    simp [bus_row, deserialise_bus_row, raw_bus_row, h_is_real] at h_reads
+    simpa [program_bus_entry, ProgramBusEntry.deserialise, h_is_real]
+
+  /-- `program_bus_operand_properties_of_reads` from the whole-row assumption. -/
   lemma program_bus_operand_properties
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -249,10 +285,8 @@ namespace CpuChip.Interpretations
   :
     ProgramBusEntry.operand_properties
       (ProgramBusEntry.deserialise (program_bus_entry air row))
-  := by
-    simp [bus_row_wf_asm] at h_wf; replace h_wf := h_wf.1
-    simp [bus_row, deserialise_bus_row, raw_bus_row, h_is_real] at h_wf
-    simpa [program_bus_entry, ProgramBusEntry.deserialise, h_is_real]
+  :=
+    program_bus_operand_properties_of_reads air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)
 
   /-- The opcode is one the decoder produces: 0 to 25, 28, 30 to 37, or 40 to 52. In
       particular no row carries the 2.x `AUIPC` opcode 27. (The chip sends the same column as
@@ -261,7 +295,7 @@ namespace CpuChip.Interpretations
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_reads : bus_row_reads_asm (bus_row air row))
   :
     (air.cols.instruction.opcode row 0).val ≤ 25 ∨
     (air.cols.instruction.opcode row 0).val = 28 ∨
@@ -270,7 +304,7 @@ namespace CpuChip.Interpretations
     (40 ≤ (air.cols.instruction.opcode row 0).val ∧
      (air.cols.instruction.opcode row 0).val ≤ 52)
   := by
-    have h_prog := program_bus_operand_properties air row h_is_real h_wf
+    have h_prog := program_bus_operand_properties_of_reads air row h_is_real h_reads
     obtain ⟨ instr, pc', data, props, _, _, h_trans, h_deser, _ ⟩ := h_prog
     have h := ProgramBusEntry.inversion_opcode_bounds h_trans h_deser
     rw [deserialise_program_bus_entry] at h
@@ -284,7 +318,7 @@ namespace CpuChip.Interpretations
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_reads : bus_row_reads_asm (bus_row air row))
   :
     #v[ air.cols.opcode_selector.is_ecall row 0
       , air.cols.opcode_selector.is_memory row 0
@@ -303,11 +337,108 @@ namespace CpuChip.Interpretations
     (∀ f, imm_c_of_opcode (air.cols.instruction.opcode row 0).val = some f →
       air.cols.opcode_selector.imm_c row 0 = f)
   := by
-    have h_prog := program_bus_operand_properties air row h_is_real h_wf
+    have h_prog := program_bus_operand_properties_of_reads air row h_is_real h_reads
     obtain ⟨ instr, pc', data, props, _, _, h_trans, h_deser, _ ⟩ := h_prog
     have h := ProgramBusEntry.inversion_opcode_selectors h_trans h_deser
     rw [deserialise_program_bus_entry] at h
     simpa [ProgramBusEntry.class_selectors] using h
+
+  /-- The row's class selectors one by one, as the Program table sets them for its opcode:
+      the first part of `selector_exclusivity` split into its eleven entries. -/
+  lemma selectors_by_opcode
+    [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_reads : bus_row_reads_asm (bus_row air row))
+  :
+    air.cols.opcode_selector.is_ecall row 0 =
+      (class_selectors_of_opcode (air.cols.instruction.opcode row 0).val)[0] ∧
+    air.cols.opcode_selector.is_memory row 0 =
+      (class_selectors_of_opcode (air.cols.instruction.opcode row 0).val)[1] ∧
+    air.cols.opcode_selector.is_store row 0 =
+      (class_selectors_of_opcode (air.cols.instruction.opcode row 0).val)[2] ∧
+    air.cols.opcode_selector.is_beq row 0 =
+      (class_selectors_of_opcode (air.cols.instruction.opcode row 0).val)[3] ∧
+    air.cols.opcode_selector.is_bne row 0 =
+      (class_selectors_of_opcode (air.cols.instruction.opcode row 0).val)[4] ∧
+    air.cols.opcode_selector.is_blt row 0 =
+      (class_selectors_of_opcode (air.cols.instruction.opcode row 0).val)[5] ∧
+    air.cols.opcode_selector.is_bge row 0 =
+      (class_selectors_of_opcode (air.cols.instruction.opcode row 0).val)[6] ∧
+    air.cols.opcode_selector.is_bltu row 0 =
+      (class_selectors_of_opcode (air.cols.instruction.opcode row 0).val)[7] ∧
+    air.cols.opcode_selector.is_bgeu row 0 =
+      (class_selectors_of_opcode (air.cols.instruction.opcode row 0).val)[8] ∧
+    air.cols.opcode_selector.is_jalr row 0 =
+      (class_selectors_of_opcode (air.cols.instruction.opcode row 0).val)[9] ∧
+    air.cols.opcode_selector.is_jal row 0 =
+      (class_selectors_of_opcode (air.cols.instruction.opcode row 0).val)[10]
+  := by
+    have h := (selector_exclusivity air row h_is_real h_reads).1
+    refine ⟨ ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_ ⟩
+    · simpa using congrArg (fun v => v[0]) h
+    · simpa using congrArg (fun v => v[1]) h
+    · simpa using congrArg (fun v => v[2]) h
+    · simpa using congrArg (fun v => v[3]) h
+    · simpa using congrArg (fun v => v[4]) h
+    · simpa using congrArg (fun v => v[5]) h
+    · simpa using congrArg (fun v => v[6]) h
+    · simpa using congrArg (fun v => v[7]) h
+    · simpa using congrArg (fun v => v[8]) h
+    · simpa using congrArg (fun v => v[9]) h
+    · simpa using congrArg (fun v => v[10]) h
+
+  /-- What the class-selector table says, read off once for every opcode the decoder produces.
+      Entry 1 is `is_memory`, entry 2 `is_store`, entries 3 to 8 the six branch selectors
+      (`BLT` and `BGE` at 5 and 6), and entries 0, 9 and 10 `ECALL`, `JALR` and `JAL`.
+
+      - The memory selector is 0 or 1, and 1 only on a load or store opcode.
+      - A store opcode sets `is_store` and no branch selector.
+      - The six branch selectors add up to 0 or 1; when 1, `is_store` is 0 and `BLT` plus
+        `BGE` is 0 or 1.
+      - The ten class selectors other than `is_store`, added in the order of constraint 17,
+        make 0 or 1, and 0 only on an ALU opcode. -/
+  lemma class_selectors_facts (n : ℕ)
+      (h_n : n ≤ 25 ∨ n = 28 ∨ (30 ≤ n ∧ n ≤ 37) ∨ (40 ≤ n ∧ n ≤ 52))
+  :
+    ((class_selectors_of_opcode n)[1] = 0 ∨ (class_selectors_of_opcode n)[1] = 1) ∧
+    ((class_selectors_of_opcode n)[1] = 1 → (10 ≤ n ∧ n ≤ 17) ∨ (45 ≤ n ∧ n ≤ 47)) ∧
+    ((15 ≤ n ∧ n ≤ 17) ∨ n = 47 →
+      (class_selectors_of_opcode n)[2] = 1 ∧
+      (class_selectors_of_opcode n)[3] = 0 ∧ (class_selectors_of_opcode n)[4] = 0 ∧
+      (class_selectors_of_opcode n)[5] = 0 ∧ (class_selectors_of_opcode n)[6] = 0 ∧
+      (class_selectors_of_opcode n)[7] = 0 ∧ (class_selectors_of_opcode n)[8] = 0) ∧
+    ((class_selectors_of_opcode n)[3] + (class_selectors_of_opcode n)[4] +
+       (class_selectors_of_opcode n)[5] + (class_selectors_of_opcode n)[6] +
+       (class_selectors_of_opcode n)[7] + (class_selectors_of_opcode n)[8] = 0 ∨
+     (class_selectors_of_opcode n)[3] + (class_selectors_of_opcode n)[4] +
+       (class_selectors_of_opcode n)[5] + (class_selectors_of_opcode n)[6] +
+       (class_selectors_of_opcode n)[7] + (class_selectors_of_opcode n)[8] = 1) ∧
+    ((class_selectors_of_opcode n)[3] + (class_selectors_of_opcode n)[4] +
+       (class_selectors_of_opcode n)[5] + (class_selectors_of_opcode n)[6] +
+       (class_selectors_of_opcode n)[7] + (class_selectors_of_opcode n)[8] = 1 →
+      (class_selectors_of_opcode n)[2] = 0 ∧
+      ((class_selectors_of_opcode n)[5] + (class_selectors_of_opcode n)[6] = 0 ∨
+       (class_selectors_of_opcode n)[5] + (class_selectors_of_opcode n)[6] = 1)) ∧
+    ((class_selectors_of_opcode n)[3] + (class_selectors_of_opcode n)[4] +
+       (class_selectors_of_opcode n)[5] + (class_selectors_of_opcode n)[6] +
+       (class_selectors_of_opcode n)[7] + (class_selectors_of_opcode n)[8] +
+       (class_selectors_of_opcode n)[0] + (class_selectors_of_opcode n)[1] +
+       (class_selectors_of_opcode n)[10] + (class_selectors_of_opcode n)[9] = 0 ∨
+     (class_selectors_of_opcode n)[3] + (class_selectors_of_opcode n)[4] +
+       (class_selectors_of_opcode n)[5] + (class_selectors_of_opcode n)[6] +
+       (class_selectors_of_opcode n)[7] + (class_selectors_of_opcode n)[8] +
+       (class_selectors_of_opcode n)[0] + (class_selectors_of_opcode n)[1] +
+       (class_selectors_of_opcode n)[10] + (class_selectors_of_opcode n)[9] = 1) ∧
+    ((class_selectors_of_opcode n)[3] + (class_selectors_of_opcode n)[4] +
+       (class_selectors_of_opcode n)[5] + (class_selectors_of_opcode n)[6] +
+       (class_selectors_of_opcode n)[7] + (class_selectors_of_opcode n)[8] +
+       (class_selectors_of_opcode n)[0] + (class_selectors_of_opcode n)[1] +
+       (class_selectors_of_opcode n)[10] + (class_selectors_of_opcode n)[9] = 0 →
+      n ≤ 9 ∨ (30 ≤ n ∧ n ≤ 37) ∨ (40 ≤ n ∧ n ≤ 44) ∨ (48 ≤ n ∧ n ≤ 52))
+  := by
+    have h_le : n ≤ 52 := by omega
+    interval_cases n <;> first | (exfalso; omega) | decide
 
   /-- The ALU case of `selector_exclusivity`, the one the first wave of instruction theorems
       needs: an opcode whose class selectors are all zero leaves every class selector zero, so
@@ -332,20 +463,9 @@ namespace CpuChip.Interpretations
     air.cols.opcode_selector.is_jalr row 0 = 0 ∧
     air.cols.opcode_selector.is_jal row 0 = 0
   := by
-    have h := (selector_exclusivity air row h_is_real h_wf).1
+    have h := selectors_by_opcode air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)
     rw [h_class] at h
-    refine ⟨ ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_ ⟩
-    · simpa using congrArg (fun v => v[0]) h
-    · simpa using congrArg (fun v => v[1]) h
-    · simpa using congrArg (fun v => v[2]) h
-    · simpa using congrArg (fun v => v[3]) h
-    · simpa using congrArg (fun v => v[4]) h
-    · simpa using congrArg (fun v => v[5]) h
-    · simpa using congrArg (fun v => v[6]) h
-    · simpa using congrArg (fun v => v[7]) h
-    · simpa using congrArg (fun v => v[8]) h
-    · simpa using congrArg (fun v => v[9]) h
-    · simpa using congrArg (fun v => v[10]) h
+    simpa using h
 
   /-- The Sail instruction the row's Program message was decoded from, as a function of the
       opcode (`ProgramBusEntry.decoded_from`). -/
@@ -527,14 +647,120 @@ namespace CpuChip.Interpretations
     exact ⟨ h_c4, h_c5, h_c6, h_c7 ⟩
 
   -- ============================================================================
+  -- Real and padding rows
+  -- ============================================================================
+
+  /-- `is_real` is 0 or 1 (constraint 12). -/
+  lemma is_real_bool
+    [Field ExtF]
+    {air : Valid_CpuChip FKB ExtF} {row : ℕ}
+    (h_constraints : CpuChip.Extraction.allHold air row)
+  :
+    air.cols.is_real row 0 = 0 ∨ air.cols.is_real row 0 = 1
+  := by
+    have h_c12 : constraint_12 air row := constraint_at h_constraints 12 (by norm_num)
+    simp [constraint_and_interaction_simplification, sub_eq_zero] at h_c12
+    exact h_c12
+
+  /-- A padding row sends none of the three messages that ask anything of the sender:
+      constraints 55 and 57 to 62 zero the memory and branch selectors, and with them and
+      constraints 54, 63 and 64 constraint 17 zeroes `is_alu_not_x0`. -/
+  lemma padding_row_silent
+    [Field ExtF]
+    {air : Valid_CpuChip FKB ExtF} {row : ℕ}
+    (h_constraints : CpuChip.Extraction.allHold air row)
+    (h_pad : air.cols.is_real row 0 = 0)
+  :
+    air.cols.opcode_selector.is_memory row 0 = 0 ∧
+    air.cols.is_alu_not_x0 row 0 = 0 ∧
+    air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 +
+      air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 +
+      air.cols.opcode_selector.is_bltu row 0 + air.cols.opcode_selector.is_bgeu row 0 = 0
+  := by
+    have h_c17 : constraint_17 air row := constraint_at h_constraints 17 (by norm_num)
+    have h_c54 : constraint_54 air row := constraint_at h_constraints 54 (by norm_num)
+    have h_c55 : constraint_55 air row := constraint_at h_constraints 55 (by norm_num)
+    have h_c57 : constraint_57 air row := constraint_at h_constraints 57 (by norm_num)
+    have h_c58 : constraint_58 air row := constraint_at h_constraints 58 (by norm_num)
+    have h_c59 : constraint_59 air row := constraint_at h_constraints 59 (by norm_num)
+    have h_c60 : constraint_60 air row := constraint_at h_constraints 60 (by norm_num)
+    have h_c61 : constraint_61 air row := constraint_at h_constraints 61 (by norm_num)
+    have h_c62 : constraint_62 air row := constraint_at h_constraints 62 (by norm_num)
+    have h_c63 : constraint_63 air row := constraint_at h_constraints 63 (by norm_num)
+    have h_c64 : constraint_64 air row := constraint_at h_constraints 64 (by norm_num)
+    simp [constraint_and_interaction_simplification, h_pad] at h_c54 h_c55 h_c57 h_c58 h_c59
+    simp [constraint_and_interaction_simplification, h_pad] at h_c60 h_c61 h_c62 h_c63 h_c64
+    simp [constraint_and_interaction_simplification, h_pad, h_c54, h_c55, h_c57, h_c58, h_c59,
+      h_c60, h_c61, h_c62, h_c63, h_c64] at h_c17
+    exact ⟨ h_c55, h_c17, by simp [h_c57, h_c58, h_c59, h_c60, h_c61, h_c62] ⟩
+
+  /-- A row that sends a message with multiplicity `m = 1`, where `m` is zero on a padding row,
+      is real. -/
+  lemma is_real_of_send
+    [Field ExtF]
+    {air : Valid_CpuChip FKB ExtF} {row : ℕ}
+    (h_constraints : CpuChip.Extraction.allHold air row)
+    {m : FKB}
+    (h_pad : air.cols.is_real row 0 = 0 → m = 0)
+    (h_m : m = 1)
+  :
+    air.cols.is_real row 0 = 1
+  := by
+    rcases is_real_bool h_constraints with h | h
+    · exact absurd (h_m.symm.trans (h_pad h)) one_ne_zero
+    · exact h
+
+  -- ============================================================================
   -- Operand ranges
   -- ============================================================================
 
-  /-- Every operand piece the row reads from or writes to the register file is 16-bit. The
-      `op_a` value comes from the chip's own write message (`h_wf_asrt`), its previous value
-      and the two register operands from the read messages (`h_wf`), the latter two only when
-      the operand is not an immediate. The immediate case is in `imm_b_eq_1_constraints` /
-      `imm_c_eq_1_constraints` together with the decoder's `imm_operand_limbs`. -/
+  /-- The register values a real row reads are 16-bit: `op_a`'s previous value always, `op_b`
+      and `op_c` when they are registers. The hypothesis holds only the Program table's and
+      the register file's promises, so nothing else can be used. -/
+  lemma read_ranges
+    [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_reads : bus_row_reads_asm (bus_row air row))
+  :
+    (air.cols.op_a_access.prev_value_0 row 0).val < 65536 ∧
+    (air.cols.op_a_access.prev_value_1 row 0).val < 65536 ∧
+    (air.cols.op_a_access.prev_value_2 row 0).val < 65536 ∧
+    (air.cols.op_a_access.prev_value_3 row 0).val < 65536 ∧
+    (air.cols.opcode_selector.imm_b row 0 = 0 →
+      (air.cols.op_b_access.access.value_0 row 0).val < 65536 ∧
+      (air.cols.op_b_access.access.value_1 row 0).val < 65536 ∧
+      (air.cols.op_b_access.access.value_2 row 0).val < 65536 ∧
+      (air.cols.op_b_access.access.value_3 row 0).val < 65536) ∧
+    (air.cols.opcode_selector.imm_c row 0 = 0 →
+      (air.cols.op_c_access.access.value_0 row 0).val < 65536 ∧
+      (air.cols.op_c_access.access.value_1 row 0).val < 65536 ∧
+      (air.cols.op_c_access.access.value_2 row 0).val < 65536 ∧
+      (air.cols.op_c_access.access.value_3 row 0).val < 65536)
+  := by
+    simp [bus_row_reads_asm, bus_row, deserialise_bus_row, raw_bus_row, h_is_real] at h_reads
+    grind
+
+  /-- The value a real row writes to `op_a` is 16-bit: the chip's own promise on its write
+      message (`bus_row_wf_asrt`). -/
+  lemma write_range
+    [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_wf_asrt : bus_row_wf_asrt (bus_row air row))
+  :
+    (air.cols.op_a_access.access.value_0 row 0).val < 65536 ∧
+    (air.cols.op_a_access.access.value_1 row 0).val < 65536 ∧
+    (air.cols.op_a_access.access.value_2 row 0).val < 65536 ∧
+    (air.cols.op_a_access.access.value_3 row 0).val < 65536
+  := by
+    simp [bus_row_wf_asrt, bus_row, deserialise_bus_row, raw_bus_row, h_is_real] at h_wf_asrt
+    grind
+
+  /-- Every operand piece the row reads from or writes to the register file is 16-bit: the
+      write from `write_range`, the reads from `read_ranges`. The immediate case is in
+      `imm_b_eq_1_constraints` / `imm_c_eq_1_constraints` together with the decoder's
+      `imm_operand_limbs`, and both cases together in `operand_ranges`. -/
   lemma operand_range
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -560,10 +786,117 @@ namespace CpuChip.Interpretations
       (air.cols.op_c_access.access.value_1 row 0).val < 65536 ∧
       (air.cols.op_c_access.access.value_2 row 0).val < 65536 ∧
       (air.cols.op_c_access.access.value_3 row 0).val < 65536)
+  :=
+    have h_w := write_range air row h_is_real h_wf_asrt
+    have h_r := read_ranges air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)
+    ⟨ h_w.1, h_w.2.1, h_w.2.2.1, h_w.2.2.2, h_r ⟩
+
+  /-- An operand that is an immediate (flag 1) has 16-bit pieces: two from the instruction
+      and a sign fill of 0 or 65535. -/
+  lemma immediate_pieces_range {v_0 v_1 v_2 v_3 p_0 p_1 s : FKB}
+      (h_0 : v_0 = p_0) (h_1 : v_1 = p_1) (h_2 : v_2 = s * 65535) (h_3 : v_3 = s * 65535)
+      (h_p_0 : p_0.val < 65536) (h_p_1 : p_1.val < 65536) (h_s : s = 0 ∨ s = 1)
+  :
+    v_0.val < 65536 ∧ v_1.val < 65536 ∧ v_2.val < 65536 ∧ v_3.val < 65536
   := by
-    simp [bus_row_wf_asm, bus_row, deserialise_bus_row, raw_bus_row, h_is_real] at h_wf
-    simp [bus_row_wf_asrt, bus_row, deserialise_bus_row, raw_bus_row, h_is_real] at h_wf_asrt
-    grind
+    subst h_0 h_1 h_2 h_3
+    rcases h_s with rfl | rfl <;> simp [h_p_0, h_p_1]
+
+  /-- On a real row both operand values the row sends are 16-bit, whatever their immediate
+      flags: a register by `read_ranges`, an immediate by constraints 0 to 7 and the Program
+      table's operand facts (`ProgramBusEntry.inversion_operands`). -/
+  lemma operand_ranges
+    [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_reads : bus_row_reads_asm (bus_row air row))
+    (h_constraints : CpuChip.Extraction.allHold air row)
+  :
+    (air.cols.op_b_access.access.value_0 row 0).val < 65536 ∧
+    (air.cols.op_b_access.access.value_1 row 0).val < 65536 ∧
+    (air.cols.op_b_access.access.value_2 row 0).val < 65536 ∧
+    (air.cols.op_b_access.access.value_3 row 0).val < 65536 ∧
+    (air.cols.op_c_access.access.value_0 row 0).val < 65536 ∧
+    (air.cols.op_c_access.access.value_1 row 0).val < 65536 ∧
+    (air.cols.op_c_access.access.value_2 row 0).val < 65536 ∧
+    (air.cols.op_c_access.access.value_3 row 0).val < 65536
+  := by
+    obtain ⟨ instr, pc', data, props, _, _, h_trans, h_deser, _ ⟩ :=
+      program_bus_operand_properties_of_reads air row h_is_real h_reads
+    have h_ops := ProgramBusEntry.inversion_operands h_trans h_deser
+    have h_hot := ProgramBusEntry.inversion_selectors_one_hot h_trans h_deser
+    rw [deserialise_program_bus_entry] at h_ops h_hot
+    obtain ⟨ -, -, -, -, h_b_0, h_b_1, h_b_s, h_c_0, h_c_1, h_c_s ⟩ := h_ops
+    obtain ⟨ h_imm_b, h_imm_c, - ⟩ := h_hot
+    obtain ⟨ -, -, -, -, h_read_b, h_read_c ⟩ := read_ranges air row h_is_real h_reads
+    have h_b :
+        (air.cols.op_b_access.access.value_0 row 0).val < 65536 ∧
+        (air.cols.op_b_access.access.value_1 row 0).val < 65536 ∧
+        (air.cols.op_b_access.access.value_2 row 0).val < 65536 ∧
+        (air.cols.op_b_access.access.value_3 row 0).val < 65536 := by
+      rcases h_imm_b with h | h
+      · exact h_read_b h
+      · obtain ⟨ e_0, e_1, e_2, e_3 ⟩ := imm_b_eq_1_constraints air row h h_constraints
+        exact immediate_pieces_range e_0 e_1 e_2 e_3 h_b_0 h_b_1 h_b_s
+    have h_c :
+        (air.cols.op_c_access.access.value_0 row 0).val < 65536 ∧
+        (air.cols.op_c_access.access.value_1 row 0).val < 65536 ∧
+        (air.cols.op_c_access.access.value_2 row 0).val < 65536 ∧
+        (air.cols.op_c_access.access.value_3 row 0).val < 65536 := by
+      rcases h_imm_c with h | h
+      · exact h_read_c h
+      · obtain ⟨ e_0, e_1, e_2, e_3 ⟩ := imm_c_eq_1_constraints air row h h_constraints
+        exact immediate_pieces_range e_0 e_1 e_2 e_3 h_c_0 h_c_1 h_c_s
+    exact ⟨ h_b.1, h_b.2.1, h_b.2.2.1, h_b.2.2.2, h_c.1, h_c.2.1, h_c.2.2.1, h_c.2.2.2 ⟩
+
+  /-- On a branch or store row `op_a` keeps the value read (constraints 13 to 16), so its four
+      pieces are 16-bit. -/
+  lemma op_a_kept_range
+    [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_reads : bus_row_reads_asm (bus_row air row))
+    (h_constraints : CpuChip.Extraction.allHold air row)
+    (h_gate : air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 +
+      air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 +
+      air.cols.opcode_selector.is_bltu row 0 + air.cols.opcode_selector.is_bgeu row 0 +
+      air.cols.opcode_selector.is_store row 0 = 1)
+  :
+    (air.cols.op_a_access.access.value_0 row 0).val < 65536 ∧
+    (air.cols.op_a_access.access.value_1 row 0).val < 65536 ∧
+    (air.cols.op_a_access.access.value_2 row 0).val < 65536 ∧
+    (air.cols.op_a_access.access.value_3 row 0).val < 65536
+  := by
+    obtain ⟨ h_p_0, h_p_1, h_p_2, h_p_3, -, - ⟩ := read_ranges air row h_is_real h_reads
+    have h_c13 : constraint_13 air row := constraint_at h_constraints 13 (by norm_num)
+    have h_c14 : constraint_14 air row := constraint_at h_constraints 14 (by norm_num)
+    have h_c15 : constraint_15 air row := constraint_at h_constraints 15 (by norm_num)
+    have h_c16 : constraint_16 air row := constraint_at h_constraints 16 (by norm_num)
+    simp only [constraint_and_interaction_simplification, h_gate, one_mul, sub_eq_zero]
+      at h_c13 h_c14 h_c15 h_c16
+    rw [h_c13, h_c14, h_c15, h_c16]
+    exact ⟨ h_p_0, h_p_1, h_p_2, h_p_3 ⟩
+
+  /-- With `op_a_is_x0` set the four pieces of `op_a` are zero (constraints 8 to 11,
+      `register/constraints.rs:73-76`). `op_a` is the instruction's first register field: the
+      destination of a load or an ALU instruction, the source register of a store. -/
+  lemma op_a_zero_of_x0
+    [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    (h_constraints : CpuChip.Extraction.allHold air row)
+    (h_x0 : ¬ air.cols.instruction.op_a_is_x0 row 0 = 0)
+  :
+    air.cols.op_a_access.access.value_0 row 0 = 0 ∧
+    air.cols.op_a_access.access.value_1 row 0 = 0 ∧
+    air.cols.op_a_access.access.value_2 row 0 = 0 ∧
+    air.cols.op_a_access.access.value_3 row 0 = 0
+  := by
+    have h_c8 : constraint_8 air row := constraint_at h_constraints 8 (by norm_num)
+    have h_c9 : constraint_9 air row := constraint_at h_constraints 9 (by norm_num)
+    have h_c10 : constraint_10 air row := constraint_at h_constraints 10 (by norm_num)
+    have h_c11 : constraint_11 air row := constraint_at h_constraints 11 (by norm_num)
+    simp [constraint_and_interaction_simplification, h_x0] at h_c8 h_c9 h_c10 h_c11
+    exact ⟨ h_c8, h_c9, h_c10, h_c11 ⟩
 
   -- ============================================================================
   -- Sequential rows
@@ -648,12 +981,12 @@ namespace CpuChip.Interpretations
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
     (h_is_real : air.cols.is_real row 0 = 1)
-    (h_wf : bus_row_wf_asm (bus_row air row))
+    (h_reads : bus_row_reads_asm (bus_row air row))
   :
     air.cols.instruction.op_a_is_x0 row 0 =
       if air.cols.instruction.op_a row 0 = 0 then 1 else 0
   := by
-    have h_prog := program_bus_operand_properties air row h_is_real h_wf
+    have h_prog := program_bus_operand_properties_of_reads air row h_is_real h_reads
     obtain ⟨ instr, pc', data, props, _, _, h_trans, h_deser, _ ⟩ := h_prog
     have h := (ProgramBusEntry.inversion_operands h_trans h_deser).2.1
     rw [deserialise_program_bus_entry] at h
@@ -678,7 +1011,7 @@ namespace CpuChip.Interpretations
     have h_c17 : constraint_17 air row := constraint_at h_constraints 17 (by norm_num)
     simp [constraint_and_interaction_simplification, h_is_real, h_beq, h_bne, h_blt, h_bge,
           h_bltu, h_bgeu, h_ecall, h_mem, h_jal, h_jalr, sub_eq_zero] at h_c17
-    rw [h_c17, op_a_is_x0_eq air row h_is_real h_wf]
+    rw [h_c17, op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
     split_ifs <;> simp
 
   /-- On a real ALU-class row whose destination is not `x0`, the chip sends its ALU message
