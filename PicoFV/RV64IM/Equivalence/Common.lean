@@ -14,10 +14,11 @@ control-flow facts every ALU-class row shares. The one assumption the theorems m
 whole trace rather than about a row, `pico_CpuChip_control_flow_assumptions`, is defined in
 `Constraints/CpuChipInterpretations.lean` so that the lemmas there can take it.
 
-The pc-alignment proof that the 2.x file also held (`pc_next_row_mod_four_eq_zero`,
-`next_pc_mod_four_eq_zero`) is not here: it splits over every instruction class and calls the
-branch and jump lemmas, which come with those classes. Only the branch and jump theorems use
-it.
+The pc-alignment lemmas that the 2.x file also held are not here. A real row's next pc is
+4-aligned by `CpuChip.Interpretations.next_pc_mod_four_eq_zero`, which keeps the 2.x name but
+takes its arguments in the interpretations file's order and no longer takes the Program-bus
+axioms. The 2.x `pc_next_row_mod_four_eq_zero` has no v3.1.1 counterpart: `pc_facts` gives
+any real row's pc alignment directly.
 -/
 
 namespace Equivalence
