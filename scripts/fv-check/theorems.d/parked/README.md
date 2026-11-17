@@ -49,12 +49,24 @@ gains three conjuncts in its definition:
   keep their recorded text, because `signatures.txt` records the name and not
   the definition, but their meaning changes;
 - the other 54 gain it as a new hypothesis, so their recorded statements change,
-  as those of the six already restored have.
+  as those of the nine already restored have.
 
 A restored statement may also drop an immediate-flag hypothesis that the v3.1.1
 decoder already fixes for its opcode (`imm_b_of_opcode`, `imm_c_of_opcode` in
-`RVSail/BusesV3.lean`): `ADDIW` no longer takes `imm_b = 0`, and `SUBW` no
-longer takes `imm_c = 0`. Dropping a hypothesis makes the theorem stronger.
+`RVSail/BusesV3.lean`): `ADDIW`, `SLLIW`, `SRLIW` and `SRAIW` no longer take
+`imm_b = 0`, and `SUBW` no longer takes `imm_c = 0`. Dropping a hypothesis
+makes the theorem stronger. `SLLIW`, `SRLIW` and `SRAIW` keep `imm_c = 1`: the
+decoder does not fix it for opcodes 42 to 44, which `SLLW`, `SRLW` and `SRAW`
+share with `imm_c = 0`.
+
+The shift-immediate theorems `SLLIW`, `SRLIW` and `SRAIW` also read their
+shift amount from the instruction's encoded `instruction.op_c_0` instead of
+the `op_c` value the row sends to the ALU chip (`op_c_value`), as they read
+`rd` and `rs1`. The statement at `353238a` read it from the value the ALU chip
+shifts by, so it held whatever tied that value to the instruction; the new one
+names the program's own immediate, and the proof needs the constraint that
+ties the two (`op_c_value_setWidth_eq_op_c_0`). A class whose immediate the
+proof does not otherwise reach should be restored the same way.
 
 Two definitions every statement names were also rewritten at v3.1.1, and
 `signatures.txt` shows only their names: `Equivalence.CPU_bus_operations` (the

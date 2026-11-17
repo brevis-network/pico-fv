@@ -646,6 +646,28 @@ namespace Equivalence
         omega
       rw [h_op_c_bv, h_low]
 
+    /-- On a row whose `op_c` is an immediate (`imm_c = 1`), the low `n ≤ 16` bits of the `op_c`
+        value the row sends to the ALU chip are those of the instruction's encoded `op_c_0`
+        (constraint 4, through `imm_c_eq_1_constraints`). A shift-by-immediate theorem reads its
+        shift amount from `op_c_0`, as it reads `rd` and `rs1` from the instruction, and uses
+        this lemma to reach the amount the ALU chip shifts by. -/
+    lemma op_c_value_setWidth_eq_op_c_0
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ) {n : ℕ} (hn : n ≤ 16)
+      (h_imm_c : air.cols.opcode_selector.imm_c row 0 = 1)
+      (h_constraints : CpuChip.Extraction.allHold air row)
+    :
+      (U64w.toBV (op_c_value air row)).setWidth n =
+        ((air.cols.instruction.op_c_0 row 0).val : BitVec n)
+    := by
+      have h_c0 := (imm_c_eq_1_constraints air row h_imm_c h_constraints).1
+      ext i hi
+      have hi16 : i < 16 := by omega
+      simp [op_c_value, h_c0, U64w.toBV, BitVec.getElem_setWidth]
+      rw [BitVec.getLsbD_append]
+      simp only [← BitVec.getLsbD_eq_getElem, BitVec.getLsbD_ofNat]
+      simp [hi16, hi]
+
   end Auxiliaries
 
 end Equivalence

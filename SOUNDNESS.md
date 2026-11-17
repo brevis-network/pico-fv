@@ -144,9 +144,13 @@ Each equivalence theorem assumes:
 `ADDIW`, `ADDW`, `SUBW`, `SLLW`, `SRLW`, `SRAW`, `SLLIW`, `SRLIW` and `SRAIW` are the nine
 theorems recorded at v3.1.1,
 against the v3.1.1 CPU constraints and the v3.1.1 contracts (`RV64IM_Interactions.V3` in
-`RVSail/BusesV3.lean`). `ADDIW`, `SLLIW`, `SRLIW` and `SRAIW` no longer assume `imm_b = 0`
-and `SUBW` no longer assumes `imm_c = 0`: the v3.1.1 decoder fixes both flags for those
-opcodes. The other 53 were last
+`RVSail/BusesV3.lean`). `ADDIW`, `SLLIW`, `SRLIW` and `SRAIW` no longer assume `imm_b = 0`,
+which the v3.1.1 decoder fixes for their opcodes, and `SUBW` no longer assumes `imm_c = 0`,
+which it fixes for opcode 41. The decoder does not fix `imm_c` for opcodes 42 to 44, which
+`SLLW`, `SRLW` and `SRAW` share with `imm_c = 0`, so `SLLIW`, `SRLIW` and `SRAIW` still assume
+`imm_c = 1`. Those three also read their shift amount from the instruction's encoded `op_c_0`,
+as they read `rd` and `rs1`, instead of from the `op_c` value the row sends to the ALU chip;
+the proofs link the two through the CPU chip's constraint 4. The other 53 were last
 recorded at `353238a`, against the 2.x constraints and the contracts of `RVSail/Buses.lean`,
 and are not checked while they move. Two definitions every instruction theorem names were
 rewritten at v3.1.1 behind unchanged names: `Equivalence.CPU_bus_operations`, the operations
@@ -161,7 +165,7 @@ of an accepted recursive proof (`docs/cpu-chip-pico-v3-design.md`, "The whole-tr
 assumption"). So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
 proof, not a chunk proof checked on its own. The eight branch and jump theorems already name the
 assumption, whose definition grew, so their recorded statements will keep their text; the other
-54 gain it as a new hypothesis, as the six recorded at v3.1.1 have.
+54 gain it as a new hypothesis, as the nine recorded at v3.1.1 have.
 
 A change that weakens or strengthens a hypothesis changes `signatures.txt`, and `check.sh` fails
 until the change is reviewed and recorded. A change to the definition behind a hypothesis's name
@@ -276,7 +280,8 @@ cannot replay what those tactics computed. Today that excludes `Fundamentals/Cor
 `Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution` and the specifications of
 the Bitwise, DivRem and memory chips; the replay covers the remaining modules, including the
 other ALU chips' specifications, the CPU chip's constraints and interpretations, and
-`Equivalence/Common`, `Equivalence/Addiw` and `Equivalence/RTypeW`. Modules the build does not
+`Equivalence/Common`, `Equivalence/Addiw`, `Equivalence/RTypeW` and `Equivalence/ShiftIWOp`.
+Modules the build does not
 import, such as the parked equivalence files, are not replayed.
 
 ## D. Does the use of the results hold together?
