@@ -544,7 +544,10 @@ namespace Equivalence
         h_all_constraints pico_assumptions h_opcode h_class h_imm_b h_imm_c h_bus_hypotheses v h_v
 
     /-- `eq_operation_list_effect_state_of_reg_reg` for a register-immediate ALU row
-        (`imm_c = 1`): one register read, `rs1`. -/
+        (`imm_c = 1`): one register read, `rs1`. It takes the row's `imm_b = 0` rather than the
+        opcode fact the register-register lemma takes, because `ADDI`'s opcode 0 is shared with
+        `LUI` and `AUIPC` and the decoder does not fix `imm_b` for it; a caller whose opcode it
+        does fix gets the flag from `imm_b_eq_zero_of_opcode`. -/
     lemma eq_operation_list_effect_state_of_reg_imm
       [Field ExtF]
       {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
@@ -558,7 +561,7 @@ namespace Equivalence
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = op)
       (h_class : class_selectors_of_opcode op.val = #v[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-      (h_op_b : imm_b_of_opcode op.val = some 0)
+      (h_imm_b : air.cols.opcode_selector.imm_b row 0 = 0)
       (h_imm_c : air.cols.opcode_selector.imm_c row 0 = 1)
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -585,8 +588,6 @@ namespace Equivalence
       exec = (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_wf := h_all_wf row h_row
-      have h_imm_b := imm_b_eq_zero_of_opcode air row h_is_real h_wf
-        (by rw [h_opcode]; exact h_op_b)
       obtain ⟨ h_pc, h_rs1 ⟩ := readReg_PC_and_read_xreg_of_reg_imm air row h_is_real h_wf
         h_opcode h_class h_imm_b h_imm_c h_bus_hypotheses
       rw [h_exec h_pc h_rs1]
