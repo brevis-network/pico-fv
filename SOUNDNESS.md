@@ -22,16 +22,17 @@ with their statements in `signatures.txt`. They are of three kinds.
   instruction gives the same post-state as the register and memory operations the row puts on the
   bus.
 
-  **6 of these 62 theorems are checked at the moment**: `ADDIW` and the five 32-bit
-  register-register opcodes `ADDW`, `SUBW`, `SLLW`, `SRLW` and `SRAW`. The CPU chip is moving
+  **9 of these 62 theorems are checked at the moment**: `ADDIW`, the five 32-bit
+  register-register opcodes `ADDW`, `SUBW`, `SLLW`, `SRLW` and `SRAW`, and the three 32-bit
+  shift-immediate opcodes `SLLIW`, `SRLIW` and `SRAIW`. The CPU chip is moving
   to Pico v3.1.1, which is a rewrite of the chip rather than a patch: 58 columns instead of
   132, 65 constraints instead of 218 and 17 messages instead of 36. Its `Airs/`, `Constraints/`
   and interpretations files are at v3.1.1 here, with the lemmas the instruction classes need —
   both the shared ones and those of the branch, jump, load and store rows;
-  the 11 instruction-theorem files that still read the 2.x layout are out of the build until
-  each is rewritten against it, and their 11 lists are parked in
+  the 10 instruction-theorem files that still read the 2.x layout are out of the build until
+  each is rewritten against it, and their 10 lists are parked in
   `scripts/fv-check/theorems.d/parked/`. Until they return, this repository says nothing about
-  the other 56 opcodes. Commit `353238a` is the last at which all 62 were checked, against the
+  the other 53 opcodes. Commit `353238a` is the last at which all 62 were checked, against the
   2.x CPU extraction and the bus contract as it stood then (which already covered the
   branch-comparison opcodes). The 2.x interpretations file is unchanged from the tag
   `pico-v3-before-cpu` (`35259d8`) to that commit.
@@ -140,10 +141,12 @@ Each equivalence theorem assumes:
 - the hypotheses of the operations the row emits, and `RISC_V_assumptions` on the machine state;
 - at v3.1.1, the whole-trace assumption described below.
 
-`ADDIW`, `ADDW`, `SUBW`, `SLLW`, `SRLW` and `SRAW` are the six theorems recorded at v3.1.1,
+`ADDIW`, `ADDW`, `SUBW`, `SLLW`, `SRLW`, `SRAW`, `SLLIW`, `SRLIW` and `SRAIW` are the nine
+theorems recorded at v3.1.1,
 against the v3.1.1 CPU constraints and the v3.1.1 contracts (`RV64IM_Interactions.V3` in
-`RVSail/BusesV3.lean`). `ADDIW` no longer assumes `imm_b = 0` and `SUBW` no longer assumes
-`imm_c = 0`: the v3.1.1 decoder fixes both flags for those opcodes. The other 56 were last
+`RVSail/BusesV3.lean`). `ADDIW`, `SLLIW`, `SRLIW` and `SRAIW` no longer assume `imm_b = 0`
+and `SUBW` no longer assumes `imm_c = 0`: the v3.1.1 decoder fixes both flags for those
+opcodes. The other 53 were last
 recorded at `353238a`, against the 2.x constraints and the contracts of `RVSail/Buses.lean`,
 and are not checked while they move. Two definitions every instruction theorem names were
 rewritten at v3.1.1 behind unchanged names: `Equivalence.CPU_bus_operations`, the operations
@@ -233,7 +236,7 @@ C2) or the specification axioms of A2.
 | Axioms the theorem depends on | Theorems |
 |---|---:|
 | kernel + compiler | 80 |
-| kernel + compiler + RISC-V spec axioms | 6 |
+| kernel + compiler + RISC-V spec axioms | 9 |
 | kernel only | 1 |
 <!-- end generated -->
 
@@ -247,7 +250,7 @@ A proof that uses them also trusts the Lean compiler and runtime.
 branch's, so the uses only go down.
 
 <!-- generated: tactics -->
-164 uses of `native_decide`, `bv_decide` or `decide +native` in 15 files:
+161 uses of `native_decide`, `bv_decide` or `decide +native` in 14 files:
 
 - `PicoFV/Fundamentals/Core.lean`: 7
 - `PicoFV/Fundamentals/KoalaBear.lean`: 1
@@ -257,7 +260,6 @@ branch's, so the uses only go down.
 - `PicoFV/RV64IM/Equivalence/Jumps.lean`: 8
 - `PicoFV/RV64IM/Equivalence/Loads.lean`: 7
 - `PicoFV/RV64IM/Equivalence/ShiftIOp.lean`: 3
-- `PicoFV/RV64IM/Equivalence/ShiftIWOp.lean`: 3
 - `PicoFV/RV64IM/Equivalence/Stores.lean`: 4
 - `PicoFV/RV64IM/Equivalence/UType.lean`: 2
 - `PicoFV/RV64IM/RVSail/Execution.lean`: 3
