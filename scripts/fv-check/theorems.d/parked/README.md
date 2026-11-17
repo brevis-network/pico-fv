@@ -1,18 +1,18 @@
 # Parked theorem lists
 
-The 11 lists here name 56 of the 62 instruction theorems of
+The 9 lists here name 47 of the 62 instruction theorems of
 `PicoFV/RV64IM/Equivalence/`. They sit out of `theorems.d/` — and so out of
 `check.sh` — while the CPU chip moves to Pico v3.1.1.
 
 The chip's column layout changed shape (58 columns instead of 132), so the 2.x
-`Constraints/CpuChipInterpretations.lean` and the `Equivalence/` files that
-rest on it no longer compile. The interpretations file and
-`Equivalence/Common.lean` are now rewritten at v3.1.1, holding the lemmas every
-instruction class shares, and `equivalence-addiw.txt` and
-`equivalence-r-type-w.txt` have moved back up a directory with
-`Equivalence/Addiw.lean` and `Equivalence/RTypeW.lean`. `PicoFV64.lean` still
-does not import `Equivalence.Equivalence`, which pulls in all 13 class files;
-it returns with the last of them. The tag `pico-v3-before-cpu` holds the 2.x versions.
+`Constraints/CpuChipInterpretations.lean` and the `Equivalence/` files that rest
+on it no longer compile. The interpretations file and `Equivalence/Common.lean`
+are now rewritten at v3.1.1, holding the lemmas every instruction class shares,
+and the lists of `Equivalence/Addiw.lean`, `Equivalence/RTypeW.lean`,
+`Equivalence/ShiftIWOp.lean` and `Equivalence/IType.lean` have moved back up a
+directory with their files. `PicoFV64.lean` still does not import
+`Equivalence.Equivalence`, which pulls in all 13 class files; it returns with
+the last of them. The tag `pico-v3-before-cpu` holds the 2.x versions.
 
 ## Restoring an instruction class
 
@@ -49,12 +49,26 @@ gains three conjuncts in its definition:
   keep their recorded text, because `signatures.txt` records the name and not
   the definition, but their meaning changes;
 - the other 54 gain it as a new hypothesis, so their recorded statements change,
-  as those of the six already restored have.
+  as those of the fifteen already restored have.
 
 A restored statement may also drop an immediate-flag hypothesis that the v3.1.1
 decoder already fixes for its opcode (`imm_b_of_opcode`, `imm_c_of_opcode` in
-`RVSail/BusesV3.lean`): `ADDIW` no longer takes `imm_b = 0`, and `SUBW` no
-longer takes `imm_c = 0`. Dropping a hypothesis makes the theorem stronger.
+`RVSail/BusesV3.lean`): `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`,
+`ANDI`, `SLTI` and `SLTIU` no longer take `imm_b = 0`, and `SUBW` no longer
+takes `imm_c = 0`. Dropping a hypothesis makes the theorem stronger. `ADDI`
+keeps `imm_b = 0`: the decoder does not fix it for opcode 0, which `LUI` and
+`AUIPC` share. `SLLIW`, `SRLIW` and `SRAIW` keep `imm_c = 1`: the decoder does
+not fix it for opcodes 42 to 44, which `SLLW`, `SRLW` and `SRAW` share with
+`imm_c = 0`.
+
+The shift-immediate theorems `SLLIW`, `SRLIW` and `SRAIW` also read their
+shift amount from the instruction's encoded `instruction.op_c_0` instead of
+the `op_c` value the row sends to the ALU chip (`op_c_value`), as they read
+`rd` and `rs1`. The statement at `353238a` read it from the value the ALU chip
+shifts by, so it held whatever tied that value to the instruction; the new one
+names the program's own immediate, and the proof needs the constraint that
+ties the two (`op_c_value_setWidth_eq_op_c_0`). A class whose immediate the
+proof does not otherwise reach should be restored the same way.
 
 Two definitions every statement names were also rewritten at v3.1.1, and
 `signatures.txt` shows only their names: `Equivalence.CPU_bus_operations` (the

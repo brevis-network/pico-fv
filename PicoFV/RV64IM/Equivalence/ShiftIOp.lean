@@ -19,7 +19,9 @@ namespace Equivalence
   section SHIFTIOP
 
     -- ========================================================================
-    -- SHIFTIOP operand setup. Like `itype_operand_setup` but for the SHIFTIOP
+    -- SHIFTIOP operand setup. Like the 2.x `itype_operand_setup` (tag
+    -- `pico-v3-before-cpu`; the v3.1.1 ITYPE proofs use
+    -- `op_c_value_eq_signExtend_imm12` instead) but for the SHIFTIOP
     -- branch of `operand_properties_inversion`. Caller supplies `op : sop` +
     -- `h_opcode : opcode = opcode_of_sop op` + `h_imm_b : imm_b = 0` +
     -- `h_imm_c : imm_c = 1`. `h_imm_b` is not strictly needed for the inversion
@@ -33,7 +35,7 @@ namespace Equivalence
     -- ========================================================================
 
     /-- Operand-setup lemma for the SHIFTIOP class (3 opcodes: SLLI/SRLI/
-    SRAI). Mirrors `itype_operand_setup` from the ITYPE section. -/
+    SRAI). Mirrors the 2.x `itype_operand_setup` (tag `pico-v3-before-cpu`). -/
     lemma shiftiop_operand_setup
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -130,7 +132,9 @@ namespace Equivalence
                   h_reg_rd, h_reg_rs1 ⟩ )
 
     -- ========================================================================
-    -- SHIFTIOP bus setup. Identical in shape to `itype_bus_setup` since the
+    -- SHIFTIOP bus setup. Identical in shape to the 2.x `itype_bus_setup` (tag
+    -- `pico-v3-before-cpu`; the v3.1.1 ITYPE proofs use
+    -- `eq_operation_list_effect_state_of_reg_imm` instead) since the
     -- chip-side bus emission for SHIFTIOP and ITYPE is the same: `imm_c = 1`
     -- filters the op_c State-bus entry, and the op_a/op_b reads use the same
     -- shape as for ITYPE. The only opcode-dependent piece is `h_opcode`,
