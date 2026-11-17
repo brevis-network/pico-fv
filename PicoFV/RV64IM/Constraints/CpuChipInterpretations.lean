@@ -36,17 +36,28 @@ places:
   the sign-extended offset folded into one subtraction of `2^32`. Reading one as a 64-bit
   addition needs a bound on the offset as well, which the decoder gives the instruction
   theorem, so `two_piece_plus_offset_implies_sum` takes it as a hypothesis.
-- **The JALR target** is the one addition the chip still proves limb by limb (constraints 27
-  to 30), with the carries as expressions rather than columns. The addition is
-  `op_b + op_c = next_pc + jalr_lsb`, and `next_pc`'s 4-alignment is what both bounds its low
-  limb and clears bit 0 of the target.
+- **The two additions the chip still proves limb by limb** are the jump return address and
+  the JALR target. The return address `op_a = pc + 4` (constraints 20 to 23) carries through
+  `pc_carry`, which the Program table defines. The JALR target `op_b + op_c = next_pc +
+  jalr_lsb` (constraints 27 to 30) has four carries that are expressions rather than columns;
+  `next_pc`'s 4-alignment is what both bounds its low limb and clears bit 0 of the target.
 - **Which promises a lemma assumes.** A lemma that needs only the Program table's promise or
   the register file's takes `bus_row_reads_asm`, that part of `bus_row_wf_asm`; the sender
   theorem `CpuChip.Spec.ext_asrt` can then use it without assuming the promises of the chips
   it sends to. A caller holding `bus_row_wf_asm` passes `bus_row_reads_asm_of_wf_asm h_wf`.
 
-Names are the 2.x ones wherever the meaning is unchanged, so the instruction-theorem files have
-less to rewrite.
+Names are the 2.x ones wherever the statement means the same, so the instruction-theorem files
+have less to rewrite. A lemma whose statement changed has a new name, so that a 2.x caller fails
+loudly rather than against a different statement:
+
+| 2.x lemma | v3.1.1 replacement |
+|-----------|--------------------|
+| `pc_next_pc_u16_bounds` | `pc_facts`, `next_pc_facts` |
+| `branching_next_pc_eq_pc_plus_op_c` | `branch_taken_next_pc` |
+| `jal_next_pc_eq_pc_plus_op_b` | `jal_next_pc` |
+| `op_a_eq_pc_plus_four_of_pc_carry_a_chain` | `jump_return_address` |
+| `jalr_next_pc_plus_specific_eq_op_b_plus_op_c` | `jalr_sum`, `jalr_target` |
+| `branch_instruction_a_lt_b`, `branch_instruction_a_gt_b` | `branch_compare_spec` |
 -/
 
 namespace Equivalence
@@ -614,9 +625,11 @@ namespace CpuChip.Interpretations
         rw [← h_c46, ← h_c47]
         exact ⟨ h_pc_next.1, by omega, h_pc_next.2.2.2.1, h_pc_next.2.2.1 ⟩
 
-  /-- A real row's next pc is 4-aligned, the alignment part of `next_pc_facts`. The JALR
-      addition needs it twice over: it bounds the low piece by `0xFFFC`, so that
-      `next_pc_0 + jalr_lsb` is still 16-bit, and it clears bits 0 and 1 of the target. -/
+  /-- A real row's next pc is 4-aligned: the alignment part of `next_pc_facts`, as the low
+      piece and as the whole value. This is the 2.x `Equivalence.next_pc_mod_four_eq_zero`,
+      which the parked branch and jump theorems call. Against 2.x it takes the arguments in
+      this file's order (`air row h_row h_is_real h_wf h_constraints pico_assumptions`), drops
+      the Program-bus axioms, and adds the whole-value conjunct. -/
   lemma next_pc_mod_four_eq_zero
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -836,6 +849,28 @@ namespace CpuChip.Interpretations
     subst h_0 h_1 h_2 h_3
     rcases h_s with rfl | rfl <;> simp [h_p_0, h_p_1]
 
+  /-- The Program table's operand pieces: both halves of each immediate are 16-bit and each
+      sign is 0 or 1 (`ProgramBusEntry.inversion_operands`). -/
+  lemma instruction_operand_facts
+    [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_reads : bus_row_reads_asm (bus_row air row))
+  :
+    (air.cols.instruction.op_b_0 row 0).val < 65536 ∧
+    (air.cols.instruction.op_b_1 row 0).val < 65536 ∧
+    (air.cols.instruction.op_b_sign row 0 = 0 ∨ air.cols.instruction.op_b_sign row 0 = 1) ∧
+    (air.cols.instruction.op_c_0 row 0).val < 65536 ∧
+    (air.cols.instruction.op_c_1 row 0).val < 65536 ∧
+    (air.cols.instruction.op_c_sign row 0 = 0 ∨ air.cols.instruction.op_c_sign row 0 = 1)
+  := by
+    obtain ⟨ instr, pc', data, props, -, -, h_trans, h_deser, - ⟩ :=
+      program_bus_operand_properties_of_reads air row h_is_real h_reads
+    have h := ProgramBusEntry.inversion_operands h_trans h_deser
+    rw [deserialise_program_bus_entry] at h
+    obtain ⟨ -, -, -, -, h_b_0, h_b_1, h_b_s, h_c_0, h_c_1, h_c_s ⟩ := h
+    simpa using ⟨ h_b_0, h_b_1, h_b_s, h_c_0, h_c_1, h_c_s ⟩
+
   /-- On a real row both operand values the row sends are 16-bit, whatever their immediate
       flags: a register by `read_ranges`, an immediate by constraints 0 to 7 and the Program
       table's operand facts (`ProgramBusEntry.inversion_operands`). -/
@@ -855,13 +890,13 @@ namespace CpuChip.Interpretations
     (air.cols.op_c_access.access.value_2 row 0).val < 65536 ∧
     (air.cols.op_c_access.access.value_3 row 0).val < 65536
   := by
-    obtain ⟨ instr, pc', data, props, _, _, h_trans, h_deser, _ ⟩ :=
+    obtain ⟨ instr, pc', data, props, -, -, h_trans, h_deser, - ⟩ :=
       program_bus_operand_properties_of_reads air row h_is_real h_reads
-    have h_ops := ProgramBusEntry.inversion_operands h_trans h_deser
     have h_hot := ProgramBusEntry.inversion_selectors_one_hot h_trans h_deser
-    rw [deserialise_program_bus_entry] at h_ops h_hot
-    obtain ⟨ -, -, -, -, h_b_0, h_b_1, h_b_s, h_c_0, h_c_1, h_c_s ⟩ := h_ops
+    rw [deserialise_program_bus_entry] at h_hot
     obtain ⟨ h_imm_b, h_imm_c, - ⟩ := h_hot
+    obtain ⟨ h_b_0, h_b_1, h_b_s, h_c_0, h_c_1, h_c_s ⟩ :=
+      instruction_operand_facts air row h_is_real h_reads
     obtain ⟨ -, -, -, -, h_read_b, h_read_c ⟩ := read_ranges air row h_is_real h_reads
     have h_b :
         (air.cols.op_b_access.access.value_0 row 0).val < 65536 ∧
@@ -952,7 +987,7 @@ namespace CpuChip.Interpretations
     exact ⟨ h_c8, h_c9, h_c10, h_c11 ⟩
 
   -- ============================================================================
-  -- Sequential rows
+  -- Sequential rows and branches not taken
   -- ============================================================================
 
   /-- Pure arithmetic: if two two-piece addresses inside the guest address space satisfy the
@@ -985,14 +1020,62 @@ namespace CpuChip.Interpretations
     simp [constraint_and_interaction_simplification, h_no_ecall] at h_c31
     exact h_c31
 
+  /-- The branch-taken predicate, the gate of constraints 19 and 37
+      (`branch_taken_expr`, `riscv_cpu/constraints.rs:344-363`). v3.1.1 commits no column for
+      it: `a_eq_b` is `1 - a_lt_b - a_gt_b`, and the column the 2.x `branching` used became
+      `is_last`. -/
+  def branch_taken {ExtF : Type} [Field ExtF] (air : Valid_CpuChip FKB ExtF) (row : ℕ) : FKB :=
+    air.cols.opcode_selector.is_beq row 0 *
+        (1 - air.cols.a_lt_b row 0 - air.cols.a_gt_b row 0) +
+      air.cols.opcode_selector.is_bne row 0 *
+        (air.cols.a_lt_b row 0 + air.cols.a_gt_b row 0) +
+      (air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bltu row 0) *
+        air.cols.a_lt_b row 0 +
+      (air.cols.opcode_selector.is_bge row 0 + air.cols.opcode_selector.is_bgeu row 0) *
+        (1 - air.cols.a_lt_b row 0)
+
+  /-- A branch row whose branch is not taken moves on by four, like a sequential row: the gate
+      of constraint 37 is `is_real` minus the taken predicate and the two jump selectors and
+      the halt flag. -/
+  lemma branch_not_taken_next_pc
+    [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    (h_row : row ≤ air.last_row)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+    (h_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+    (pico_assumptions : Equivalence.pico_CpuChip_control_flow_assumptions air)
+    (h_not_taken : branch_taken air row = 0)
+    (h_no_jal : air.cols.opcode_selector.is_jal row 0 = 0)
+    (h_no_jalr : air.cols.opcode_selector.is_jalr row 0 = 0)
+    (h_no_halt : air.cols.is_halt row 0 = 0)
+  :
+    U64w.toBV (next_pc air row) = U64w.toBV (pc air row) + 4#64
+  := by
+    have h_cs := h_constraints row h_row
+    have h_c37 : constraint_37 air row := constraint_at h_cs 37 (by norm_num)
+    obtain ⟨ h_pc_0, h_pc_1, -, h_pc_bound, - ⟩ := pc_facts air row h_is_real (h_wf row h_row)
+    obtain ⟨ h_np_0, h_np_1, h_np_bound, - ⟩ :=
+      next_pc_facts air row h_row h_is_real h_wf h_constraints pico_assumptions
+    have h_pc_1' : (air.cols.pc_1 row 0).val < 65536 := Nat.lt_of_le_of_lt h_pc_1 (by norm_num)
+    rcases mul_eq_zero.mp h_c37 with h_gate | h_eq
+    · have h_one : air.cols.is_real row 0 - branch_taken air row -
+          air.cols.opcode_selector.is_jal row 0 - air.cols.opcode_selector.is_jalr row 0 -
+          air.cols.is_halt row 0 = 1 := by
+        rw [h_is_real, h_not_taken, h_no_jal, h_no_jalr, h_no_halt]; ring
+      exact absurd (h_one.symm.trans h_gate) one_ne_zero
+    · rw [sub_eq_zero] at h_eq
+      simp only [next_pc, pc]
+      exact two_piece_plus_four_implies_sum _ _ _ _ h_pc_0 h_pc_1' h_np_0 h_np_1
+        h_pc_bound h_np_bound h_eq
+
   /-- A row of an instruction outside the branch and jump classes, not a halt, advances the pc
       by four: constraint 37's gate is `is_real` and its field equation reads as a 64-bit
       addition once the pc and next-pc pieces are bounded. `pc_facts` and `next_pc_facts`
       supply the bounds, so this lemma inherits the whole-trace assumption.
 
-      It needs all six branch selectors to be zero, so it does not cover a branch row whose
-      branch is not taken, even though constraint 37 moves that row on by four as well; the
-      branch theorems need their own not-taken lemma. -/
+      With all six branch selectors zero the taken predicate is zero, so this is
+      `branch_not_taken_next_pc` on a row with no branch selector at all. -/
   lemma is_sequential_active_constraints
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -1014,16 +1097,9 @@ namespace CpuChip.Interpretations
     U64w.toBV (next_pc air row) = U64w.toBV (pc air row) + 4#64
   := by
     obtain ⟨ h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu ⟩ := h_no_branch
-    have h_c37 : constraint_37 air row := constraint_at (h_constraints row h_row) 37 (by norm_num)
-    simp [constraint_and_interaction_simplification, h_is_real, h_beq, h_bne, h_blt, h_bge,
-          h_bltu, h_bgeu, h_no_jal, h_no_jalr, h_no_halt, sub_eq_zero] at h_c37
-    -- `h_c37` is the field equation `next_pc_0 + 65536 * next_pc_1 = pc_0 + 65536 * pc_1 + 4`.
-    obtain ⟨ h_pc_0, h_pc_1, _, h_pc_bound, _ ⟩ := pc_facts air row h_is_real (h_wf row h_row)
-    obtain ⟨ h_np_0, h_np_1, h_np_bound, - ⟩ :=
-      next_pc_facts air row h_row h_is_real h_wf h_constraints pico_assumptions
-    simp only [next_pc, pc]
-    exact two_piece_plus_four_implies_sum _ _ _ _ h_pc_0 (by omega) h_np_0 h_np_1
-      (by omega) h_np_bound (by linear_combination h_c37)
+    exact branch_not_taken_next_pc air row h_row h_is_real h_wf h_constraints pico_assumptions
+      (by simp [branch_taken, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu]) h_no_jal h_no_jalr
+      h_no_halt
 
   -- ============================================================================
   -- ALU rows: the destination register and the ALU message
@@ -1067,6 +1143,56 @@ namespace CpuChip.Interpretations
     rw [h_c17, op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
     split_ifs <;> simp
 
+  /-- The receivers' promises for the three dispatch messages a real row can send, from one
+      unfolding of `bus_row_wf_asm`: the ALU message (multiplicity `is_alu_not_x0`), the
+      branch comparison (multiplicity the sum of the six branch selectors, opcode 264 for
+      `BLT` and `BGE` and 265 otherwise) and the memory dispatch (multiplicity `is_memory`).
+      `alu_message_spec`, `branch_compare_spec` and `memory_message_spec` read their part. -/
+  lemma dispatch_specs
+    [Field ExtF]
+    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    (h_is_real : air.cols.is_real row 0 = 1)
+    (h_wf : bus_row_wf_asm (bus_row air row))
+  :
+    (air.cols.is_alu_not_x0 row 0 = 1 →
+      RV64IM_Interactions.ALUBus.Spec (air.cols.instruction.opcode row 0)
+        (air.cols.op_a_access.access.value_0 row 0) (air.cols.op_a_access.access.value_1 row 0)
+        (air.cols.op_a_access.access.value_2 row 0) (air.cols.op_a_access.access.value_3 row 0)
+        (air.cols.op_b_access.access.value_0 row 0) (air.cols.op_b_access.access.value_1 row 0)
+        (air.cols.op_b_access.access.value_2 row 0) (air.cols.op_b_access.access.value_3 row 0)
+        (air.cols.op_c_access.access.value_0 row 0) (air.cols.op_c_access.access.value_1 row 0)
+        (air.cols.op_c_access.access.value_2 row 0)
+        (air.cols.op_c_access.access.value_3 row 0)) ∧
+    (air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 +
+        air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 +
+        air.cols.opcode_selector.is_bltu row 0 + air.cols.opcode_selector.is_bgeu row 0 = 1 →
+      RV64IM_Interactions.ALUBus.Spec
+        ((air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0) * 8 +
+          (1 - (air.cols.opcode_selector.is_blt row 0 +
+            air.cols.opcode_selector.is_bge row 0)) * 9 + 256)
+        (air.cols.a_lt_b row 0) (air.cols.a_gt_b row 0) 0 0
+        (air.cols.op_a_access.access.value_0 row 0) (air.cols.op_a_access.access.value_1 row 0)
+        (air.cols.op_a_access.access.value_2 row 0) (air.cols.op_a_access.access.value_3 row 0)
+        (air.cols.op_b_access.access.value_0 row 0) (air.cols.op_b_access.access.value_1 row 0)
+        (air.cols.op_b_access.access.value_2 row 0)
+        (air.cols.op_b_access.access.value_3 row 0)) ∧
+    (air.cols.opcode_selector.is_memory row 0 = 1 →
+      MemoryBus.Spec (air.cols.instruction.opcode row 0)
+        (air.cols.op_a_access.access.value_0 row 0) (air.cols.op_a_access.access.value_1 row 0)
+        (air.cols.op_a_access.access.value_2 row 0) (air.cols.op_a_access.access.value_3 row 0)
+        (air.cols.op_b_access.access.value_0 row 0) (air.cols.op_b_access.access.value_1 row 0)
+        (air.cols.op_b_access.access.value_2 row 0) (air.cols.op_b_access.access.value_3 row 0)
+        (air.cols.op_c_access.access.value_0 row 0) (air.cols.op_c_access.access.value_1 row 0)
+        (air.cols.op_c_access.access.value_2 row 0) (air.cols.op_c_access.access.value_3 row 0)
+        (air.cols.instruction.op_a_is_x0 row 0))
+  := by
+    have h := h_wf
+    simp [bus_row_wf_asm, bus_row, deserialise_bus_row, raw_bus_row, h_is_real] at h
+    -- The Program message, the ALU message, the comparison, then the six Byte checks, the
+    -- four register-read ranges and the old `op_a` range, then the memory dispatch.
+    obtain ⟨ -, h_alu, h_cmp, -, -, -, -, -, -, -, -, -, -, -, h_mem ⟩ := h
+    exact ⟨ h_alu, h_cmp, h_mem ⟩
+
   /-- On a real ALU-class row whose destination is not `x0`, the chip sends its ALU message
       with multiplicity 1, so the ALU chip's promise `ALUBus.Spec` holds for the row's opcode,
       result (`op_a`) and operands (`op_b`, `op_c`). A row whose destination is `x0` sends no
@@ -1092,35 +1218,7 @@ namespace CpuChip.Interpretations
   := by
     have h_alu := is_alu_not_x0_eq air row h_is_real h_wf h_constraints h_class
     rw [if_neg h_rd] at h_alu
-    have h := h_wf
-    simp [bus_row_wf_asm, bus_row, deserialise_bus_row, raw_bus_row, h_is_real] at h
-    exact h.2.1 (by simp [h_alu])
-
-  -- ============================================================================
-  -- The instruction's operand pieces
-  -- ============================================================================
-
-  /-- The Program table's operand pieces: both halves of each immediate are 16-bit and each
-      sign is 0 or 1 (`ProgramBusEntry.inversion_operands`). -/
-  lemma instruction_operand_facts
-    [Field ExtF]
-    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
-    (h_is_real : air.cols.is_real row 0 = 1)
-    (h_reads : bus_row_reads_asm (bus_row air row))
-  :
-    (air.cols.instruction.op_b_0 row 0).val < 65536 ∧
-    (air.cols.instruction.op_b_1 row 0).val < 65536 ∧
-    (air.cols.instruction.op_b_sign row 0 = 0 ∨ air.cols.instruction.op_b_sign row 0 = 1) ∧
-    (air.cols.instruction.op_c_0 row 0).val < 65536 ∧
-    (air.cols.instruction.op_c_1 row 0).val < 65536 ∧
-    (air.cols.instruction.op_c_sign row 0 = 0 ∨ air.cols.instruction.op_c_sign row 0 = 1)
-  := by
-    obtain ⟨ instr, pc', data, props, -, -, h_trans, h_deser, - ⟩ :=
-      program_bus_operand_properties_of_reads air row h_is_real h_reads
-    have h := ProgramBusEntry.inversion_operands h_trans h_deser
-    rw [deserialise_program_bus_entry] at h
-    simpa using ⟨ h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.1,
-                  h.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2 ⟩
+    exact (dispatch_specs air row h_is_real h_wf).1 h_alu
 
   -- ============================================================================
   -- Branch and jump targets
@@ -1194,22 +1292,10 @@ namespace CpuChip.Interpretations
       repeat rw [Nat.mod_eq_of_lt (by omega)]
       grind
 
-  /-- The branch-taken predicate, the gate of constraints 19 and 37
-      (`branch/constraints.rs:30-44`). v3.1.1 commits no column for it: `a_eq_b` is
-      `1 - a_lt_b - a_gt_b`, and the column the 2.x `branching` used became `is_last`. -/
-  def branch_taken {ExtF : Type} [Field ExtF] (air : Valid_CpuChip FKB ExtF) (row : ℕ) : FKB :=
-    air.cols.opcode_selector.is_beq row 0 *
-        (1 - air.cols.a_lt_b row 0 - air.cols.a_gt_b row 0) +
-      air.cols.opcode_selector.is_bne row 0 *
-        (air.cols.a_lt_b row 0 + air.cols.a_gt_b row 0) +
-      (air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bltu row 0) *
-        air.cols.a_lt_b row 0 +
-      (air.cols.opcode_selector.is_bge row 0 + air.cols.opcode_selector.is_bgeu row 0) *
-        (1 - air.cols.a_lt_b row 0)
-
-  /-- A taken branch's next pc is `pc + offset`, the sign-extended `op_c` (constraint 19). The
-      offset bound is the caller's: a branch offset is 13-bit, so it is at most `0x10_0000`
-      going forward and at least `2^32 - 0x10_0000` going back. -/
+  /-- A taken branch's next pc is `pc + offset`, the sign-extended `op_c` (constraint 19); a
+      branch's `op_c` is always its immediate (constraint 18). The offset bound is the
+      caller's, stated on the instruction's own `op_c` pieces: `imm_operand_offset_bounds`
+      gives it from the 13-bit immediate the row was decoded from. -/
   lemma branch_taken_next_pc
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -1218,14 +1304,17 @@ namespace CpuChip.Interpretations
     (h_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
     (h_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
     (pico_assumptions : Equivalence.pico_CpuChip_control_flow_assumptions air)
-    (h_imm_c : air.cols.opcode_selector.imm_c row 0 = 1)
+    (h_branch_sum :
+      air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 +
+        air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 +
+        air.cols.opcode_selector.is_bltu row 0 + air.cols.opcode_selector.is_bgeu row 0 = 1)
     (h_taken : branch_taken air row = 1)
     (h_forward : air.cols.instruction.op_c_sign row 0 = 0 →
-      (air.cols.op_c_access.access.value_0 row 0).val +
-        65536 * (air.cols.op_c_access.access.value_1 row 0).val ≤ 0x10_0000)
+      (air.cols.instruction.op_c_0 row 0).val +
+        65536 * (air.cols.instruction.op_c_1 row 0).val ≤ 0x10_0000)
     (h_backward : air.cols.instruction.op_c_sign row 0 = 1 →
-      0x1_0000_0000 - 0x10_0000 ≤ (air.cols.op_c_access.access.value_0 row 0).val +
-        65536 * (air.cols.op_c_access.access.value_1 row 0).val)
+      0x1_0000_0000 - 0x10_0000 ≤ (air.cols.instruction.op_c_0 row 0).val +
+        65536 * (air.cols.instruction.op_c_1 row 0).val)
   :
     U64w.toBV (next_pc air row) =
       U64w.toBV (pc air row) +
@@ -1236,8 +1325,11 @@ namespace CpuChip.Interpretations
   := by
     have h_cs := h_constraints row h_row
     have h_wf_row := h_wf row h_row
+    have h_c18 : constraint_18 air row := constraint_at h_cs 18 (by norm_num)
+    simp only [constraint_and_interaction_simplification, h_branch_sum, one_mul,
+      sub_eq_zero] at h_c18
     have h_c19 : constraint_19 air row := constraint_at h_cs 19 (by norm_num)
-    obtain ⟨ -, -, e_2, e_3 ⟩ := imm_c_eq_1_constraints air row h_imm_c h_cs
+    obtain ⟨ e_0, e_1, e_2, e_3 ⟩ := imm_c_eq_1_constraints air row h_c18.symm h_cs
     obtain ⟨ h_pc_0, h_pc_1, -, h_pc_bound, - ⟩ := pc_facts air row h_is_real h_wf_row
     obtain ⟨ h_np_0, h_np_1, h_np_bound, - ⟩ :=
       next_pc_facts air row h_row h_is_real h_wf h_constraints pico_assumptions
@@ -1251,47 +1343,13 @@ namespace CpuChip.Interpretations
     · rw [sub_eq_zero] at h_eq
       simp only [next_pc, pc]
       exact two_piece_plus_offset_implies_sum _ _ _ _ _ _ _ _ _ h_pc_0 h_pc_1' h_np_0 h_np_1
-        h_pc_bound h_np_bound h_d_0 h_d_1 h_forward h_backward h_sign e_2 e_3 h_eq
-
-  /-- A branch row whose branch is not taken moves on by four, like a sequential row: the gate
-      of constraint 37 is `is_real` minus the taken predicate and the two jump selectors and
-      the halt flag. `is_sequential_active_constraints` is the same statement for a row with no
-      branch selector at all. -/
-  lemma branch_not_taken_next_pc
-    [Field ExtF]
-    (air : Valid_CpuChip FKB ExtF) (row : ℕ)
-    (h_row : row ≤ air.last_row)
-    (h_is_real : air.cols.is_real row 0 = 1)
-    (h_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-    (h_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
-    (pico_assumptions : Equivalence.pico_CpuChip_control_flow_assumptions air)
-    (h_not_taken : branch_taken air row = 0)
-    (h_no_jal : air.cols.opcode_selector.is_jal row 0 = 0)
-    (h_no_jalr : air.cols.opcode_selector.is_jalr row 0 = 0)
-    (h_no_halt : air.cols.is_halt row 0 = 0)
-  :
-    U64w.toBV (next_pc air row) = U64w.toBV (pc air row) + 4#64
-  := by
-    have h_cs := h_constraints row h_row
-    have h_c37 : constraint_37 air row := constraint_at h_cs 37 (by norm_num)
-    obtain ⟨ h_pc_0, h_pc_1, -, h_pc_bound, - ⟩ := pc_facts air row h_is_real (h_wf row h_row)
-    obtain ⟨ h_np_0, h_np_1, h_np_bound, - ⟩ :=
-      next_pc_facts air row h_row h_is_real h_wf h_constraints pico_assumptions
-    have h_pc_1' : (air.cols.pc_1 row 0).val < 65536 := Nat.lt_of_le_of_lt h_pc_1 (by norm_num)
-    rcases mul_eq_zero.mp h_c37 with h_gate | h_eq
-    · have h_one : air.cols.is_real row 0 - branch_taken air row -
-          air.cols.opcode_selector.is_jal row 0 - air.cols.opcode_selector.is_jalr row 0 -
-          air.cols.is_halt row 0 = 1 := by
-        rw [h_is_real, h_not_taken, h_no_jal, h_no_jalr, h_no_halt]; ring
-      exact absurd (h_one.symm.trans h_gate) one_ne_zero
-    · rw [sub_eq_zero] at h_eq
-      simp only [next_pc, pc]
-      exact two_piece_plus_four_implies_sum _ _ _ _ h_pc_0 h_pc_1' h_np_0 h_np_1
-        h_pc_bound h_np_bound h_eq
+        h_pc_bound h_np_bound h_d_0 h_d_1 (by rw [e_0, e_1]; exact h_forward)
+        (by rw [e_0, e_1]; exact h_backward) h_sign e_2 e_3 h_eq
 
   /-- A JAL row's next pc is `pc + offset`, the sign-extended `op_b` (constraint 24), and its
-      `op_b` is an immediate (constraint 25). The offset bound is the caller's: a JAL offset is
-      21-bit. -/
+      `op_b` is an immediate (constraint 25). The offset bound is the caller's, stated on the
+      instruction's own `op_b` pieces: `imm_operand_offset_bounds` gives it from the 21-bit
+      immediate the row was decoded from. -/
   lemma jal_next_pc
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -1302,11 +1360,11 @@ namespace CpuChip.Interpretations
     (pico_assumptions : Equivalence.pico_CpuChip_control_flow_assumptions air)
     (h_is_jal : air.cols.opcode_selector.is_jal row 0 = 1)
     (h_forward : air.cols.instruction.op_b_sign row 0 = 0 →
-      (air.cols.op_b_access.access.value_0 row 0).val +
-        65536 * (air.cols.op_b_access.access.value_1 row 0).val ≤ 0x10_0000)
+      (air.cols.instruction.op_b_0 row 0).val +
+        65536 * (air.cols.instruction.op_b_1 row 0).val ≤ 0x10_0000)
     (h_backward : air.cols.instruction.op_b_sign row 0 = 1 →
-      0x1_0000_0000 - 0x10_0000 ≤ (air.cols.op_b_access.access.value_0 row 0).val +
-        65536 * (air.cols.op_b_access.access.value_1 row 0).val)
+      0x1_0000_0000 - 0x10_0000 ≤ (air.cols.instruction.op_b_0 row 0).val +
+        65536 * (air.cols.instruction.op_b_1 row 0).val)
   :
     air.cols.opcode_selector.imm_b row 0 = 1 ∧
     U64w.toBV (next_pc air row) =
@@ -1321,7 +1379,7 @@ namespace CpuChip.Interpretations
     have h_c24 : constraint_24 air row := constraint_at h_cs 24 (by norm_num)
     have h_c25 : constraint_25 air row := constraint_at h_cs 25 (by norm_num)
     simp [constraint_and_interaction_simplification, h_is_jal, sub_eq_zero] at h_c25
-    obtain ⟨ -, -, e_2, e_3 ⟩ := imm_b_eq_1_constraints air row h_c25.symm h_cs
+    obtain ⟨ e_0, e_1, e_2, e_3 ⟩ := imm_b_eq_1_constraints air row h_c25.symm h_cs
     obtain ⟨ h_pc_0, h_pc_1, -, h_pc_bound, - ⟩ := pc_facts air row h_is_real h_wf_row
     obtain ⟨ h_np_0, h_np_1, h_np_bound, - ⟩ :=
       next_pc_facts air row h_row h_is_real h_wf h_constraints pico_assumptions
@@ -1336,7 +1394,8 @@ namespace CpuChip.Interpretations
     · rw [sub_eq_zero] at h_eq
       simp only [next_pc, pc]
       exact two_piece_plus_offset_implies_sum _ _ _ _ _ _ _ _ _ h_pc_0 h_pc_1' h_np_0 h_np_1
-        h_pc_bound h_np_bound h_d_0 h_d_1 h_forward h_backward h_sign e_2 e_3 h_eq
+        h_pc_bound h_np_bound h_d_0 h_d_1 (by rw [e_0, e_1]; exact h_forward)
+        (by rw [e_0, e_1]; exact h_backward) h_sign e_2 e_3 h_eq
 
   -- ============================================================================
   -- Jump rows: the return address
@@ -1389,6 +1448,10 @@ namespace CpuChip.Interpretations
 
   /-- `inv(2^16)` in KoalaBear, the factor the extracted carries carry. -/
   lemma inv_65536 : (2130673921 : FKB) * 65536 = 1 := by decide
+
+  /-- A carry the extraction writes as `e * inv(2^16)` is `e / 2^16`. -/
+  lemma carry_mul_65536 {k e : FKB} (h : k = e * 2130673921) : e = k * 65536 := by
+    rw [h, mul_assoc, inv_65536, mul_one]
 
   /-- Four boolean carries make the schoolbook 64-bit sum `b + c = next_pc + lsb`, whose third
       and fourth limbs are zero: a target at or above `2^32` has no witness. -/
@@ -1466,8 +1529,9 @@ namespace CpuChip.Interpretations
 
   /-- The JALR target: `op_b + op_c = next_pc + jalr_lsb` as a 64-bit addition, proven in the
       chip by the four boolean carries of constraints 27 to 30
-      (`jump/constraints.rs:79-126`). `jalr_lsb` is bit 0 of the unmasked target
-      (constraint 26). -/
+      (`jump/constraints.rs:79-126`). Constraint 26 makes `jalr_lsb` boolean; that it is bit 0
+      of the unmasked target follows from this sum and the 4-alignment of `next_pc`
+      (`jalr_target`). -/
   lemma jalr_sum
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -1520,20 +1584,10 @@ namespace CpuChip.Interpretations
       (air.cols.next_pc_1 row 0) _ (air.cols.jalr_lsb row 0) k_1 k_2 k_3 k_4
       h_b_0 h_b_1 h_b_2 h_b_3 h_c_0 h_c_1 h_c_2 h_c_3 (by omega) h_np_1 h_c26 h_c27 h_c28
       h_c29 h_c30 rfl
-    · rw [h_k_1_def]
-      linear_combination (-(0 + air.cols.op_b_access.access.value_0 row 0 +
-        air.cols.op_c_access.access.value_0 row 0 - air.cols.next_pc_0 row 0 -
-        air.cols.jalr_lsb row 0)) * inv_65536
-    · rw [h_k_2_def]
-      linear_combination (-(0 + air.cols.op_b_access.access.value_1 row 0 +
-        air.cols.op_c_access.access.value_1 row 0 + k_1 -
-        air.cols.next_pc_1 row 0)) * inv_65536
-    · rw [h_k_3_def]
-      linear_combination (-(0 + air.cols.op_b_access.access.value_2 row 0 +
-        air.cols.op_c_access.access.value_2 row 0 + k_2)) * inv_65536
-    · rw [h_k_4_def]
-      linear_combination (-(0 + air.cols.op_b_access.access.value_3 row 0 +
-        air.cols.op_c_access.access.value_3 row 0 + k_3)) * inv_65536
+    · linear_combination carry_mul_65536 h_k_1_def
+    · linear_combination carry_mul_65536 h_k_2_def
+    · linear_combination carry_mul_65536 h_k_3_def
+    · linear_combination carry_mul_65536 h_k_4_def
 
   /-- The JALR target, as RISC-V and the Sail specification read it: `next_pc` is the 64-bit
       sum `op_b + op_c` with bit 0 cleared, and bit 1 of that sum is zero, so the fetch is
@@ -1629,10 +1683,7 @@ namespace CpuChip.Interpretations
         (air.cols.op_b_access.access.value_2 row 0)
         (air.cols.op_b_access.access.value_3 row 0))
   := by
-    have h := h_wf
-    simp [bus_row_wf_asm, bus_row, deserialise_bus_row, raw_bus_row, h_is_real,
-      h_branch_sum] at h
-    have h_cmp := h.2.2.1
+    have h_cmp := (dispatch_specs air row h_is_real h_wf).2.1 h_branch_sum
     constructor
     · intro h_lt_ge
       rw [h_lt_ge] at h_cmp
@@ -1648,8 +1699,9 @@ namespace CpuChip.Interpretations
   -- ============================================================================
 
   /-- A memory row sends the memory dispatch, so the memory chip's promise holds for it: the
-      address `op_b + op_c` is inside the guest space and aligned for the width, and a load's
-      value has the opcode's extension. -/
+      address `op_b + op_c` is at least `2^16` and below `2^32` and aligned for the width, and a
+      load's value has the opcode's extension. The promise does not give the `0x7800_0000`
+      guest bound. -/
   lemma memory_message_spec
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -1666,9 +1718,6 @@ namespace CpuChip.Interpretations
       (air.cols.op_c_access.access.value_2 row 0) (air.cols.op_c_access.access.value_3 row 0)
       (air.cols.instruction.op_a_is_x0 row 0)
   := by
-    have h := h_wf
-    simp [bus_row_wf_asm, bus_row, deserialise_bus_row, raw_bus_row, h_is_real,
-      h_memory] at h
-    exact h.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+    exact (dispatch_specs air row h_is_real h_wf).2.2 h_memory
 
 end CpuChip.Interpretations

@@ -27,7 +27,7 @@ with their statements in `signatures.txt`. They are of three kinds.
   to Pico v3.1.1, which is a rewrite of the chip rather than a patch: 58 columns instead of
   132, 65 constraints instead of 218 and 17 messages instead of 36. Its `Airs/`, `Constraints/`
   and interpretations files are at v3.1.1 here, with the lemmas the instruction classes need —
-  both the shared ones and those of the branch, jump, U-type, load and store rows;
+  both the shared ones and those of the branch, jump, load and store rows;
   the 11 instruction-theorem files that still read the 2.x layout are out of the build until
   each is rewritten against it, and their 11 lists are parked in
   `scripts/fv-check/theorems.d/parked/`. Until they return, this repository says nothing about
