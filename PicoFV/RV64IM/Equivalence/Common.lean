@@ -117,6 +117,50 @@ namespace Equivalence
         is_sequential_active_constraints air row h_row h_is_real h_wf h_constraints
           pico_assumptions ⟨ h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu ⟩ h_jal h_jalr h_halt ⟩
 
+    /-- The pc of the row after a transition row with a real successor is 4-aligned: it is a
+        Program-table address, and the table's addresses are. The 2.x lemma of this name took
+        the Byte-bus axioms, because the 2.x chip range-checked the pc itself; at v3.1.1 the
+        Program table carries the alignment, so it takes the bus assumption instead. -/
+    lemma pc_next_row_mod_four_eq_zero
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_transition_row : ¬ (Circuit.isTransitionRow air row = 0))
+      (h_is_real : air.cols.is_real row 1 = 1)
+      (h_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+    :
+      (air.cols.pc_0 row 1).val % 4 = 0
+    := by
+      have h_row_next : row + 1 ≤ air.last_row := by
+        simp [Circuit.isTransitionRow, Circuit.last_row] at h_transition_row; omega
+      have h_mod : (row + 1) % (air.last_row + 1) = row + 1 := Nat.mod_eq_of_lt (by omega)
+      have h_is_real' : air.cols.is_real (row + 1) 0 = 1 := by
+        rw [is_real_rotation, h_mod] at h_is_real; exact h_is_real
+      obtain ⟨ -, -, h_al, -, - ⟩ :=
+        pc_facts air (row + 1) h_is_real' (h_wf (row + 1) h_row_next)
+      rw [pc_0_rotation, h_mod]
+      exact h_al
+
+    /-- A real row's next pc is 4-aligned, under its 2.x name. At v3.1.1 the proof is in
+        `Constraints/CpuChipInterpretations.lean`, as the alignment part of `next_pc_facts`:
+        the row chain hands the next pc to the successor's Program lookup whatever the row
+        does, so the 2.x split over every instruction class is gone, and with it the branch and
+        jump lemmas that split needed. -/
+    lemma next_pc_mod_four_eq_zero
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (h_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+    :
+      (air.cols.next_pc_0 row 0).val % 4 = 0 ∧ U64w.toNat (next_pc air row) % 4 = 0
+    :=
+      CpuChip.Interpretations.next_pc_mod_four_eq_zero air row h_row h_is_real h_wf
+        h_constraints pico_assumptions
+
     /-- An opcode that sets no class selector has no memory width: every opcode with one (10 to
         17 and 45 to 47) sets `is_memory`. -/
     lemma mem_width_of_opcode_eq_none_of_class_selectors {op : FKB}
