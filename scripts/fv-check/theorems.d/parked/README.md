@@ -1,7 +1,7 @@
 # Parked theorem lists
 
 <!-- generated: parked -->
-The 6 lists here name 29 of the 62 instruction theorems of
+The 5 lists here name 21 of the 62 instruction theorems of
 `PicoFV/RV64IM/Equivalence/`.
 <!-- end generated -->
 
