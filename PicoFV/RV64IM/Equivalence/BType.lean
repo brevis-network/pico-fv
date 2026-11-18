@@ -43,11 +43,11 @@ namespace Equivalence
     -- proof (mirroring RV32's pattern at `RV32IM/Equivalence/Equivalence.lean:3818`).
     -- ========================================================================
 
-    /-- Operand-setup lemma for the BTYPE class. Mirrors `mul_operand_setup`
-    but for the 6 branch opcodes. Returns the 13-bit immediate, rs2, rs1, the
-    column equations, the imm_b = 0 / imm_c = 1 flags, the specific-branch
-    selector via `(if (op == .X) then 1 else 0)`, and the two reg bounds and
-    `imm % 2 = 0` precondition from the chip's BTYPE transpiler entry. -/
+    /-- Operand-setup lemma for the BTYPE class, the 6 branch opcodes. Returns
+    the 13-bit immediate, rs2, rs1, the column equations, the imm_b = 0 /
+    imm_c = 1 flags, the specific-branch selector via
+    `(if (op == .X) then 1 else 0)`, and the two reg bounds and `imm % 2 = 0`
+    precondition from the chip's BTYPE transpiler entry. -/
     lemma btype_operand_setup
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
