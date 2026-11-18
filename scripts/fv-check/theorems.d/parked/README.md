@@ -1,6 +1,6 @@
 # Parked theorem lists
 
-The 9 lists here name 47 of the 62 instruction theorems of
+The 8 lists here name 45 of the 62 instruction theorems of
 `PicoFV/RV64IM/Equivalence/`. They sit out of `theorems.d/` — and so out of
 `check.sh` — while the CPU chip moves to Pico v3.1.1.
 
@@ -9,8 +9,8 @@ The chip's column layout changed shape (58 columns instead of 132), so the 2.x
 on it no longer compile. The interpretations file and `Equivalence/Common.lean`
 are now rewritten at v3.1.1, holding the lemmas every instruction class shares,
 and the lists of `Equivalence/Addiw.lean`, `Equivalence/RTypeW.lean`,
-`Equivalence/ShiftIWOp.lean` and `Equivalence/IType.lean` have moved back up a
-directory with their files. `PicoFV64.lean` still does not import
+`Equivalence/ShiftIWOp.lean`, `Equivalence/IType.lean` and `Equivalence/Jumps.lean`
+have moved back up a directory with their files. `PicoFV64.lean` still does not import
 `Equivalence.Equivalence`, which pulls in all 13 class files; it returns with
 the last of them. The tag `pico-v3-before-cpu` holds the 2.x versions.
 
@@ -46,16 +46,20 @@ rename. And the whole-trace assumption `pico_CpuChip_control_flow_assumptions`
 gains three conjuncts in its definition:
 
 - the eight theorems that already name it (the six branches, `JAL` and `JALR`)
-  keep their recorded text, because `signatures.txt` records the name and not
-  the definition, but their meaning changes;
+  keep that part of their recorded text, because `signatures.txt` records the
+  name and not the definition, but their meaning changes. `JAL` and `JALR`
+  changed for the other reasons in this section;
 - the other 54 gain it as a new hypothesis, so their recorded statements change,
-  as those of the fifteen already restored have.
+  as those of the fifteen non-jump theorems already restored have.
 
 A restored statement may also drop an immediate-flag hypothesis that the v3.1.1
 decoder already fixes for its opcode (`imm_b_of_opcode`, `imm_c_of_opcode` in
 `RVSail/BusesV3.lean`): `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`,
 `ANDI`, `SLTI` and `SLTIU` no longer take `imm_b = 0`, and `SUBW` no longer
-takes `imm_c = 0`. Dropping a hypothesis makes the theorem stronger. `ADDI`
+takes `imm_c = 0`. Dropping a hypothesis makes the theorem stronger. It may also
+drop the row's class selector when the opcode fixes that: `JAL` and `JALR` no
+longer take `is_jal` / `is_jalr`, nor either immediate flag, because opcodes 24
+and 25 are the two jumps alone. `ADDI`
 keeps `imm_b = 0`: the decoder does not fix it for opcode 0, which `LUI` and
 `AUIPC` share. `SLLIW`, `SRLIW` and `SRAIW` keep `imm_c = 1`: the decoder does
 not fix it for opcodes 42 to 44, which `SLLW`, `SRLW` and `SRAW` share with
