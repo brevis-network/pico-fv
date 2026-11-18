@@ -139,7 +139,7 @@ import PicoFV.RV64IM.Equivalence.RTypeW
 import PicoFV.RV64IM.Equivalence.ShiftIWOp
 import PicoFV.RV64IM.Equivalence.IType
 import PicoFV.RV64IM.Equivalence.ShiftIOp
--- The other 8 instruction-theorem files still read the 2.x CPU layout and are
+-- The other instruction-theorem files still read the 2.x CPU layout and are
 -- out of the build, with their lists parked in
 -- `scripts/fv-check/theorems.d/parked/`. They come back one class at a time;
 -- `Equivalence/Equivalence.lean`, which imported all 13, returns with the last.
