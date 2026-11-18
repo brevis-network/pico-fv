@@ -46,11 +46,11 @@ rename. And the whole-trace assumption `pico_CpuChip_control_flow_assumptions`
 gains three conjuncts in its definition:
 
 - the eight theorems that already name it (the six branches, `JAL` and `JALR`)
-  keep their recorded text, because `signatures.txt` records the name and not
-  the definition, but their meaning changes;
+  keep that part of their recorded text, because `signatures.txt` records the
+  name and not the definition, but their meaning changes. `JAL` and `JALR`
+  changed for the other reasons in this section;
 - the other 54 gain it as a new hypothesis, so their recorded statements change,
-  as those of the fifteen non-jump theorems already restored have. `JAL` and `JALR` already
-  named it, and changed for the other reasons in this section.
+  as those of the fifteen non-jump theorems already restored have.
 
 A restored statement may also drop an immediate-flag hypothesis that the v3.1.1
 decoder already fixes for its opcode (`imm_b_of_opcode`, `imm_c_of_opcode` in

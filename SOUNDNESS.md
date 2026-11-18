@@ -144,8 +144,8 @@ Each equivalence theorem assumes:
 - at v3.1.1, the whole-trace assumption described below.
 
 `ADDIW`, `ADDW`, `SUBW`, `SLLW`, `SRLW`, `SRAW`, `SLLIW`, `SRLIW`, `SRAIW`, `ADDI`, `XORI`,
-`ORI`, `ANDI`, `SLTI`, `SLTIU`, `JAL` and `JALR` are the seventeen theorems recorded at v3.1.1, against the
-v3.1.1 CPU constraints and the v3.1.1 contracts (`RV64IM_Interactions.V3` in
+`ORI`, `ANDI`, `SLTI`, `SLTIU`, `JAL` and `JALR` are the seventeen theorems recorded at
+v3.1.1, against the v3.1.1 CPU constraints and the v3.1.1 contracts (`RV64IM_Interactions.V3` in
 `RVSail/BusesV3.lean`). `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`, `ANDI`, `SLTI` and
 `SLTIU` no longer assume `imm_b = 0`, which the v3.1.1 decoder fixes for their opcodes, and
 `SUBW` no longer assumes `imm_c = 0`, which it fixes for opcode 41. `ADDI` still assumes
@@ -153,17 +153,18 @@ v3.1.1 CPU constraints and the v3.1.1 contracts (`RV64IM_Interactions.V3` in
 decoder does not fix `imm_c` for opcodes 42 to 44, which `SLLW`, `SRLW` and `SRAW` share with
 `imm_c = 0`, or for opcodes 0, 2, 3, 4, 8 and 9, which `ADD`, `XOR`, `OR`, `AND`, `SLT` and
 `SLTU` share with it, so `SLLIW`, `SRLIW`, `SRAIW` and the six `ITYPE` theorems still assume
-`imm_c = 1`. `JAL` and `JALR` assume neither, nor the row's `is_jal` / `is_jalr` selector,
-all three of which their 2.x statements took: opcodes 24 and 25 are the two jumps alone, so the
-decoder fixes every one of them. `SLLIW`, `SRLIW` and `SRAIW` also read their shift amount from the instruction's
-encoded `op_c_0`, as they read `rd` and `rs1`, instead of from the `op_c` value the row sends to
-the ALU chip; the proofs link the two through the CPU chip's constraint 4. The other 45 were
-last recorded at `353238a`, against the 2.x constraints and the contracts of
-`RVSail/Buses.lean`, and are not checked while they move. Two definitions every instruction
-theorem names were rewritten at v3.1.1 behind unchanged names: `Equivalence.CPU_bus_operations`,
-the operations the theorem compares the Sail step against (now a two-piece pc, with the memory
-width and direction taken from the opcode), and `CpuChip.Interpretations.bus_row`, which sorts
-the row's messages (now with the v3.1.1 deserialiser).
+`imm_c = 1`. `JAL` and `JALR` assume neither `imm_b` nor `imm_c`, nor the row's `is_jal` /
+`is_jalr` selector, all three of which their 2.x statements took: opcodes 24 and 25 are the two
+jumps alone, so the decoder fixes every one of them. `SLLIW`, `SRLIW` and `SRAIW` also read
+their shift amount from the instruction's encoded `op_c_0`, as they read `rd` and `rs1`, instead
+of from the `op_c` value the row sends to the ALU chip; the proofs link the two through the CPU
+chip's constraint 4. The other 45 were last recorded at `353238a`, against the 2.x constraints and
+the contracts of `RVSail/Buses.lean`, and are not checked while they move. Two definitions every
+instruction theorem names were rewritten at v3.1.1 behind unchanged names:
+`Equivalence.CPU_bus_operations`, the operations the theorem compares the Sail step against (now a
+two-piece pc, with the memory width and direction taken from the opcode), and
+`CpuChip.Interpretations.bus_row`, which sorts the row's messages (now with the v3.1.1
+deserialiser).
 
 The whole-trace assumption, `pico_CpuChip_control_flow_assumptions`, bounds the chunk's final
 pc (public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The
@@ -263,13 +264,12 @@ A proof that uses them also trusts the Lean compiler and runtime.
 branch's, so the uses only go down.
 
 <!-- generated: tactics -->
-155 uses of `native_decide`, `bv_decide` or `decide +native` in 13 files:
+147 uses of `native_decide`, `bv_decide` or `decide +native` in 12 files:
 
 - `PicoFV/Fundamentals/Core.lean`: 7
 - `PicoFV/Fundamentals/KoalaBear.lean`: 1
 - `PicoFV/Fundamentals/Word.lean`: 39
 - `PicoFV/RV64IM/Equivalence/BType.lean`: 6
-- `PicoFV/RV64IM/Equivalence/Jumps.lean`: 8
 - `PicoFV/RV64IM/Equivalence/Loads.lean`: 7
 - `PicoFV/RV64IM/Equivalence/ShiftIOp.lean`: 3
 - `PicoFV/RV64IM/Equivalence/Stores.lean`: 4
@@ -288,9 +288,9 @@ cannot replay what those tactics computed. Today that excludes `Fundamentals/Cor
 `Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution` and the specifications of the
 Bitwise, DivRem and memory chips; the replay covers the remaining modules, including the other
 ALU chips' specifications, the CPU chip's constraints and interpretations, and
-`Equivalence/Common`, `Equivalence/Addiw`, `Equivalence/RTypeW`, `Equivalence/ShiftIWOp` and
-`Equivalence/IType`. Modules the build does not import, such as the parked equivalence files,
-are not replayed.
+`Equivalence/Common`, `Equivalence/Addiw`, `Equivalence/RTypeW`, `Equivalence/ShiftIWOp`,
+`Equivalence/IType` and `Equivalence/Jumps`. Modules the build does not import, such as the
+parked equivalence files, are not replayed.
 
 ## D. Does the use of the results hold together?
 
