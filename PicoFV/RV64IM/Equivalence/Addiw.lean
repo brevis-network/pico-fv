@@ -56,13 +56,12 @@ namespace Equivalence
       execute_instruction (instruction.ADDIW (imm, rs1, rd)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have h_wf := h_all_wf row h_row
-      have h_imm_b := imm_b_eq_zero_of_opcode air row h_is_real h_wf (by rw [h_opcode.1]; rfl)
-      have h_imm := op_c_value_eq_signExtend_imm12 air row h_is_real h_wf
-        (h_all_constraints row h_row) h_opcode.1 (by simp) h_imm_b h_opcode.2
+      have h_alu : ALURowFacts air row 40 :=
+        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, h_opcode.1, rfl,
+          imm_b_eq_zero_of_opcode air row h_is_real (h_all_wf row h_row) (by rw [h_opcode.1]; rfl) ⟩
+      have h_imm := op_c_value_eq_signExtend_imm12 h_alu (by simp) h_opcode.2
       intro rd rs1 imm
-      refine eq_operation_list_effect_state_of_reg_imm air row h_row h_is_real h_all_wf
-        h_all_constraints pico_assumptions h_opcode.1 rfl h_imm_b h_opcode.2 h_bus_hypotheses _
+      refine eq_operation_list_effect_state_of_reg_imm h_alu h_opcode.2 h_bus_hypotheses _
         (fun h_pc h_rs1 => OpcodeSpec.RV64.execute_ADDIW_equiv
           (by rw [OpcodeSpec.RV64.spec_ADDIW_hypotheses]; exact ⟨ h_pc, h_rs1 ⟩))
         (fun h_spec => ?_)

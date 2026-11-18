@@ -36,17 +36,17 @@ namespace Equivalence
         `eq_operation_list_effect_state_of_reg_imm` reads the pc and `rs1`, and leaves
         the opcode's arm of `ALUBus.Spec`. `imm` is read back from `op_c`, and
         `op_c_value_eq_signExtend_imm12` gives back the 64-bit value Sail adds, combines or
-        compares. Hygiene is off so the tactic can name the theorem's hypotheses (`h_opcode`,
-        `h_all_wf`, ...), which every theorem here declares under the same names. -/
+        compares; both take the row's `ALURowFacts`, built once. Hygiene is off so the tactic
+        can name the theorem's hypotheses (`h_opcode`, `h_all_wf`, ...), which every theorem
+        here declares under the same names. -/
     local macro "itype_by_alu_spec " imm_b:term ", " imm_c:term ", " exec_equiv:ident ", "
         spec_hyps:ident ", " pat:rcasesPat : tactic => `(tactic| (
-      have h_wf := h_all_wf row h_row
-      have h_imm_b : air.cols.opcode_selector.imm_b row 0 = 0 := $imm_b
-      have h_imm := op_c_value_eq_signExtend_imm12 air row h_is_real h_wf
-        (h_all_constraints row h_row) h_opcode.1 (by simp) h_imm_b $imm_c
+      have h_alu : ALURowFacts air row _ :=
+        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, h_opcode.1, rfl,
+          $imm_b ⟩
+      have h_imm := op_c_value_eq_signExtend_imm12 h_alu (by simp) $imm_c
       intro rd rs1 imm
-      refine eq_operation_list_effect_state_of_reg_imm air row h_row h_is_real h_all_wf
-        h_all_constraints pico_assumptions h_opcode.1 rfl h_imm_b $imm_c h_bus_hypotheses _
+      refine eq_operation_list_effect_state_of_reg_imm h_alu $imm_c h_bus_hypotheses _
         (fun h_pc h_rs1 => $exec_equiv (by rw [$spec_hyps:ident]; exact ⟨ h_pc, h_rs1 ⟩))
         (fun h_spec => ?_)
       simp [RV64IM_Interactions.ALUBus.Spec] at h_spec
