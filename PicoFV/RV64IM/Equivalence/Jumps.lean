@@ -399,8 +399,6 @@ namespace Equivalence
         simp [RISC_V_assumptions] at risc_v_assumptions
         tauto
 
-
-
   end JUMPS
 
 end Equivalence
