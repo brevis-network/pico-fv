@@ -23,15 +23,16 @@ with their statements in `signatures.txt`. They are of three kinds.
   bus.
 
   <!-- generated: restored -->
-  **18 of these 62 theorems are checked at the moment**, in 5 files of `PicoFV/RV64IM/Equivalence/`:
+  **28 of these 62 theorems are checked at the moment**, in 6 files of `PicoFV/RV64IM/Equivalence/`:
 
   - `Addiw.lean`: `ADDIW`
   - `IType.lean`: `ADDI`, `ANDI`, `ORI`, `SLTI`, `SLTIU` and `XORI`
   - `RTypeW.lean`: `ADDW`, `SLLW`, `SRAW`, `SRLW` and `SUBW`
+  - `RType.lean`: `ADD`, `AND`, `OR`, `SLL`, `SLT`, `SLTU`, `SRA`, `SRL`, `SUB` and `XOR`
   - `ShiftIOp.lean`: `SLLI`, `SRAI` and `SRLI`
   - `ShiftIWOp.lean`: `SLLIW`, `SRAIW` and `SRLIW`
 
-  The other 44, in 8 files, are out of the build, with their lists parked in
+  The other 34, in 7 files, are out of the build, with their lists parked in
   `scripts/fv-check/theorems.d/parked/`:
 
   - `BType.lean`: `BEQ`, `BGE`, `BGEU`, `BLT`, `BLTU` and `BNE`
@@ -39,7 +40,6 @@ with their statements in `signatures.txt`. They are of three kinds.
   - `Jumps.lean`: `JAL` and `JALR`
   - `Loads.lean`: `LB`, `LBU`, `LD`, `LH`, `LHU`, `LW` and `LWU`
   - `MulFamily.lean`: `MUL`, `MULH`, `MULHSU`, `MULHU` and `MULW`
-  - `RType.lean`: `ADD`, `AND`, `OR`, `SLL`, `SLT`, `SLTU`, `SRA`, `SRL`, `SUB` and `XOR`
   - `Stores.lean`: `SB`, `SD`, `SH` and `SW`
   - `UType.lean`: `AUIPC` and `LUI`
   <!-- end generated -->
@@ -160,16 +160,18 @@ Each equivalence theorem assumes:
 - at v3.1.1, the whole-trace assumption described below.
 
 The instruction theorems checked at the moment (listed under "What is proved") are recorded at
-v3.1.1, against the v3.1.1 CPU constraints and the v3.1.1 contracts (`RV64IM_Interactions.V3`
-in `RVSail/BusesV3.lean`). `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`, `ANDI`, `SLTI`,
-`SLTIU`, `SLLI`, `SRLI` and `SRAI` no longer assume `imm_b = 0`, which the v3.1.1 decoder fixes
-for their opcodes, and `SUBW` no longer assumes `imm_c = 0`, which it fixes for opcode 41. `ADDI`
-still assumes `imm_b = 0`: its opcode 0 with `imm_c = 1` is also `LUI` or `AUIPC`, which set
-`imm_b = 1`. The decoder does not fix `imm_c` for the opcodes these theorems share with a
-register-register opcode, which has `imm_c = 0`: 40 with `ADDW`, 42 to 44 with `SLLW`, `SRLW`
-and `SRAW`, 5 to 7 with `SLL`, `SRL` and `SRA`, and 0, 2, 3, 4, 8 and 9 with `ADD`, `XOR`, `OR`,
-`AND`, `SLT` and `SLTU`. So `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `SLLI`, `SRLI`, `SRAI` and the
-six `ITYPE` theorems still assume `imm_c = 1`.
+v3.1.1, against the v3.1.1 CPU constraints and the v3.1.1 contracts (`RV64IM_Interactions.V3` in
+`RVSail/BusesV3.lean`). `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`, `ANDI`, `SLTI`, `SLTIU`,
+`SLLI`, `SRLI` and `SRAI` no longer assume `imm_b = 0`, which the v3.1.1 decoder fixes for their
+opcodes, and `SUBW` and `SUB` no longer assume `imm_c = 0`, which it fixes for opcodes 41 and 1.
+`ADDI` still assumes `imm_b = 0`: its opcode 0 with `imm_c = 1` is also `LUI` or `AUIPC`, which set
+`imm_b = 1`. `ADD` does not assume it, although the decoder does not fix it for opcode 0: on a row
+with `imm_c = 0` the flag is 0 whatever the opcode (`imm_b_eq_zero_of_imm_c_eq_zero`). The decoder
+does not fix `imm_c` for an opcode that an immediate form shares with a register-register one: 40
+(`ADDIW` and `ADDW`), 42 to 44 (`SLLIW`, `SRLIW`, `SRAIW` and `SLLW`, `SRLW`, `SRAW`), 5 to 7
+(`SLLI`, `SRLI`, `SRAI` and `SLL`, `SRL`, `SRA`), and 0, 2, 3, 4, 8 and 9 (the six `ITYPE` theorems
+and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`). So those thirteen immediate-form theorems still
+assume `imm_c = 1`, and those thirteen register-register theorems still assume `imm_c = 0`.
 
 The six shift-immediate theorems also read their shift amount from the instruction's encoded
 `op_c_0`, as they read `rd` and `rs1`, instead of from the `op_c` value the row sends to the ALU
@@ -269,7 +271,7 @@ C2) or the specification axioms of A2.
 | Axioms the theorem depends on | Theorems |
 |---|---:|
 | kernel + compiler | 80 |
-| kernel + compiler + RISC-V spec axioms | 18 |
+| kernel + compiler + RISC-V spec axioms | 28 |
 | kernel only | 1 |
 <!-- end generated -->
 

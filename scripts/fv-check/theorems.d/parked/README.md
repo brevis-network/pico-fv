@@ -1,7 +1,7 @@
 # Parked theorem lists
 
 <!-- generated: parked -->
-The 8 lists here name 44 of the 62 instruction theorems of
+The 7 lists here name 34 of the 62 instruction theorems of
 `PicoFV/RV64IM/Equivalence/`.
 <!-- end generated -->
 
@@ -64,14 +64,17 @@ A restored statement may also drop an immediate-flag hypothesis that the v3.1.1
 decoder already fixes for its opcode (`imm_b_of_opcode`, `imm_c_of_opcode` in
 `RVSail/BusesV3.lean`): `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`,
 `ANDI`, `SLTI`, `SLTIU`, `SLLI`, `SRLI` and `SRAI` no longer take `imm_b = 0`,
-and `SUBW` no longer takes `imm_c = 0`. Dropping a hypothesis makes the theorem
-stronger. `ADDI` keeps `imm_b = 0`: the decoder does not fix it for opcode 0,
-which `LUI` and `AUIPC` share. `SLLIW`, `SRLIW` and `SRAIW` keep `imm_c = 1`:
-the decoder does not fix it for opcodes 42 to 44, which `SLLW`, `SRLW` and
-`SRAW` share with `imm_c = 0`. `SLLI`, `SRLI` and `SRAI` keep it for the same
-reason: `SLL`, `SRL` and `SRA` share their opcodes 5 to 7. So do `ADDIW`, whose
-opcode 40 `ADDW` shares, and the six `ITYPE` theorems, whose opcodes `ADD`,
-`XOR`, `OR`, `AND`, `SLT` and `SLTU` share.
+and `SUBW` and `SUB` no longer take `imm_c = 0`. Dropping a hypothesis makes the
+theorem stronger. `ADDI` keeps `imm_b = 0`: the decoder does not fix it for
+opcode 0, which `LUI` and `AUIPC` share. `ADD` does not take `imm_b = 0`,
+although the decoder does not fix it for opcode 0: on a row with `imm_c = 0` the
+flag is 0 whatever the opcode (`imm_b_eq_zero_of_imm_c_eq_zero`). Where an
+immediate form and a register-register opcode share an opcode, the decoder does
+not fix `imm_c`, so the immediate form keeps `imm_c = 1` and the
+register-register one keeps `imm_c = 0`: opcode 40 (`ADDIW`, `ADDW`), 42 to 44
+(`SLLIW`, `SRLIW`, `SRAIW` and `SLLW`, `SRLW`, `SRAW`), 5 to 7 (`SLLI`, `SRLI`,
+`SRAI` and `SLL`, `SRL`, `SRA`), and 0, 2 to 4, 8 and 9 (the six `ITYPE`
+theorems and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`).
 
 The shift-immediate theorems `SLLIW`, `SRLIW`, `SRAIW`, `SLLI`, `SRLI` and
 `SRAI` also read their shift amount from the instruction's encoded

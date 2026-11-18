@@ -27,7 +27,8 @@ namespace Equivalence
     --   MULW   = 48   — 32-bit × 32-bit → 32-bit sign-extended to 64
     -- All five share the same Program-bus column layout (3 register operands,
     -- imm_b = 0, imm_c = 0, is_alu = 1), so the operand/bus setups can be
-    -- factored exactly as for `rtype_operand_setup` / `rtype_bus_setup`.
+    -- factored exactly as for the 2.x `rtype_operand_setup` / `rtype_bus_setup`
+    -- (`Equivalence/RType.lean` at the tag `pico-v3-before-cpu`).
     -- ========================================================================
 
     inductive MulVariant where
@@ -42,7 +43,7 @@ namespace Equivalence
       | .MULW   => 48
 
     -- ========================================================================
-    -- MUL-family operand setup. Mirrors `rtype_operand_setup` but for the
+    -- MUL-family operand setup. Mirrors the 2.x `rtype_operand_setup` but for the
     -- five MUL/MULW chip opcodes. Caller supplies `var : MulVariant` +
     -- `h_opcode : opcode = opcode_of_MulVariant var`. The chip-side imm_b /
     -- imm_c flags are returned (eq_imm_b, eq_imm_c) — for the MUL family
@@ -56,7 +57,7 @@ namespace Equivalence
     -- ========================================================================
 
     /-- Operand-setup lemma for the MUL family (5 opcodes: MUL/MULH/MULHU/
-    MULHSU/MULW). Mirrors `rtype_operand_setup`. -/
+    MULHSU/MULW). Mirrors the 2.x `rtype_operand_setup`. -/
     lemma mul_operand_setup
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -260,7 +261,7 @@ namespace Equivalence
                 h_reg_rd, h_reg_rs1, h_reg_rs2 ⟩
 
     -- ========================================================================
-    -- MUL-family bus setup. Identical in shape to `rtype_bus_setup` — the
+    -- MUL-family bus setup. Identical in shape to the 2.x `rtype_bus_setup` — the
     -- chip's State-bus emission for MUL/MULW is the same as for RTYPE
     -- (imm_b = imm_c = 0 means op_a/op_b/op_c are all register reads). The
     -- ALU-bus shape only differs by opcode value (handled by `h_opcode`).
