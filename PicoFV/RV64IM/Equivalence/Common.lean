@@ -469,6 +469,18 @@ namespace Equivalence
             h.toBV_next_pc_eq]
       exact operation_list_effect_state_writeReg_eq_op_a_value h v h_v _
 
+    /-- Cutting a sign extension back to the immediate's own width returns the immediate. An
+        instruction theorem that reads its `imm` back from an operand column, where the decoder
+        put it sign-extended to 64 bits, uses it at the immediate's width. -/
+    lemma setWidth_signExtend_self {w : ℕ} (imm : BitVec w) (hw : w ≤ 64) :
+      (BitVec.signExtend 64 imm).setWidth w = imm
+    := by
+      ext i hi
+      simp [BitVec.getElem_setWidth]
+      rw [BitVec.getLsbD_signExtend]
+      simp [hi]
+      omega
+
     /-- On a row of `ADDI`, `XORI`, `ORI`, `ANDI`, `SLTI`, `SLTIU` (opcodes 0, 2, 3, 4, 8, 9 with
         `imm_b = 0`, `imm_c = 1`) or `ADDIW` (40 with `imm_c = 1`), the `op_c` value is the
         sign extension of its own low 12 bits: the decoder writes the instruction's 12-bit
@@ -514,13 +526,7 @@ namespace Equivalence
         simp only [op_c_value, h_imm_c_eqs.1, h_imm_c_eqs.2.1, h_imm_c_eqs.2.2.1,
                    h_imm_c_eqs.2.2.2, eq_c0, eq_c1, eq_cs]
         exact Transpiler.V3.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
-      have h_low : (BitVec.signExtend 64 imm').setWidth 12 = imm' := by
-        ext i hi
-        simp [BitVec.getElem_setWidth]
-        rw [BitVec.getLsbD_signExtend]
-        simp [hi]
-        omega
-      rw [h_op_c_bv, h_low]
+      rw [h_op_c_bv, setWidth_signExtend_self imm' (by norm_num)]
 
     /-- On a row whose `op_c` is an immediate (`imm_c = 1`), the low `n ≤ 16` bits of the `op_c`
         value the row sends to the ALU chip are those of the instruction's encoded `op_c_0`
