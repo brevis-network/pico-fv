@@ -21,7 +21,9 @@ axioms. The 2.x `pc_next_row_mod_four_eq_zero` has no v3.1.1 counterpart: `pc_fa
 any real row's pc alignment directly.
 
 An ALU-class instruction theorem with register operands closes in one call,
-`eq_operation_list_effect_state_of_reg_reg` or `eq_operation_list_effect_state_of_reg_imm`.
+`eq_operation_list_effect_state_of_reg_reg` or `eq_operation_list_effect_state_of_reg_imm`
+(for a shift by an immediate, `eq_operation_list_effect_state_of_shift_imm`, which calls the
+latter).
 Both take the row's facts bundled as `ALURowFacts`, the immediate flags of their family, the bus
 hypotheses, and the ALU chip's promise `alu_promise`. The bundle says nothing about the
 immediate flags, so every ALU-class row has one, `LUI` and `AUIPC` rows included; a theorem
@@ -543,6 +545,48 @@ namespace Equivalence
       rw [BitVec.getLsbD_append]
       simp only [← BitVec.getLsbD_eq_getElem, BitVec.getLsbD_ofNat]
       simp [hi16, hi]
+
+    /-- `eq_operation_list_effect_state_of_reg_imm` for a shift by an immediate amount
+        (`SLLI`, `SRLI`, `SRAI`, `SLLIW`, `SRLIW`, `SRAIW`). The theorem reads the amount from
+        the instruction's encoded `op_c_0`, cut to the shift's `n` bits, as it reads `rd` and
+        `rs1`; the ALU chip shifts by the low `n` bits of the `op_c` value the row sends.
+        `op_c_value_setWidth_eq_op_c_0` shows the two agree, so the caller gives the Sail step
+        (`h_exec`, from the opcode's `execute_*_equiv`) with the amount from `op_c_0`, and the
+        ALU chip's arm for its opcode (`h_shift`) with the amount from `op_c`. `shift` is the
+        result Sail writes to `rd`, as a function of `rs1`'s value and the amount. -/
+    lemma eq_operation_list_effect_state_of_shift_imm
+      [Field ExtF]
+      {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+      {exec : EStateM.Result (Sail.Error exception)
+        (PreSail.SequentialState RegisterType Sail.trivialChoiceSource) ExecutionResult}
+      {air : Valid_CpuChip FKB ExtF} {row : ℕ} {op : FKB} {n : ℕ}
+      (hn : n ≤ 16)
+      (h : ALURowFacts air row op)
+      (h_imm_b : air.cols.opcode_selector.imm_b row 0 = 0)
+      (h_imm_c : air.cols.opcode_selector.imm_c row 0 = 1)
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (shift : BitVec 64 → BitVec n → BitVec 64)
+      (h_exec : ∀ pc_val rs1_val : BitVec 64,
+        Sail.readReg Register.PC state = .ok pc_val state ∧
+        read_xreg (regidx_to_fin (.Regidx (air.cols.instruction.op_b_0 row 0).val)) state =
+          .ok rs1_val state →
+        exec = (operation_list_effect
+          [ .ReadPC pc_val,
+            .ReadReg (.Regidx (air.cols.instruction.op_b_0 row 0).val) rs1_val,
+            .WritePC (pc_val + 4#64),
+            .WriteReg (.Regidx (air.cols.instruction.op_a row 0).val)
+              (shift rs1_val ((air.cols.instruction.op_c_0 row 0).val : BitVec n)) ] state).state)
+      (h_shift : alu_spec_of_row air row op →
+        shift (U64w.toBV (op_b_value air row)) ((U64w.toBV (op_c_value air row)).setWidth n) =
+          U64w.toBV (op_a_value air row))
+    :
+      exec = (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      rw [← op_c_value_setWidth_eq_op_c_0 air row hn h_imm_c (h.all_constraints row h.row_le)]
+        at h_exec
+      exact eq_operation_list_effect_state_of_reg_imm h h_imm_b h_imm_c h_bus_hypotheses _
+        (fun h_pc h_rs1 => h_exec _ _ ⟨ h_pc, h_rs1 ⟩) (fun h_spec => h_shift h_spec)
 
   end Auxiliaries
 

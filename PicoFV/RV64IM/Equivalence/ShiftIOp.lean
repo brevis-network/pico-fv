@@ -19,38 +19,16 @@ namespace Equivalence
     -- They share their opcodes with SLL, SRL and SRA, which `imm_c = 0`
     -- tells apart (`ProgramBusEntry.decoded_from`), so each theorem takes
     -- `imm_c = 1`; the decoder fixes `imm_b = 0` for all three. The row reads
-    -- `rs1` and sends the instruction's immediate as `op_c`;
-    -- `eq_operation_list_effect_state_of_reg_imm` does everything but the
-    -- opcode's arm of `ALUBus.Spec`. That arm shifts by the low 6 bits of the
-    -- `op_c` value the row sends. Each theorem reads its 6-bit `imm` from the
-    -- instruction's encoded `op_c_0`, as it reads `rd` and `rs1`, and
-    -- `op_c_value_setWidth_eq_op_c_0` (constraint 4) shows the two agree.
+    -- `rs1` and sends the instruction's immediate as `op_c`. Each theorem reads
+    -- its 6-bit `imm` from the instruction's encoded `op_c_0`, as it reads `rd`
+    -- and `rs1`; the ALU chip shifts by the low 6 bits of the `op_c` value the
+    -- row sends. `eq_operation_list_effect_state_of_shift_imm` links the two
+    -- and does everything but the opcode's arm of `ALUBus.Spec`, which each
+    -- proof gives last.
     -- ========================================================================
 
-    -- The proof every SHIFTIOP theorem shares, given the opcode's two Sail lemmas: one call to
-    -- `eq_operation_list_effect_state_of_reg_imm`, leaving the opcode's arm of `ALUBus.Spec`,
-    -- where `imm` is rewritten to the low 6 bits of the `op_c` value the row sends. It names
-    -- the theorem's own hypotheses, so it is unhygienic.
-    set_option hygiene false in
-    local macro "shifti_close " equiv:ident hyps:ident : tactic => `(tactic| (
-      intro rd rs1 imm
-      have h_alu : ALURowFacts air row _ :=
-        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, h_opcode.1, rfl ⟩
-      refine eq_operation_list_effect_state_of_reg_imm h_alu (h_alu.imm_b_eq_zero rfl)
-        h_opcode.2 h_bus_hypotheses _
-        (fun h_pc h_rs1 => $equiv:ident
-          (by rw [$hyps:ident]; exact ⟨ h_pc, h_rs1 ⟩))
-        (fun h_spec => ?_)
-      simp [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
-      obtain ⟨ -, h_spec_eq ⟩ := h_spec
-      have h_imm := op_c_value_setWidth_eq_op_c_0 air row (n := 6) (by norm_num) h_opcode.2
-        (h_all_constraints row h_row)
-      simp only [imm, ← h_imm]
-      simp [op_a_value, op_b_value, h_spec_eq, execute_RTYPE_pure]
-      rfl))
-
     /-- Equivalence for SLLI (opcode 5, `sop.SLLI`), the 64-bit shift left logical by an immediate.
-        `imm` is read from the instruction's encoded `op_c_0`, as `rd` and `rs1` are.
+        `imm` is the low 6 bits of `op_c_0`, read from the instruction as `rd` and `rs1` are.
 
         The bus assumptions are part of every instruction theorem's statement; the ones this
         proof does not read are named with a leading underscore. -/
@@ -78,10 +56,22 @@ namespace Equivalence
       execute_instruction (instruction.SHIFTIOP (imm, rs1, rd, sop.SLLI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      shifti_close OpcodeSpec.RV64.execute_SLLI_equiv OpcodeSpec.RV64.spec_SLLI_hypotheses
+      intro rd rs1 imm
+      have h_alu : ALURowFacts air row _ :=
+        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, h_opcode.1, rfl ⟩
+      refine eq_operation_list_effect_state_of_shift_imm (n := 6) (by norm_num) h_alu
+        (h_alu.imm_b_eq_zero rfl) h_opcode.2 h_bus_hypotheses
+        (fun v amount => v <<< amount.toNat)
+        (fun _ _ h_reads => OpcodeSpec.RV64.execute_SLLI_equiv
+          (by rw [OpcodeSpec.RV64.spec_SLLI_hypotheses]; exact h_reads))
+        (fun h_spec => ?_)
+      -- The ALU chip's arm for opcode 5.
+      simp only [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
+      obtain ⟨ -, h_spec_eq ⟩ := h_spec
+      simp [op_a_value, op_b_value, op_c_value, h_spec_eq, execute_RTYPE_pure]
 
     /-- Equivalence for SRLI (opcode 6, `sop.SRLI`), the 64-bit shift right logical by an immediate.
-        `imm` is read from the instruction's encoded `op_c_0`, as `rd` and `rs1` are.
+        `imm` is the low 6 bits of `op_c_0`, read from the instruction as `rd` and `rs1` are.
 
         The bus assumptions are part of every instruction theorem's statement; the ones this
         proof does not read are named with a leading underscore. -/
@@ -109,10 +99,23 @@ namespace Equivalence
       execute_instruction (instruction.SHIFTIOP (imm, rs1, rd, sop.SRLI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      shifti_close OpcodeSpec.RV64.execute_SRLI_equiv OpcodeSpec.RV64.spec_SRLI_hypotheses
+      intro rd rs1 imm
+      have h_alu : ALURowFacts air row _ :=
+        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, h_opcode.1, rfl ⟩
+      refine eq_operation_list_effect_state_of_shift_imm (n := 6) (by norm_num) h_alu
+        (h_alu.imm_b_eq_zero rfl) h_opcode.2 h_bus_hypotheses
+        (fun v amount => v >>> amount.toNat)
+        (fun _ _ h_reads => OpcodeSpec.RV64.execute_SRLI_equiv
+          (by rw [OpcodeSpec.RV64.spec_SRLI_hypotheses]; exact h_reads))
+        (fun h_spec => ?_)
+      -- The ALU chip's arm for opcode 6.
+      simp only [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
+      obtain ⟨ -, h_spec_eq ⟩ := h_spec
+      simp [op_a_value, op_b_value, op_c_value, h_spec_eq, execute_RTYPE_pure]
 
     /-- Equivalence for SRAI (opcode 7, `sop.SRAI`), the 64-bit shift right arithmetic by an
-        immediate. `imm` is read from the instruction's encoded `op_c_0`, as `rd` and `rs1` are.
+        immediate. `imm` is the low 6 bits of `op_c_0`, read from the instruction as `rd` and
+        `rs1` are.
 
         The bus assumptions are part of every instruction theorem's statement; the ones this
         proof does not read are named with a leading underscore. -/
@@ -140,7 +143,19 @@ namespace Equivalence
       execute_instruction (instruction.SHIFTIOP (imm, rs1, rd, sop.SRAI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      shifti_close OpcodeSpec.RV64.execute_SRAI_equiv OpcodeSpec.RV64.spec_SRAI_hypotheses
+      intro rd rs1 imm
+      have h_alu : ALURowFacts air row _ :=
+        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, h_opcode.1, rfl ⟩
+      refine eq_operation_list_effect_state_of_shift_imm (n := 6) (by norm_num) h_alu
+        (h_alu.imm_b_eq_zero rfl) h_opcode.2 h_bus_hypotheses
+        (fun v amount => v.sshiftRight amount.toNat)
+        (fun _ _ h_reads => OpcodeSpec.RV64.execute_SRAI_equiv
+          (by rw [OpcodeSpec.RV64.spec_SRAI_hypotheses]; exact h_reads))
+        (fun h_spec => ?_)
+      -- The ALU chip's arm for opcode 7.
+      simp only [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
+      obtain ⟨ -, h_spec_eq ⟩ := h_spec
+      simp [op_a_value, op_b_value, op_c_value, h_spec_eq, execute_RTYPE_pure]
 
   end SHIFTIOP
 
