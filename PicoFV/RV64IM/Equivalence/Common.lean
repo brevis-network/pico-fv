@@ -223,6 +223,19 @@ namespace Equivalence
     :=
       (selector_exclusivity air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)).2.2 0 h_op
 
+    /-- `imm_c_eq_zero_of_opcode` from an ALU-class row's facts: for an opcode the decoder
+        always gives a register `op_c`, which a caller with a literal opcode proves by `rfl`. -/
+    lemma ALURowFacts.imm_c_eq_zero
+      [Field ExtF]
+      {air : Valid_CpuChip FKB ExtF} {row : ℕ} {op : FKB}
+      (h : ALURowFacts air row op)
+      (h_op : imm_c_of_opcode op.val = some 0)
+    :
+      air.cols.opcode_selector.imm_c row 0 = 0
+    :=
+      imm_c_eq_zero_of_opcode air row h.is_real (h.all_wf row h.row_le)
+        (by rw [h.opcode_eq]; exact h_op)
+
     /-- The register indices the decoder writes: `op_a` is below 32, and so is each operand
         whose immediate flag is 0 (`ProgramBusEntry.inversion_operands`). -/
     lemma register_indices_lt
@@ -424,6 +437,33 @@ namespace Equivalence
             operation_list_effect_state_writeReg_same h_rs2, operation_list_effect_state_readReg,
             h.toBV_next_pc_eq]
       exact operation_list_effect_state_writeReg_eq_op_a_value h v h_v _
+
+    set_option hygiene false in
+    /-- The proof of a register-register ALU instruction theorem: introduce its `rd`, `rs1` and
+        `rs2`, build the row's `ALURowFacts` as `h_alu`, make the one call to
+        `eq_operation_list_effect_state_of_reg_reg`, whose Sail side is the opcode's
+        specification lemma, and close the opcode's arm of `ALUBus.Spec` by `simp`. `h_op` proves
+        the row's opcode and `h_imm_c` its `imm_c = 0`; `h_imm_c` may use `h_alu`, as
+        `h_alu.imm_c_eq_zero rfl` does for an opcode no immediate form shares. `equiv` and
+        `hyps` are the opcode's Sail lemmas `execute_<OP>_equiv` and `spec_<OP>_hypotheses`;
+        `extra` names further `simp` lemmas for the arm, such as the class's `execute_*_pure`.
+
+        The arm is passed to `simp` whole, so the proof does not depend on how `simp` orders
+        its conjuncts (the result range, the operand range and the result equation). Hygiene
+        is off so the tactic can name the theorem's hypotheses (`h_row`, `h_is_real`,
+        `h_all_wf`, `h_all_constraints`, `pico_assumptions`, `h_bus_hypotheses`), which every
+        such theorem declares under the same names. -/
+    macro "alu_reg_reg_close " h_op:term:max h_imm_c:term:max equiv:ident hyps:ident
+        " [" extra:ident,* "]" : tactic => `(tactic| (
+      intro rd rs1 rs2
+      have h_alu : ALURowFacts air row _ :=
+        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, $h_op, rfl ⟩
+      refine eq_operation_list_effect_state_of_reg_reg h_alu $h_imm_c h_bus_hypotheses _
+        (fun h_pc h_rs1 h_rs2 => $equiv:ident
+          (by rw [$hyps:ident]; exact ⟨ h_pc, h_rs1, h_rs2 ⟩))
+        (fun h_spec => ?_)
+      simp [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
+      simp [op_a_value, op_b_value, op_c_value, h_spec, $[$extra:ident],*]))
 
     /-- `eq_operation_list_effect_state_of_reg_reg` for a register-immediate ALU row
         (`imm_b = 0`, `imm_c = 1`): one register read, `rs1`. It takes `imm_b = 0` because

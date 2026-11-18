@@ -22,31 +22,13 @@ namespace Equivalence
     -- which `imm_c = 1` tells apart (`ProgramBusEntry.decoded_from`), so the
     -- ADDW, SLLW, SRLW and SRAW theorems take `imm_c = 0`. No immediate form
     -- shares 41, so the decoder already gives SUBW `imm_c = 0`
-    -- (`imm_c_eq_zero_of_opcode`) and its theorem takes the opcode alone. The
+    -- (`ALURowFacts.imm_c_eq_zero`) and its theorem takes the opcode alone. The
     -- row reads both operands from registers (`imm_b = 0`, `imm_c = 0`) and sets
     -- no class selector; `eq_operation_list_effect_state_of_reg_reg` does
     -- everything but the opcode's arm of `ALUBus.Spec`, which applies
-    -- `setWidth 32` to both operands and sign-extends the 32-bit result.
+    -- `setWidth 32` to both operands and sign-extends the 32-bit result. Every
+    -- theorem closes through `alu_reg_reg_close` (`Common.lean`).
     -- ========================================================================
-
-    -- The proof every RTYPEW theorem shares, given the opcode `h_op`, `imm_c = 0` and the
-    -- opcode's two Sail lemmas: one call to `eq_operation_list_effect_state_of_reg_reg` with
-    -- the row's `ALURowFacts`, whose Sail side is the opcode's specification lemma, leaving the
-    -- opcode's arm of `ALUBus.Spec`. It names the theorem's own hypotheses, so it is
-    -- unhygienic.
-    set_option hygiene false in
-    local macro "rtypew_close " h_op:term:max h_imm_c:term:max equiv:ident hyps:ident :
-        tactic => `(tactic| (
-      intro rd rs1 rs2
-      refine eq_operation_list_effect_state_of_reg_reg
-        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, $h_op, rfl ⟩
-        $h_imm_c h_bus_hypotheses _
-        (fun h_pc h_rs1 h_rs2 => $equiv:ident
-          (by rw [$hyps:ident]; exact ⟨ h_pc, h_rs1, h_rs2 ⟩))
-        (fun h_spec => ?_)
-      simp [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
-      obtain ⟨ -, h_spec_eq ⟩ := h_spec
-      simp [op_a_value, op_b_value, op_c_value, h_spec_eq, execute_RTYPEW_pure]))
 
     /-- Equivalence for ADDW (opcode 40, `ropw.ADDW`), the 32-bit add.
 
@@ -76,8 +58,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPEW (rs2, rs1, rd, ropw.ADDW)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rtypew_close h_opcode.1 h_opcode.2
+      alu_reg_reg_close h_opcode.1 h_opcode.2
         OpcodeSpec.RV64.execute_ADDW_equiv OpcodeSpec.RV64.spec_ADDW_hypotheses
+        [execute_RTYPEW_pure]
 
     /-- Equivalence for SUBW (opcode 41, `ropw.SUBW`), the 32-bit subtract.
 
@@ -106,10 +89,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPEW (rs2, rs1, rd, ropw.SUBW)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have h_imm_c := imm_c_eq_zero_of_opcode air row h_is_real (h_all_wf row h_row)
-        (by rw [h_opcode]; rfl)
-      rtypew_close h_opcode h_imm_c
+      alu_reg_reg_close h_opcode (h_alu.imm_c_eq_zero rfl)
         OpcodeSpec.RV64.execute_SUBW_equiv OpcodeSpec.RV64.spec_SUBW_hypotheses
+        [execute_RTYPEW_pure]
 
     /-- Equivalence for SLLW (opcode 42, `ropw.SLLW`), the 32-bit shift left logical.
 
@@ -139,8 +121,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPEW (rs2, rs1, rd, ropw.SLLW)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rtypew_close h_opcode.1 h_opcode.2
+      alu_reg_reg_close h_opcode.1 h_opcode.2
         OpcodeSpec.RV64.execute_SLLW_equiv OpcodeSpec.RV64.spec_SLLW_hypotheses
+        [execute_RTYPEW_pure]
 
     /-- Equivalence for SRLW (opcode 43, `ropw.SRLW`), the 32-bit shift right logical.
 
@@ -170,8 +153,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPEW (rs2, rs1, rd, ropw.SRLW)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rtypew_close h_opcode.1 h_opcode.2
+      alu_reg_reg_close h_opcode.1 h_opcode.2
         OpcodeSpec.RV64.execute_SRLW_equiv OpcodeSpec.RV64.spec_SRLW_hypotheses
+        [execute_RTYPEW_pure]
 
     /-- Equivalence for SRAW (opcode 44, `ropw.SRAW`), the 32-bit shift right arithmetic.
 
@@ -201,8 +185,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPEW (rs2, rs1, rd, ropw.SRAW)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rtypew_close h_opcode.1 h_opcode.2
+      alu_reg_reg_close h_opcode.1 h_opcode.2
         OpcodeSpec.RV64.execute_SRAW_equiv OpcodeSpec.RV64.spec_SRAW_hypotheses
+        [execute_RTYPEW_pure]
 
   end RTYPEW
 

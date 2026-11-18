@@ -1,6 +1,8 @@
 import PicoFV.RV64IM.Equivalence.Common
 
-set_option maxHeartbeats 1_000_000_000
+-- About 2.6 times the most any proof here uses (about 570 000, for `SUB`), so a proof that
+-- stops terminating fails at its theorem instead of at the CI job's time-out.
+set_option maxHeartbeats 1_500_000
 set_option maxRecDepth 1_000_000
 set_option linter.constructorNameAsVariable false
 
@@ -26,32 +28,13 @@ namespace Equivalence
     -- already gives SUB `imm_c = 0` (`imm_c_eq_zero_of_opcode`) and its theorem
     -- takes the opcode alone. The row reads both operands from registers
     -- (`imm_b = 0`, which `imm_c = 0` fixes, and `imm_c = 0`) and sets no class
-    -- selector; `eq_operation_list_effect_state_of_reg_reg` does everything but
-    -- the opcode's arm of `ALUBus.Spec`. The arms of XOR, OR and AND carry the
-    -- operands' range as well as the result, so their pattern drops one more
-    -- conjunct. SLT and SLTU read the less-than chip's arm, whose "not a branch
-    -- comparison" premise that chip's own contract proof discharges.
+    -- selector. Every theorem closes with `alu_reg_reg_close` (`Common.lean`),
+    -- which ends on the opcode's arm of `ALUBus.Spec`, passed to `simp` whole.
+    -- The arms of XOR, OR and AND also state the operands' range. The arms of SLT and SLTU (8 and 9) state the
+    -- result with no premise; the "not a branch comparison" condition
+    -- (`is_cmp = 0`) sits in the less-than chip's own specification
+    -- (`spec_SLT`, `spec_SLTU` in `Spec/LtChip.lean`), not on this side.
     -- ========================================================================
-
-    -- The proof every RTYPE theorem shares, given the opcode `h_op`, `imm_c = 0`, the opcode's
-    -- two Sail lemmas and a pattern that takes the opcode's arm of `ALUBus.Spec` apart and
-    -- names its result equation `h_spec_eq`: one call to
-    -- `eq_operation_list_effect_state_of_reg_reg` with the row's `ALURowFacts`, whose Sail side
-    -- is the opcode's specification lemma, leaving the opcode's arm of `ALUBus.Spec`. It names
-    -- the theorem's own hypotheses, so it is unhygienic.
-    set_option hygiene false in
-    local macro "rtype_close " h_op:term:max h_imm_c:term:max equiv:ident hyps:ident
-        pat:rcasesPat : tactic => `(tactic| (
-      intro rd rs1 rs2
-      refine eq_operation_list_effect_state_of_reg_reg
-        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, $h_op, rfl ⟩
-        $h_imm_c h_bus_hypotheses _
-        (fun h_pc h_rs1 h_rs2 => $equiv:ident
-          (by rw [$hyps:ident]; exact ⟨ h_pc, h_rs1, h_rs2 ⟩))
-        (fun h_spec => ?_)
-      simp [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
-      obtain $pat:rcasesPat := h_spec
-      simp [op_a_value, op_b_value, op_c_value, h_spec_eq, execute_RTYPE_pure]))
 
     /-- Equivalence for ADD (opcode 0, `rop.ADD`), the 64-bit add.
 
@@ -81,9 +64,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.ADD)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rtype_close h_opcode.1 h_opcode.2
+      alu_reg_reg_close h_opcode.1 h_opcode.2
         OpcodeSpec.RV64.execute_ADD_equiv OpcodeSpec.RV64.spec_ADD_hypotheses
-        ⟨ -, h_spec_eq ⟩
+        [execute_RTYPE_pure]
 
     /-- Equivalence for SUB (opcode 1, `rop.SUB`), the 64-bit subtract.
         No immediate form shares opcode 1, so the decoder gives `imm_c = 0`
@@ -114,11 +97,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.SUB)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have h_imm_c := imm_c_eq_zero_of_opcode air row h_is_real (h_all_wf row h_row)
-        (by rw [h_opcode]; rfl)
-      rtype_close h_opcode h_imm_c
+      alu_reg_reg_close h_opcode (h_alu.imm_c_eq_zero rfl)
         OpcodeSpec.RV64.execute_SUB_equiv OpcodeSpec.RV64.spec_SUB_hypotheses
-        ⟨ -, h_spec_eq ⟩
+        [execute_RTYPE_pure]
 
     /-- Equivalence for XOR (opcode 2, `rop.XOR`), the bitwise exclusive or.
 
@@ -148,9 +129,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.XOR)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rtype_close h_opcode.1 h_opcode.2
+      alu_reg_reg_close h_opcode.1 h_opcode.2
         OpcodeSpec.RV64.execute_XOR_equiv OpcodeSpec.RV64.spec_XOR_hypotheses
-        ⟨ -, -, h_spec_eq ⟩
+        [execute_RTYPE_pure]
 
     /-- Equivalence for OR (opcode 3, `rop.OR`), the bitwise or.
 
@@ -180,9 +161,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.OR)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rtype_close h_opcode.1 h_opcode.2
+      alu_reg_reg_close h_opcode.1 h_opcode.2
         OpcodeSpec.RV64.execute_OR_equiv OpcodeSpec.RV64.spec_OR_hypotheses
-        ⟨ -, -, h_spec_eq ⟩
+        [execute_RTYPE_pure]
 
     /-- Equivalence for AND (opcode 4, `rop.AND`), the bitwise and.
 
@@ -212,9 +193,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.AND)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rtype_close h_opcode.1 h_opcode.2
+      alu_reg_reg_close h_opcode.1 h_opcode.2
         OpcodeSpec.RV64.execute_AND_equiv OpcodeSpec.RV64.spec_AND_hypotheses
-        ⟨ -, -, h_spec_eq ⟩
+        [execute_RTYPE_pure]
 
     /-- Equivalence for SLL (opcode 5, `rop.SLL`), the shift left logical
         by the low 6 bits of `rs2`.
@@ -245,9 +226,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.SLL)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rtype_close h_opcode.1 h_opcode.2
+      alu_reg_reg_close h_opcode.1 h_opcode.2
         OpcodeSpec.RV64.execute_SLL_equiv OpcodeSpec.RV64.spec_SLL_hypotheses
-        ⟨ -, h_spec_eq ⟩
+        [execute_RTYPE_pure]
 
     /-- Equivalence for SRL (opcode 6, `rop.SRL`), the shift right logical
         by the low 6 bits of `rs2`.
@@ -278,9 +259,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.SRL)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rtype_close h_opcode.1 h_opcode.2
+      alu_reg_reg_close h_opcode.1 h_opcode.2
         OpcodeSpec.RV64.execute_SRL_equiv OpcodeSpec.RV64.spec_SRL_hypotheses
-        ⟨ -, h_spec_eq ⟩
+        [execute_RTYPE_pure]
 
     /-- Equivalence for SRA (opcode 7, `rop.SRA`), the shift right arithmetic
         by the low 6 bits of `rs2`.
@@ -311,9 +292,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.SRA)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rtype_close h_opcode.1 h_opcode.2
+      alu_reg_reg_close h_opcode.1 h_opcode.2
         OpcodeSpec.RV64.execute_SRA_equiv OpcodeSpec.RV64.spec_SRA_hypotheses
-        ⟨ -, h_spec_eq ⟩
+        [execute_RTYPE_pure]
 
     /-- Equivalence for SLT (opcode 8, `rop.SLT`), the signed set-less-than.
 
@@ -343,9 +324,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.SLT)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rtype_close h_opcode.1 h_opcode.2
+      alu_reg_reg_close h_opcode.1 h_opcode.2
         OpcodeSpec.RV64.execute_SLT_equiv OpcodeSpec.RV64.spec_SLT_hypotheses
-        ⟨ -, h_spec_eq ⟩
+        [execute_RTYPE_pure]
 
     /-- Equivalence for SLTU (opcode 9, `rop.SLTU`), the unsigned set-less-than.
 
@@ -375,9 +356,9 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.SLTU)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rtype_close h_opcode.1 h_opcode.2
+      alu_reg_reg_close h_opcode.1 h_opcode.2
         OpcodeSpec.RV64.execute_SLTU_equiv OpcodeSpec.RV64.spec_SLTU_hypotheses
-        ⟨ -, h_spec_eq ⟩
+        [execute_RTYPE_pure]
 
   end RTYPE
 
