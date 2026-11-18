@@ -314,10 +314,11 @@ equivalence files, are not replayed.
 and the workflow is on `pico-v3`, not on `main`. Until it runs, this section describes what it would
 check, not a result. Run by hand on the instruction-theorem files the build imports, `lake env
 leanchecker` replays `Equivalence/Addiw`, `Equivalence/RTypeW`, `Equivalence/ShiftIWOp`,
-`Equivalence/IType` and `Equivalence/ShiftIOp`, and fails on `Equivalence/Common` with "(kernel)
-deep recursion detected": `lake build` runs Lean with a larger kernel stack (`--tstack=400000` in
-the lakefile), which `leanchecker` does not get. Until that is fixed, the declarations of
-`Equivalence/Common` are not replayed. The other modules have not been replayed by hand.
+`Equivalence/IType`, `Equivalence/ShiftIOp` and `Equivalence/RType`, and fails on
+`Equivalence/Common` with "(kernel) deep recursion detected": `lake build` runs Lean with a larger
+kernel stack (`--tstack=400000` in the lakefile), which `leanchecker` does not get. Until that is
+fixed, the declarations of `Equivalence/Common` are not replayed. The other modules have not been
+replayed by hand.
 
 ## D. Does the use of the results hold together?
 
