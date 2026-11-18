@@ -21,7 +21,7 @@ namespace Equivalence
     -- They share their opcodes with ADD, XOR, OR, AND, SLT and SLTU, which
     -- `imm_c = 0` tells apart (`ProgramBusEntry.decoded_from`), so each
     -- theorem takes `imm_c = 1`. The decoder fixes `imm_b = 0` for opcodes 2,
-    -- 3, 4, 8 and 9 (`imm_b_eq_zero_of_opcode`). Opcode 0 is also `LUI` and
+    -- 3, 4, 8 and 9 (`ALURowFacts.imm_b_eq_zero`). Opcode 0 is also `LUI` and
     -- `AUIPC` with `imm_b = 1` and `imm_c = 1`, so ADDI keeps `imm_b = 0` as a
     -- hypothesis. All six close through `itype_by_alu_spec` below, which
     -- takes the `imm_b = 0` proof as an argument.
@@ -29,27 +29,29 @@ namespace Equivalence
 
     set_option hygiene false in
     /-- The proof of every theorem in this section. `imm_b` and `imm_c` prove the row's
-        `imm_b = 0` and `imm_c = 1`; `exec_equiv` and `spec_hyps` are the opcode's Sail lemmas
+        `imm_b = 0` and `imm_c = 1`; `imm_b` may use the row's `ALURowFacts`, which the tactic
+        builds first as `h_alu`. `exec_equiv` and `spec_hyps` are the opcode's Sail lemmas
         `execute_<OP>_equiv` and `spec_<OP>_hypotheses`; `pat` takes the opcode's arm of
         `ALUBus.Spec` apart and names its result equation `h_spec_eq`.
 
         `eq_operation_list_effect_state_of_reg_imm` reads the pc and `rs1`, and leaves
         the opcode's arm of `ALUBus.Spec`. `imm` is read back from `op_c`, and
         `op_c_value_eq_signExtend_imm12` gives back the 64-bit value Sail adds, combines or
-        compares; both take the row's `ALURowFacts`, built once. Hygiene is off so the tactic
+        compares. Hygiene is off so the tactic
         can name the theorem's hypotheses (`h_opcode`, `h_all_wf`, ...), which every theorem
         here declares under the same names. -/
     local macro "itype_by_alu_spec " imm_b:term ", " imm_c:term ", " exec_equiv:ident ", "
         spec_hyps:ident ", " pat:rcasesPat : tactic => `(tactic| (
       have h_alu : ALURowFacts air row _ :=
-        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, h_opcode.1, rfl,
-          $imm_b ⟩
-      have h_imm := op_c_value_eq_signExtend_imm12 h_alu (by simp) $imm_c
+        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, h_opcode.1, rfl ⟩
+      have h_imm_b : air.cols.opcode_selector.imm_b row 0 = 0 := $imm_b
+      have h_imm := op_c_value_eq_signExtend_imm12 air row h_is_real (h_all_wf row h_row)
+        (h_all_constraints row h_row) h_opcode.1 (by simp) h_imm_b $imm_c
       intro rd rs1 imm
-      refine eq_operation_list_effect_state_of_reg_imm h_alu $imm_c h_bus_hypotheses _
+      refine eq_operation_list_effect_state_of_reg_imm h_alu h_imm_b $imm_c h_bus_hypotheses _
         (fun h_pc h_rs1 => $exec_equiv (by rw [$spec_hyps:ident]; exact ⟨ h_pc, h_rs1 ⟩))
         (fun h_spec => ?_)
-      simp [RV64IM_Interactions.ALUBus.Spec] at h_spec
+      simp [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
       obtain $pat:rcasesPat := h_spec
       rw [show BitVec.signExtend 64 imm = U64w.toBV (op_c_value air row) from h_imm.symm]
       simp [op_a_value, op_b_value, op_c_value, h_spec_eq, execute_RTYPE_pure]))
@@ -122,9 +124,8 @@ namespace Equivalence
       execute_instruction (instruction.ITYPE (imm, rs1, rd, iop.XORI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      itype_by_alu_spec
-        (imm_b_eq_zero_of_opcode air row h_is_real (h_all_wf row h_row) (by rw [h_opcode.1]; rfl)),
-        h_opcode.2, OpcodeSpec.RV64.execute_XORI_equiv, OpcodeSpec.RV64.spec_XORI_hypotheses,
+      itype_by_alu_spec (h_alu.imm_b_eq_zero rfl), h_opcode.2,
+        OpcodeSpec.RV64.execute_XORI_equiv, OpcodeSpec.RV64.spec_XORI_hypotheses,
         ⟨ -, -, h_spec_eq ⟩
 
     /-- Equivalence for ORI (opcode 3, `iop.ORI`). `imm` is read back from the chip's `op_c`
@@ -158,9 +159,8 @@ namespace Equivalence
       execute_instruction (instruction.ITYPE (imm, rs1, rd, iop.ORI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      itype_by_alu_spec
-        (imm_b_eq_zero_of_opcode air row h_is_real (h_all_wf row h_row) (by rw [h_opcode.1]; rfl)),
-        h_opcode.2, OpcodeSpec.RV64.execute_ORI_equiv, OpcodeSpec.RV64.spec_ORI_hypotheses,
+      itype_by_alu_spec (h_alu.imm_b_eq_zero rfl), h_opcode.2,
+        OpcodeSpec.RV64.execute_ORI_equiv, OpcodeSpec.RV64.spec_ORI_hypotheses,
         ⟨ -, -, h_spec_eq ⟩
 
     /-- Equivalence for ANDI (opcode 4, `iop.ANDI`). `imm` is read back from the chip's `op_c`
@@ -194,9 +194,8 @@ namespace Equivalence
       execute_instruction (instruction.ITYPE (imm, rs1, rd, iop.ANDI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      itype_by_alu_spec
-        (imm_b_eq_zero_of_opcode air row h_is_real (h_all_wf row h_row) (by rw [h_opcode.1]; rfl)),
-        h_opcode.2, OpcodeSpec.RV64.execute_ANDI_equiv, OpcodeSpec.RV64.spec_ANDI_hypotheses,
+      itype_by_alu_spec (h_alu.imm_b_eq_zero rfl), h_opcode.2,
+        OpcodeSpec.RV64.execute_ANDI_equiv, OpcodeSpec.RV64.spec_ANDI_hypotheses,
         ⟨ -, -, h_spec_eq ⟩
 
     /-- Equivalence for SLTI (opcode 8, `iop.SLTI`), the signed set-less-than against an
@@ -232,9 +231,8 @@ namespace Equivalence
       execute_instruction (instruction.ITYPE (imm, rs1, rd, iop.SLTI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      itype_by_alu_spec
-        (imm_b_eq_zero_of_opcode air row h_is_real (h_all_wf row h_row) (by rw [h_opcode.1]; rfl)),
-        h_opcode.2, OpcodeSpec.RV64.execute_SLTI_equiv, OpcodeSpec.RV64.spec_SLTI_hypotheses,
+      itype_by_alu_spec (h_alu.imm_b_eq_zero rfl), h_opcode.2,
+        OpcodeSpec.RV64.execute_SLTI_equiv, OpcodeSpec.RV64.spec_SLTI_hypotheses,
         ⟨ -, h_spec_eq ⟩
 
     /-- Equivalence for SLTIU (opcode 9, `iop.SLTIU`), the unsigned set-less-than against an
@@ -271,9 +269,8 @@ namespace Equivalence
       execute_instruction (instruction.ITYPE (imm, rs1, rd, iop.SLTIU)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      itype_by_alu_spec
-        (imm_b_eq_zero_of_opcode air row h_is_real (h_all_wf row h_row) (by rw [h_opcode.1]; rfl)),
-        h_opcode.2, OpcodeSpec.RV64.execute_SLTIU_equiv, OpcodeSpec.RV64.spec_SLTIU_hypotheses,
+      itype_by_alu_spec (h_alu.imm_b_eq_zero rfl), h_opcode.2,
+        OpcodeSpec.RV64.execute_SLTIU_equiv, OpcodeSpec.RV64.spec_SLTIU_hypotheses,
         ⟨ -, h_spec_eq ⟩
 
   end ITYPE

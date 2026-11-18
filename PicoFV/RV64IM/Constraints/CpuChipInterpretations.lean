@@ -1193,10 +1193,22 @@ namespace CpuChip.Interpretations
     obtain ⟨ -, h_alu, h_cmp, -, -, -, -, -, -, -, -, -, -, -, h_mem ⟩ := h
     exact ⟨ h_alu, h_cmp, h_mem ⟩
 
+  /-- The ALU chip's specification `ALUBus.Spec` for opcode `op`, applied to the row's twelve
+      operand columns: the result `op_a` and the operands `op_b` and `op_c`. -/
+  def alu_spec_of_row {ExtF : Type} [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ) (op : FKB) : Prop :=
+    RV64IM_Interactions.ALUBus.Spec op
+      (air.cols.op_a_access.access.value_0 row 0) (air.cols.op_a_access.access.value_1 row 0)
+      (air.cols.op_a_access.access.value_2 row 0) (air.cols.op_a_access.access.value_3 row 0)
+      (air.cols.op_b_access.access.value_0 row 0) (air.cols.op_b_access.access.value_1 row 0)
+      (air.cols.op_b_access.access.value_2 row 0) (air.cols.op_b_access.access.value_3 row 0)
+      (air.cols.op_c_access.access.value_0 row 0) (air.cols.op_c_access.access.value_1 row 0)
+      (air.cols.op_c_access.access.value_2 row 0) (air.cols.op_c_access.access.value_3 row 0)
+
   /-- On a real ALU-class row whose destination is not `x0`, the chip sends its ALU message
-      with multiplicity 1, so the ALU chip's promise `ALUBus.Spec` holds for the row's opcode,
-      result (`op_a`) and operands (`op_b`, `op_c`). A row whose destination is `x0` sends no
-      ALU message; its instruction theorem cancels the two writes to `x0` instead
+      with multiplicity 1, so the ALU chip's promise holds for the row's opcode, result
+      (`op_a`) and operands (`op_b`, `op_c`): `alu_spec_of_row`. A row whose destination is
+      `x0` sends no ALU message; its instruction theorem cancels the two writes to `x0` instead
       (`operation_list_effect_state_writeReg_x0`). -/
   lemma alu_message_spec
     [Field ExtF]
@@ -1208,13 +1220,7 @@ namespace CpuChip.Interpretations
       #v[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     (h_rd : air.cols.instruction.op_a row 0 ≠ 0)
   :
-    RV64IM_Interactions.ALUBus.Spec (air.cols.instruction.opcode row 0)
-      (air.cols.op_a_access.access.value_0 row 0) (air.cols.op_a_access.access.value_1 row 0)
-      (air.cols.op_a_access.access.value_2 row 0) (air.cols.op_a_access.access.value_3 row 0)
-      (air.cols.op_b_access.access.value_0 row 0) (air.cols.op_b_access.access.value_1 row 0)
-      (air.cols.op_b_access.access.value_2 row 0) (air.cols.op_b_access.access.value_3 row 0)
-      (air.cols.op_c_access.access.value_0 row 0) (air.cols.op_c_access.access.value_1 row 0)
-      (air.cols.op_c_access.access.value_2 row 0) (air.cols.op_c_access.access.value_3 row 0)
+    alu_spec_of_row air row (air.cols.instruction.opcode row 0)
   := by
     have h_alu := is_alu_not_x0_eq air row h_is_real h_wf h_constraints h_class
     rw [if_neg h_rd] at h_alu
