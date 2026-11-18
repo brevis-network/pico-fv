@@ -21,7 +21,9 @@ axioms. The 2.x `pc_next_row_mod_four_eq_zero` has no v3.1.1 counterpart: `pc_fa
 any real row's pc alignment directly.
 
 An ALU-class instruction theorem with register operands closes in one call,
-`eq_operation_list_effect_state_of_reg_reg` or `eq_operation_list_effect_state_of_reg_imm`.
+`eq_operation_list_effect_state_of_reg_reg` or `eq_operation_list_effect_state_of_reg_imm`
+(for a shift by an immediate, `eq_operation_list_effect_state_of_shift_imm`, which calls the
+latter).
 Both take the row's facts bundled as `ALURowFacts`, the immediate flags of their family, the bus
 hypotheses, and the ALU chip's promise `alu_promise`. The bundle says nothing about the
 immediate flags, so every ALU-class row has one, `LUI` and `AUIPC` rows included; a theorem
@@ -220,6 +222,19 @@ namespace Equivalence
       air.cols.opcode_selector.imm_c row 0 = 0
     :=
       (selector_exclusivity air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)).2.2 0 h_op
+
+    /-- `imm_c_eq_zero_of_opcode` from an ALU-class row's facts: for an opcode the decoder
+        always gives a register `op_c`, which a caller with a literal opcode proves by `rfl`. -/
+    lemma ALURowFacts.imm_c_eq_zero
+      [Field ExtF]
+      {air : Valid_CpuChip FKB ExtF} {row : ℕ} {op : FKB}
+      (h : ALURowFacts air row op)
+      (h_op : imm_c_of_opcode op.val = some 0)
+    :
+      air.cols.opcode_selector.imm_c row 0 = 0
+    :=
+      imm_c_eq_zero_of_opcode air row h.is_real (h.all_wf row h.row_le)
+        (by rw [h.opcode_eq]; exact h_op)
 
     /-- The register indices the decoder writes: `op_a` is below 32, and so is each operand
         whose immediate flag is 0 (`ProgramBusEntry.inversion_operands`). -/
@@ -423,6 +438,33 @@ namespace Equivalence
             h.toBV_next_pc_eq]
       exact operation_list_effect_state_writeReg_eq_op_a_value h v h_v _
 
+    set_option hygiene false in
+    /-- The proof of a register-register ALU instruction theorem: introduce its `rd`, `rs1` and
+        `rs2`, build the row's `ALURowFacts` as `h_alu`, make the one call to
+        `eq_operation_list_effect_state_of_reg_reg`, whose Sail side is the opcode's
+        specification lemma, and close the opcode's arm of `ALUBus.Spec` by `simp`. `h_op` proves
+        the row's opcode and `h_imm_c` its `imm_c = 0`; `h_imm_c` may use `h_alu`, as
+        `h_alu.imm_c_eq_zero rfl` does for an opcode no immediate form shares. `equiv` and
+        `hyps` are the opcode's Sail lemmas `execute_<OP>_equiv` and `spec_<OP>_hypotheses`;
+        `extra` names further `simp` lemmas for the arm, such as the class's `execute_*_pure`.
+
+        The arm is passed to `simp` whole, so the proof does not depend on how `simp` orders
+        its conjuncts (the result range, the operand range and the result equation). Hygiene
+        is off so the tactic can name the theorem's hypotheses (`h_row`, `h_is_real`,
+        `h_all_wf`, `h_all_constraints`, `pico_assumptions`, `h_bus_hypotheses`), which every
+        such theorem declares under the same names. -/
+    macro "alu_reg_reg_close " h_op:term:max h_imm_c:term:max equiv:ident hyps:ident
+        " [" extra:ident,* "]" : tactic => `(tactic| (
+      intro rd rs1 rs2
+      have h_alu : ALURowFacts air row _ :=
+        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, $h_op, rfl ⟩
+      refine eq_operation_list_effect_state_of_reg_reg h_alu $h_imm_c h_bus_hypotheses _
+        (fun h_pc h_rs1 h_rs2 => $equiv:ident
+          (by rw [$hyps:ident]; exact ⟨ h_pc, h_rs1, h_rs2 ⟩))
+        (fun h_spec => ?_)
+      simp [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
+      simp [op_a_value, op_b_value, op_c_value, h_spec, $[$extra:ident],*]))
+
     /-- `eq_operation_list_effect_state_of_reg_reg` for a register-immediate ALU row
         (`imm_b = 0`, `imm_c = 1`): one register read, `rs1`. It takes `imm_b = 0` because
         `imm_c = 1` does not fix it: opcode 0 with `imm_c = 1` is `ADDI` when `imm_b = 0` and
@@ -549,6 +591,48 @@ namespace Equivalence
       rw [BitVec.getLsbD_append]
       simp only [← BitVec.getLsbD_eq_getElem, BitVec.getLsbD_ofNat]
       simp [hi16, hi]
+
+    /-- `eq_operation_list_effect_state_of_reg_imm` for a shift by an immediate amount
+        (`SLLI`, `SRLI`, `SRAI`, `SLLIW`, `SRLIW`, `SRAIW`). The theorem reads the amount from
+        the instruction's encoded `op_c_0`, cut to the shift's `n` bits, as it reads `rd` and
+        `rs1`; the ALU chip shifts by the low `n` bits of the `op_c` value the row sends.
+        `op_c_value_setWidth_eq_op_c_0` shows the two agree, so the caller gives the Sail step
+        (`h_exec`, from the opcode's `execute_*_equiv`) with the amount from `op_c_0`, and the
+        ALU chip's arm for its opcode (`h_shift`) with the amount from `op_c`. `shift` is the
+        result Sail writes to `rd`, as a function of `rs1`'s value and the amount. -/
+    lemma eq_operation_list_effect_state_of_shift_imm
+      [Field ExtF]
+      {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+      {exec : EStateM.Result (Sail.Error exception)
+        (PreSail.SequentialState RegisterType Sail.trivialChoiceSource) ExecutionResult}
+      {air : Valid_CpuChip FKB ExtF} {row : ℕ} {op : FKB} {n : ℕ}
+      (hn : n ≤ 16)
+      (h : ALURowFacts air row op)
+      (h_imm_b : air.cols.opcode_selector.imm_b row 0 = 0)
+      (h_imm_c : air.cols.opcode_selector.imm_c row 0 = 1)
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (shift : BitVec 64 → BitVec n → BitVec 64)
+      (h_exec : ∀ pc_val rs1_val : BitVec 64,
+        Sail.readReg Register.PC state = .ok pc_val state ∧
+        read_xreg (regidx_to_fin (.Regidx (air.cols.instruction.op_b_0 row 0).val)) state =
+          .ok rs1_val state →
+        exec = (operation_list_effect
+          [ .ReadPC pc_val,
+            .ReadReg (.Regidx (air.cols.instruction.op_b_0 row 0).val) rs1_val,
+            .WritePC (pc_val + 4#64),
+            .WriteReg (.Regidx (air.cols.instruction.op_a row 0).val)
+              (shift rs1_val ((air.cols.instruction.op_c_0 row 0).val : BitVec n)) ] state).state)
+      (h_shift : alu_spec_of_row air row op →
+        shift (U64w.toBV (op_b_value air row)) ((U64w.toBV (op_c_value air row)).setWidth n) =
+          U64w.toBV (op_a_value air row))
+    :
+      exec = (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      rw [← op_c_value_setWidth_eq_op_c_0 air row hn h_imm_c (h.all_constraints row h.row_le)]
+        at h_exec
+      exact eq_operation_list_effect_state_of_reg_imm h h_imm_b h_imm_c h_bus_hypotheses _
+        (fun h_pc h_rs1 => h_exec _ _ ⟨ h_pc, h_rs1 ⟩) (fun h_spec => h_shift h_spec)
 
   end Auxiliaries
 

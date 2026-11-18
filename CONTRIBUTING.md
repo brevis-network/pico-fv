@@ -41,8 +41,8 @@ those, and updates the chip's entries in the shared registers:
 - its line in `extractor/pending.txt` (removed when the chip moves);
 - its list `scripts/fv-check/theorems.d/<chip>.txt` (kebab-case, e.g. `lt-chip.txt`), and its
   lines in `axioms.txt` and `signatures.txt`, recorded with `check.sh --update`;
-- the generated blocks of `SOUNDNESS.md` (`soundness_facts.py`), and its rows in
-  `docs/rv64-bug-mapping.md`.
+- the generated blocks of `SOUNDNESS.md`, `README.md` and the parked-lists README
+  (`soundness_facts.py`), and its rows in `docs/rv64-bug-mapping.md`.
 
 An instruction-class file in `PicoFV/RV64IM/Equivalence/` is owned the same way.
 
@@ -86,8 +86,8 @@ python3 scripts/fv-check/soundness_facts.py --check
 (cd extractor && cargo run --release -- --check ../PicoFV/RV64IM/Extraction)
 ```
 
-If a check's facts change (for example a file leaves `pending.txt`), regenerate `SOUNDNESS.md`
-with `python3 scripts/fv-check/soundness_facts.py`.
+If a check's facts change (for example a file leaves `pending.txt`), regenerate the blocks with
+`python3 scripts/fv-check/soundness_facts.py`.
 
 CI builds on a 16 GB runner. A module whose elaboration needs more than 3 GiB of private memory
 (`RssAnon` while `lean` builds it) goes in `scripts/ci/heavy-modules.txt`, which CI builds first,

@@ -22,22 +22,38 @@ with their statements in `signatures.txt`. They are of three kinds.
   instruction gives the same post-state as the register and memory operations the row puts on the
   bus.
 
-  **17 of these 62 theorems are checked at the moment**: `ADDIW`, the five 32-bit
-  register-register opcodes `ADDW`, `SUBW`, `SLLW`, `SRLW` and `SRAW`, the three 32-bit
-  shift-immediate opcodes `SLLIW`, `SRLIW` and `SRAIW`, the six register-immediate opcodes
-  of Sail's `ITYPE` (`ADDI`, `XORI`, `ORI`, `ANDI`, `SLTI` and `SLTIU`), and the two jumps
-  `JAL` and `JALR`. The 64-bit
-  shift-immediates `SLLI`, `SRLI` and `SRAI` are not checked yet. The CPU chip is moving to
-  Pico v3.1.1, which is a rewrite of the chip rather than a patch: 58 columns instead of 132, 65
-  constraints instead of 218 and 17 messages instead of 36. Its `Airs/`, `Constraints/` and
-  interpretations files are at v3.1.1 here, with the lemmas the instruction classes need — both
-  the shared ones and those of the branch, jump, load and store rows; the 8 instruction-theorem
-  files that still read the 2.x layout are out of the build until each is rewritten against it,
-  and their 8 lists are parked in `scripts/fv-check/theorems.d/parked/`. Until they return, this
-  repository says nothing about the other 45 opcodes. Commit `353238a` is the last at which all
-  62 were checked, against the 2.x CPU extraction and the bus contract as it stood then (which
-  already covered the branch-comparison opcodes). The 2.x interpretations file is unchanged from
-  the tag `pico-v3-before-cpu` (`35259d8`) to that commit.
+  <!-- generated: restored -->
+  **43 of these 62 theorems are checked at the moment**, in 9 files of `PicoFV/RV64IM/Equivalence/`:
+
+  - `Addiw.lean`: `ADDIW`
+  - `DivFamily.lean`: `DIV`, `DIVU`, `DIVUW`, `DIVW`, `REM`, `REMU`, `REMUW` and `REMW`
+  - `IType.lean`: `ADDI`, `ANDI`, `ORI`, `SLTI`, `SLTIU` and `XORI`
+  - `Jumps.lean`: `JAL` and `JALR`
+  - `MulFamily.lean`: `MUL`, `MULH`, `MULHSU`, `MULHU` and `MULW`
+  - `RTypeW.lean`: `ADDW`, `SLLW`, `SRAW`, `SRLW` and `SUBW`
+  - `RType.lean`: `ADD`, `AND`, `OR`, `SLL`, `SLT`, `SLTU`, `SRA`, `SRL`, `SUB` and `XOR`
+  - `ShiftIOp.lean`: `SLLI`, `SRAI` and `SRLI`
+  - `ShiftIWOp.lean`: `SLLIW`, `SRAIW` and `SRLIW`
+
+  The other 19, in 4 files, are out of the build, with their lists parked in
+  `scripts/fv-check/theorems.d/parked/`:
+
+  - `BType.lean`: `BEQ`, `BGE`, `BGEU`, `BLT`, `BLTU` and `BNE`
+  - `Loads.lean`: `LB`, `LBU`, `LD`, `LH`, `LHU`, `LW` and `LWU`
+  - `Stores.lean`: `SB`, `SD`, `SH` and `SW`
+  - `UType.lean`: `AUIPC` and `LUI`
+  <!-- end generated -->
+
+  The CPU chip is moving to Pico v3.1.1, which is a rewrite of the chip rather than a patch: 58
+  columns instead of 132, 65 constraints instead of 218 and 17 messages instead of 36. Its `Airs/`,
+  `Constraints/` and interpretations files are at v3.1.1 here, with the lemmas the instruction
+  classes need — both the shared ones and those of the branch, jump, load and store rows; the
+  instruction-theorem files that still read the 2.x layout are out of the build until each is
+  rewritten against it. Until they return, this repository says nothing about the opcodes whose
+  lists are parked. Commit `353238a` is the last at which all 62 were checked, against the 2.x CPU
+  extraction and the bus contract as it stood then (which already covered the branch-comparison
+  opcodes). The 2.x interpretations file is unchanged from the tag `pico-v3-before-cpu` (`35259d8`)
+  to that commit.
 
   Every v3.1.1 instruction theorem also assumes the chunk's final pc is a well-formed guest
   address (`Equivalence.pico_CpuChip_control_flow_assumptions`; see A3). Pico enforces that in
@@ -143,28 +159,42 @@ Each equivalence theorem assumes:
 - the hypotheses of the operations the row emits, and `RISC_V_assumptions` on the machine state;
 - at v3.1.1, the whole-trace assumption described below.
 
-`ADDIW`, `ADDW`, `SUBW`, `SLLW`, `SRLW`, `SRAW`, `SLLIW`, `SRLIW`, `SRAIW`, `ADDI`, `XORI`,
-`ORI`, `ANDI`, `SLTI`, `SLTIU`, `JAL` and `JALR` are the seventeen theorems recorded at
+The instruction theorems checked at the moment (listed under "What is proved") are recorded at
 v3.1.1, against the v3.1.1 CPU constraints and the v3.1.1 contracts (`RV64IM_Interactions.V3` in
-`RVSail/BusesV3.lean`). `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`, `ANDI`, `SLTI` and
-`SLTIU` no longer assume `imm_b = 0`, which the v3.1.1 decoder fixes for their opcodes, and
-`SUBW` no longer assumes `imm_c = 0`, which it fixes for opcode 41. `ADDI` still assumes
-`imm_b = 0`: its opcode 0 with `imm_c = 1` is also `LUI` or `AUIPC`, which set `imm_b = 1`. The
-decoder does not fix `imm_c` for opcodes 42 to 44, which `SLLW`, `SRLW` and `SRAW` share with
-`imm_c = 0`, or for opcodes 0, 2, 3, 4, 8 and 9, which `ADD`, `XOR`, `OR`, `AND`, `SLT` and
-`SLTU` share with it, so `SLLIW`, `SRLIW`, `SRAIW` and the six `ITYPE` theorems still assume
-`imm_c = 1`. `JAL` and `JALR` assume neither `imm_b` nor `imm_c`, nor the row's `is_jal` /
-`is_jalr` selector, all three of which their 2.x statements took: opcodes 24 and 25 are the two
-jumps alone, so the decoder fixes every one of them. `SLLIW`, `SRLIW` and `SRAIW` also read
-their shift amount from the instruction's encoded `op_c_0`, as they read `rd` and `rs1`, instead
-of from the `op_c` value the row sends to the ALU chip; the proofs link the two through the CPU
-chip's constraint 4. The other 45 were last recorded at `353238a`, against the 2.x constraints and
-the contracts of `RVSail/Buses.lean`, and are not checked while they move. Two definitions every
-instruction theorem names were rewritten at v3.1.1 behind unchanged names:
-`Equivalence.CPU_bus_operations`, the operations the theorem compares the Sail step against (now a
-two-piece pc, with the memory width and direction taken from the opcode), and
-`CpuChip.Interpretations.bus_row`, which sorts the row's messages (now with the v3.1.1
-deserialiser).
+`RVSail/BusesV3.lean`). `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`, `ANDI`, `SLTI`, `SLTIU`,
+`SLLI`, `SRLI` and `SRAI` no longer assume `imm_b = 0`, which the v3.1.1 decoder fixes for their
+opcodes, and `SUBW` and `SUB` no longer assume `imm_c = 0`, which it fixes for opcodes 41 and 1.
+`ADDI` still assumes `imm_b = 0`: its opcode 0 with `imm_c = 1` is also `LUI` or `AUIPC`, which set
+`imm_b = 1`. `ADD` does not assume it, although the decoder does not fix it for opcode 0: on a row
+with `imm_c = 0` the flag is 0 whatever the opcode (`imm_b_eq_zero_of_imm_c_eq_zero`). The decoder
+does not fix `imm_c` for an opcode that an immediate form shares with a register-register one: 40
+(`ADDIW` and `ADDW`), 42 to 44 (`SLLIW`, `SRLIW`, `SRAIW` and `SLLW`, `SRLW`, `SRAW`), 5 to 7
+(`SLLI`, `SRLI`, `SRAI` and `SLL`, `SRL`, `SRA`), and 0, 2, 3, 4, 8 and 9 (the six `ITYPE` theorems
+and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`). So those thirteen immediate-form theorems still
+assume `imm_c = 1`, and those thirteen register-register theorems still assume `imm_c = 0`. The
+multiply, divide and remainder theorems take their opcode alone, as at `353238a`: the decoder fixes
+both immediate flags to 0 for opcodes 30 to 37 and 48 to 52. The divide and remainder theorems
+assume nothing about the divisor: the ALU chip's promise for their opcodes already gives Sail's
+result on division by zero and on signed overflow. `JAL` and `JALR` take their opcode alone too:
+they assume neither immediate flag, nor the row's `is_jal` / `is_jalr` selector, all three of which
+their 2.x statements took, because opcodes 24 and 25 are the two jumps alone and the decoder fixes
+every one of them.
+
+The six shift-immediate theorems also read their shift amount from the instruction's encoded
+`op_c_0`, as they read `rd` and `rs1`, instead of from the `op_c` value the row sends to the ALU
+chip. The proofs link the two through the CPU constraint that, on a row whose third operand is
+an immediate, copies `op_c_0` into the first 16-bit piece of the `op_c` value
+(`op_c_value_setWidth_eq_op_c_0`, through `imm_c_eq_1_constraints`). The amount is `op_c_0`'s
+low 6 bits (5 for the 32-bit shifts), that is `op_c_0` modulo 64 (or 32). The decoder writes the
+instruction's shift amount into `op_c_0` unchanged (`Transpiler.V3.imm_operand`), so on a row
+the program decoded the two are equal; the theorems do not state that link.
+
+The parked theorems were last recorded at `353238a`, against the 2.x constraints and the contracts
+of `RVSail/Buses.lean`, and are not checked while they move. Two definitions every instruction
+theorem names were rewritten at v3.1.1 behind unchanged names: `Equivalence.CPU_bus_operations`, the
+operations the theorem compares the Sail step against (now a two-piece pc, with the memory width and
+direction taken from the opcode), and `CpuChip.Interpretations.bus_row`, which sorts the row's
+messages (now with the v3.1.1 deserialiser).
 
 The whole-trace assumption, `pico_CpuChip_control_flow_assumptions`, bounds the chunk's final
 pc (public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The
@@ -174,8 +204,8 @@ assumption"). So at v3.1.1 the instruction theorems cover a chunk inside an acce
 proof, not a chunk proof checked on its own. The eight branch and jump theorems already name the
 assumption, whose definition grew, so it is not what changes their recorded statements — `JAL`
 and `JALR`, now recorded, changed for the other reasons above; the six branches will keep their
-text for this hypothesis when they return. The other 54 gain it as a new hypothesis, as the
-fifteen non-jump theorems recorded at v3.1.1 have.
+text for this hypothesis when they return. The other 54 gain it as a new hypothesis, as those
+recorded at v3.1.1 have.
 
 A change that weakens or strengthens a hypothesis changes `signatures.txt`, and `check.sh` fails
 until the change is reviewed and recorded. A change to the definition behind a hypothesis's name
@@ -250,7 +280,7 @@ C2) or the specification axioms of A2.
 | Axioms the theorem depends on | Theorems |
 |---|---:|
 | kernel + compiler | 80 |
-| kernel + compiler + RISC-V spec axioms | 17 |
+| kernel + compiler + RISC-V spec axioms | 43 |
 | kernel only | 1 |
 <!-- end generated -->
 
@@ -264,14 +294,13 @@ A proof that uses them also trusts the Lean compiler and runtime.
 branch's, so the uses only go down.
 
 <!-- generated: tactics -->
-147 uses of `native_decide`, `bv_decide` or `decide +native` in 12 files:
+144 uses of `native_decide`, `bv_decide` or `decide +native` in 11 files:
 
 - `PicoFV/Fundamentals/Core.lean`: 7
 - `PicoFV/Fundamentals/KoalaBear.lean`: 1
 - `PicoFV/Fundamentals/Word.lean`: 39
 - `PicoFV/RV64IM/Equivalence/BType.lean`: 6
 - `PicoFV/RV64IM/Equivalence/Loads.lean`: 7
-- `PicoFV/RV64IM/Equivalence/ShiftIOp.lean`: 3
 - `PicoFV/RV64IM/Equivalence/Stores.lean`: 4
 - `PicoFV/RV64IM/Equivalence/UType.lean`: 2
 - `PicoFV/RV64IM/RVSail/Execution.lean`: 3
@@ -282,15 +311,24 @@ branch's, so the uses only go down.
 
 ### C3. Declarations the kernel did not check
 
-A weekly CI job (`.github/workflows/replay.yml`) replays the declarations of every module the
-build imports into the kernel with `leanchecker`, except the modules listed in C2: the kernel
-cannot replay what those tactics computed. Today that excludes `Fundamentals/Core`,
+A weekly CI job (`.github/workflows/replay.yml`) is written to replay the declarations of every
+module the build imports into the kernel with `leanchecker`, except the modules listed in C2:
+the kernel cannot replay what those tactics computed. Today that excludes `Fundamentals/Core`,
 `Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution` and the specifications of the
-Bitwise, DivRem and memory chips; the replay covers the remaining modules, including the other
-ALU chips' specifications, the CPU chip's constraints and interpretations, and
-`Equivalence/Common`, `Equivalence/Addiw`, `Equivalence/RTypeW`, `Equivalence/ShiftIWOp`,
-`Equivalence/IType` and `Equivalence/Jumps`. Modules the build does not import, such as the
-parked equivalence files, are not replayed.
+Bitwise, DivRem and memory chips. Modules the build does not import, such as the parked
+equivalence files, are not replayed.
+
+**The job has not run.** GitHub runs a scheduled workflow only from the repository's default branch,
+and the workflow is on `pico-v3`, not on `main`. Until it runs, this section describes what it would
+check, not a result. Run by hand on the instruction-theorem files the build imports, `lake env
+leanchecker` replays `Equivalence/Addiw`, `Equivalence/RTypeW`, `Equivalence/ShiftIWOp`,
+`Equivalence/IType`, `Equivalence/ShiftIOp`, `Equivalence/RType`, `Equivalence/MulFamily` and
+`Equivalence/DivFamily`, and fails on `Equivalence/Common` and `Equivalence/Jumps` with "(kernel)
+deep recursion detected": `lake build` runs Lean with a larger kernel stack (`--tstack=400000` in
+the lakefile), which `leanchecker` does not get. Until that is fixed, the declarations of
+`Equivalence/Common` and `Equivalence/Jumps` — so `equivalence_JAL` and `equivalence_JALR`, and the
+shared lemmas every instruction theorem closes through — are not replayed. The other modules have
+not been replayed by hand.
 
 ## D. Does the use of the results hold together?
 
