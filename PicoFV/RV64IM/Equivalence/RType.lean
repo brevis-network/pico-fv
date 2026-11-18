@@ -30,7 +30,8 @@ namespace Equivalence
     -- (`imm_b = 0`, which `imm_c = 0` fixes, and `imm_c = 0`) and sets no class
     -- selector. Every theorem closes with `alu_reg_reg_close` (`Common.lean`),
     -- which ends on the opcode's arm of `ALUBus.Spec`, passed to `simp` whole.
-    -- The arms of XOR, OR and AND also state the operands' range. The arms of SLT and SLTU (8 and 9) state the
+    -- The arms of XOR, OR and AND also state the operands' range. The arms of
+    -- SLT and SLTU (8 and 9) state the
     -- result with no premise; the "not a branch comparison" condition
     -- (`is_cmp = 0`) sits in the less-than chip's own specification
     -- (`spec_SLT`, `spec_SLTU` in `Spec/LtChip.lean`), not on this side.

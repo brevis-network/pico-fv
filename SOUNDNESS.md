@@ -23,22 +23,22 @@ with their statements in `signatures.txt`. They are of three kinds.
   bus.
 
   <!-- generated: restored -->
-  **41 of these 62 theorems are checked at the moment**, in 8 files of `PicoFV/RV64IM/Equivalence/`:
+  **43 of these 62 theorems are checked at the moment**, in 9 files of `PicoFV/RV64IM/Equivalence/`:
 
   - `Addiw.lean`: `ADDIW`
   - `DivFamily.lean`: `DIV`, `DIVU`, `DIVUW`, `DIVW`, `REM`, `REMU`, `REMUW` and `REMW`
   - `IType.lean`: `ADDI`, `ANDI`, `ORI`, `SLTI`, `SLTIU` and `XORI`
+  - `Jumps.lean`: `JAL` and `JALR`
   - `MulFamily.lean`: `MUL`, `MULH`, `MULHSU`, `MULHU` and `MULW`
   - `RTypeW.lean`: `ADDW`, `SLLW`, `SRAW`, `SRLW` and `SUBW`
   - `RType.lean`: `ADD`, `AND`, `OR`, `SLL`, `SLT`, `SLTU`, `SRA`, `SRL`, `SUB` and `XOR`
   - `ShiftIOp.lean`: `SLLI`, `SRAI` and `SRLI`
   - `ShiftIWOp.lean`: `SLLIW`, `SRAIW` and `SRLIW`
 
-  The other 21, in 5 files, are out of the build, with their lists parked in
+  The other 19, in 4 files, are out of the build, with their lists parked in
   `scripts/fv-check/theorems.d/parked/`:
 
   - `BType.lean`: `BEQ`, `BGE`, `BGEU`, `BLT`, `BLTU` and `BNE`
-  - `Jumps.lean`: `JAL` and `JALR`
   - `Loads.lean`: `LB`, `LBU`, `LD`, `LH`, `LHU`, `LW` and `LWU`
   - `Stores.lean`: `SB`, `SD`, `SH` and `SW`
   - `UType.lean`: `AUIPC` and `LUI`
@@ -175,7 +175,10 @@ assume `imm_c = 1`, and those thirteen register-register theorems still assume `
 multiply, divide and remainder theorems take their opcode alone, as at `353238a`: the decoder fixes
 both immediate flags to 0 for opcodes 30 to 37 and 48 to 52. The divide and remainder theorems
 assume nothing about the divisor: the ALU chip's promise for their opcodes already gives Sail's
-result on division by zero and on signed overflow.
+result on division by zero and on signed overflow. `JAL` and `JALR` take their opcode alone too:
+they assume neither immediate flag, nor the row's `is_jal` / `is_jalr` selector, all three of which
+their 2.x statements took, because opcodes 24 and 25 are the two jumps alone and the decoder fixes
+every one of them.
 
 The six shift-immediate theorems also read their shift amount from the instruction's encoded
 `op_c_0`, as they read `rd` and `rs1`, instead of from the `op_c` value the row sends to the ALU
@@ -199,8 +202,10 @@ v3.1.1 chip does not check this itself; Pico's recursion circuit makes it hold f
 of an accepted recursive proof (`docs/cpu-chip-pico-v3-design.md`, "The whole-trace
 assumption"). So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
 proof, not a chunk proof checked on its own. The eight branch and jump theorems already name the
-assumption, whose definition grew, so their recorded statements will keep their text; the other
-54 gain it as a new hypothesis, as those recorded at v3.1.1 have.
+assumption, whose definition grew, so it is not what changes their recorded statements — `JAL`
+and `JALR`, now recorded, changed for the other reasons above; the six branches will keep their
+text for this hypothesis when they return. The other 54 gain it as a new hypothesis, as those
+recorded at v3.1.1 have.
 
 A change that weakens or strengthens a hypothesis changes `signatures.txt`, and `check.sh` fails
 until the change is reviewed and recorded. A change to the definition behind a hypothesis's name
@@ -275,7 +280,7 @@ C2) or the specification axioms of A2.
 | Axioms the theorem depends on | Theorems |
 |---|---:|
 | kernel + compiler | 80 |
-| kernel + compiler + RISC-V spec axioms | 41 |
+| kernel + compiler + RISC-V spec axioms | 43 |
 | kernel only | 1 |
 <!-- end generated -->
 
@@ -289,13 +294,12 @@ A proof that uses them also trusts the Lean compiler and runtime.
 branch's, so the uses only go down.
 
 <!-- generated: tactics -->
-152 uses of `native_decide`, `bv_decide` or `decide +native` in 12 files:
+144 uses of `native_decide`, `bv_decide` or `decide +native` in 11 files:
 
 - `PicoFV/Fundamentals/Core.lean`: 7
 - `PicoFV/Fundamentals/KoalaBear.lean`: 1
 - `PicoFV/Fundamentals/Word.lean`: 39
 - `PicoFV/RV64IM/Equivalence/BType.lean`: 6
-- `PicoFV/RV64IM/Equivalence/Jumps.lean`: 8
 - `PicoFV/RV64IM/Equivalence/Loads.lean`: 7
 - `PicoFV/RV64IM/Equivalence/Stores.lean`: 4
 - `PicoFV/RV64IM/Equivalence/UType.lean`: 2
@@ -319,10 +323,12 @@ and the workflow is on `pico-v3`, not on `main`. Until it runs, this section des
 check, not a result. Run by hand on the instruction-theorem files the build imports, `lake env
 leanchecker` replays `Equivalence/Addiw`, `Equivalence/RTypeW`, `Equivalence/ShiftIWOp`,
 `Equivalence/IType`, `Equivalence/ShiftIOp`, `Equivalence/RType`, `Equivalence/MulFamily` and
-`Equivalence/DivFamily`, and fails on `Equivalence/Common` with "(kernel) deep recursion detected":
-`lake build` runs Lean with a larger kernel stack (`--tstack=400000` in the lakefile), which
-`leanchecker` does not get. Until that is fixed, the declarations of `Equivalence/Common` are not
-replayed. The other modules have not been replayed by hand.
+`Equivalence/DivFamily`, and fails on `Equivalence/Common` and `Equivalence/Jumps` with "(kernel)
+deep recursion detected": `lake build` runs Lean with a larger kernel stack (`--tstack=400000` in
+the lakefile), which `leanchecker` does not get. Until that is fixed, the declarations of
+`Equivalence/Common` and `Equivalence/Jumps` — so `equivalence_JAL` and `equivalence_JALR`, and the
+shared lemmas every instruction theorem closes through — are not replayed. The other modules have
+not been replayed by hand.
 
 ## D. Does the use of the results hold together?
 

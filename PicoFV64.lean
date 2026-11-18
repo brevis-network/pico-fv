@@ -142,6 +142,7 @@ import PicoFV.RV64IM.Equivalence.ShiftIOp
 import PicoFV.RV64IM.Equivalence.RType
 import PicoFV.RV64IM.Equivalence.MulFamily
 import PicoFV.RV64IM.Equivalence.DivFamily
+import PicoFV.RV64IM.Equivalence.Jumps
 -- The other instruction-theorem files still read the 2.x CPU layout and are
 -- out of the build, with their lists parked in
 -- `scripts/fv-check/theorems.d/parked/`. They come back one class at a time;

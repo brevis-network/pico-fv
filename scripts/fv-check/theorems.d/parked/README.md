@@ -1,7 +1,7 @@
 # Parked theorem lists
 
 <!-- generated: parked -->
-The 5 lists here name 21 of the 62 instruction theorems of
+The 4 lists here name 19 of the 62 instruction theorems of
 `PicoFV/RV64IM/Equivalence/`.
 <!-- end generated -->
 
@@ -55,8 +55,9 @@ rename. And the whole-trace assumption `pico_CpuChip_control_flow_assumptions`
 gains three conjuncts in its definition:
 
 - the eight theorems that already name it (the six branches, `JAL` and `JALR`)
-  keep their recorded text, because `signatures.txt` records the name and not
-  the definition, but their meaning changes;
+  keep that part of their recorded text, because `signatures.txt` records the
+  name and not the definition, but their meaning changes. `JAL` and `JALR`
+  changed for the other reasons in this section;
 - the other 54 gain it as a new hypothesis, so their recorded statements change,
   as those already restored have.
 
@@ -75,6 +76,10 @@ register-register one keeps `imm_c = 0`: opcode 40 (`ADDIW`, `ADDW`), 42 to 44
 (`SLLIW`, `SRLIW`, `SRAIW` and `SLLW`, `SRLW`, `SRAW`), 5 to 7 (`SLLI`, `SRLI`,
 `SRAI` and `SLL`, `SRL`, `SRA`), and 0, 2 to 4, 8 and 9 (the six `ITYPE`
 theorems and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`).
+
+A restored statement may also drop the row's class selector when the opcode
+fixes that: `JAL` and `JALR` no longer take `is_jal` / `is_jalr`, nor either
+immediate flag, because opcodes 24 and 25 are the two jumps alone.
 
 The shift-immediate theorems `SLLIW`, `SRLIW`, `SRAIW`, `SLLI`, `SRLI` and
 `SRAI` also read their shift amount from the instruction's encoded
