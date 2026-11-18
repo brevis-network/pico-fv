@@ -11,11 +11,12 @@ being rewritten one instruction class at a time while the CPU chip moves to
 Pico v3.1.1.
 
 <!-- generated: restored -->
-For now the branch proves 28 of them against the v3.1.1 chip: `ADD`, `ADDI`,
-`ADDIW`, `ADDW`, `AND`, `ANDI`, `OR`, `ORI`, `SLL`, `SLLI`, `SLLIW`, `SLLW`,
-`SLT`, `SLTI`, `SLTIU`, `SLTU`, `SRA`, `SRAI`, `SRAIW`, `SRAW`, `SRL`, `SRLI`,
-`SRLIW`, `SRLW`, `SUB`, `SUBW`, `XOR` and `XORI`. The other 34 are out of the
-build and `check.sh` does not check them (see [SOUNDNESS.md](SOUNDNESS.md)).
+For now the branch proves 33 of them against the v3.1.1 chip: `ADD`, `ADDI`,
+`ADDIW`, `ADDW`, `AND`, `ANDI`, `MUL`, `MULH`, `MULHSU`, `MULHU`, `MULW`, `OR`,
+`ORI`, `SLL`, `SLLI`, `SLLIW`, `SLLW`, `SLT`, `SLTI`, `SLTIU`, `SLTU`, `SRA`,
+`SRAI`, `SRAIW`, `SRAW`, `SRL`, `SRLI`, `SRLIW`, `SRLW`, `SUB`, `SUBW`, `XOR`
+and `XORI`. The other 29 are out of the build and `check.sh` does not check them
+(see [SOUNDNESS.md](SOUNDNESS.md)).
 <!-- end generated -->
 
 The 62 opcodes:

@@ -23,23 +23,23 @@ with their statements in `signatures.txt`. They are of three kinds.
   bus.
 
   <!-- generated: restored -->
-  **28 of these 62 theorems are checked at the moment**, in 6 files of `PicoFV/RV64IM/Equivalence/`:
+  **33 of these 62 theorems are checked at the moment**, in 7 files of `PicoFV/RV64IM/Equivalence/`:
 
   - `Addiw.lean`: `ADDIW`
   - `IType.lean`: `ADDI`, `ANDI`, `ORI`, `SLTI`, `SLTIU` and `XORI`
+  - `MulFamily.lean`: `MUL`, `MULH`, `MULHSU`, `MULHU` and `MULW`
   - `RTypeW.lean`: `ADDW`, `SLLW`, `SRAW`, `SRLW` and `SUBW`
   - `RType.lean`: `ADD`, `AND`, `OR`, `SLL`, `SLT`, `SLTU`, `SRA`, `SRL`, `SUB` and `XOR`
   - `ShiftIOp.lean`: `SLLI`, `SRAI` and `SRLI`
   - `ShiftIWOp.lean`: `SLLIW`, `SRAIW` and `SRLIW`
 
-  The other 34, in 7 files, are out of the build, with their lists parked in
+  The other 29, in 6 files, are out of the build, with their lists parked in
   `scripts/fv-check/theorems.d/parked/`:
 
   - `BType.lean`: `BEQ`, `BGE`, `BGEU`, `BLT`, `BLTU` and `BNE`
   - `DivFamily.lean`: `DIV`, `DIVU`, `DIVUW`, `DIVW`, `REM`, `REMU`, `REMUW` and `REMW`
   - `Jumps.lean`: `JAL` and `JALR`
   - `Loads.lean`: `LB`, `LBU`, `LD`, `LH`, `LHU`, `LW` and `LWU`
-  - `MulFamily.lean`: `MUL`, `MULH`, `MULHSU`, `MULHU` and `MULW`
   - `Stores.lean`: `SB`, `SD`, `SH` and `SW`
   - `UType.lean`: `AUIPC` and `LUI`
   <!-- end generated -->
@@ -171,7 +171,9 @@ does not fix `imm_c` for an opcode that an immediate form shares with a register
 (`ADDIW` and `ADDW`), 42 to 44 (`SLLIW`, `SRLIW`, `SRAIW` and `SLLW`, `SRLW`, `SRAW`), 5 to 7
 (`SLLI`, `SRLI`, `SRAI` and `SLL`, `SRL`, `SRA`), and 0, 2, 3, 4, 8 and 9 (the six `ITYPE` theorems
 and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`). So those thirteen immediate-form theorems still
-assume `imm_c = 1`, and those thirteen register-register theorems still assume `imm_c = 0`.
+assume `imm_c = 1`, and those thirteen register-register theorems still assume `imm_c = 0`. The
+multiply theorems take their opcode alone, as at `353238a`: the decoder fixes both immediate flags
+to 0 for opcodes 30 to 33 and 48.
 
 The six shift-immediate theorems also read their shift amount from the instruction's encoded
 `op_c_0`, as they read `rd` and `rs1`, instead of from the `op_c` value the row sends to the ALU
@@ -271,7 +273,7 @@ C2) or the specification axioms of A2.
 | Axioms the theorem depends on | Theorems |
 |---|---:|
 | kernel + compiler | 80 |
-| kernel + compiler + RISC-V spec axioms | 28 |
+| kernel + compiler + RISC-V spec axioms | 33 |
 | kernel only | 1 |
 <!-- end generated -->
 
