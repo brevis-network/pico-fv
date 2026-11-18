@@ -42,14 +42,14 @@ namespace Equivalence
     set_option hygiene false in
     local macro "shiftiw_close " equiv:ident hyps:ident : tactic => `(tactic| (
       intro rd rs1 imm
-      refine eq_operation_list_effect_state_of_reg_imm air row h_row h_is_real h_all_wf
-        h_all_constraints pico_assumptions h_opcode.1 rfl
-        (imm_b_eq_zero_of_opcode air row h_is_real (h_all_wf row h_row) (by rw [h_opcode.1]; rfl))
+      have h_alu : ALURowFacts air row _ :=
+        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, h_opcode.1, rfl ⟩
+      refine eq_operation_list_effect_state_of_reg_imm h_alu (h_alu.imm_b_eq_zero rfl)
         h_opcode.2 h_bus_hypotheses _
         (fun h_pc h_rs1 => $equiv:ident
           (by rw [$hyps:ident]; exact ⟨ h_pc, h_rs1 ⟩))
         (fun h_spec => ?_)
-      simp [RV64IM_Interactions.ALUBus.Spec] at h_spec
+      simp [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
       obtain ⟨ -, h_spec_eq ⟩ := h_spec
       have h_imm := op_c_value_setWidth_eq_op_c_0 air row (n := 5) (by norm_num) h_opcode.2
         (h_all_constraints row h_row)

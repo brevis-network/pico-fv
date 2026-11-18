@@ -30,19 +30,21 @@ namespace Equivalence
     -- ========================================================================
 
     -- The proof every RTYPEW theorem shares, given the opcode `h_op`, `imm_c = 0` and the
-    -- opcode's two Sail lemmas: one call to `eq_operation_list_effect_state_of_reg_reg`, whose
-    -- Sail side is the opcode's specification lemma, leaving the opcode's arm of
-    -- `ALUBus.Spec`. It names the theorem's own hypotheses, so it is unhygienic.
+    -- opcode's two Sail lemmas: one call to `eq_operation_list_effect_state_of_reg_reg` with
+    -- the row's `ALURowFacts`, whose Sail side is the opcode's specification lemma, leaving the
+    -- opcode's arm of `ALUBus.Spec`. It names the theorem's own hypotheses, so it is
+    -- unhygienic.
     set_option hygiene false in
     local macro "rtypew_close " h_op:term:max h_imm_c:term:max equiv:ident hyps:ident :
         tactic => `(tactic| (
       intro rd rs1 rs2
-      refine eq_operation_list_effect_state_of_reg_reg air row h_row h_is_real h_all_wf
-        h_all_constraints pico_assumptions $h_op rfl rfl $h_imm_c h_bus_hypotheses _
+      refine eq_operation_list_effect_state_of_reg_reg
+        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, $h_op, rfl ⟩
+        $h_imm_c h_bus_hypotheses _
         (fun h_pc h_rs1 h_rs2 => $equiv:ident
           (by rw [$hyps:ident]; exact ⟨ h_pc, h_rs1, h_rs2 ⟩))
         (fun h_spec => ?_)
-      simp [RV64IM_Interactions.ALUBus.Spec] at h_spec
+      simp [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
       obtain ⟨ -, h_spec_eq ⟩ := h_spec
       simp [op_a_value, op_b_value, op_c_value, h_spec_eq, execute_RTYPEW_pure]))
 
