@@ -1,8 +1,8 @@
 import PicoFV.RV64IM.Equivalence.Common
 
--- About 2.6 times the most any proof here uses (about 570 000, for `SUB`), so a proof that
--- stops terminating fails at its theorem instead of at the CI job's time-out.
-set_option maxHeartbeats 1_500_000
+-- About 2.4 times the most any proof here uses (about 408 000), so a proof that stops
+-- terminating fails at its theorem instead of at the CI job's time-out.
+set_option maxHeartbeats 1_000_000
 set_option maxRecDepth 1_000_000
 set_option linter.constructorNameAsVariable false
 
