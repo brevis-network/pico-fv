@@ -5,8 +5,10 @@ Generates `PicoFV/RV64IM/Extraction/*.lean` from Pico's Rust source. It runs eac
 standalone wrappers for the gadgets the chips call, and prints the resulting constraints and
 bus interactions in the `LeanZKCircuit_Plonky3` format.
 
-The Pico commit is pinned in `Cargo.toml` (and `PICO_REV` in `src/main.rs`, which a test keeps
-in step). Each generated file records that commit in its first line. The Lean build does not
+Pico is pinned by release tag in `Cargo.toml`, and `Cargo.lock` records the commit the tag
+resolved to. `PICO_TAG` and `PICO_REV` in `src/main.rs` name the same tag and commit, and a test
+checks both against `Cargo.toml` and `Cargo.lock`. Each generated file records that commit in its
+first line. The Lean build does not
 need Rust: the generated files are committed.
 
 ## Run
@@ -32,8 +34,10 @@ skips them but fails once one matches the extractor's output, so the list only s
 
 ## Upgrading Pico
 
-1. Change the `rev` of `pico-vm` / `pico-mle-core` in `Cargo.toml`, and `PICO_REV` and
-   `PICO_TAG` in `src/main.rs`; then run `python3 scripts/fv-check/soundness_facts.py` from the
+1. Change the `tag` of `pico-vm` / `pico-mle-core` in `Cargo.toml` and run
+   `cargo update -p pico-vm -p pico-mle-core`. Set `PICO_TAG` in `src/main.rs` to the tag and
+   `PICO_REV` to the commit `Cargo.lock` now names after `#`; `cargo test --release` fails if
+   either disagrees. Then run `python3 scripts/fv-check/soundness_facts.py` from the
    repository root to update the pin blocks of `README.md` and `SOUNDNESS.md`.
 2. Regenerate and look at `git diff PicoFV/RV64IM/Extraction`. Files whose constraints did not
    change differ only in their first line. The others show which chips need their Lean proofs
