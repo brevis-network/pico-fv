@@ -2059,7 +2059,7 @@ dependencies = [
 [[package]]
 name = "pico-derive"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?rev=2acc7c1828fb4ec1bed5963511bb370870c5b608#2acc7c1828fb4ec1bed5963511bb370870c5b608"
+source = "git+https://github.com/brevis-network/pico.git?rev=6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb#6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2080,7 +2080,7 @@ dependencies = [
 [[package]]
 name = "pico-mle-core"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?rev=2acc7c1828fb4ec1bed5963511bb370870c5b608#2acc7c1828fb4ec1bed5963511bb370870c5b608"
+source = "git+https://github.com/brevis-network/pico.git?rev=6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb#6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb"
 dependencies = [
  "cfg-if",
  "derivative",
@@ -2113,7 +2113,7 @@ dependencies = [
 [[package]]
 name = "pico-mle-cpu"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?rev=2acc7c1828fb4ec1bed5963511bb370870c5b608#2acc7c1828fb4ec1bed5963511bb370870c5b608"
+source = "git+https://github.com/brevis-network/pico.git?rev=6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb#6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb"
 dependencies = [
  "cfg-if",
  "derive-new",
@@ -2131,7 +2131,7 @@ dependencies = [
 [[package]]
 name = "pico-verifier"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?rev=2acc7c1828fb4ec1bed5963511bb370870c5b608#2acc7c1828fb4ec1bed5963511bb370870c5b608"
+source = "git+https://github.com/brevis-network/pico.git?rev=6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb#6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb"
 dependencies = [
  "bincode",
  "p3-field",
@@ -2148,7 +2148,7 @@ dependencies = [
 [[package]]
 name = "pico-vm"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?rev=2acc7c1828fb4ec1bed5963511bb370870c5b608#2acc7c1828fb4ec1bed5963511bb370870c5b608"
+source = "git+https://github.com/brevis-network/pico.git?rev=6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb#6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb"
 dependencies = [
  "anyhow",
  "arrayref",

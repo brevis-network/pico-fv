@@ -3,10 +3,11 @@
 The formalisation of the 2.x series of Pico found 13 soundness gaps in its RV64IM chips
 (described in `Report.pdf`, and for the memory chip in
 `RV64_MemoryReadWriteChip_soundness_gaps.md`). This table records,
-for each gap, the Pico constraint that closes it at the pinned commit
-([`2acc7c18`](https://github.com/brevis-network/pico/tree/2acc7c1828fb4ec1bed5963511bb370870c5b608),
-v3.1.1), and the extracted constraint and theorem that rely on it. A row is filled when its chip
-is moved to the pinned commit (see [`migrating-a-chip.md`](migrating-a-chip.md)). If a gap turns
+for each gap, the Pico constraint that closes it at the pinned commit, and the extracted
+constraint and theorem that rely on it. The links point to Pico v3.1.1
+([`2acc7c18`](https://github.com/brevis-network/pico/tree/2acc7c1828fb4ec1bed5963511bb370870c5b608));
+none of the constraint files they cite changed between v3.1.1 and the pin, v3.1.5. A row is
+filled when its chip is moved to the pinned commit (see [`migrating-a-chip.md`](migrating-a-chip.md)). If a gap turns
 out not to be closed at the pinned commit, report it privately ([SECURITY.md](../SECURITY.md));
 its row stays pending until the gap is fixed or disclosed.
 

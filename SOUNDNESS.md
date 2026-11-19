@@ -101,8 +101,12 @@ with their statements in `signatures.txt`. They are of three kinds.
 The proofs are about this Pico revision:
 
 <!-- generated: pin -->
-Pico commit [`2acc7c182`](https://github.com/brevis-network/pico/commit/2acc7c1828fb4ec1bed5963511bb370870c5b608).
+Pico commit [`6788178d6`](https://github.com/brevis-network/pico/commit/6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb).
 <!-- end generated -->
+
+That commit is Pico v3.1.5. Pico's per-chip constraint digests (`vm/tests/riscv_constraint_dump.txt`)
+are the same at v3.1.1 and v3.1.5 for the CPU chip and the ten ALU chips, so what this document says
+about them at v3.1.1 holds at the pin.
 
 <!-- generated: pending -->
 1 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `MemoryReadWriteChip.lean`.

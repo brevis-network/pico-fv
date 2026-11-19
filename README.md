@@ -34,9 +34,12 @@ The 62 opcodes:
 
 `ECALL` is intentionally out of scope.
 
-The extraction tool in `extractor/` is pinned to Pico v3.1.1. Each proof is about the Pico
+The extraction tool in `extractor/` is pinned to Pico v3.1.5. Each proof is about the Pico
 revision named in the first line of the `PicoFV/RV64IM/Extraction/` file it uses; the files
-listed in `extractor/pending.txt` still predate v3.1.1 and are being moved chip by chip.
+listed in `extractor/pending.txt` still predate Pico 3.x and are being moved chip by chip.
+Pico's per-chip constraint digests (`vm/tests/riscv_constraint_dump.txt`) are the same at v3.1.1
+and v3.1.5 for the CPU chip and the ten ALU chips, so what this README says about them at v3.1.1
+holds at the pin.
 [SOUNDNESS.md](SOUNDNESS.md) says what the proofs establish and what they trust.
 
 For each opcode, the equivalence theorem states: under the chip's row

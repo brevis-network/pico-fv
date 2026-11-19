@@ -36,7 +36,7 @@ use render::{pair_interaction_meta, render_module, ExtractedAir};
 type F = KoalaBear;
 
 /// The Pico commit `Cargo.toml` pins; `pico_rev_matches_cargo_toml` keeps the two in step.
-const PICO_REV: &str = "2acc7c1828fb4ec1bed5963511bb370870c5b608";
+const PICO_REV: &str = "6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb";
 
 /// Files in the extraction directory that this tool does not generate.
 const HAND_WRITTEN: &[&str] = &["Attributes.lean"];

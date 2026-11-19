@@ -1,8 +1,8 @@
 # Moving the CPU chip to Pico v3.1.1: design
 
 The design questions were settled on 12 November 2026; see "Decisions". Pico references are
-to the commit `extractor/` pins (`2acc7c1828fb`, v3.1.1); pico-fv references are to `pico-v3`
-at `ca52d7a`, which the work targets. Pico paths below are under `vm/src/chips/chips/` unless
+to v3.1.1 (`2acc7c1828fb`, the commit `extractor/` pinned when this was written); pico-fv
+references are to `pico-v3` at `ca52d7a`, which the work targets. Pico paths below are under `vm/src/chips/chips/` unless
 they start with `vm/`; `rrs.rs` is `vm/src/compiler/riscv/disassembler/rrs.rs`.
 
 ## What changed and why it is a redesign
