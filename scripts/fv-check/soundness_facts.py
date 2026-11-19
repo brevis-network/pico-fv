@@ -82,6 +82,11 @@ def opcodes(names):
     return names[0] if len(names) == 1 else ', '.join(names[:-1]) + ' and ' + names[-1]
 
 
+def plural(n, word):
+    """`n` with `word` pluralised, so a single parked file does not read "1 files"."""
+    return f'{n} {word}' if n == 1 else f'{n} {word}s'
+
+
 def fill(text, width=80, **kw):
     return textwrap.fill(text, width, break_long_words=False, break_on_hyphens=False, **kw)
 
@@ -95,9 +100,9 @@ def restored_detail():
     # SOUNDNESS.md keeps lines to 100 characters, and the block sits in a list item (2 more).
     width = 98
     out = [fill(f'**{count(done)} of these {count(done) + count(rest)} theorems are checked at the '
-                f'moment**, in {len(done)} files of `PicoFV/RV64IM/Equivalence/`:', width), '']
+                f'moment**, in {plural(len(done), "file")} of `PicoFV/RV64IM/Equivalence/`:', width), '']
     out += by_file(done, width)
-    out += ['', fill(f'The other {count(rest)}, in {len(rest)} files, are out of the build, with their '
+    out += ['', fill(f'The other {count(rest)}, in {plural(len(rest), "file")}, are out of the build, with their '
                      'lists parked in `scripts/fv-check/theorems.d/parked/`:', width), '']
     out += by_file(rest, width)
     return '\n'.join(out)
@@ -114,8 +119,9 @@ def restored_summary():
 
 def parked_summary():
     done, rest = checked(), parked()
-    text = (f'The {len(rest)} lists here name {count(rest)} of the {count(done) + count(rest)} '
-            'instruction theorems of `PicoFV/RV64IM/Equivalence/`.')
+    verb = 'names' if len(rest) == 1 else 'name'
+    text = (f'The {plural(len(rest), "list")} here {verb} {count(rest)} of the '
+            f'{count(done) + count(rest)} instruction theorems of `PicoFV/RV64IM/Equivalence/`.')
     return fill(text)
 
 
