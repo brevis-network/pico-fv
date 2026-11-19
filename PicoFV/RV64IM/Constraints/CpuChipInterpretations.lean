@@ -13,7 +13,8 @@ set_option linter.constructorNameAsVariable false
 Readable facts about one row of the v3.1.1 `CpuChip`, derived from the restated constraints of
 `Constraints/CpuChip.lean` and the bus contracts of `RVSail/BusesV3.lean`: first what every
 instruction class needs, then what one class does — the branch and jump targets, the JALR
-addition, the comparison message and the memory dispatch.
+addition, the comparison message and the memory dispatch. Pico line numbers are at v3.1.1
+(`2acc7c1828fb`).
 
 The v3.1.1 chip checks much less itself than the 2.x one did, so the facts come from different
 places:

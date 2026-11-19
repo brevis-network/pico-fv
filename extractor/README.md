@@ -32,8 +32,9 @@ skips them but fails once one matches the extractor's output, so the list only s
 
 ## Upgrading Pico
 
-1. Change the `rev` of `pico-vm` / `pico-mle-core` in `Cargo.toml` and `PICO_REV` in
-   `src/main.rs`.
+1. Change the `rev` of `pico-vm` / `pico-mle-core` in `Cargo.toml`, and `PICO_REV` and
+   `PICO_TAG` in `src/main.rs`; then run `python3 scripts/fv-check/soundness_facts.py` from the
+   repository root to update the pin blocks of `README.md` and `SOUNDNESS.md`.
 2. Regenerate and look at `git diff PicoFV/RV64IM/Extraction`. Files whose constraints did not
    change differ only in their first line. The others show which chips need their Lean proofs
    revisited.

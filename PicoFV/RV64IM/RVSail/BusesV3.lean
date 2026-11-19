@@ -30,7 +30,12 @@ set_option maxHeartbeats 1_000_000_000
     for every branch.
 
     Open `RV64IM_Interactions.V3`, not `RV64IM_Interactions`, in a file that uses these: the
-    entry, row and predicate names are the same as the 2.x ones.                           -/
+    entry, row and predicate names are the same as the 2.x ones.
+
+    Pico line numbers in this file are at v3.1.1 (`2acc7c1828fb`). At v3.1.5 the CPU chip's
+    files are unchanged; `riscv_program/traces.rs` and `riscv_memory/read_write/constraints.rs`
+    are not, and the memory dispatch gains a second receiver, `MemoryUnalignedChip`, which
+    `MemoryBus.Spec`'s alignment clause does not describe (`SOUNDNESS.md`, A4).            -/
 
 namespace RV64IM_Interactions.V3
 
