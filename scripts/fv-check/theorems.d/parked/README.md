@@ -1,7 +1,7 @@
 # Parked theorem lists
 
 <!-- generated: parked -->
-The 3 lists here name 13 of the 62 instruction theorems of
+The 2 lists here name 9 of the 62 instruction theorems of
 `PicoFV/RV64IM/Equivalence/`.
 <!-- end generated -->
 
@@ -81,7 +81,15 @@ theorems and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`).
 
 A restored statement may also drop the row's class selector when the opcode
 fixes that: `JAL` and `JALR` no longer take `is_jal` / `is_jalr`, nor either
-immediate flag, because opcodes 24 and 25 are the two jumps alone.
+immediate flag, because opcodes 24 and 25 are the two jumps alone. The six
+branches and the four stores never took theirs, for the same reason, so their
+statements lose nothing here.
+
+A restored memory theorem also names what the Memory message promises it
+(`MemoryBus.Spec` in `RVSail/BusesV3.lean`) only through the bus assumptions,
+as the ALU classes name `ALUBus.Spec`. The promise's serving side is not proven
+at v3.1.1 yet: `SOUNDNESS.md` A3 says so, and a restoring pull request for
+`Loads.lean` should keep that paragraph true.
 
 The shift-immediate theorems `SLLIW`, `SRLIW`, `SRAIW`, `SLLI`, `SRLI` and
 `SRAI` also read their shift amount from the instruction's encoded

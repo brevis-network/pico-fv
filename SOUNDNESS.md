@@ -23,7 +23,7 @@ with their statements in `signatures.txt`. They are of three kinds.
   bus.
 
   <!-- generated: restored -->
-  **49 of these 62 theorems are checked at the moment**, in 10 files of
+  **53 of these 62 theorems are checked at the moment**, in 11 files of
   `PicoFV/RV64IM/Equivalence/`:
 
   - `Addiw.lean`: `ADDIW`
@@ -36,12 +36,12 @@ with their statements in `signatures.txt`. They are of three kinds.
   - `RType.lean`: `ADD`, `AND`, `OR`, `SLL`, `SLT`, `SLTU`, `SRA`, `SRL`, `SUB` and `XOR`
   - `ShiftIOp.lean`: `SLLI`, `SRAI` and `SRLI`
   - `ShiftIWOp.lean`: `SLLIW`, `SRAIW` and `SRLIW`
+  - `Stores.lean`: `SB`, `SD`, `SH` and `SW`
 
-  The other 13, in 3 files, are out of the build, with their lists parked in
+  The other 9, in 2 files, are out of the build, with their lists parked in
   `scripts/fv-check/theorems.d/parked/`:
 
   - `Loads.lean`: `LB`, `LBU`, `LD`, `LH`, `LHU`, `LW` and `LWU`
-  - `Stores.lean`: `SB`, `SD`, `SH` and `SW`
   - `UType.lean`: `AUIPC` and `LUI`
   <!-- end generated -->
 
@@ -186,6 +186,18 @@ other four, unsigned — so the two comparison bits are what `ALUBus.Spec` promi
 opcodes, which `LtChip.Spec.spec_SLT` and `spec_SLTU` discharge on the serving chip's side, and
 the branch theorems assume nothing about the operands themselves.
 
+The four store theorems take their opcode alone too, as they did at `353238a`, and gain the
+whole-trace assumption, which their 2.x statements did not take. What a store rests on beyond the
+CPU's own constraints is the Memory message's promise (`MemoryBus.Spec` in `RVSail/BusesV3.lean`):
+that the address `op_b + op_c` is below `2 ^ 32` and aligned for the width. Sail traps instead of
+storing without those two, so a store theorem cannot be stated without them. **Nothing in this
+repository discharges that promise yet.** `MemoryReadWriteChip.Spec` still states its assumptions
+against the 2.x memory contract of `RVSail/Buses.lean`, and it is verified against a
+`MemoryReadWriteChip.lean` extraction that predates the pinned Pico commit (see the generated list
+in A1 and `extractor/pending.txt`). So the serving side of the link a store theorem assumes is
+open, as A4 describes for chip composition generally; the loads will assume the same promise when
+they return.
+
 The six shift-immediate theorems also read their shift amount from the instruction's encoded
 `op_c_0`, as they read `rd` and `rs1`, instead of from the `op_c` value the row sends to the ALU
 chip. The proofs link the two through the CPU constraint that, on a row whose third operand is
@@ -286,7 +298,7 @@ C2) or the specification axioms of A2.
 | Axioms the theorem depends on | Theorems |
 |---|---:|
 | kernel + compiler | 80 |
-| kernel + compiler + RISC-V spec axioms | 49 |
+| kernel + compiler + RISC-V spec axioms | 53 |
 | kernel only | 1 |
 <!-- end generated -->
 
@@ -300,13 +312,12 @@ A proof that uses them also trusts the Lean compiler and runtime.
 branch's, so the uses only go down.
 
 <!-- generated: tactics -->
-138 uses of `native_decide`, `bv_decide` or `decide +native` in 10 files:
+134 uses of `native_decide`, `bv_decide` or `decide +native` in 9 files:
 
 - `PicoFV/Fundamentals/Core.lean`: 7
 - `PicoFV/Fundamentals/KoalaBear.lean`: 1
 - `PicoFV/Fundamentals/Word.lean`: 39
 - `PicoFV/RV64IM/Equivalence/Loads.lean`: 7
-- `PicoFV/RV64IM/Equivalence/Stores.lean`: 4
 - `PicoFV/RV64IM/Equivalence/UType.lean`: 2
 - `PicoFV/RV64IM/RVSail/Execution.lean`: 3
 - `PicoFV/RV64IM/Spec/BitwiseChip.lean`: 1
@@ -328,12 +339,13 @@ and the workflow is on `pico-v3`, not on `main`. Until it runs, this section des
 check, not a result. Run by hand on the instruction-theorem files the build imports, `lake env
 leanchecker` replays `Equivalence/Addiw`, `Equivalence/RTypeW`, `Equivalence/ShiftIWOp`,
 `Equivalence/IType`, `Equivalence/ShiftIOp`, `Equivalence/RType`, `Equivalence/MulFamily` and
-`Equivalence/DivFamily`, and fails on `Equivalence/Common`, `Equivalence/Jumps` and
-`Equivalence/BType` with "(kernel) deep recursion detected": `lake build` runs Lean with a larger
-kernel stack (`--tstack=400000` in the lakefile), which `leanchecker` does not get. Until that is
-fixed, the declarations of those three modules — so `equivalence_JAL`, `equivalence_JALR` and the
-six branch theorems, and the shared lemmas every instruction theorem closes through — are not
-replayed. The other modules have not been replayed by hand.
+`Equivalence/DivFamily`, and fails on `Equivalence/Common`, `Equivalence/Jumps`,
+`Equivalence/BType` and `Equivalence/Stores` with "(kernel) deep recursion detected": `lake build`
+runs Lean with a larger kernel stack (`--tstack=400000` in the lakefile), which `leanchecker` does
+not get. Until that is fixed, the declarations of those four modules — so `equivalence_JAL`,
+`equivalence_JALR`, the six branch theorems, the four store theorems, and the shared lemmas every
+instruction theorem closes through — are not replayed. The other modules have not been replayed by
+hand.
 
 ## D. Does the use of the results hold together?
 
