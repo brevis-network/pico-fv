@@ -1,7 +1,7 @@
 # Parked theorem lists
 
 <!-- generated: parked -->
-The 4 lists here name 19 of the 62 instruction theorems of
+The 3 lists here name 13 of the 62 instruction theorems of
 `PicoFV/RV64IM/Equivalence/`.
 <!-- end generated -->
 
@@ -48,16 +48,18 @@ They are expected to differ from those at `353238a` in three ways, plus the
 dropped hypotheses and, for the shift-immediate theorems, the shift amount,
 both described at the end of this section. The bus assumptions name the v3.1.1
 contracts (`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`) instead of the
-2.x ones. The destination register is
-read from `instruction.op_a` instead of `instruction.op_a_0`: v3.1.1 keeps the
-5-bit index in one column, so every theorem whose `rd` reads it shows this
-rename. And the whole-trace assumption `pico_CpuChip_control_flow_assumptions`
+2.x ones. The register held in `op_a` (the destination, or `rs1` for a
+branch) is read from `instruction.op_a` instead of `instruction.op_a_0`: v3.1.1
+keeps the 5-bit index in one column, so every theorem whose `rd` or, for a
+branch, `rs1` reads it shows this rename. And the whole-trace assumption `pico_CpuChip_control_flow_assumptions`
 gains three conjuncts in its definition:
 
-- the eight theorems that already name it (the six branches, `JAL` and `JALR`)
-  keep that part of their recorded text, because `signatures.txt` records the
-  name and not the definition, but their meaning changes. `JAL` and `JALR`
-  changed for the other reasons in this section;
+- the eight theorems that already name it (the six branches, `JAL` and `JALR`,
+  all now restored) keep that part of their recorded text, because
+  `signatures.txt` records the name and not the definition, but their meaning
+  changes. They changed for the other reasons in this section: the six branches
+  only in the contract names and in reading `rs1` from `op_a`, which makes them
+  the one class whose statements lose and gain no hypothesis at all;
 - the other 54 gain it as a new hypothesis, so their recorded statements change,
   as those already restored have.
 

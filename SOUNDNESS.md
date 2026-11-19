@@ -23,9 +23,11 @@ with their statements in `signatures.txt`. They are of three kinds.
   bus.
 
   <!-- generated: restored -->
-  **43 of these 62 theorems are checked at the moment**, in 9 files of `PicoFV/RV64IM/Equivalence/`:
+  **49 of these 62 theorems are checked at the moment**, in 10 files of
+  `PicoFV/RV64IM/Equivalence/`:
 
   - `Addiw.lean`: `ADDIW`
+  - `BType.lean`: `BEQ`, `BGE`, `BGEU`, `BLT`, `BLTU` and `BNE`
   - `DivFamily.lean`: `DIV`, `DIVU`, `DIVUW`, `DIVW`, `REM`, `REMU`, `REMUW` and `REMW`
   - `IType.lean`: `ADDI`, `ANDI`, `ORI`, `SLTI`, `SLTIU` and `XORI`
   - `Jumps.lean`: `JAL` and `JALR`
@@ -35,10 +37,9 @@ with their statements in `signatures.txt`. They are of three kinds.
   - `ShiftIOp.lean`: `SLLI`, `SRAI` and `SRLI`
   - `ShiftIWOp.lean`: `SLLIW`, `SRAIW` and `SRLIW`
 
-  The other 19, in 4 files, are out of the build, with their lists parked in
+  The other 13, in 3 files, are out of the build, with their lists parked in
   `scripts/fv-check/theorems.d/parked/`:
 
-  - `BType.lean`: `BEQ`, `BGE`, `BGEU`, `BLT`, `BLTU` and `BNE`
   - `Loads.lean`: `LB`, `LBU`, `LD`, `LH`, `LHU`, `LW` and `LWU`
   - `Stores.lean`: `SB`, `SD`, `SH` and `SW`
   - `UType.lean`: `AUIPC` and `LUI`
@@ -188,7 +189,12 @@ assume nothing about the divisor: the ALU chip's promise for their opcodes alrea
 result on division by zero and on signed overflow. `JAL` and `JALR` take their opcode alone too:
 they assume neither immediate flag, nor the row's `is_jal` / `is_jalr` selector, all three of which
 their 2.x statements took, because opcodes 24 and 25 are the two jumps alone and the decoder fixes
-every one of them.
+every one of them. The six branch theorems take their opcode alone too, as they already did at
+`353238a`: opcodes 18 to 23 are the six branches alone. Their comparison is not made in the CPU
+chip. The row sends it on the ALU bus — opcode 264 for `BLT` and `BGE`, signed, and 265 for the
+other four, unsigned — so the two comparison bits are what `ALUBus.Spec` promises for those
+opcodes, which `LtChip.Spec.spec_CMP_SLT` and `spec_CMP_SLTU` discharge on the serving chip's
+side, and the branch theorems assume nothing about the operands themselves.
 
 The six shift-immediate theorems also read their shift amount from the instruction's encoded
 `op_c_0`, as they read `rd` and `rs1`, instead of from the `op_c` value the row sends to the ALU
@@ -214,10 +220,10 @@ assumption"). That circuit was read again at v3.1.6, which rewrote it: the three
 argument uses (the pc carried from chunk to chunk, a chunk with no CPU keeping its pc, the last
 chunk ending at pc zero) are still there. So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
 proof, not a chunk proof checked on its own. The eight branch and jump theorems already name the
-assumption, whose definition grew, so it is not what changes their recorded statements — `JAL`
-and `JALR`, now recorded, changed for the other reasons above; the six branches will keep their
-text for this hypothesis when they return. The other 54 gain it as a new hypothesis, as those
-recorded at v3.1.1 have.
+assumption, whose definition grew, so it is not what changes their recorded statements: all eight
+are recorded at v3.1.1 now, and changed for the other reasons above. What they assume did change,
+behind the unchanged name. The other 54 gain it as a new hypothesis, as those recorded at v3.1.1
+have.
 
 A change that weakens or strengthens a hypothesis changes `signatures.txt`, and `check.sh` fails
 until the change is reviewed and recorded. A change to the definition behind a hypothesis's name
@@ -256,10 +262,10 @@ The contract now covers the merged branch-comparison rows. `ALUBus.validOpcode` 
 opcodes 264 / 265 (`SLT` / `SLTU` + `LT_CMP_OPCODE_TAG`) that Pico's CPU sends for every branch,
 `ALUBus.Spec` gives them their meaning — piece 0 is `[b < c]`, piece 1 is `[c < b]`, pieces 2 and
 3 are zero — and `LtChip.Spec.spec_CMP_SLT` / `spec_CMP_SLTU` prove that `LtChip` serves them.
-What the CPU does with the two bits is not proven here: that is the CPU chip's side. Its
-v3.1.1 constraints, including the comparison message and the taken-branch condition, are
-restated in `Constraints/CpuChip.lean`, but the branch theorems that use them are parked while
-the CPU chip moves.
+What the CPU does with the two bits is the CPU chip's side, and the six branch theorems in
+`Equivalence/BType.lean` prove it: `branch_compare_spec` turns the promise into the meaning of
+the two bits, `branch_taken` builds the taken condition from them, and the next-pc constraints
+send the row to `pc + offset` or `pc + 4` as Sail does.
 
 Messages a chip serves but the contract does not specify are still not covered in general; there
 are none among the RV64IM ALU chips at v3.1.6.
@@ -318,7 +324,7 @@ C2) or the specification axioms of A2.
 | Axioms the theorem depends on | Theorems |
 |---|---:|
 | kernel + compiler | 80 |
-| kernel + compiler + RISC-V spec axioms | 43 |
+| kernel + compiler + RISC-V spec axioms | 49 |
 | kernel only | 1 |
 <!-- end generated -->
 
@@ -332,12 +338,11 @@ A proof that uses them also trusts the Lean compiler and runtime.
 branch's, so the uses only go down.
 
 <!-- generated: tactics -->
-144 uses of `native_decide`, `bv_decide` or `decide +native` in 11 files:
+138 uses of `native_decide`, `bv_decide` or `decide +native` in 10 files:
 
 - `PicoFV/Fundamentals/Core.lean`: 7
 - `PicoFV/Fundamentals/KoalaBear.lean`: 1
 - `PicoFV/Fundamentals/Word.lean`: 39
-- `PicoFV/RV64IM/Equivalence/BType.lean`: 6
 - `PicoFV/RV64IM/Equivalence/Loads.lean`: 7
 - `PicoFV/RV64IM/Equivalence/Stores.lean`: 4
 - `PicoFV/RV64IM/Equivalence/UType.lean`: 2
@@ -359,14 +364,16 @@ equivalence files, are not replayed.
 **The job has not run.** GitHub runs a scheduled workflow only from the repository's default branch,
 and the workflow is on `pico-v3`, not on `main`. Until it runs, this section describes what it would
 check, not a result. Run by hand on the instruction-theorem files the build imports, `lake env
-leanchecker` replays `Equivalence/Addiw`, `Equivalence/RTypeW`, `Equivalence/ShiftIWOp`,
-`Equivalence/IType`, `Equivalence/ShiftIOp`, `Equivalence/RType`, `Equivalence/MulFamily` and
-`Equivalence/DivFamily`, and fails on `Equivalence/Common` and `Equivalence/Jumps` with "(kernel)
-deep recursion detected": `lake build` runs Lean with a larger kernel stack (`--tstack=400000` in
-the lakefile), which `leanchecker` does not get. Until that is fixed, the declarations of
-`Equivalence/Common` and `Equivalence/Jumps` — so `equivalence_JAL` and `equivalence_JALR`, and the
-shared lemmas every instruction theorem closes through — are not replayed. The other modules have
-not been replayed by hand.
+leanchecker` replays all eleven: `Equivalence/Common`, `Equivalence/Addiw`, `Equivalence/RTypeW`,
+`Equivalence/ShiftIWOp`, `Equivalence/IType`, `Equivalence/ShiftIOp`, `Equivalence/RType`,
+`Equivalence/MulFamily`, `Equivalence/DivFamily`, `Equivalence/Jumps` and `Equivalence/BType`.
+`Common`, `Jumps` and `BType` used to fail with "(kernel) deep recursion detected": one `simp`
+sorted all 17 messages of a CPU row at once, and the proof term it built was deeper than
+`leanchecker`'s kernel stack (`lake build` runs Lean with `--tstack=400000` in the lakefile). The
+parts of a sorted row are now separate lemmas checked by evaluation
+(`deserialise_raw_bus_row_Program`, `_State` and `_Memory` in `Equivalence/Common.lean`), and
+the lemmas that compute a row's bus operations rewrite with them.
+The other modules have not been replayed by hand.
 
 ## D. Does the use of the results hold together?
 
