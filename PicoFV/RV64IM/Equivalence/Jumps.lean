@@ -176,14 +176,17 @@ namespace Equivalence
       obtain ⟨ h_imm_b, h_imm_c, -, -, h_s_mem ⟩ :=
         jal_row_selectors air row h_is_real h_wf h_opcode
       obtain ⟨ h_reg_rd, -, - ⟩ := register_indices_lt air row h_is_real h_wf
-      simp [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations, deserialise_bus_row,
-            raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+          deserialise_raw_bus_row_Memory]
+      simp [MemoryBusEntry.deserialise, mem_width_of_opcode,
             h_is_real, h_opcode, h_imm_b, h_imm_c, h_s_mem, h_reg_rd, BitVec.ofNatLT_eq_ofNat,
             toBV_pc_eq_ofNat air row h_is_real h_wf, op_a_prev_value, op_a_value]
 
     /-- The operations a JALR row's messages stand for, in order: the pc read, a read and
         write back of `rs1`, the read of `rd`'s old value and the write of the return address,
-        and the next pc. `op_c` is the immediate, so it sends no message. -/
+        and the next pc. `op_c` is the immediate, so it sends no message: the shared
+        `CPU_bus_operations_eq_of_imm_c_eq_one`. -/
     private lemma CPU_bus_operations_eq_of_jalr
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -203,14 +206,10 @@ namespace Equivalence
             (U64w.toBV (op_a_value air row)),
           .WritePC (U64w.toBV (next_pc air row)) ]
     := by
-      obtain ⟨ h_imm_b, h_imm_c, -, -, h_s_mem ⟩ :=
+      obtain ⟨ h_imm_b, h_imm_c, -, -, - ⟩ :=
         jalr_row_selectors air row h_is_real h_wf h_opcode
-      obtain ⟨ h_reg_rd, h_reg_rs1, - ⟩ := register_indices_lt air row h_is_real h_wf
-      simp [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations, deserialise_bus_row,
-            raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
-            h_is_real, h_opcode, h_imm_b, h_imm_c, h_s_mem, h_reg_rd, h_reg_rs1 h_imm_b,
-            BitVec.ofNatLT_eq_ofNat, toBV_pc_eq_ofNat air row h_is_real h_wf,
-            op_a_prev_value, op_a_value, op_b_value]
+      exact CPU_bus_operations_eq_of_imm_c_eq_one air row h_is_real h_wf h_imm_b h_imm_c
+        (by simp [mem_width_of_opcode, h_opcode])
 
     /-- On a jump row whose destination is not `x0`, the chip's `op_a` value is the return
         address `pc + 4` (`jump_return_address`); `op_a_is_x0` is 0 there (`op_a_is_x0_eq`). -/
