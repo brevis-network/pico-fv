@@ -2059,7 +2059,7 @@ dependencies = [
 [[package]]
 name = "pico-derive"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?rev=6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb#6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb"
+source = "git+https://github.com/brevis-network/pico.git?tag=v3.1.6#6aa644efeff9ddbec6beb538200f98f2a70f5d8e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2080,7 +2080,7 @@ dependencies = [
 [[package]]
 name = "pico-mle-core"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?rev=6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb#6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb"
+source = "git+https://github.com/brevis-network/pico.git?tag=v3.1.6#6aa644efeff9ddbec6beb538200f98f2a70f5d8e"
 dependencies = [
  "cfg-if",
  "derivative",
@@ -2113,7 +2113,7 @@ dependencies = [
 [[package]]
 name = "pico-mle-cpu"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?rev=6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb#6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb"
+source = "git+https://github.com/brevis-network/pico.git?tag=v3.1.6#6aa644efeff9ddbec6beb538200f98f2a70f5d8e"
 dependencies = [
  "cfg-if",
  "derive-new",
@@ -2131,7 +2131,7 @@ dependencies = [
 [[package]]
 name = "pico-verifier"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?rev=6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb#6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb"
+source = "git+https://github.com/brevis-network/pico.git?tag=v3.1.6#6aa644efeff9ddbec6beb538200f98f2a70f5d8e"
 dependencies = [
  "bincode",
  "p3-field",
@@ -2148,7 +2148,7 @@ dependencies = [
 [[package]]
 name = "pico-vm"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?rev=6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb#6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb"
+source = "git+https://github.com/brevis-network/pico.git?tag=v3.1.6#6aa644efeff9ddbec6beb538200f98f2a70f5d8e"
 dependencies = [
  "anyhow",
  "arrayref",

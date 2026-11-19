@@ -6,7 +6,7 @@ import PicoFV.RV64IM.Transpiler.Transpiler
     Program bus (tag 2). This file maps a Sail `instruction` at address `pc` to that message,
     following Pico's decoder `vm/src/compiler/riscv/disassembler/rrs.rs` and the table builder
     `vm/src/chips/chips/riscv_program/traces.rs` at Pico v3.1.1 (`2acc7c1828fb`), where the
-    line numbers below point. It was read again at v3.1.5 and models that commit unchanged: the
+    line numbers below point. It was read again at v3.1.5 and v3.1.6 and models both unchanged: the
     instruction rows are the same, three lines further down `riscv_program/traces.rs`, and
     `looked_program` is at `riscv_program/constraints.rs:71-101`, after the new code-range
     message (`SOUNDNESS.md`, A6).

@@ -101,15 +101,18 @@ with their statements in `signatures.txt`. They are of three kinds.
 The proofs are about this Pico revision:
 
 <!-- generated: pin -->
-Pico v3.1.5, commit [`6788178d6`](https://github.com/brevis-network/pico/commit/6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb).
+Pico v3.1.6, commit [`6aa644efe`](https://github.com/brevis-network/pico/commit/6aa644efeff9ddbec6beb538200f98f2a70f5d8e).
 <!-- end generated -->
 
-Pico's per-chip constraint digests (`vm/tests/riscv_constraint_dump.txt`) are the same at v3.1.1
-and v3.1.5 for the CPU chip and the ten ALU chips, so what this document says about those chips'
-own constraints at v3.1.1 holds at v3.1.5. A digest covers only its own chip; it cannot show which
-chips receive a message. At v3.1.5 the CPU chip's memory dispatch has a second receiver,
-`MemoryUnalignedChip`, which makes no alignment promise (see A4 and A5), and the Program table
-changed (see A6).
+Re-extracting the CPU chip, the ten ALU chips and their gadgets at v3.1.6 gives the same
+constraints and bus messages as at v3.1.1: each extraction file differs only in its first line,
+which names the Pico commit. So what this document says about those chips' own constraints at
+v3.1.1 holds at v3.1.6. The claims in this document that name v3.1.6 were checked there; if the
+pin above names a later version, they have not been checked there yet. Pico's per-chip constraint digests (`vm/tests/riscv_constraint_dump.txt`)
+cannot show this at v3.1.6, which changed every chip's digest when it rewrote how chunks are joined;
+the re-extraction does. A chip's constraints also cannot show which chips receive its messages. At
+the pin the CPU chip's memory dispatch has a second receiver, `MemoryUnalignedChip`, which makes no
+alignment promise (see A4 and A5), and the Program table changed after v3.1.1 (see A6).
 
 <!-- generated: pending -->
 1 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `MemoryReadWriteChip.lean`.
@@ -207,7 +210,9 @@ The whole-trace assumption, `pico_CpuChip_control_flow_assumptions`, bounds the 
 pc (public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The
 v3.1.1 chip does not check this itself; Pico's recursion circuit makes it hold for every chunk
 of an accepted recursive proof (`docs/cpu-chip-pico-v3-design.md`, "The whole-trace
-assumption"). So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
+assumption"). That circuit was read again at v3.1.6, which rewrote it: the three checks the
+argument uses (the pc carried from chunk to chunk, a chunk with no CPU keeping its pc, the last
+chunk ending at pc zero) are still there. So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
 proof, not a chunk proof checked on its own. The eight branch and jump theorems already name the
 assumption, whose definition grew, so it is not what changes their recorded statements — `JAL`
 and `JALR`, now recorded, changed for the other reasons above; the six branches will keep their
@@ -235,14 +240,14 @@ receiving chip's theorem. The memory chip's specification still states its assum
 against the 2.x memory contract (`RVSail/Buses.lean`); the 3.x contract it will assume
 (`MemoryBus.externals` in `RVSail/BusesV3.lean`) is the one the CPU is proven to meet.
 
-At the pinned commit the memory dispatch has two receivers, and the promise the CPU chip assumes
-of it is out of date. Pico v3.1.5 adds `MemoryUnalignedChip`
+At v3.1.6, the pin, the memory dispatch has two receivers, and the promise the CPU chip assumes
+of it is out of date. Since v3.1.2 Pico has `MemoryUnalignedChip`
 (`vm/src/chips/chips/riscv_memory/unaligned/`), which takes the same 17-field message on the same
 bus as `MemoryReadWriteChip` and serves loads and stores whose address is not a multiple of their
 width. The CPU chip's constraints did not change, so either chip may take any load or store. The
 promise (`MemoryBus.Spec` in `RVSail/BusesV3.lean`) was drafted against v3.1.1, where
 `MemoryReadWriteChip` was the only receiver. It says that the address of a halfword, word or
-doubleword access is a multiple of its width, and at v3.1.5 that is false. Only a load or store row
+doubleword access is a multiple of its width, and since v3.1.2 that is false. Only a load or store row
 sends the memory dispatch, so the clause matters only to the parked load and store theorems. The
 promise has to be rewritten against the pin when the memory chips move, and those theorems have to
 be rewritten with it.
@@ -257,12 +262,12 @@ restated in `Constraints/CpuChip.lean`, but the branch theorems that use them ar
 the CPU chip moves.
 
 Messages a chip serves but the contract does not specify are still not covered in general; there
-are none among the RV64IM ALU chips at the pinned commit.
+are none among the RV64IM ALU chips at v3.1.6.
 
 ### A5. What is not covered
 
 `ECALL` and syscalls, the precompile chips, the program, global memory and memory
-initialisation chips, `MemoryUnalignedChip` (new at v3.1.5; see A4), the recursion layers, and
+initialisation chips, `MemoryUnalignedChip` (new since v3.1.2; see A4), the recursion layers, and
 Pico's proof system itself.
 
 ### A6. The instruction decoder
@@ -278,18 +283,20 @@ the Lean decoder with the Rust one; Pico's own decoder tests are restated as `ex
 of `TranspilerV3.lean`. The decoder starts from an already-decoded Sail instruction, not from the
 32-bit word: that a word decodes to the same instruction in Sail and in Pico is not modelled.
 
-The contract was read again against v3.1.5, the pinned commit. The decoder (`rrs.rs`), the opcodes and the
-instruction type did not change. The Program table builds each instruction's row as before, at the
-same addresses under the same asserts; v3.1.5 adds the program's code range to every row in four new
-columns, `code_start` and `code_end`. The Program chip still receives the CPU's 26-field instruction
-message, and it now also serves a 4-field message giving that range, which store rows look up to
-prove that they do not write into the code. Pico's LogUp fingerprint includes a message's length
-(`eval_interaction` in `mle-core/src/prover/logup_zerocheck/evaluator.rs`), so the two messages
-never match each other. The Lean reader of the CPU row's messages (`deserialise_bus_row` in
-`RVSail/BusesV3.lean`) takes only 26-field messages as instructions. The ELF loader
-(`vm/src/compiler/riscv/disassembler/elf.rs`) rejects more files than before (32-bit ELFs, segments
-that are both writable and executable, an entry point outside the code) and builds the instructions
-in the same way. So the Program contract holds at v3.1.5 as written.
+The contract was read again against v3.1.5, and again against v3.1.6, the pinned commit. The decoder
+(`rrs.rs`), the opcodes and the instruction type did not change. The Program table builds each
+instruction's row as before, at the same addresses under the same asserts; since v3.1.2 the table
+adds the program's code range to every row in four new columns, `code_start` and `code_end`. The
+Program chip still receives the CPU's 26-field instruction message, and it now also serves a 4-field
+message giving that range, which store rows look up to prove that they do not write into the code.
+Pico's LogUp fingerprint includes a message's length (`eval_interaction` in
+`mle-core/src/prover/logup_zerocheck/evaluator.rs`), so the two messages never match each other. The
+Lean reader of the CPU row's messages (`deserialise_bus_row` in `RVSail/BusesV3.lean`) takes only
+26-field messages as instructions. The ELF loader (`vm/src/compiler/riscv/disassembler/elf.rs`)
+rejects more files than at v3.1.1 (32-bit ELFs, segments that are both writable and executable, an
+entry point outside the code) and builds the instructions in the same way. From v3.1.5 to v3.1.6
+none of the decoder, the Program chip's files or the ELF loader changed. So the Program contract
+holds at v3.1.6 as written.
 
 The fences have no row of their own. Pico runs every fence word (`fence`, `fence.tso` and
 `pause`) as the no-op `ADD x0, x0, 0`, the row of `ADDI x0, x0, 0`. Sail decodes them as three
