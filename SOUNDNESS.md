@@ -23,7 +23,7 @@ with their statements in `signatures.txt`. They are of three kinds.
   bus.
 
   <!-- generated: restored -->
-  **53 of these 62 theorems are checked at the moment**, in 11 files of
+  **60 of these 62 theorems are checked at the moment**, in 12 files of
   `PicoFV/RV64IM/Equivalence/`:
 
   - `Addiw.lean`: `ADDIW`
@@ -31,6 +31,7 @@ with their statements in `signatures.txt`. They are of three kinds.
   - `DivFamily.lean`: `DIV`, `DIVU`, `DIVUW`, `DIVW`, `REM`, `REMU`, `REMUW` and `REMW`
   - `IType.lean`: `ADDI`, `ANDI`, `ORI`, `SLTI`, `SLTIU` and `XORI`
   - `Jumps.lean`: `JAL` and `JALR`
+  - `Loads.lean`: `LB`, `LBU`, `LD`, `LH`, `LHU`, `LW` and `LWU`
   - `MulFamily.lean`: `MUL`, `MULH`, `MULHSU`, `MULHU` and `MULW`
   - `RTypeW.lean`: `ADDW`, `SLLW`, `SRAW`, `SRLW` and `SUBW`
   - `RType.lean`: `ADD`, `AND`, `OR`, `SLL`, `SLT`, `SLTU`, `SRA`, `SRL`, `SUB` and `XOR`
@@ -38,10 +39,9 @@ with their statements in `signatures.txt`. They are of three kinds.
   - `ShiftIWOp.lean`: `SLLIW`, `SRAIW` and `SRLIW`
   - `Stores.lean`: `SB`, `SD`, `SH` and `SW`
 
-  The other 9, in 2 files, are out of the build, with their lists parked in
+  The other 2, in 1 file, are out of the build, with their lists parked in
   `scripts/fv-check/theorems.d/parked/`:
 
-  - `Loads.lean`: `LB`, `LBU`, `LD`, `LH`, `LHU`, `LW` and `LWU`
   - `UType.lean`: `AUIPC` and `LUI`
   <!-- end generated -->
 
@@ -224,8 +224,16 @@ repository discharges that promise yet.** `MemoryReadWriteChip.Spec` still state
 against the 2.x memory contract of `RVSail/Buses.lean`, and it is verified against a
 `MemoryReadWriteChip.lean` extraction that predates the pinned Pico commit (see the generated list
 in A1 and `extractor/pending.txt`). So the serving side of the link a store theorem assumes is
-open, as A4 describes for chip composition generally; the loads will assume the same promise when
-they return.
+open, as A4 describes for chip composition generally.
+
+The seven load theorems rest on the same promise, and on one more part of it. Besides the address
+range and the width's alignment, `MemoryBus.Spec` says what extension the loaded word carries:
+sign for `LB`, `LH` and `LW`, zero for `LBU`, `LHU` and `LWU`, none for `LD`. That is the whole
+content of what a load writes to `rd`, so a load theorem says that the CPU row writes back
+whatever the memory chip promised — and, like the stores, it is assuming that promise rather than
+resting on a proof of it. The CPU constraints alone do not tie the loaded word to memory at all.
+A load whose destination is `x0` is the one case that needs nothing of the promise: the chip sends
+`ReadMemAny` and writes no register, and so does Sail.
 
 The parked theorems were last recorded at `353238a`, against the 2.x constraints and the contracts
 of `RVSail/Buses.lean`, and are not checked while they move. Two definitions every instruction
@@ -358,7 +366,7 @@ C2) or the specification axioms of A2.
 | Axioms the theorem depends on | Theorems |
 |---|---:|
 | kernel + compiler | 80 |
-| kernel + compiler + RISC-V spec axioms | 53 |
+| kernel + compiler + RISC-V spec axioms | 60 |
 | kernel only | 1 |
 <!-- end generated -->
 
@@ -372,12 +380,11 @@ A proof that uses them also trusts the Lean compiler and runtime.
 branch's, so the uses only go down.
 
 <!-- generated: tactics -->
-134 uses of `native_decide`, `bv_decide` or `decide +native` in 9 files:
+127 uses of `native_decide`, `bv_decide` or `decide +native` in 8 files:
 
 - `PicoFV/Fundamentals/Core.lean`: 7
 - `PicoFV/Fundamentals/KoalaBear.lean`: 1
 - `PicoFV/Fundamentals/Word.lean`: 39
-- `PicoFV/RV64IM/Equivalence/Loads.lean`: 7
 - `PicoFV/RV64IM/Equivalence/UType.lean`: 2
 - `PicoFV/RV64IM/RVSail/Execution.lean`: 3
 - `PicoFV/RV64IM/Spec/BitwiseChip.lean`: 1
