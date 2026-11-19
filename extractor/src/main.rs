@@ -35,8 +35,12 @@ use render::{pair_interaction_meta, render_module, ExtractedAir};
 
 type F = KoalaBear;
 
-/// The Pico commit `Cargo.toml` pins; `pico_rev_matches_cargo_toml` keeps the two in step.
-const PICO_REV: &str = "2acc7c1828fb4ec1bed5963511bb370870c5b608";
+/// The Pico commit that `PICO_TAG` resolves to in `Cargo.lock`.
+const PICO_REV: &str = "6aa644efeff9ddbec6beb538200f98f2a70f5d8e";
+/// The Pico release tag `Cargo.toml` pins. `pico_pin_matches_cargo` checks it against
+/// `Cargo.toml`, and `PICO_REV` against the commit `Cargo.lock` resolves it to.
+/// `soundness_facts.py` prints both in the documents' pin blocks.
+const PICO_TAG: &str = "v3.1.6";
 
 /// Files in the extraction directory that this tool does not generate.
 const HAND_WRITTEN: &[&str] = &["Attributes.lean"];
@@ -122,7 +126,7 @@ fn main() {
         }
     }
     if !problems.is_empty() {
-        eprintln!("{} is out of date with pico {PICO_REV}:", dir.display());
+        eprintln!("{} is out of date with pico {PICO_TAG} ({PICO_REV}):", dir.display());
         for problem in &problems {
             eprintln!("  {problem}");
         }
@@ -188,16 +192,28 @@ mod tests {
         symbolic_expression::SymbolicExpression, symbolic_variable::Entry,
     };
 
+    /// `Cargo.toml` pins the tag and `Cargo.lock` records the commit it resolved to, so the
+    /// tag and commit printed in the documents are the ones the extractor builds against.
     #[test]
-    fn pico_rev_matches_cargo_toml() {
+    fn pico_pin_matches_cargo() {
         let manifest = include_str!("../Cargo.toml");
-        let pinned = format!("rev = \"{PICO_REV}\"");
+        let pinned = format!("tag = \"{PICO_TAG}\"");
         for krate in ["pico-vm", "pico-mle-core"] {
             let line = manifest
                 .lines()
                 .find(|line| line.starts_with(&format!("{krate} =")))
                 .unwrap_or_else(|| panic!("{krate} missing from Cargo.toml"));
-            assert!(line.contains(&pinned), "{krate} is not pinned to PICO_REV");
+            assert!(line.contains(&pinned), "{krate} is not pinned to PICO_TAG");
+        }
+        let lock = include_str!("../Cargo.lock");
+        let sources: Vec<&str> = lock
+            .lines()
+            .filter(|line| line.starts_with("source = \"git+https://github.com/brevis-network/pico.git"))
+            .collect();
+        assert!(!sources.is_empty(), "no Pico crate in Cargo.lock");
+        let resolved = format!("?tag={PICO_TAG}#{PICO_REV}\"");
+        for source in sources {
+            assert!(source.ends_with(&resolved), "{source} does not resolve PICO_TAG to PICO_REV");
         }
     }
 

@@ -5,8 +5,11 @@ import PicoFV.RV64IM.Transpiler.Transpiler
     The Pico v3.1.1 `CpuChip` fetches its instruction with one 26-field message on the
     Program bus (tag 2). This file maps a Sail `instruction` at address `pc` to that message,
     following Pico's decoder `vm/src/compiler/riscv/disassembler/rrs.rs` and the table builder
-    `vm/src/chips/chips/riscv_program/traces.rs` at the commit pinned in `extractor/Cargo.toml`
-    (`2acc7c1828fb`).
+    `vm/src/chips/chips/riscv_program/traces.rs` at Pico v3.1.1 (`2acc7c1828fb`), where the
+    line numbers below point. It was read again at v3.1.5 and v3.1.6 and models both unchanged: the
+    instruction rows are the same, three lines further down `riscv_program/traces.rs`, and
+    `looked_program` is at `riscv_program/constraints.rs:71-101`, after the new code-range
+    message (`SOUNDNESS.md`, A6).
 
     Layout, as sent by `riscv_cpu/constraints.rs:452-481` (`looking_program`) and received by
     `riscv_program/constraints.rs:53-83` (`looked_program`):
