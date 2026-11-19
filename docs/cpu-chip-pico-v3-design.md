@@ -56,8 +56,10 @@ It says a real row's fetch message is a row of the table Pico builds at keygen: 
 preprocessed, so the whole message matches one such row (`riscv_cpu/constraints.rs:42-75`).
 
 The memory-dispatch contract keeps the 2.x content keyed on the opcode, since the width
-selectors are gone, with the address bound the v3.1.1 memory chip proves: `2^16 <= b + c < 2^32`
-(`riscv_memory/read_write/constraints.rs:209-255`). Its `chunk` and `clk` fields carry no
+selectors are gone, except the three alignment clauses, with the address bound the memory
+chips prove: `2^16 <= b + c < 2^32` (at v3.1.1, `riscv_memory/read_write/constraints.rs:209-255`).
+The alignment clauses were dropped at v3.1.6, where a second memory chip takes misaligned
+accesses (the decision on the memory contract, below). Its `chunk` and `clk` fields carry no
 promise yet.
 
 Two deliberate differences from the 2.x decoder, both about which traces the theorems apply to:
@@ -122,16 +124,23 @@ Settled on 12 November 2026.
 
    The promise is read against Pico again when the pin moves. It was read against v3.1.5 and
    v3.1.6 and holds as written (`SOUNDNESS.md`, A6).
-2. **The memory contract is as drafted** (question 5). Two trial proofs, LW and SD, pass against
-   it unchanged. They use the address bound `< 2^32`, the alignment clause and, for LW, the
-   sign-extension clause. They do not use the lower bound `2^16`, the 16-bit range of a loaded
-   value, or the `chunk` and `clk` fields, which stay without a promise. The alignment clause is
-   required by the Sail-side lemmas (`execute_LW_equiv`, `execute_SD_equiv`). The memory chip's
+2. **The memory contract states what both memory chips prove** (question 5). As first drafted,
+   against v3.1.1, it was settled unchanged: two trial proofs, LW and SD, passed against it.
+   They used the address bound `< 2^32`, the alignment clause and, for LW, the sign-extension
+   clause. They did not use the lower bound `2^16`, the 16-bit range of a loaded value, or the
+   `chunk` and `clk` fields, which stay without a promise. The alignment clause was required by
+   the Sail-side lemmas as they stand (`execute_LW_equiv`, `execute_SD_equiv`). The memory chip's
    own proofs stay on the 2.x extraction and the 2.x contract until that chip moves, so until then
    the 11 load and store theorems rest on a promise with no Lean proof at v3.1.1; `SOUNDNESS.md`
    has to say so. Since v3.1.2, and so at the pin, the alignment clause no longer holds:
-   `MemoryUnalignedChip` also serves the memory dispatch, with no alignment promise
-   (`SOUNDNESS.md`, A4), so the contract is rewritten against the pin when the memory chips move.
+   `MemoryUnalignedChip` also serves the memory dispatch and takes any byte offset. The contract
+   was rewritten against v3.1.6 to what both memory chips prove: the alignment clauses are
+   dropped, and the 16-bit range of a loaded value, the address bound and the six extension
+   clauses stay (`MemoryBus.Spec`'s doc comment cites each chip's constraint;
+   `SOUNDNESS.md`, the composition section, A4). The two trial proofs, kept on the prototype
+   branch and not in this tree, use the dropped alignment clauses, so they would not pass
+   unchanged against the current contract. The Sail-side lemmas of the eight halfword, word and
+   doubleword loads and stores then need a misaligned case instead of the alignment hypothesis.
 3. **The whole-trace assumption takes the `0x7800_0000` bound**, as in the next section, not
    the weakest bound the proofs need.
 4. **The CPU chip gets a theorem for what it guarantees as a sender** (`ext_asrt`). Each of
@@ -236,7 +245,8 @@ the Sail state as one step of the instruction does"):
 - `equivalence_JALR`: the four-carry addition `rs1 + imm = next_pc + lsb` (`jalr_sum`), the
   cleared low bit, bit 1 of the target, and the return address `pc + 4` from `pc_carry`.
 
-`Equivalence/TrialV3Mem.lean` adds two against the memory-dispatch contract:
+`Equivalence/TrialV3Mem.lean` adds two against the memory-dispatch contract as drafted at
+v3.1.1, with its alignment clauses (since dropped; see the decision on the memory contract):
 
 - `equivalence_LW`: the address `rs1 + imm` with the bound and the 4-byte alignment from the
   memory promise, the sign-extended value, and the destination `x0` case, where the proof
