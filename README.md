@@ -42,9 +42,10 @@ Pico v3.1.6, commit [`6aa644efe`](https://github.com/brevis-network/pico/commit/
 
 Each proof is about the Pico revision named in the first line of the `PicoFV/RV64IM/Extraction/`
 file it uses; the files listed in `extractor/pending.txt` still predate the pinned commit and are
-being moved chip by chip. Re-extracting the CPU chip, the ten ALU chips and their gadgets at the
-pin gives the same constraints and bus messages as at v3.1.1, so what this README says about those
-chips at v3.1.1 holds at the pin. The memory chips differ, and since v3.1.2 Pico has a second
+being moved chip by chip. Re-extracting the CPU chip, the ten ALU chips and their gadgets at
+v3.1.6 gives the same constraints and bus messages as at v3.1.1, so what this README says about
+those chips at v3.1.1 holds at v3.1.6. This was checked at v3.1.6; if the pin above names a later
+version, it has not been checked there yet. The memory chips differ, and since v3.1.2 Pico has a second
 memory chip for misaligned loads and stores (see [SOUNDNESS.md](SOUNDNESS.md), A4).
 [SOUNDNESS.md](SOUNDNESS.md) says what the proofs establish and what they trust.
 

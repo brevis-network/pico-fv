@@ -129,7 +129,7 @@ Settled on 12 November 2026.
    required by the Sail-side lemmas (`execute_LW_equiv`, `execute_SD_equiv`). The memory chip's
    own proofs stay on the 2.x extraction and the 2.x contract until that chip moves, so until then
    the 11 load and store theorems rest on a promise with no Lean proof at v3.1.1; `SOUNDNESS.md`
-   has to say so. At the pin (v3.1.5 and later) the alignment clause no longer holds:
+   has to say so. Since v3.1.2, and so at the pin, the alignment clause no longer holds:
    `MemoryUnalignedChip` also serves the memory dispatch, with no alignment promise
    (`SOUNDNESS.md`, A4), so the contract is rewritten against the pin when the memory chips move.
 3. **The whole-trace assumption takes the `0x7800_0000` bound**, as in the next section, not
@@ -180,10 +180,13 @@ slightly stronger, is the guest address bound Pico itself uses, and also covers 
 offsets, which need `p - 2^20`.
 
 Where Pico enforces it, outside the chips, in the recursion circuit
-(`vm/src/mle/compiler/recursion/lowering.rs`): each chunk's final pc equals the next chunk's
-first pc (`assert_child_continuity`, 1081-1090); a chunk that runs no CPU passes its pc through
-unchanged (1436-1440); the root requires the last chunk's final pc to be zero
-(`assert_root_complete`, 1748-1754). A chunk's first pc is its row 0's pc
+(`vm/src/mle/compiler/recursion/lowering.rs`; lines at v3.1.1, then at v3.1.6): each chunk's
+final pc equals the next chunk's first pc (`assert_child_continuity`, 1081-1090; 1194-1199); a
+chunk that runs no CPU passes its pc through unchanged (1436-1440; 1559-1563); the root requires
+the last chunk's final pc to be zero (`assert_root_complete`, 1748-1754; 1776-1779). v3.1.6
+rewrote this file for the global LogUp; the three checks are unchanged, and it adds others
+(a CPU chunk's first pc is not zero, a chunk with no CPU is not chunk 1) that only narrow what is
+accepted. A chunk's first pc is its row 0's pc
 (`riscv_cpu/public_values/constraints.rs:26-33`), row 0 is real
 (`riscv_cpu/constraints.rs:340-341`) and its fetch matches the Program table, whose pcs are
 4-aligned and below `0x7800_0000` (`riscv_program/traces.rs:83-110`). So in an accepted proof the
