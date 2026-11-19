@@ -112,8 +112,9 @@ v3.1.1 holds at v3.1.6. The claims in this document that name v3.1.6 were checke
 pin above names a later version, they have not been checked there yet. Pico's per-chip constraint digests (`vm/tests/riscv_constraint_dump.txt`)
 cannot show this at v3.1.6, which changed every chip's digest when it rewrote how chunks are joined;
 the re-extraction does. A chip's constraints also cannot show which chips receive its messages. At
-the pin the CPU chip's memory dispatch has a second receiver, `MemoryUnalignedChip`, which makes no
-alignment promise (see A4 and A5), and the Program table changed after v3.1.1 (see A6).
+the pin the CPU chip's memory dispatch has a second receiver, `MemoryUnalignedChip`, which serves
+misaligned loads and stores, so the memory promise no longer says an address is aligned (see A4
+and A5), and the Program table changed after v3.1.1 (see A6).
 
 <!-- generated: pending -->
 1 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `MemoryReadWriteChip.lean`.
@@ -246,17 +247,21 @@ receiving chip's theorem. The memory chip's specification still states its assum
 against the 2.x memory contract (`RVSail/Buses.lean`); the 3.x contract it will assume
 (`MemoryBus.externals` in `RVSail/BusesV3.lean`) is the one the CPU is proven to meet.
 
-At v3.1.6, the pin, the memory dispatch has two receivers, and the promise the CPU chip assumes
-of it is out of date. Since v3.1.2 Pico has `MemoryUnalignedChip`
-(`vm/src/chips/chips/riscv_memory/unaligned/`), which takes the same 17-field message on the same
-bus as `MemoryReadWriteChip` and serves loads and stores whose address is not a multiple of their
-width. The CPU chip's constraints did not change, so either chip may take any load or store. The
-promise (`MemoryBus.Spec` in `RVSail/BusesV3.lean`) was drafted against v3.1.1, where
-`MemoryReadWriteChip` was the only receiver. It says that the address of a halfword, word or
-doubleword access is a multiple of its width, and since v3.1.2 that is false. Only a load or store row
-sends the memory dispatch, so the clause matters only to the parked load and store theorems. The
-promise has to be rewritten against the pin when the memory chips move, and those theorems have to
-be rewritten with it.
+At v3.1.6, the pin, the memory dispatch has two receivers. Since v3.1.2 Pico has
+`MemoryUnalignedChip` (`vm/src/chips/chips/riscv_memory/unaligned/`), which takes the same
+17-field message on the same bus as `MemoryReadWriteChip` and serves loads and stores whose
+address is not a multiple of their width. The CPU chip's constraints did not change, so either
+chip may take any load or store. The promise the CPU chip assumes of the dispatch
+(`MemoryBus.Spec` in `RVSail/BusesV3.lean`) therefore states only what both chips' constraints
+at v3.1.6 establish: a load's value has 16-bit pieces, the address `b + c` is at least `2^16` and
+below `2^32`, and, unless the destination is `x0`, a load's value is the sign or zero extension
+its opcode names. Its doc comment cites the constraint of each chip behind each clause. It no
+longer says that a halfword, word or doubleword address is a multiple of the width, as it did
+when drafted against v3.1.1, where `MemoryReadWriteChip` was the only receiver. It says nothing
+about which memory a load reads, about the message's `chunk` and `clk` fields, or that a store
+misses the program's code. Neither memory chip's proof against this promise exists yet: the
+read/write chip's proofs are against the 2.x contract, and the unaligned chip has none. The load
+and store theorems, still parked, have to hold for a misaligned address too.
 
 The contract now covers the merged branch-comparison rows. `ALUBus.validOpcode` contains the two
 opcodes 264 / 265 (`SLT` / `SLTU` + `LT_CMP_OPCODE_TAG`) that Pico's CPU sends for every branch,

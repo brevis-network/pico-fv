@@ -130,8 +130,12 @@ Settled on 12 November 2026.
    own proofs stay on the 2.x extraction and the 2.x contract until that chip moves, so until then
    the 11 load and store theorems rest on a promise with no Lean proof at v3.1.1; `SOUNDNESS.md`
    has to say so. Since v3.1.2, and so at the pin, the alignment clause no longer holds:
-   `MemoryUnalignedChip` also serves the memory dispatch, with no alignment promise
-   (`SOUNDNESS.md`, A4), so the contract is rewritten against the pin when the memory chips move.
+   `MemoryUnalignedChip` also serves the memory dispatch and takes any byte offset. The contract
+   was rewritten against v3.1.6 to what both memory chips prove: the alignment clauses are
+   dropped, and the 16-bit range of a loaded value, the address bound and the six extension
+   clauses stay (`MemoryBus.Spec`'s doc comment cites each chip's constraint;
+   `SOUNDNESS.md`, A4). The Sail-side lemmas of the eight halfword, word and doubleword loads
+   and stores then need a misaligned case instead of the alignment hypothesis.
 3. **The whole-trace assumption takes the `0x7800_0000` bound**, as in the next section, not
    the weakest bound the proofs need.
 4. **The CPU chip gets a theorem for what it guarantees as a sender** (`ext_asrt`). Each of
@@ -236,7 +240,8 @@ the Sail state as one step of the instruction does"):
 - `equivalence_JALR`: the four-carry addition `rs1 + imm = next_pc + lsb` (`jalr_sum`), the
   cleared low bit, bit 1 of the target, and the return address `pc + 4` from `pc_carry`.
 
-`Equivalence/TrialV3Mem.lean` adds two against the memory-dispatch contract:
+`Equivalence/TrialV3Mem.lean` adds two against the memory-dispatch contract as drafted at
+v3.1.1, with its alignment clauses (since dropped; see decision 2):
 
 - `equivalence_LW`: the address `rs1 + imm` with the bound and the 4-byte alignment from the
   memory promise, the sign-extended value, and the destination `x0` case, where the proof

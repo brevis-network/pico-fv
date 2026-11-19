@@ -32,12 +32,12 @@ set_option maxHeartbeats 1_000_000_000
     Open `RV64IM_Interactions.V3`, not `RV64IM_Interactions`, in a file that uses these: the
     entry, row and predicate names are the same as the 2.x ones.
 
-    Pico line numbers in this file are at v3.1.1 (`2acc7c1828fb`). From v3.1.1 to v3.1.6 the
+    Pico line numbers in this file are at v3.1.1 (`2acc7c1828fb`), except in `MemoryBus.Spec`,
+    which cites the two memory chips at v3.1.6 (`6aa644efeff9`). From v3.1.1 to v3.1.6 the
     CPU chip's constraint files are unchanged; its trace generation (`riscv_cpu/event.rs`,
     `traces.rs`) changed, as did the Program chip's and `MemoryReadWriteChip`'s columns,
     constraints and trace generation. Since v3.1.2 the memory dispatch has a second receiver,
-    `MemoryUnalignedChip`, which `MemoryBus.Spec`'s alignment clause does not describe
-    (`SOUNDNESS.md`, A4).                                                                   -/
+    `MemoryUnalignedChip`, so `MemoryBus.Spec` states only what both receivers prove.        -/
 
 namespace RV64IM_Interactions.V3
 
@@ -717,14 +717,33 @@ namespace RV64IM_Interactions.V3
     def MemoryBus.isStore (mem_opcode : FKB) : Prop :=
       mem_opcode ∈ Finset.Icc 15 17 ∨ mem_opcode = 47
 
-    /-- What the memory chip guarantees, which the CPU chip assumes when it sends.
+    /-- What the memory chips guarantee, which the CPU chip assumes when it sends.
 
-        Same content as the 2.x `MemoryBus.Spec`, keyed on the opcode as before, except the
-        address bound: the v3.1.1 memory chip proves `b + c` with an in-chip carry chain whose
-        third and fourth result limbs are zero, so the address is below `2^32`, and its stack
-        guard keeps it at or above `2^16` (`riscv_memory/read_write/constraints.rs:209-255`).
-        The `chunk` and `clk` fields carry no promise here; the memory chip's own proofs may
-        need one. -/
+        Two chips receive the memory dispatch at the pin, `MemoryReadWriteChip` and, since
+        v3.1.2, `MemoryUnalignedChip`; either may take any load or store, so this states only
+        what both prove. Lines below are in `vm/src/chips/chips/riscv_memory/` at v3.1.6:
+        `rw` is `read_write/constraints.rs`, `un` is `unaligned/constraints.rs`. Both receive
+        the same 17-field message (`rw:49-84`, `un:44-63`).
+
+        - A load's value has four 16-bit pieces. `rw`: the pieces are the memory value's
+          (`:417-442`), which the memory argument's promise bounds (`StateBusEntry`,
+          `Buses.lean`), or a byte split by the U8Range check at `:535-542`, plus the
+          `0xFF00` / `0xFFFF` sign fill. `un`: every piece is two bytes of the two dwords,
+          each U8Range-checked (`:185-205`), selected at `:216-227` and placed at `:232-250`,
+          plus the same fill. Neither chip constrains the value of a load into `x0`; there the
+          CPU sends zero (`MemoryBus.externals`).
+        - `2^16 ≤ addr < 2^32` for `addr = b + c`. Both chips add `b + c` with a carry chain
+          whose third and fourth result pieces are zero (`rw:242-253`, `un:70-81`), bound the
+          two low pieces (`rw:259-266, 301-309`, `un:82-89, 109-116`), and require the second
+          piece to be non-zero (`rw:271-274`, `un:90-93`).
+        - When `op_a_0 = 0`, a load's value is the sign or zero extension its opcode names.
+          `rw:417-442` and `un:232-250` set each piece of `a` from the bytes read, gated by
+          `op_a_0`, which both make boolean (`rw:497`, `un:251`); the sign bit is fixed by a
+          U16Range check (`rw:451-494`, `un:256-271`).
+
+        No alignment clause: `rw:311-325` refuses a misaligned access, but `un` takes any byte
+        offset (`un:100-108`). Nothing is promised about which memory a load reads, about the
+        `chunk` and `clk` fields, or that a store misses the program's code. -/
     def MemoryBus.Spec
       (mem_opcode a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 op_a_0 : FKB) : Prop :=
       let a := U64w.toBV #v[a_0, a_1, a_2, a_3]
@@ -734,9 +753,6 @@ namespace RV64IM_Interactions.V3
       ((mem_opcode.val ≤ 14 ∨ mem_opcode.val = 45 ∨ mem_opcode.val = 46) →
           a_0.val < 65536 ∧ a_1.val < 65536 ∧ a_2.val < 65536 ∧ a_3.val < 65536) ∧
       65536 ≤ addr ∧ addr < 2 ^ 32 ∧
-      (mem_opcode = 11 ∨ mem_opcode = 14 ∨ mem_opcode = 16 → 2 ∣ addr) ∧
-      (mem_opcode = 12 ∨ mem_opcode = 17 ∨ mem_opcode = 45 → 4 ∣ addr) ∧
-      (mem_opcode = 46 ∨ mem_opcode = 47 → 8 ∣ addr) ∧
       (mem_opcode = 10 → op_a_0 = 0 → a = BitVec.signExtend 64 (a.truncate 8)) ∧   -- LB
       (mem_opcode = 11 → op_a_0 = 0 → a = BitVec.signExtend 64 (a.truncate 16)) ∧  -- LH
       (mem_opcode = 12 → op_a_0 = 0 → a = BitVec.signExtend 64 (a.truncate 32)) ∧  -- LW
