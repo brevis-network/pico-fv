@@ -1706,9 +1706,10 @@ namespace CpuChip.Interpretations
   -- ============================================================================
 
   /-- A memory row sends the memory dispatch, so the memory chips' promise holds for it: the
-      address `op_b + op_c` is at least `2^16` and below `2^32`, and a load's value has 16-bit
-      pieces and the opcode's extension. The address need not be a multiple of the access
-      width, and the promise does not give the `0x7800_0000` guest bound. -/
+      address `op_b + op_c` is at least `2^16` and below `2^32`, a load's value has 16-bit
+      pieces, and, when the destination is not `x0` (`op_a_is_x0 = 0`), a load's value is the
+      opcode's sign or zero extension. The address need not be a multiple of the access width,
+      and the promise does not give the `0x7800_0000` guest bound. -/
   lemma memory_message_spec
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)

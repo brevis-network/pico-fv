@@ -211,7 +211,10 @@ of `RVSail/Buses.lean`, and are not checked while they move. Two definitions eve
 theorem names were rewritten at v3.1.1 behind unchanged names: `Equivalence.CPU_bus_operations`, the
 operations the theorem compares the Sail step against (now a two-piece pc, with the memory width and
 direction taken from the opcode), and `CpuChip.Interpretations.bus_row`, which sorts the row's
-messages (now with the v3.1.1 deserialiser).
+messages (now with the v3.1.1 deserialiser). A third was rewritten against v3.1.6:
+`V3.MemoryBus.Spec`, the memory chips' promise, which every checked 3.x instruction theorem
+assumes through its `bus_row_wf_asm` hypothesis. It lost its three alignment clauses (see the
+composition section below), so that hypothesis now assumes less, and each theorem says more.
 
 The whole-trace assumption, `pico_CpuChip_control_flow_assumptions`, bounds the chunk's final
 pc (public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The
@@ -243,20 +246,25 @@ proves the v3.1.1 CPU chip sends, at whatever multiplicity it sends it (each mes
 carries a duty is sent 0 or 1 times, `CpuChip.Spec.multiplicity_eq_zero_or_one`). The theorem
 assumes only the Program table's and the register file's promises, not those of the ALU and
 memory chips it sends to, so the CPU's side of each of those links does not rest on the
-receiving chip's theorem. The memory chip's specification still states its assumptions
-against the 2.x memory contract (`RVSail/Buses.lean`); the 3.x contract it will assume
-(`MemoryBus.externals` in `RVSail/BusesV3.lean`) is the one the CPU is proven to meet.
+receiving chip's theorem. The read/write memory chip's specification still states its
+assumptions against the 2.x memory contract (`RVSail/Buses.lean`); the 3.x contract both memory
+chips will assume (`MemoryBus.externals` in `RVSail/BusesV3.lean`) is the one the CPU is proven
+to meet.
 
 At v3.1.6, the pin, the memory dispatch has two receivers. Since v3.1.2 Pico has
 `MemoryUnalignedChip` (`vm/src/chips/chips/riscv_memory/unaligned/`), which takes the same
 17-field message on the same bus as `MemoryReadWriteChip` and serves loads and stores whose
 address is not a multiple of their width. The CPU chip's constraints did not change, so either
 chip may take any load or store. The promise the CPU chip assumes of the dispatch
-(`MemoryBus.Spec` in `RVSail/BusesV3.lean`) therefore states only what both chips' constraints
-at v3.1.6 establish: a load's value has 16-bit pieces, the address `b + c` is at least `2^16` and
-below `2^32`, and, unless the destination is `x0`, a load's value is the sign or zero extension
-its opcode names. Its doc comment cites the constraint of each chip behind each clause. It no
-longer says that a halfword, word or doubleword address is a multiple of the width, as it did
+(`MemoryBus.Spec` in `RVSail/BusesV3.lean`) therefore states only what holds whichever chip takes
+the message: a load's value has 16-bit pieces, the address `b + c` is at least `2^16` and below
+`2^32`, and, unless the destination is `x0`, a load's value is the sign or zero extension its
+opcode names. The address bound and the extensions follow from each chip's constraints at v3.1.6.
+The 16-bit pieces need more: in `MemoryReadWriteChip` they are pieces of the previous memory
+value, which the memory argument's promise bounds, and for a load into `x0` neither chip
+constrains the value, so there the clause holds because the CPU sends zero
+(`MemoryBus.externals`). Its doc comment cites the constraint of each chip behind each clause.
+It no longer says that a halfword, word or doubleword address is a multiple of the width, as it did
 when drafted against v3.1.1, where `MemoryReadWriteChip` was the only receiver. It says nothing
 about which memory a load reads, about the message's `chunk` and `clk` fields, or that a store
 misses the program's code. Neither memory chip's proof against this promise exists yet: the
