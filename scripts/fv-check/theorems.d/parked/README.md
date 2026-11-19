@@ -45,7 +45,7 @@ time. For each class:
 ## How the restored statements may differ
 
 They are expected to differ from those at `353238a` in three ways, plus the
-dropped hypotheses and, for the shift-immediate theorems, the shift amount,
+dropped hypotheses and, for the register-immediate theorems, the immediate,
 both described at the end of this section. The bus assumptions name the v3.1.1
 contracts (`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`) instead of the
 2.x ones. The register held in `op_a` (the destination, or `rs1` for a
@@ -83,19 +83,24 @@ A restored statement may also drop the row's class selector when the opcode
 fixes that: `JAL` and `JALR` no longer take `is_jal` / `is_jalr`, nor either
 immediate flag, because opcodes 24 and 25 are the two jumps alone.
 
-The shift-immediate theorems `SLLIW`, `SRLIW`, `SRAIW`, `SLLI`, `SRLI` and
-`SRAI` also read their shift amount from the instruction's encoded
-`instruction.op_c_0` instead of the `op_c` value the row sends to the ALU chip
-(`op_c_value`), as they read `rd` and `rs1`. The statement at `353238a` read it
-from the value the ALU chip shifts by, so it held whatever tied that value to
-the instruction. The new one names the low 6 bits (5 for the 32-bit shifts) of
-the instruction's encoded `op_c_0`, that is `op_c_0` modulo 64 (or 32), and the
-proof needs the constraint that ties the two
-(`op_c_value_setWidth_eq_op_c_0`). The decoder writes the program's shift
-amount into `op_c_0` unchanged (`Transpiler.V3.imm_operand`), so on a row the
-program decoded the two are equal, but the statement does not tie `op_c_0` to
-the decoder. A class whose immediate the proof does not otherwise reach should
-be restored the same way.
+The register-immediate theorems read their immediate from the instruction's
+encoded `instruction.op_c_0` instead of the `op_c` value the row sends to the
+ALU chip (`op_c_value`), as they read `rd` and `rs1`: the shifts `SLLIW`,
+`SRLIW`, `SRAIW`, `SLLI`, `SRLI` and `SRAI`, and `ADDI`, `XORI`, `ORI`, `ANDI`,
+`SLTI`, `SLTIU` and `ADDIW`. The statement at `353238a` read it from the value
+the ALU chip works on, so it held whatever tied that value to the instruction.
+The new one names the low 6 bits (5 for the 32-bit shifts) of the
+instruction's encoded `op_c_0`, that is `op_c_0` modulo 64 (or 32), or its low
+12 bits for the other seven, and the proof needs the constraint that ties the
+two (`op_c_value_setWidth_eq_op_c_0`). The decoder sign-extends the program's
+12-bit immediates and zero-extends its shift amounts
+(`Transpiler.V3.imm_operand` with its sign flag `true` or `false`), and writes
+the low 16 bits of the result into `op_c_0`, so on a row the program decoded
+those bits are the program's immediate, but the statement does not tie
+`op_c_0` to the decoder. A class whose immediate the proof does not otherwise
+reach should be restored the same way. The branches, `JAL` and `JALR`, already
+restored, read theirs from the row's operand values (`op_c_value`, or
+`op_b_value` for `JAL`).
 
 Two definitions every statement names were also rewritten at v3.1.1, and
 `signatures.txt` shows only their names: `Equivalence.CPU_bus_operations` (the

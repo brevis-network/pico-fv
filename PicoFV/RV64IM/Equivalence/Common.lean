@@ -638,9 +638,10 @@ namespace Equivalence
     /-- On a row of `ADDI`, `XORI`, `ORI`, `ANDI`, `SLTI`, `SLTIU` (opcodes 0, 2, 3, 4, 8, 9 with
         `imm_b = 0`, `imm_c = 1`) or `ADDIW` (40 with `imm_c = 1`), the `op_c` value is the
         sign extension of its own low 12 bits: the decoder writes the instruction's 12-bit
-        immediate there, sign-extended (`Transpiler.V3.imm_operand`, constraints 4 to 7). An
-        instruction theorem that reads `imm` back from `op_c` uses it to recover the 64-bit
-        value Sail adds or compares. -/
+        immediate there, sign-extended (`Transpiler.V3.imm_operand`, constraints 4 to 7). The
+        `ITYPE` and `ADDIW` theorems read `imm` from the instruction's `op_c_0`; they rewrite
+        the low 12 bits on the right with `op_c_value_setWidth_eq_op_c_0` and use the result to
+        recover the 64-bit value Sail adds or compares. -/
     lemma op_c_value_eq_signExtend_imm12
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ) {op : FKB}
@@ -684,9 +685,10 @@ namespace Equivalence
 
     /-- On a row whose `op_c` is an immediate (`imm_c = 1`), the low `n ≤ 16` bits of the `op_c`
         value the row sends to the ALU chip are those of the instruction's encoded `op_c_0`
-        (constraint 4, through `imm_c_eq_1_constraints`). A shift-by-immediate theorem reads its
-        shift amount from `op_c_0`, as it reads `rd` and `rs1` from the instruction, and uses
-        this lemma to reach the amount the ALU chip shifts by. -/
+        (constraint 4, through `imm_c_eq_1_constraints`). The register-immediate theorems read
+        their immediate from `op_c_0`, as they read `rd` and `rs1` from the instruction, and use
+        this lemma to reach the value the ALU chip works on: the shifts at `n` = 6 or 5, the
+        `ITYPE` and `ADDIW` theorems at `n` = 12. -/
     lemma op_c_value_setWidth_eq_op_c_0
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ) {n : ℕ} (hn : n ≤ 16)
