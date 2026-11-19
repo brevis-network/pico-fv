@@ -36,10 +36,10 @@ use render::{pair_interaction_meta, render_module, ExtractedAir};
 type F = KoalaBear;
 
 /// The Pico commit `Cargo.toml` pins; `pico_rev_matches_cargo_toml` keeps the two in step.
-const PICO_REV: &str = "6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb";
+const PICO_REV: &str = "6aa644efeff9ddbec6beb538200f98f2a70f5d8e";
 /// The Pico release tag at `PICO_REV`. Change the two together; `soundness_facts.py` prints
 /// both in the documents' pin blocks.
-const PICO_TAG: &str = "v3.1.5";
+const PICO_TAG: &str = "v3.1.6";
 
 /// Files in the extraction directory that this tool does not generate.
 const HAND_WRITTEN: &[&str] = &["Attributes.lean"];

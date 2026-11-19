@@ -37,15 +37,15 @@ The 62 opcodes:
 The extraction tool in `extractor/` is pinned to this Pico revision:
 
 <!-- generated: pin -->
-Pico v3.1.5, commit [`6788178d6`](https://github.com/brevis-network/pico/commit/6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb).
+Pico v3.1.6, commit [`6aa644efe`](https://github.com/brevis-network/pico/commit/6aa644efeff9ddbec6beb538200f98f2a70f5d8e).
 <!-- end generated -->
 
 Each proof is about the Pico revision named in the first line of the `PicoFV/RV64IM/Extraction/`
 file it uses; the files listed in `extractor/pending.txt` still predate the pinned commit and are
-being moved chip by chip. Pico's per-chip constraint digests (`vm/tests/riscv_constraint_dump.txt`)
-are the same at v3.1.1 and v3.1.5 for the CPU chip and the ten ALU chips, so what this README says
-about those chips at v3.1.1 holds at v3.1.5. The memory chips differ between the two, and v3.1.5
-adds a second memory chip for misaligned loads and stores (see [SOUNDNESS.md](SOUNDNESS.md), A4).
+being moved chip by chip. Re-extracting the CPU chip, the ten ALU chips and their gadgets at the
+pin gives the same constraints and bus messages as at v3.1.1, so what this README says about those
+chips at v3.1.1 holds at the pin. The memory chips differ, and since v3.1.2 Pico has a second
+memory chip for misaligned loads and stores (see [SOUNDNESS.md](SOUNDNESS.md), A4).
 [SOUNDNESS.md](SOUNDNESS.md) says what the proofs establish and what they trust.
 
 For each opcode, the equivalence theorem states: under the chip's row
