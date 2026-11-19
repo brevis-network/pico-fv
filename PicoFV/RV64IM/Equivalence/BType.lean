@@ -22,17 +22,32 @@ namespace Equivalence
     -- changes only in the contract names and in reading `rs1` from `op_a`.
     --
     -- A branch row reads `rs1` into `op_a` and `rs2` into `op_b` and writes
-    -- both back unchanged (`op_a_kept`), so it writes no register. Its `op_c`
-    -- is the 13-bit offset (`imm_c = 1`). The comparison runs on the ALU bus:
-    -- `branch_compare_spec` gives the two bits `a_lt_b` and `a_gt_b` as the
-    -- strict comparisons of the two operands, signed for `BLT` and `BGE`
-    -- (opcode 264) and unsigned for the other four (265); the chip recovers
-    -- equality as `1 - a_lt_b - a_gt_b`. The row's own taken predicate is
-    -- `branch_taken`, and the next pc is `pc + offset` when it is 1
-    -- (`branch_taken_next_pc`) and `pc + 4` when it is 0
-    -- (`branch_not_taken_next_pc`). Sail's success condition is that the
-    -- target is 4-aligned on the taken branch alone, which
+    -- both back unchanged (`op_a_kept`, constraint 13), so it writes no
+    -- register. Its `op_c` is the 13-bit offset (`imm_c = 1`). The comparison
+    -- runs on the ALU bus: `branch_compare_spec` gives the two bits `a_lt_b`
+    -- and `a_gt_b` as the strict comparisons of the two operands, signed for
+    -- `BLT` and `BGE` (opcode 264) and unsigned for the other four (265); the
+    -- chip recovers equality as `1 - a_lt_b - a_gt_b`. The row's own taken
+    -- predicate is `branch_taken`, and the next pc is `pc + offset` when it is
+    -- 1 (`branch_taken_next_pc`, constraint 19) and `pc + 4` when it is 0
+    -- (`branch_not_taken_next_pc`, constraint 37). Sail's success condition is
+    -- that the target is 4-aligned on the taken branch alone, which
     -- `next_pc_mod_four_eq_zero` carries.
+    --
+    -- Pico source at the pinned v3.1.6, under `vm/src/chips/chips/riscv_cpu/`:
+    --   * `op_a` keeps its previous value on a branch or store row:
+    --     `register/constraints.rs:117-123`;
+    --   * every branch row has `imm_c = 1`, and the taken target
+    --     `next_pc = pc + offset`: `branch/constraints.rs:74-86`;
+    --   * the comparison message on the ALU bus, opcode `SLT` or `SLTU` plus
+    --     `LT_CMP_OPCODE_TAG`: `branch/constraints.rs:103-117`;
+    --   * the taken predicate: `branch_taken_expr`, `constraints.rs:356-363`;
+    --   * `next_pc = pc + 4` on a real row that is not a taken branch, a jump
+    --     or a halt: `constraints.rs:318-326`.
+    --
+    -- The six theorems differ only in the comparison. Each derives the row's
+    -- taken bit from the comparison bits and hands it, with its Sail lemmas,
+    -- to `branch_equivalence`, which does the rest.
     -- ========================================================================
 
     /-- A branch row's flags and selectors, as its opcode fixes them
@@ -112,38 +127,6 @@ namespace Equivalence
                    h_imm_c_eqs.2.2.2, eq_c0, eq_c1, eq_cs]
         exact Transpiler.V3.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
 
-    /-- The operations a branch row's messages stand for, in order: the pc read, a read and
-        write back of `rs2`, a read and write back of `rs1`, and the next pc. `op_c` is the
-        offset, so it sends no message, and neither register changes. -/
-    private lemma CPU_bus_operations_eq_of_branch
-      [Field ExtF]
-      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
-      (h_is_real : air.cols.is_real row 0 = 1)
-      (h_wf : bus_row_wf_asm (bus_row air row))
-      (h_imm_b : air.cols.opcode_selector.imm_b row 0 = 0)
-      (h_imm_c : air.cols.opcode_selector.imm_c row 0 = 1)
-      (h_memory : air.cols.opcode_selector.is_memory row 0 = 0)
-      (h_width : mem_width_of_opcode (air.cols.instruction.opcode row 0) = none)
-    :
-      CPU_bus_operations air row =
-        [ .ReadPC (U64w.toBV (pc air row)),
-          .ReadReg (.Regidx (air.cols.instruction.op_b_0 row 0).val)
-            (U64w.toBV (op_b_value air row)),
-          .WriteReg (.Regidx (air.cols.instruction.op_b_0 row 0).val)
-            (U64w.toBV (op_b_value air row)),
-          .ReadReg (.Regidx (air.cols.instruction.op_a row 0).val)
-            (U64w.toBV (op_a_prev_value air row)),
-          .WriteReg (.Regidx (air.cols.instruction.op_a row 0).val)
-            (U64w.toBV (op_a_value air row)),
-          .WritePC (U64w.toBV (next_pc air row)) ]
-    := by
-      obtain ⟨ h_reg_rd, h_reg_rs1, - ⟩ := register_indices_lt air row h_is_real h_wf
-      simp [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations, deserialise_bus_row,
-            raw_bus_row, MemoryBusEntry.deserialise, h_width,
-            h_is_real, h_imm_b, h_imm_c, h_memory, h_reg_rd, h_reg_rs1 h_imm_b,
-            BitVec.ofNatLT_eq_ofNat, toBV_pc_eq_ofNat air row h_is_real h_wf,
-            op_a_prev_value, op_a_value, op_b_value]
-
     /-- A branch row's next pc, as Sail's increment: `pc + offset` when the branch is taken
         and `pc + 4` when it is not. `taken` is the row's own predicate, decided by the
         comparison bits; `branch_taken_next_pc` and `branch_not_taken_next_pc` give the two
@@ -190,6 +173,114 @@ namespace Equivalence
           pico_assumptions (by simpa using h_taken) h_jal h_jalr
           (is_halt_eq_zero_of_no_ecall air row h_ecall (h_all_constraints row h_row))
 
+    /-- The part of a branch theorem that does not depend on the comparison. A branch's Sail
+        operations are a pc read, reads of `rs1` and `rs2`, and the write of
+        `pc + (if cond then offset else 4)`, where `cond` is the branch's comparison of the two
+        values (`h_spec`); `h_exec` is the opcode's `execute_*_equiv`. Given the row's
+        selectors and its taken bit as `cond` of the `op_a` and `op_b` values (`h_taken`), the
+        row's operations have the same effect: the branch writes no register, since `op_a`
+        keeps the value it read (`op_a_kept`), and the next pc is the Sail increment
+        (`branch_next_pc`), 4-aligned when the branch is taken (`next_pc_mod_four_eq_zero`). -/
+    private lemma branch_equivalence
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ) (bo : bop)
+      (h_row : row ≤ air.last_row)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      (h_opcode : air.cols.instruction.opcode row 0 = Transpiler.opcode_of_bop bo)
+      (h_ecall : air.cols.opcode_selector.is_ecall row 0 = 0)
+      (h_store : air.cols.opcode_selector.is_store row 0 = 0)
+      (h_jalr : air.cols.opcode_selector.is_jalr row 0 = 0)
+      (h_jal : air.cols.opcode_selector.is_jal row 0 = 0)
+      (h_branch_sum :
+        air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 +
+          air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 +
+          air.cols.opcode_selector.is_bltu row 0 + air.cols.opcode_selector.is_bgeu row 0 = 1)
+      (spec :
+        regidx → regidx → BitVec 13 → BitVec 64 → BitVec 64 → BitVec 64 → List Operation)
+      (cond : BitVec 64 → BitVec 64 → Prop) [∀ a b, Decidable (cond a b)]
+      (h_spec : ∀ r1 r2 imm pc_val r1_val r2_val, spec r1 r2 imm pc_val r1_val r2_val =
+        [ .ReadPC pc_val, .ReadReg r1 r1_val, .ReadReg r2 r2_val,
+          .WritePC (pc_val + if cond r1_val r2_val then BitVec.signExtend 64 imm else 4#64) ])
+      (h_exec : ∀ {r1 r2 : regidx} {imm : BitVec 13} {pc_val r1_val r2_val : BitVec 64}
+          {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+          {misa : BitVec 64},
+        (operation_list_effect (spec r1 r2 imm pc_val r1_val r2_val) state).hypotheses →
+        Sail.readReg Register.misa state = EStateM.Result.ok misa state →
+        (cond r1_val r2_val → (pc_val + BitVec.signExtend 64 imm) % 4 = 0) →
+        execute_instruction (instruction.BTYPE (imm, r2, r1, bo)) state =
+          (operation_list_effect (spec r1 r2 imm pc_val r1_val r2_val) state).state)
+      (h_taken : branch_taken air row =
+        if cond (U64w.toBV (op_a_value air row)) (U64w.toBV (op_b_value air row)) then 1 else 0)
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      let rs1 : regidx := .Regidx (air.cols.instruction.op_a row 0).val
+      let rs2 : regidx := .Regidx (air.cols.instruction.op_b_0 row 0).val
+      let imm : BitVec 13 := (U64w.toBV (op_c_value air row)).setWidth 13
+      execute_instruction (instruction.BTYPE (imm, rs2, rs1, bo)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      have h_wf := h_all_wf row h_row
+      have h_constraints := h_all_constraints row h_row
+      obtain ⟨ h_imm_b, h_imm_c, - ⟩ :=
+        branch_row_selectors air row h_is_real h_wf h_opcode
+          (by cases bo <;> rfl) (by cases bo <;> rfl)
+      obtain ⟨ imm', eq_c0, eq_c1, eq_cs, h_op_c ⟩ :=
+        branch_offset air row bo h_is_real h_wf h_constraints h_opcode h_imm_c
+      -- `op_a` keeps the value it read, so the branch writes no register.
+      have h_kept := op_a_kept air row h_constraints (by rw [h_branch_sum, h_store]; norm_num)
+      have h_a_value :
+          U64w.toBV (op_a_value air row) = U64w.toBV (op_a_prev_value air row) := by
+        simp [op_a_value, op_a_prev_value, h_kept.1, h_kept.2.1, h_kept.2.2.1, h_kept.2.2.2]
+      have h_next := branch_next_pc air row h_row h_is_real h_all_wf h_all_constraints
+        pico_assumptions h_ecall h_jal h_jalr h_branch_sum eq_c0 eq_c1 eq_cs h_op_c
+        (decide (cond (U64w.toBV (op_a_value air row)) (U64w.toBV (op_b_value air row))))
+        (by simp only [decide_eq_true_eq]; exact h_taken)
+      simp only [decide_eq_true_eq] at h_next
+      have h_align := next_pc_mod_four_eq_zero air row h_row h_is_real h_all_wf
+        h_all_constraints pico_assumptions
+      -- The row's messages, as operations on the Sail state.
+      rw [CPU_bus_operations_eq_of_imm_c_eq_one air row h_is_real h_wf h_imm_b h_imm_c
+            (by cases bo <;> simp [mem_width_of_opcode, h_opcode, Transpiler.opcode_of_bop])]
+        at h_bus_hypotheses ⊢
+      extract_lets rs1 rs2 imm
+      rw [show imm = imm' by
+            simp only [imm, h_op_c]; exact setWidth_signExtend_self imm' (by norm_num)]
+      simp at h_bus_hypotheses
+      obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus_hypotheses
+      rw [operation_list_effect_hypotheses_writeReg_same (by simpa using h_read_b)] at h_rest
+      simp at h_rest
+      obtain ⟨ h_read_a, - ⟩ := h_rest
+      rw [h_exec (pc_val := U64w.toBV (pc air row))
+            (r1_val := U64w.toBV (op_a_value air row))
+            (r2_val := U64w.toBV (op_b_value air row))
+            (misa := misa)]
+      · rw [h_spec]
+        simp [rs1, rs2]
+        rw [operation_list_effect_state_writeReg_same h_read_b,
+            operation_list_effect_state_readReg,
+            operation_list_effect_state_writeReg_same (by rw [h_a_value]; exact h_read_a),
+            ← h_next]
+      · rw [h_spec]
+        simp [operation_list_effect, List.foldl, operation_effect, and_assoc]
+        exact ⟨ h_pc_read, by rw [h_a_value]; simpa [rs1] using h_read_a,
+                by simpa [rs2] using h_read_b ⟩
+      · clear * - risc_v_assumptions
+        simp [RISC_V_assumptions] at risc_v_assumptions
+        tauto
+      · intro h_c
+        rw [show BitVec.signExtend 64 imm' =
+              (if cond (U64w.toBV (op_a_value air row)) (U64w.toBV (op_b_value air row))
+                then BitVec.signExtend 64 imm' else 4#64) from (if_pos h_c).symm,
+            ← h_next]
+        apply BitVec.eq_of_toNat_eq
+        rw [BitVec.toNat_umod]
+        simp [U64w.toBV_toNat, h_align.2]
+
     /-- Equivalence for BEQ (opcode 18, `bop.BEQ`). -/
     theorem equivalence_BEQ
       [Field ExtF]
@@ -215,14 +306,11 @@ namespace Equivalence
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_wf := h_all_wf row h_row
-      have h_constraints := h_all_constraints row h_row
-      obtain ⟨ h_imm_b, h_imm_c, h_s ⟩ :=
+      obtain ⟨ -, -, h_s ⟩ :=
         branch_row_selectors air row h_is_real h_wf h_opcode (by rfl) (by rfl)
       simp [class_selectors_of_opcode] at h_s
-      obtain ⟨ h_ecall, h_memory, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
+      obtain ⟨ h_ecall, -, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
                h_jalr, h_jal ⟩ := h_s
-      obtain ⟨ imm', eq_c0, eq_c1, eq_cs, h_op_c ⟩ :=
-        branch_offset air row .BEQ h_is_real h_wf h_constraints h_opcode h_imm_c
       have h_branch_sum :
           air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 +
             air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 +
@@ -239,11 +327,6 @@ namespace Equivalence
       have h_gt_bit : air.cols.a_gt_b row 0 =
           if (U64w.toBV (op_b_value air row)).ult (U64w.toBV (op_a_value air row)) = true
             then 1 else 0 := h_cmp.2.2
-      -- `op_a` keeps the value it read, so the branch writes no register.
-      have h_kept := op_a_kept air row h_constraints
-        (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
-      have h_a_value : U64w.toBV (op_a_value air row) = U64w.toBV (op_a_prev_value air row) := by
-        simp [op_a_value, op_a_prev_value, h_kept.1, h_kept.2.1, h_kept.2.2.1, h_kept.2.2.2]
       -- The row's predicate: taken exactly when the two values are equal.
       have h_taken : branch_taken air row =
           if U64w.toBV (op_a_value air row) = U64w.toBV (op_b_value air row) then 1 else 0 := by
@@ -270,51 +353,12 @@ namespace Equivalence
             have h_gt1 : air.cols.a_gt_b row 0 = 1 := by
               rw [h_gt_bit, if_pos (by simp [BitVec.ult]; omega)]
             simp [branch_taken, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_lt0, h_gt1]
-      have h_next : U64w.toBV (next_pc air row) =
-          U64w.toBV (pc air row) +
-            (if U64w.toBV (op_a_value air row) = U64w.toBV (op_b_value air row)
-              then BitVec.signExtend 64 imm' else 4#64) := by
-        simpa using branch_next_pc air row h_row h_is_real h_all_wf h_all_constraints
-          pico_assumptions h_ecall h_jal h_jalr h_branch_sum eq_c0 eq_c1 eq_cs h_op_c
-          (decide (U64w.toBV (op_a_value air row) = U64w.toBV (op_b_value air row)))
-          (by simpa using h_taken)
-      have h_align := next_pc_mod_four_eq_zero air row h_row h_is_real h_all_wf
-        h_all_constraints pico_assumptions
-      -- The row's messages, as operations on the Sail state.
-      rw [CPU_bus_operations_eq_of_branch air row h_is_real h_wf h_imm_b h_imm_c h_memory
-            (by simp [mem_width_of_opcode, h_opcode])] at h_bus_hypotheses ⊢
-      extract_lets rs1 rs2 imm
-      rw [show imm = imm' by
-            simp only [imm, h_op_c]; exact setWidth_signExtend_self imm' (by norm_num)]
-      simp at h_bus_hypotheses
-      obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus_hypotheses
-      rw [operation_list_effect_hypotheses_writeReg_same (by simpa using h_read_b)] at h_rest
-      simp at h_rest
-      obtain ⟨ h_read_a, - ⟩ := h_rest
-      rw [OpcodeSpec.RV64.execute_BEQ_equiv
-            (pc_val := U64w.toBV (pc air row))
-            (r1_val := U64w.toBV (op_a_value air row))
-            (r2_val := U64w.toBV (op_b_value air row))
-            (misa := misa)]
-      · simp [OpcodeSpec.RV64.spec_BEQ, rs1, rs2]
-        rw [operation_list_effect_state_writeReg_same h_read_b,
-            operation_list_effect_state_readReg,
-            operation_list_effect_state_writeReg_same (by rw [h_a_value]; exact h_read_a),
-            ← h_next]
-      · rw [OpcodeSpec.RV64.spec_BEQ_hypotheses]
-        exact ⟨ h_pc_read, by rw [h_a_value]; simpa [rs1] using h_read_a,
-                by simpa [rs2] using h_read_b ⟩
-      · clear * - risc_v_assumptions
-        simp [RISC_V_assumptions] at risc_v_assumptions
-        tauto
-      · intro h_vals
-        rw [show BitVec.signExtend 64 imm' =
-              (if U64w.toBV (op_a_value air row) = U64w.toBV (op_b_value air row)
-                then BitVec.signExtend 64 imm' else 4#64) from by rw [if_pos h_vals]]
-        rw [← h_next]
-        apply BitVec.eq_of_toNat_eq
-        rw [BitVec.toNat_umod]
-        simp [U64w.toBV_toNat, h_align.2]
+      exact branch_equivalence air row .BEQ h_row h_is_real h_all_wf h_all_constraints
+        pico_assumptions h_opcode h_ecall h_store h_jalr h_jal h_branch_sum
+        OpcodeSpec.RV64.spec_BEQ (fun a b => a = b)
+        (fun _ _ _ _ _ _ => by simp [OpcodeSpec.RV64.spec_BEQ])
+        OpcodeSpec.RV64.execute_BEQ_equiv h_taken
+        h_bus_hypotheses risc_v_assumptions
 
     /-- Equivalence for BNE (opcode 19, `bop.BNE`). -/
     theorem equivalence_BNE
@@ -341,14 +385,11 @@ namespace Equivalence
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_wf := h_all_wf row h_row
-      have h_constraints := h_all_constraints row h_row
-      obtain ⟨ h_imm_b, h_imm_c, h_s ⟩ :=
+      obtain ⟨ -, -, h_s ⟩ :=
         branch_row_selectors air row h_is_real h_wf h_opcode (by rfl) (by rfl)
       simp [class_selectors_of_opcode] at h_s
-      obtain ⟨ h_ecall, h_memory, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
+      obtain ⟨ h_ecall, -, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
                h_jalr, h_jal ⟩ := h_s
-      obtain ⟨ imm', eq_c0, eq_c1, eq_cs, h_op_c ⟩ :=
-        branch_offset air row .BNE h_is_real h_wf h_constraints h_opcode h_imm_c
       have h_branch_sum :
           air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 +
             air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 +
@@ -365,11 +406,6 @@ namespace Equivalence
       have h_gt_bit : air.cols.a_gt_b row 0 =
           if (U64w.toBV (op_b_value air row)).ult (U64w.toBV (op_a_value air row)) = true
             then 1 else 0 := h_cmp.2.2
-      -- `op_a` keeps the value it read, so the branch writes no register.
-      have h_kept := op_a_kept air row h_constraints
-        (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
-      have h_a_value : U64w.toBV (op_a_value air row) = U64w.toBV (op_a_prev_value air row) := by
-        simp [op_a_value, op_a_prev_value, h_kept.1, h_kept.2.1, h_kept.2.2.1, h_kept.2.2.2]
       have h_taken : branch_taken air row =
           if U64w.toBV (op_a_value air row) = U64w.toBV (op_b_value air row) then 0 else 1 := by
         by_cases h_vals : U64w.toBV (op_a_value air row) = U64w.toBV (op_b_value air row)
@@ -395,47 +431,12 @@ namespace Equivalence
             have h_gt1 : air.cols.a_gt_b row 0 = 1 := by
               rw [h_gt_bit, if_pos (by simp [BitVec.ult]; omega)]
             simp [branch_taken, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_lt0, h_gt1]
-      have h_next : U64w.toBV (next_pc air row) =
-          U64w.toBV (pc air row) + (if U64w.toBV (op_a_value air row) = U64w.toBV (op_b_value air row) then 4#64 else BitVec.signExtend 64 imm') := by
-        simpa using branch_next_pc air row h_row h_is_real h_all_wf h_all_constraints
-          pico_assumptions h_ecall h_jal h_jalr h_branch_sum eq_c0 eq_c1 eq_cs h_op_c
-          (decide (¬ (U64w.toBV (op_a_value air row) = U64w.toBV (op_b_value air row)))) (by simpa using h_taken)
-      have h_align := next_pc_mod_four_eq_zero air row h_row h_is_real h_all_wf
-        h_all_constraints pico_assumptions
-      -- The row's messages, as operations on the Sail state.
-      rw [CPU_bus_operations_eq_of_branch air row h_is_real h_wf h_imm_b h_imm_c h_memory
-            (by simp [mem_width_of_opcode, h_opcode])] at h_bus_hypotheses ⊢
-      extract_lets rs1 rs2 imm
-      rw [show imm = imm' by
-            simp only [imm, h_op_c]; exact setWidth_signExtend_self imm' (by norm_num)]
-      simp at h_bus_hypotheses
-      obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus_hypotheses
-      rw [operation_list_effect_hypotheses_writeReg_same (by simpa using h_read_b)] at h_rest
-      simp at h_rest
-      obtain ⟨ h_read_a, - ⟩ := h_rest
-      rw [OpcodeSpec.RV64.execute_BNE_equiv
-            (pc_val := U64w.toBV (pc air row))
-            (r1_val := U64w.toBV (op_a_value air row))
-            (r2_val := U64w.toBV (op_b_value air row))
-            (misa := misa)]
-      · simp [OpcodeSpec.RV64.spec_BNE, rs1, rs2]
-        rw [operation_list_effect_state_writeReg_same h_read_b,
-            operation_list_effect_state_readReg,
-            operation_list_effect_state_writeReg_same (by rw [h_a_value]; exact h_read_a),
-            ← h_next]
-      · rw [OpcodeSpec.RV64.spec_BNE_hypotheses]
-        exact ⟨ h_pc_read, by rw [h_a_value]; simpa [rs1] using h_read_a,
-                by simpa [rs2] using h_read_b ⟩
-      · clear * - risc_v_assumptions
-        simp [RISC_V_assumptions] at risc_v_assumptions
-        tauto
-      · intro h_vals
-        rw [show BitVec.signExtend 64 imm' =
-              (if U64w.toBV (op_a_value air row) = U64w.toBV (op_b_value air row) then 4#64 else BitVec.signExtend 64 imm') from by rw [if_neg h_vals]]
-        rw [← h_next]
-        apply BitVec.eq_of_toNat_eq
-        rw [BitVec.toNat_umod]
-        simp [U64w.toBV_toNat, h_align.2]
+      exact branch_equivalence air row .BNE h_row h_is_real h_all_wf h_all_constraints
+        pico_assumptions h_opcode h_ecall h_store h_jalr h_jal h_branch_sum
+        OpcodeSpec.RV64.spec_BNE (fun a b => ¬ a = b)
+        (fun _ _ _ _ _ _ => by simp [OpcodeSpec.RV64.spec_BNE])
+        OpcodeSpec.RV64.execute_BNE_equiv (by rw [ite_not]; exact h_taken)
+        h_bus_hypotheses risc_v_assumptions
 
     /-- Equivalence for BLT (opcode 20, `bop.BLT`). -/
     theorem equivalence_BLT
@@ -462,14 +463,11 @@ namespace Equivalence
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_wf := h_all_wf row h_row
-      have h_constraints := h_all_constraints row h_row
-      obtain ⟨ h_imm_b, h_imm_c, h_s ⟩ :=
+      obtain ⟨ -, -, h_s ⟩ :=
         branch_row_selectors air row h_is_real h_wf h_opcode (by rfl) (by rfl)
       simp [class_selectors_of_opcode] at h_s
-      obtain ⟨ h_ecall, h_memory, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
+      obtain ⟨ h_ecall, -, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
                h_jalr, h_jal ⟩ := h_s
-      obtain ⟨ imm', eq_c0, eq_c1, eq_cs, h_op_c ⟩ :=
-        branch_offset air row .BLT h_is_real h_wf h_constraints h_opcode h_imm_c
       have h_branch_sum :
           air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 +
             air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 +
@@ -483,60 +481,18 @@ namespace Equivalence
       have h_lt_bit : air.cols.a_lt_b row 0 =
           if (U64w.toBV (op_a_value air row)).slt (U64w.toBV (op_b_value air row)) = true
             then 1 else 0 := h_cmp.2.1
-      -- `op_a` keeps the value it read, so the branch writes no register.
-      have h_kept := op_a_kept air row h_constraints
-        (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
-      have h_a_value : U64w.toBV (op_a_value air row) = U64w.toBV (op_a_prev_value air row) := by
-        simp [op_a_value, op_a_prev_value, h_kept.1, h_kept.2.1, h_kept.2.2.1, h_kept.2.2.2]
       have h_taken : branch_taken air row =
           if U64w.toInt (op_a_value air row) < U64w.toInt (op_b_value air row) then 1 else 0 := by
         rw [show branch_taken air row = air.cols.a_lt_b row 0 by
               simp [branch_taken, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu]]
         rw [h_lt_bit]
         simp [BitVec.slt]
-      have h_next : U64w.toBV (next_pc air row) =
-          U64w.toBV (pc air row) + (if U64w.toInt (op_a_value air row) < U64w.toInt (op_b_value air row) then BitVec.signExtend 64 imm' else 4#64) := by
-        simpa using branch_next_pc air row h_row h_is_real h_all_wf h_all_constraints
-          pico_assumptions h_ecall h_jal h_jalr h_branch_sum eq_c0 eq_c1 eq_cs h_op_c
-          (decide (U64w.toInt (op_a_value air row) < U64w.toInt (op_b_value air row))) (by simpa using h_taken)
-      have h_align := next_pc_mod_four_eq_zero air row h_row h_is_real h_all_wf
-        h_all_constraints pico_assumptions
-      -- The row's messages, as operations on the Sail state.
-      rw [CPU_bus_operations_eq_of_branch air row h_is_real h_wf h_imm_b h_imm_c h_memory
-            (by simp [mem_width_of_opcode, h_opcode])] at h_bus_hypotheses ⊢
-      extract_lets rs1 rs2 imm
-      rw [show imm = imm' by
-            simp only [imm, h_op_c]; exact setWidth_signExtend_self imm' (by norm_num)]
-      simp at h_bus_hypotheses
-      obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus_hypotheses
-      rw [operation_list_effect_hypotheses_writeReg_same (by simpa using h_read_b)] at h_rest
-      simp at h_rest
-      obtain ⟨ h_read_a, - ⟩ := h_rest
-      rw [OpcodeSpec.RV64.execute_BLT_equiv
-            (pc_val := U64w.toBV (pc air row))
-            (r1_val := U64w.toBV (op_a_value air row))
-            (r2_val := U64w.toBV (op_b_value air row))
-            (misa := misa)]
-      · simp [OpcodeSpec.RV64.spec_BLT, rs1, rs2]
-        rw [operation_list_effect_state_writeReg_same h_read_b,
-            operation_list_effect_state_readReg,
-            operation_list_effect_state_writeReg_same (by rw [h_a_value]; exact h_read_a),
-            ← h_next]
-      · rw [OpcodeSpec.RV64.spec_BLT_hypotheses]
-        exact ⟨ h_pc_read, by rw [h_a_value]; simpa [rs1] using h_read_a,
-                by simpa [rs2] using h_read_b ⟩
-      · clear * - risc_v_assumptions
-        simp [RISC_V_assumptions] at risc_v_assumptions
-        tauto
-      · intro h_vals
-        rw [show BitVec.signExtend 64 imm' =
-              (if U64w.toInt (op_a_value air row) < U64w.toInt (op_b_value air row)
-                then BitVec.signExtend 64 imm' else 4#64) from by
-            rw [if_pos (by simpa using h_vals)]]
-        rw [← h_next]
-        apply BitVec.eq_of_toNat_eq
-        rw [BitVec.toNat_umod]
-        simp [U64w.toBV_toNat, h_align.2]
+      exact branch_equivalence air row .BLT h_row h_is_real h_all_wf h_all_constraints
+        pico_assumptions h_opcode h_ecall h_store h_jalr h_jal h_branch_sum
+        OpcodeSpec.RV64.spec_BLT (fun a b => a.toInt < b.toInt)
+        (fun _ _ _ _ _ _ => by simp [OpcodeSpec.RV64.spec_BLT])
+        OpcodeSpec.RV64.execute_BLT_equiv (by simpa using h_taken)
+        h_bus_hypotheses risc_v_assumptions
 
     /-- Equivalence for BGE (opcode 21, `bop.BGE`). -/
     theorem equivalence_BGE
@@ -563,14 +519,11 @@ namespace Equivalence
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_wf := h_all_wf row h_row
-      have h_constraints := h_all_constraints row h_row
-      obtain ⟨ h_imm_b, h_imm_c, h_s ⟩ :=
+      obtain ⟨ -, -, h_s ⟩ :=
         branch_row_selectors air row h_is_real h_wf h_opcode (by rfl) (by rfl)
       simp [class_selectors_of_opcode] at h_s
-      obtain ⟨ h_ecall, h_memory, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
+      obtain ⟨ h_ecall, -, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
                h_jalr, h_jal ⟩ := h_s
-      obtain ⟨ imm', eq_c0, eq_c1, eq_cs, h_op_c ⟩ :=
-        branch_offset air row .BGE h_is_real h_wf h_constraints h_opcode h_imm_c
       have h_branch_sum :
           air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 +
             air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 +
@@ -584,11 +537,6 @@ namespace Equivalence
       have h_lt_bit : air.cols.a_lt_b row 0 =
           if (U64w.toBV (op_a_value air row)).slt (U64w.toBV (op_b_value air row)) = true
             then 1 else 0 := h_cmp.2.1
-      -- `op_a` keeps the value it read, so the branch writes no register.
-      have h_kept := op_a_kept air row h_constraints
-        (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
-      have h_a_value : U64w.toBV (op_a_value air row) = U64w.toBV (op_a_prev_value air row) := by
-        simp [op_a_value, op_a_prev_value, h_kept.1, h_kept.2.1, h_kept.2.2.1, h_kept.2.2.2]
       have h_taken : branch_taken air row =
           if U64w.toInt (op_a_value air row) ≥ U64w.toInt (op_b_value air row) then 1 else 0 := by
         rw [show branch_taken air row = 1 - air.cols.a_lt_b row 0 by
@@ -601,49 +549,12 @@ namespace Equivalence
               if_pos (by simp only [BitVec.slt, decide_eq_true_eq]
                          simpa using Int.not_le.mp h_ge)]
           norm_num
-      have h_next : U64w.toBV (next_pc air row) =
-          U64w.toBV (pc air row) + (if U64w.toInt (op_a_value air row) ≥ U64w.toInt (op_b_value air row) then BitVec.signExtend 64 imm' else 4#64) := by
-        simpa using branch_next_pc air row h_row h_is_real h_all_wf h_all_constraints
-          pico_assumptions h_ecall h_jal h_jalr h_branch_sum eq_c0 eq_c1 eq_cs h_op_c
-          (decide (U64w.toInt (op_a_value air row) ≥ U64w.toInt (op_b_value air row))) (by simpa using h_taken)
-      have h_align := next_pc_mod_four_eq_zero air row h_row h_is_real h_all_wf
-        h_all_constraints pico_assumptions
-      -- The row's messages, as operations on the Sail state.
-      rw [CPU_bus_operations_eq_of_branch air row h_is_real h_wf h_imm_b h_imm_c h_memory
-            (by simp [mem_width_of_opcode, h_opcode])] at h_bus_hypotheses ⊢
-      extract_lets rs1 rs2 imm
-      rw [show imm = imm' by
-            simp only [imm, h_op_c]; exact setWidth_signExtend_self imm' (by norm_num)]
-      simp at h_bus_hypotheses
-      obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus_hypotheses
-      rw [operation_list_effect_hypotheses_writeReg_same (by simpa using h_read_b)] at h_rest
-      simp at h_rest
-      obtain ⟨ h_read_a, - ⟩ := h_rest
-      rw [OpcodeSpec.RV64.execute_BGE_equiv
-            (pc_val := U64w.toBV (pc air row))
-            (r1_val := U64w.toBV (op_a_value air row))
-            (r2_val := U64w.toBV (op_b_value air row))
-            (misa := misa)]
-      · simp [OpcodeSpec.RV64.spec_BGE, rs1, rs2]
-        rw [operation_list_effect_state_writeReg_same h_read_b,
-            operation_list_effect_state_readReg,
-            operation_list_effect_state_writeReg_same (by rw [h_a_value]; exact h_read_a),
-            ← h_next]
-      · rw [OpcodeSpec.RV64.spec_BGE_hypotheses]
-        exact ⟨ h_pc_read, by rw [h_a_value]; simpa [rs1] using h_read_a,
-                by simpa [rs2] using h_read_b ⟩
-      · clear * - risc_v_assumptions
-        simp [RISC_V_assumptions] at risc_v_assumptions
-        tauto
-      · intro h_vals
-        rw [show BitVec.signExtend 64 imm' =
-              (if U64w.toInt (op_a_value air row) ≥ U64w.toInt (op_b_value air row)
-                then BitVec.signExtend 64 imm' else 4#64) from by
-            rw [if_pos (by simpa using h_vals)]]
-        rw [← h_next]
-        apply BitVec.eq_of_toNat_eq
-        rw [BitVec.toNat_umod]
-        simp [U64w.toBV_toNat, h_align.2]
+      exact branch_equivalence air row .BGE h_row h_is_real h_all_wf h_all_constraints
+        pico_assumptions h_opcode h_ecall h_store h_jalr h_jal h_branch_sum
+        OpcodeSpec.RV64.spec_BGE (fun a b => a.toInt ≥ b.toInt)
+        (fun _ _ _ _ _ _ => by simp [OpcodeSpec.RV64.spec_BGE])
+        OpcodeSpec.RV64.execute_BGE_equiv (by simpa using h_taken)
+        h_bus_hypotheses risc_v_assumptions
 
     /-- Equivalence for BLTU (opcode 22, `bop.BLTU`). -/
     theorem equivalence_BLTU
@@ -670,14 +581,11 @@ namespace Equivalence
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_wf := h_all_wf row h_row
-      have h_constraints := h_all_constraints row h_row
-      obtain ⟨ h_imm_b, h_imm_c, h_s ⟩ :=
+      obtain ⟨ -, -, h_s ⟩ :=
         branch_row_selectors air row h_is_real h_wf h_opcode (by rfl) (by rfl)
       simp [class_selectors_of_opcode] at h_s
-      obtain ⟨ h_ecall, h_memory, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
+      obtain ⟨ h_ecall, -, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
                h_jalr, h_jal ⟩ := h_s
-      obtain ⟨ imm', eq_c0, eq_c1, eq_cs, h_op_c ⟩ :=
-        branch_offset air row .BLTU h_is_real h_wf h_constraints h_opcode h_imm_c
       have h_branch_sum :
           air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 +
             air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 +
@@ -691,60 +599,18 @@ namespace Equivalence
       have h_lt_bit : air.cols.a_lt_b row 0 =
           if (U64w.toBV (op_a_value air row)).ult (U64w.toBV (op_b_value air row)) = true
             then 1 else 0 := h_cmp.2.1
-      -- `op_a` keeps the value it read, so the branch writes no register.
-      have h_kept := op_a_kept air row h_constraints
-        (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
-      have h_a_value : U64w.toBV (op_a_value air row) = U64w.toBV (op_a_prev_value air row) := by
-        simp [op_a_value, op_a_prev_value, h_kept.1, h_kept.2.1, h_kept.2.2.1, h_kept.2.2.2]
       have h_taken : branch_taken air row =
           if U64w.toNat (op_a_value air row) < U64w.toNat (op_b_value air row) then 1 else 0 := by
         rw [show branch_taken air row = air.cols.a_lt_b row 0 by
               simp [branch_taken, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu]]
         rw [h_lt_bit]
         simp [BitVec.ult]
-      have h_next : U64w.toBV (next_pc air row) =
-          U64w.toBV (pc air row) + (if U64w.toNat (op_a_value air row) < U64w.toNat (op_b_value air row) then BitVec.signExtend 64 imm' else 4#64) := by
-        simpa using branch_next_pc air row h_row h_is_real h_all_wf h_all_constraints
-          pico_assumptions h_ecall h_jal h_jalr h_branch_sum eq_c0 eq_c1 eq_cs h_op_c
-          (decide (U64w.toNat (op_a_value air row) < U64w.toNat (op_b_value air row))) (by simpa using h_taken)
-      have h_align := next_pc_mod_four_eq_zero air row h_row h_is_real h_all_wf
-        h_all_constraints pico_assumptions
-      -- The row's messages, as operations on the Sail state.
-      rw [CPU_bus_operations_eq_of_branch air row h_is_real h_wf h_imm_b h_imm_c h_memory
-            (by simp [mem_width_of_opcode, h_opcode])] at h_bus_hypotheses ⊢
-      extract_lets rs1 rs2 imm
-      rw [show imm = imm' by
-            simp only [imm, h_op_c]; exact setWidth_signExtend_self imm' (by norm_num)]
-      simp at h_bus_hypotheses
-      obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus_hypotheses
-      rw [operation_list_effect_hypotheses_writeReg_same (by simpa using h_read_b)] at h_rest
-      simp at h_rest
-      obtain ⟨ h_read_a, - ⟩ := h_rest
-      rw [OpcodeSpec.RV64.execute_BLTU_equiv
-            (pc_val := U64w.toBV (pc air row))
-            (r1_val := U64w.toBV (op_a_value air row))
-            (r2_val := U64w.toBV (op_b_value air row))
-            (misa := misa)]
-      · simp [OpcodeSpec.RV64.spec_BLTU, rs1, rs2]
-        rw [operation_list_effect_state_writeReg_same h_read_b,
-            operation_list_effect_state_readReg,
-            operation_list_effect_state_writeReg_same (by rw [h_a_value]; exact h_read_a),
-            ← h_next]
-      · rw [OpcodeSpec.RV64.spec_BLTU_hypotheses]
-        exact ⟨ h_pc_read, by rw [h_a_value]; simpa [rs1] using h_read_a,
-                by simpa [rs2] using h_read_b ⟩
-      · clear * - risc_v_assumptions
-        simp [RISC_V_assumptions] at risc_v_assumptions
-        tauto
-      · intro h_vals
-        rw [show BitVec.signExtend 64 imm' =
-              (if U64w.toNat (op_a_value air row) < U64w.toNat (op_b_value air row)
-                then BitVec.signExtend 64 imm' else 4#64) from by
-            rw [if_pos (by simpa using h_vals)]]
-        rw [← h_next]
-        apply BitVec.eq_of_toNat_eq
-        rw [BitVec.toNat_umod]
-        simp [U64w.toBV_toNat, h_align.2]
+      exact branch_equivalence air row .BLTU h_row h_is_real h_all_wf h_all_constraints
+        pico_assumptions h_opcode h_ecall h_store h_jalr h_jal h_branch_sum
+        OpcodeSpec.RV64.spec_BLTU (fun a b => a.toNat < b.toNat)
+        (fun _ _ _ _ _ _ => by simp [OpcodeSpec.RV64.spec_BLTU])
+        OpcodeSpec.RV64.execute_BLTU_equiv (by simpa using h_taken)
+        h_bus_hypotheses risc_v_assumptions
 
     /-- Equivalence for BGEU (opcode 23, `bop.BGEU`). -/
     theorem equivalence_BGEU
@@ -771,14 +637,11 @@ namespace Equivalence
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
       have h_wf := h_all_wf row h_row
-      have h_constraints := h_all_constraints row h_row
-      obtain ⟨ h_imm_b, h_imm_c, h_s ⟩ :=
+      obtain ⟨ -, -, h_s ⟩ :=
         branch_row_selectors air row h_is_real h_wf h_opcode (by rfl) (by rfl)
       simp [class_selectors_of_opcode] at h_s
-      obtain ⟨ h_ecall, h_memory, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
+      obtain ⟨ h_ecall, -, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
                h_jalr, h_jal ⟩ := h_s
-      obtain ⟨ imm', eq_c0, eq_c1, eq_cs, h_op_c ⟩ :=
-        branch_offset air row .BGEU h_is_real h_wf h_constraints h_opcode h_imm_c
       have h_branch_sum :
           air.cols.opcode_selector.is_beq row 0 + air.cols.opcode_selector.is_bne row 0 +
             air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 +
@@ -792,11 +655,6 @@ namespace Equivalence
       have h_lt_bit : air.cols.a_lt_b row 0 =
           if (U64w.toBV (op_a_value air row)).ult (U64w.toBV (op_b_value air row)) = true
             then 1 else 0 := h_cmp.2.1
-      -- `op_a` keeps the value it read, so the branch writes no register.
-      have h_kept := op_a_kept air row h_constraints
-        (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
-      have h_a_value : U64w.toBV (op_a_value air row) = U64w.toBV (op_a_prev_value air row) := by
-        simp [op_a_value, op_a_prev_value, h_kept.1, h_kept.2.1, h_kept.2.2.1, h_kept.2.2.2]
       have h_taken : branch_taken air row =
           if U64w.toNat (op_a_value air row) ≥ U64w.toNat (op_b_value air row) then 1 else 0 := by
         rw [show branch_taken air row = 1 - air.cols.a_lt_b row 0 by
@@ -806,49 +664,12 @@ namespace Equivalence
           norm_num
         · rw [if_neg h_ge, h_lt_bit, if_pos (by simp [BitVec.ult]; omega)]
           norm_num
-      have h_next : U64w.toBV (next_pc air row) =
-          U64w.toBV (pc air row) + (if U64w.toNat (op_a_value air row) ≥ U64w.toNat (op_b_value air row) then BitVec.signExtend 64 imm' else 4#64) := by
-        simpa using branch_next_pc air row h_row h_is_real h_all_wf h_all_constraints
-          pico_assumptions h_ecall h_jal h_jalr h_branch_sum eq_c0 eq_c1 eq_cs h_op_c
-          (decide (U64w.toNat (op_a_value air row) ≥ U64w.toNat (op_b_value air row))) (by simpa using h_taken)
-      have h_align := next_pc_mod_four_eq_zero air row h_row h_is_real h_all_wf
-        h_all_constraints pico_assumptions
-      -- The row's messages, as operations on the Sail state.
-      rw [CPU_bus_operations_eq_of_branch air row h_is_real h_wf h_imm_b h_imm_c h_memory
-            (by simp [mem_width_of_opcode, h_opcode])] at h_bus_hypotheses ⊢
-      extract_lets rs1 rs2 imm
-      rw [show imm = imm' by
-            simp only [imm, h_op_c]; exact setWidth_signExtend_self imm' (by norm_num)]
-      simp at h_bus_hypotheses
-      obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus_hypotheses
-      rw [operation_list_effect_hypotheses_writeReg_same (by simpa using h_read_b)] at h_rest
-      simp at h_rest
-      obtain ⟨ h_read_a, - ⟩ := h_rest
-      rw [OpcodeSpec.RV64.execute_BGEU_equiv
-            (pc_val := U64w.toBV (pc air row))
-            (r1_val := U64w.toBV (op_a_value air row))
-            (r2_val := U64w.toBV (op_b_value air row))
-            (misa := misa)]
-      · simp [OpcodeSpec.RV64.spec_BGEU, rs1, rs2]
-        rw [operation_list_effect_state_writeReg_same h_read_b,
-            operation_list_effect_state_readReg,
-            operation_list_effect_state_writeReg_same (by rw [h_a_value]; exact h_read_a),
-            ← h_next]
-      · rw [OpcodeSpec.RV64.spec_BGEU_hypotheses]
-        exact ⟨ h_pc_read, by rw [h_a_value]; simpa [rs1] using h_read_a,
-                by simpa [rs2] using h_read_b ⟩
-      · clear * - risc_v_assumptions
-        simp [RISC_V_assumptions] at risc_v_assumptions
-        tauto
-      · intro h_vals
-        rw [show BitVec.signExtend 64 imm' =
-              (if U64w.toNat (op_a_value air row) ≥ U64w.toNat (op_b_value air row)
-                then BitVec.signExtend 64 imm' else 4#64) from by
-            rw [if_pos (by simpa using h_vals)]]
-        rw [← h_next]
-        apply BitVec.eq_of_toNat_eq
-        rw [BitVec.toNat_umod]
-        simp [U64w.toBV_toNat, h_align.2]
+      exact branch_equivalence air row .BGEU h_row h_is_real h_all_wf h_all_constraints
+        pico_assumptions h_opcode h_ecall h_store h_jalr h_jal h_branch_sum
+        OpcodeSpec.RV64.spec_BGEU (fun a b => a.toNat ≥ b.toNat)
+        (fun _ _ _ _ _ _ => by simp [OpcodeSpec.RV64.spec_BGEU])
+        OpcodeSpec.RV64.execute_BGEU_equiv (by simpa using h_taken)
+        h_bus_hypotheses risc_v_assumptions
 
   end BTYPE
 
