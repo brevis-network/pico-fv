@@ -34,12 +34,18 @@ The 62 opcodes:
 
 `ECALL` is intentionally out of scope.
 
-The extraction tool in `extractor/` is pinned to Pico v3.1.5. Each proof is about the Pico
-revision named in the first line of the `PicoFV/RV64IM/Extraction/` file it uses; the files
-listed in `extractor/pending.txt` still predate Pico 3.x and are being moved chip by chip.
-Pico's per-chip constraint digests (`vm/tests/riscv_constraint_dump.txt`) are the same at v3.1.1
-and v3.1.5 for the CPU chip and the ten ALU chips, so what this README says about them at v3.1.1
-holds at the pin.
+The extraction tool in `extractor/` is pinned to this Pico revision:
+
+<!-- generated: pin -->
+Pico v3.1.5, commit [`6788178d6`](https://github.com/brevis-network/pico/commit/6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb).
+<!-- end generated -->
+
+Each proof is about the Pico revision named in the first line of the `PicoFV/RV64IM/Extraction/`
+file it uses; the files listed in `extractor/pending.txt` still predate the pinned commit and are
+being moved chip by chip. Pico's per-chip constraint digests (`vm/tests/riscv_constraint_dump.txt`)
+are the same at v3.1.1 and v3.1.5 for the CPU chip and the ten ALU chips, so what this README says
+about those chips at v3.1.1 holds at v3.1.5. The memory chips differ between the two, and v3.1.5
+adds a second memory chip for misaligned loads and stores (see [SOUNDNESS.md](SOUNDNESS.md), A4).
 [SOUNDNESS.md](SOUNDNESS.md) says what the proofs establish and what they trust.
 
 For each opcode, the equivalence theorem states: under the chip's row
@@ -51,7 +57,7 @@ In the course of this development, 13 chip-side soundness gaps were found in
 the Pico implementation, across `LtChip`, `ShiftRightChip`, `SLLChip`,
 `JalrChip`, `DivRemChip`, and `MemoryReadWriteChip` (see `Report.pdf`). Which
 Pico 3.x constraint closes each of them is being recorded as the chips move to
-v3.1.1.
+the pinned commit.
 
 ### RV32IM (historical)
 
@@ -148,4 +154,4 @@ The 13 RV64IM soundness gaps found during the formalisation are described in
 `Report.pdf` and, for the memory chip, in
 [`RV64_MemoryReadWriteChip_soundness_gaps.md`](RV64_MemoryReadWriteChip_soundness_gaps.md).
 [`docs/rv64-bug-mapping.md`](docs/rv64-bug-mapping.md) records the Pico 3.x constraint that closes
-each of them, filled in as the chips move to v3.1.1.
+each of them, filled in as the chips move to the pinned commit.

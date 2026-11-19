@@ -37,6 +37,9 @@ type F = KoalaBear;
 
 /// The Pico commit `Cargo.toml` pins; `pico_rev_matches_cargo_toml` keeps the two in step.
 const PICO_REV: &str = "6788178d63aede0a4adbd7ab1a7c6a2ead15dfbb";
+/// The Pico release tag at `PICO_REV`. Change the two together; `soundness_facts.py` prints
+/// both in the documents' pin blocks.
+const PICO_TAG: &str = "v3.1.5";
 
 /// Files in the extraction directory that this tool does not generate.
 const HAND_WRITTEN: &[&str] = &["Attributes.lean"];
@@ -122,7 +125,7 @@ fn main() {
         }
     }
     if !problems.is_empty() {
-        eprintln!("{} is out of date with pico {PICO_REV}:", dir.display());
+        eprintln!("{} is out of date with pico {PICO_TAG} ({PICO_REV}):", dir.display());
         for problem in &problems {
             eprintln!("  {problem}");
         }

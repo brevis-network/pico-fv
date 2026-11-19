@@ -2,8 +2,9 @@
 
 The design questions were settled on 12 November 2026; see "Decisions". Pico references are
 to v3.1.1 (`2acc7c1828fb`, the commit `extractor/` pinned when this was written); pico-fv
-references are to `pico-v3` at `ca52d7a`, which the work targets. Pico paths below are under `vm/src/chips/chips/` unless
-they start with `vm/`; `rrs.rs` is `vm/src/compiler/riscv/disassembler/rrs.rs`.
+references are to `pico-v3` at `ca52d7a`, which the work targets. Pico paths below are under
+`vm/src/chips/chips/` unless they start with `vm/`; `rrs.rs` is
+`vm/src/compiler/riscv/disassembler/rrs.rs`.
 
 ## What changed and why it is a redesign
 
@@ -119,7 +120,8 @@ Settled on 12 November 2026.
      `RVSail/Opcodes/fence.lean` proves that Sail's `FENCE`, `FENCE_TSO` and `PAUSE` execute
      as `ADDI x0, x0, 0` (`FENCE` in machine mode, the standing assumption).
 
-   The promise is read against Pico again when the pin moves.
+   The promise is read against Pico again when the pin moves. It was read against v3.1.5 and
+   holds as written (`SOUNDNESS.md`, A6).
 2. **The memory contract is as drafted** (question 5). Two trial proofs, LW and SD, pass
    against it unchanged. They use the address bound `< 2^32`, the alignment clause and, for
    LW, the sign-extension clause. They do not use the lower bound `2^16`, the 16-bit range of
@@ -127,7 +129,10 @@ Settled on 12 November 2026.
    alignment clause is required by the Sail-side lemmas (`execute_LW_equiv`,
    `execute_SD_equiv`). The memory chip's own proofs stay on the 2.x extraction and the 2.x
    contract until that chip moves, so until then the 11 load and store theorems rest on a
-   promise with no Lean proof at v3.1.1; `SOUNDNESS.md` has to say so.
+   promise with no Lean proof at v3.1.1; `SOUNDNESS.md` has to say so. At v3.1.5 the
+   alignment clause no longer holds: `MemoryUnalignedChip` also serves the memory dispatch, with
+   no alignment promise (`SOUNDNESS.md`, A4), so the contract is rewritten against the pin when
+   the memory chips move.
 3. **The whole-trace assumption takes the `0x7800_0000` bound**, as in the next section, not
    the weakest bound the proofs need.
 4. **The CPU chip gets a theorem for what it guarantees as a sender** (`ext_asrt`). Each of
