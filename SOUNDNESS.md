@@ -196,14 +196,20 @@ other four, unsigned — so the two comparison bits are what `ALUBus.Spec` promi
 opcodes, which `LtChip.Spec.spec_CMP_SLT` and `spec_CMP_SLTU` discharge on the serving chip's
 side, and the branch theorems assume nothing about the operands themselves.
 
-The six shift-immediate theorems also read their shift amount from the instruction's encoded
-`op_c_0`, as they read `rd` and `rs1`, instead of from the `op_c` value the row sends to the ALU
-chip. The proofs link the two through the CPU constraint that, on a row whose third operand is
-an immediate, copies `op_c_0` into the first 16-bit piece of the `op_c` value
-(`op_c_value_setWidth_eq_op_c_0`, through `imm_c_eq_1_constraints`). The amount is `op_c_0`'s
-low 6 bits (5 for the 32-bit shifts), that is `op_c_0` modulo 64 (or 32). The decoder writes the
-instruction's shift amount into `op_c_0` unchanged (`Transpiler.V3.imm_operand`), so on a row
-the program decoded the two are equal; the theorems do not state that link.
+The thirteen register-immediate theorems (the six shifts, `ADDI`, `XORI`, `ORI`, `ANDI`,
+`SLTI`, `SLTIU` and `ADDIW`) read their immediate from the instruction's encoded `op_c_0`, as
+they read `rd` and `rs1`, instead of from the `op_c` value the row sends to the ALU chip. The
+proofs link the two through the CPU constraint that, on a row whose third operand is an
+immediate, copies `op_c_0` into the first 16-bit piece of the `op_c` value
+(`op_c_value_setWidth_eq_op_c_0`, through `imm_c_eq_1_constraints`). A shift's amount is
+`op_c_0`'s low 6 bits (5 for the 32-bit shifts), that is `op_c_0` modulo 64 (or 32); the other
+seven take `op_c_0`'s low 12 bits. The decoder sign-extends the seven 12-bit immediates and
+zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign flag `true` or
+`false`), and writes the low 16 bits of the result into `op_c_0`, the next 16 into `op_c_1` and
+the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
+amount or 12-bit immediate; the theorems do not state that link. The other checked theorems with
+an immediate still read it from the row's operand values: the six branches and `JALR` take the
+low 13 or 12 bits of the `op_c` value, and `JAL` the low 21 bits of the `op_b` value.
 
 The parked theorems were last recorded at `353238a`, against the 2.x constraints and the contracts
 of `RVSail/Buses.lean`, and are not checked while they move. Two definitions every instruction

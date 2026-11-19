@@ -23,10 +23,11 @@ namespace Equivalence
     -- and no class selector.
     -- ========================================================================
 
-    /-- Equivalence for ADDIW (opcode 40, `instruction.ADDIW`). `imm` is read back from the
-        chip's `op_c` columns, the low 12 bits of the sign-extended 64-bit form
-        (`op_c_value_eq_signExtend_imm12`). The decoder gives opcode 40 a register `op_b`, so
-        the theorem does not take `imm_b = 0` (`imm_b_eq_zero_of_opcode`). The close needs
+    /-- Equivalence for ADDIW (opcode 40, `instruction.ADDIW`). `imm` is the low 12 bits of
+        `op_c_0`, read from the instruction as `rd` and `rs1` are; `op_c_value_setWidth_eq_op_c_0`
+        ties it to the `op_c` value the row sends, whose 64-bit form is its sign extension
+        (`op_c_value_eq_signExtend_imm12`). The decoder gives opcode 40 a register `op_b`, so the
+        theorem does not take `imm_b = 0` (`imm_b_eq_zero_of_opcode`). The close needs
         `(b + c).setWidth 32 = b.setWidth 32 + c.setWidth 32` between `spec_ADDIW`'s
         `setWidth 32 (r1 + signExtend 64 imm)` and the ALU chip's 32-bit sum.
 
@@ -52,7 +53,7 @@ namespace Equivalence
     :
       let rd  : regidx := .Regidx (air.cols.instruction.op_a row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.op_b_0 row 0).val
-      let imm : BitVec 12 := (U64w.toBV (op_c_value air row)).setWidth 12
+      let imm : BitVec 12 := ((air.cols.instruction.op_c_0 row 0).val : BitVec 12)
       execute_instruction (instruction.ADDIW (imm, rs1, rd)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
@@ -61,6 +62,8 @@ namespace Equivalence
       have h_imm_b := h_alu.imm_b_eq_zero rfl
       have h_imm := op_c_value_eq_signExtend_imm12 air row h_is_real (h_all_wf row h_row)
         (h_all_constraints row h_row) h_opcode.1 (by simp) h_imm_b h_opcode.2
+      rw [op_c_value_setWidth_eq_op_c_0 air row (n := 12) (by norm_num) h_opcode.2
+        (h_all_constraints row h_row)] at h_imm
       intro rd rs1 imm
       refine eq_operation_list_effect_state_of_reg_imm h_alu h_imm_b h_opcode.2 h_bus_hypotheses _
         (fun h_pc h_rs1 => OpcodeSpec.RV64.execute_ADDIW_equiv
