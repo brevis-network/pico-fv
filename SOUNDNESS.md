@@ -215,8 +215,11 @@ low 13 or 12 bits of the `op_c` value, and `JAL` the low 21 bits of the `op_b` v
 The four store theorems take their opcode alone too, as they did at `353238a`, and gain the
 whole-trace assumption, which their 2.x statements did not take. What a store rests on beyond the
 CPU's own constraints is the Memory message's promise (`MemoryBus.Spec` in `RVSail/BusesV3.lean`):
-that the address `op_b + op_c` is below `2 ^ 32` and aligned for the width. Sail traps instead of
-storing without those two, so a store theorem cannot be stated without them. **Nothing in this
+that the address `op_b + op_c` is below `2 ^ 32`, so the stored bytes lie inside the memory region
+the RISC-V assumptions give. The address need not be a multiple of the width: Sail then splits the
+store into naturally aligned pieces (`split_misaligned`), and the Sail lemmas of `SH`, `SW` and `SD`
+(`RVSail/Opcodes/`) prove that the pieces write the same bytes as one aligned store would
+(`RVSail/Misaligned.lean`). **Nothing in this
 repository discharges that promise yet.** `MemoryReadWriteChip.Spec` still states its assumptions
 against the 2.x memory contract of `RVSail/Buses.lean`, and it is verified against a
 `MemoryReadWriteChip.lean` extraction that predates the pinned Pico commit (see the generated list

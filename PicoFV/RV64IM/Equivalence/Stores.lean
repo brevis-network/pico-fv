@@ -332,16 +332,12 @@ namespace Equivalence
                         (air.cols.op_c_access.access.value_2 row 0 : FKB),
                         (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
         rw [← h_op_c]; rfl
-      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat <
+      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 2 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
         have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
-      have h_align : (2 : ℤ) ∣ (U64w.toBV (op_b_value air row) +
-          BitVec.signExtend 64 imm').toNat := by
-        rw [h_addr_bridge]
-        exact_mod_cast h_mem_spec.2.2.2.1 (by right; right; trivial)
       -- The row moves on by four, and writes back the value it read.
       have h_halt : air.cols.is_halt row 0 = 0 :=
         is_halt_eq_zero_of_no_ecall air row h_ecall h_constraints
@@ -374,8 +370,7 @@ namespace Equivalence
             (pc_val := U64w.toBV (pc air row))
             (r1_val := U64w.toBV (op_b_value air row))
             (r2_val := U64w.toBV (op_a_value air row))
-            (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)
-            (h_align := h_align)]
+            (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
       · simp +decide [OpcodeSpec.RV64.spec_SH, CPU_bus_operations,
               RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
               MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -465,16 +460,12 @@ namespace Equivalence
                         (air.cols.op_c_access.access.value_2 row 0 : FKB),
                         (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
         rw [← h_op_c]; rfl
-      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat <
+      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 4 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
         have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
-      have h_align : (4 : ℤ) ∣ (U64w.toBV (op_b_value air row) +
-          BitVec.signExtend 64 imm').toNat := by
-        rw [h_addr_bridge]
-        exact_mod_cast h_mem_spec.2.2.2.2.1 (by right; left; trivial)
       -- The row moves on by four, and writes back the value it read.
       have h_halt : air.cols.is_halt row 0 = 0 :=
         is_halt_eq_zero_of_no_ecall air row h_ecall h_constraints
@@ -507,8 +498,7 @@ namespace Equivalence
             (pc_val := U64w.toBV (pc air row))
             (r1_val := U64w.toBV (op_b_value air row))
             (r2_val := U64w.toBV (op_a_value air row))
-            (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)
-            (h_align := h_align)]
+            (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
       · simp +decide [OpcodeSpec.RV64.spec_SW, CPU_bus_operations,
               RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
               MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -598,16 +588,12 @@ namespace Equivalence
                         (air.cols.op_c_access.access.value_2 row 0 : FKB),
                         (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
         rw [← h_op_c]; rfl
-      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat <
+      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 8 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
         have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
-      have h_align : (8 : ℤ) ∣ (U64w.toBV (op_b_value air row) +
-          BitVec.signExtend 64 imm').toNat := by
-        rw [h_addr_bridge]
-        exact_mod_cast h_mem_spec.2.2.2.2.2.1 (by right; trivial)
       -- The row moves on by four, and writes back the value it read.
       have h_halt : air.cols.is_halt row 0 = 0 :=
         is_halt_eq_zero_of_no_ecall air row h_ecall h_constraints
@@ -640,8 +626,7 @@ namespace Equivalence
             (pc_val := U64w.toBV (pc air row))
             (r1_val := U64w.toBV (op_b_value air row))
             (r2_val := U64w.toBV (op_a_value air row))
-            (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)
-            (h_align := h_align)]
+            (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
       · simp +decide [OpcodeSpec.RV64.spec_SD, CPU_bus_operations,
               RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
               MemoryBusEntry.deserialise, mem_width_of_opcode,
