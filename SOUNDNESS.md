@@ -232,9 +232,9 @@ zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign fl
 `false`), and writes the low 16 bits of the result into `op_c_0`, the next 16 into `op_c_1` and
 the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
 amount or 12-bit immediate; the theorems do not state that link. The other checked theorems with
-an immediate still read it from the row's operand values: the six branches, `JALR` and the four
-stores take the low 13 or 12 bits of the `op_c` value, and `JAL` the low 21 bits of the `op_b`
-value.
+an immediate still read it from the row's operand values: the six branches, `JALR`, the four
+stores and the seven loads take the low 13 or 12 bits of the `op_c` value, and `JAL` the low 21
+bits of the `op_b` value.
 
 The four store theorems take their opcode alone too, as they did at `353238a`, and gain the
 whole-trace assumption, which their 2.x statements did not take. Like every restored theorem they
@@ -251,8 +251,18 @@ repository discharges the Memory promise yet.** `MemoryReadWriteChip.Spec` still
 assumptions against the 2.x memory contract of `RVSail/Buses.lean`, and it is verified against a
 `MemoryReadWriteChip.lean` extraction that predates the pinned Pico commit (see the generated list
 under "What is proved" and `extractor/pending.txt`). So the serving side of the link a store theorem
-assumes is open, as A4 describes for chip composition generally; the loads will assume the same
-promise when they return.
+assumes is open, as A4 describes for chip composition generally.
+
+The seven load theorems rest on the same promise, and on one more part of it. Besides the address
+bound, `MemoryBus.Spec` says what extension the loaded word carries when the destination is not
+`x0`: sign for `LB`, `LH` and `LW`, zero for `LBU`, `LHU` and `LWU`, none for `LD`. That is the
+whole content of what a load writes to `rd`, so a load theorem says that the CPU row writes back
+whatever the memory chip promised, and, like the stores, it assumes that promise rather than
+resting on a proof of it. The CPU constraints alone do not tie the loaded word to memory. A load
+whose destination is `x0` needs only the address bound: the row writes zero to `x0`, and Sail's
+write to `x0` changes nothing. The loads hold at a misaligned address as the stores do: Sail splits
+the load into aligned pieces and reads the same bytes, which the Sail lemmas of `LH`, `LHU`, `LW`,
+`LWU` and `LD` prove (`RVSail/Misaligned.lean`).
 
 The parked theorems were last recorded at `353238a`, against the 2.x constraints and the contracts
 of `RVSail/Buses.lean`, and are not checked while they move. Two definitions every instruction
@@ -317,8 +327,8 @@ when drafted against v3.1.1, where `MemoryReadWriteChip` was the only receiver. 
 about which memory a load reads, or about the message's `chunk` and `clk` fields. That a store
 misses the program's code is not the memory promise's business: the store row proves it itself,
 through the `code_range` gadget, against the code-range contract below. Neither memory chip's proof against this promise exists yet: the
-read/write chip's proofs are against the 2.x contract, and the unaligned chip has none. The store
-theorems hold for a misaligned address too (A3); the load theorems, still parked, have to.
+read/write chip's proofs are against the 2.x contract, and the unaligned chip has none. The load
+and store theorems hold for a misaligned address too (A3).
 
 The contract now covers the merged branch-comparison rows. `ALUBus.validOpcode` contains the two
 opcodes 264 / 265 (`SLT` / `SLTU` + `LT_CMP_OPCODE_TAG`) that Pico's CPU sends for every branch,
@@ -424,12 +434,11 @@ A proof that uses them also trusts the Lean compiler and runtime.
 branch's, so the uses only go down.
 
 <!-- generated: tactics -->
-134 uses of `native_decide`, `bv_decide` or `decide +native` in 9 files:
+127 uses of `native_decide`, `bv_decide` or `decide +native` in 8 files:
 
 - `PicoFV/Fundamentals/Core.lean`: 7
 - `PicoFV/Fundamentals/KoalaBear.lean`: 1
 - `PicoFV/Fundamentals/Word.lean`: 39
-- `PicoFV/RV64IM/Equivalence/Loads.lean`: 7
 - `PicoFV/RV64IM/Equivalence/UType.lean`: 2
 - `PicoFV/RV64IM/RVSail/Execution.lean`: 3
 - `PicoFV/RV64IM/Spec/BitwiseChip.lean`: 1

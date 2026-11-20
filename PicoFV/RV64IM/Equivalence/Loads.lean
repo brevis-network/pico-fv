@@ -22,17 +22,23 @@ namespace Equivalence
     --
     -- A load row reads `rs1` into `op_b`, carries the 12-bit offset in `op_c`
     -- (`imm_c = 1`), and writes the loaded word into `op_a`. It sends one
-    -- Memory message, whose promise (`memory_message_spec`) gives the address
-    -- `op_b + op_c` its guest range and the width's alignment, and gives the
-    -- loaded word the opcode's extension — sign for `LB`, `LH` and `LW`, zero
-    -- for `LBU`, `LHU` and `LWU`, none for `LD`. Those are the conditions Sail
-    -- needs to take the load rather than trap, and the extension is what it
-    -- writes to `rd`. The row sets no branch or jump selector, so its next pc
-    -- is `pc + 4` (`is_sequential_active_constraints`).
+    -- Memory message (Pico v3.1.6, `riscv_cpu/constraints.rs:117-133`), whose
+    -- promise (`memory_message_spec`) puts the address `op_b + op_c` below
+    -- `2 ^ 32`, inside the memory region `RISC_V_assumptions` gives Sail, and
+    -- gives the loaded word the opcode's extension — sign for `LB`, `LH` and
+    -- `LW`, zero for `LBU`, `LHU` and `LWU`, none for `LD`. The extension is
+    -- what Sail writes to `rd`. The promise says nothing about alignment: at
+    -- an address that is not a multiple of the width Sail splits the load
+    -- into aligned pieces, which the Sail lemmas of `LH`, `LHU`, `LW`, `LWU`
+    -- and `LD` cover (`RVSail/Misaligned.lean`). The row sets no branch or
+    -- jump selector, so its next pc is `pc + 4`
+    -- (`is_sequential_active_constraints`; Pico v3.1.6,
+    -- `riscv_cpu/constraints.rs:318-326`).
     --
-    -- Each theorem splits on whether the destination is `x0`. There the chip
-    -- sends `ReadMemAny` and writes nothing, and so does Sail; elsewhere both
-    -- read the same bytes and write the same extension.
+    -- Each theorem splits on whether the destination is `x0`. There the row
+    -- writes zero to `x0` (Pico v3.1.6, `riscv_cpu/register/constraints.rs:73-76`)
+    -- and sends `ReadMemAny`, and Sail's write to `x0` changes nothing;
+    -- elsewhere both read the same bytes and write the same extension.
     -- ========================================================================
 
     /-- The low 8 bits of a `U64w`'s value are those of its first limb. -/
