@@ -115,16 +115,16 @@ macro "misaligned_load_tac" split:term "," pure:ident : tactic => `(tactic| (
   simp (disch := omega) only [mod_add_eq_add_mod_of_lt, Nat.add_assoc, Nat.reduceAdd] at h_mem
   split_ifs at h_mem with h_rd
   · set_option maxRecDepth 16384 in repeat (first
-      | simp (disch := omega) only [if_pos, if_neg, Nat.mod_eq_of_lt, mod_add_eq_add_mod_of_lt, Nat.add_assoc,
-          Nat.reduceAdd]
+      | simp (config := {maxSteps := 4000000}) (disch := omega) only [if_pos, if_neg,
+          Nat.mod_eq_of_lt, mod_add_eq_add_mod_of_lt, Nat.add_assoc, Nat.reduceAdd]
       | simp (config := {maxSteps := 4000000}) (disch := simp [h_mem]) [-LeanRV64D.Functions.split_misaligned, Sail.readReg,
           PreSail.readReg, h_mstatus, h_mprv2, h_priv, h_pma_regions, h_pma_base, h_pma_readable,
           h_pma_misaligned, h_htif, h_misa, h_mseccfg, h_range', write_reg_state_mem,
           Std.ExtHashMap.getElem?_eq_some_getElem])
     simp [*, write_reg_state, $pure:ident, LeanRV64D.Functions.wX_bits, LeanRV64D.Functions.wX, write_xreg]
   · set_option maxRecDepth 16384 in repeat (first
-      | simp (disch := omega) only [if_pos, if_neg, Nat.mod_eq_of_lt, mod_add_eq_add_mod_of_lt, Nat.add_assoc,
-          Nat.reduceAdd]
+      | simp (config := {maxSteps := 4000000}) (disch := omega) only [if_pos, if_neg,
+          Nat.mod_eq_of_lt, mod_add_eq_add_mod_of_lt, Nat.add_assoc, Nat.reduceAdd]
       | simp (config := {maxSteps := 4000000}) [-LeanRV64D.Functions.split_misaligned, Sail.readReg, PreSail.readReg, h_mstatus, h_mprv2,
           h_priv, h_pma_regions, h_pma_base, h_pma_readable, h_pma_misaligned, h_htif, h_misa,
           h_mseccfg, h_range', write_reg_state_mem, h_mem])
@@ -142,7 +142,11 @@ macro "misaligned_load_tac" split:term "," pure:ident : tactic => `(tactic| (
     interval_cases i <;> simp (config := {decide := true})
     all_goals (repeat (first
       | rw [BitVec.getElem_append]
-      | simp (config := {decide := true})))))
+      | simp (config := {decide := true})))
+    -- A wider load leaves goals whose mask bits are `Nat.testBit` of a literal, which neither
+    -- `simp` nor `decide` reduces on its own: the byte the bit comes from is a variable, so the
+    -- proposition is not closed. Unfolding `Nat.testBit` evaluates the literal side.
+    all_goals (try simp [Nat.testBit])))
 
 set_option hygiene false in
 /-- Unroll a misaligned store. `pure` is the opcode's `execute_*_pure`, `modify` its
@@ -158,13 +162,17 @@ macro "misaligned_store_tac" split:term "," pure:ident "," modify:ident : tactic
   simp [-LeanRV64D.Functions.split_misaligned, LeanRV64D.Functions.vmem_write_addr, ExceptT.run, $split:term,
     Sail.readReg, PreSail.readReg, h_mstatus, h_mprv2, h_priv, h_pma_regions, h_pma_base,
     h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg]
+  -- As in the load tactic, the address-normalising lemmas belong in the cheap branch: Sail
+  -- addresses the next piece as `(a % 2 ^ 64) + k`, and without them `omega` cannot see that
+  -- the later pieces of an eight-piece store are still inside the region.
   set_option maxRecDepth 16384 in repeat (first
-    | simp (disch := omega) only [if_pos, if_neg]
+    | simp (config := {maxSteps := 4000000}) (disch := omega) only [if_pos, if_neg,
+        Nat.mod_eq_of_lt, mod_add_eq_add_mod_of_lt, Nat.add_assoc, Nat.reduceAdd]
     | simp (config := {maxSteps := 4000000}) [-LeanRV64D.Functions.split_misaligned, Sail.readReg, PreSail.readReg, h_mstatus, h_mprv2,
         h_priv, h_pma_regions, h_pma_base, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg,
         h_range'])
   simp [$pure:ident, EStateM.set, $modify:ident, BitVec.extractLsb, BitVec.extractLsb', *]
-  repeat' (first
+  repeat (first
     | omega
     | (apply BitVec.eq_of_toNat_eq; simp [Nat.shiftRight_eq_div_pow] <;> omega)
     | (show Std.ExtHashMap.insert _ _ _ = Std.ExtHashMap.insert _ _ _; congr 1))))

@@ -220,8 +220,10 @@ namespace Equivalence
         (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
       -- The row's messages, as operations on the Sail state.
       have h_bus := h_bus_hypotheses
-      simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-            deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+          deserialise_raw_bus_row_Memory] at h_bus
+      simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
             h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store,
             h_reg_rs2, h_reg_rs1] at h_bus
       obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -243,8 +245,10 @@ namespace Equivalence
             (r1_val := U64w.toBV (op_b_value air row))
             (r2_val := U64w.toBV (op_a_value air row))
             (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-      · simp +decide [OpcodeSpec.RV64.spec_SB, CPU_bus_operations,
-              RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+      · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+              deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+              deserialise_raw_bus_row_Memory]
+        simp +decide [OpcodeSpec.RV64.spec_SB,
               MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store,
               h_reg_rs2, h_reg_rs1, rs1, rs2, BitVec.ofNatLT_eq_ofNat]
@@ -348,8 +352,10 @@ namespace Equivalence
         (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
       -- The row's messages, as operations on the Sail state.
       have h_bus := h_bus_hypotheses
-      simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-            deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+          deserialise_raw_bus_row_Memory] at h_bus
+      simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
             h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store,
             h_reg_rs2, h_reg_rs1] at h_bus
       obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -371,8 +377,10 @@ namespace Equivalence
             (r1_val := U64w.toBV (op_b_value air row))
             (r2_val := U64w.toBV (op_a_value air row))
             (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-      · simp +decide [OpcodeSpec.RV64.spec_SH, CPU_bus_operations,
-              RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+      · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+              deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+              deserialise_raw_bus_row_Memory]
+        simp +decide [OpcodeSpec.RV64.spec_SH,
               MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store,
               h_reg_rs2, h_reg_rs1, rs1, rs2, BitVec.ofNatLT_eq_ofNat]
@@ -476,8 +484,10 @@ namespace Equivalence
         (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
       -- The row's messages, as operations on the Sail state.
       have h_bus := h_bus_hypotheses
-      simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-            deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+          deserialise_raw_bus_row_Memory] at h_bus
+      simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
             h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store,
             h_reg_rs2, h_reg_rs1] at h_bus
       obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -499,8 +509,10 @@ namespace Equivalence
             (r1_val := U64w.toBV (op_b_value air row))
             (r2_val := U64w.toBV (op_a_value air row))
             (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-      · simp +decide [OpcodeSpec.RV64.spec_SW, CPU_bus_operations,
-              RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+      · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+              deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+              deserialise_raw_bus_row_Memory]
+        simp +decide [OpcodeSpec.RV64.spec_SW,
               MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store,
               h_reg_rs2, h_reg_rs1, rs1, rs2, BitVec.ofNatLT_eq_ofNat]
@@ -604,8 +616,10 @@ namespace Equivalence
         (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
       -- The row's messages, as operations on the Sail state.
       have h_bus := h_bus_hypotheses
-      simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-            deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+          deserialise_raw_bus_row_Memory] at h_bus
+      simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
             h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store,
             h_reg_rs2, h_reg_rs1] at h_bus
       obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -627,8 +641,10 @@ namespace Equivalence
             (r1_val := U64w.toBV (op_b_value air row))
             (r2_val := U64w.toBV (op_a_value air row))
             (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-      · simp +decide [OpcodeSpec.RV64.spec_SD, CPU_bus_operations,
-              RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+      · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+              deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+              deserialise_raw_bus_row_Memory]
+        simp +decide [OpcodeSpec.RV64.spec_SD,
               MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store,
               h_reg_rs2, h_reg_rs1, rs1, rs2, BitVec.ofNatLT_eq_ofNat]

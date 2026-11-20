@@ -203,16 +203,12 @@ namespace Equivalence
                         (air.cols.op_c_access.access.value_2 row 0 : FKB),
                         (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
         rw [← h_op_c]; rfl
-      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat <
+      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 4 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
         have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
-      have h_align : (4 : ℤ) ∣ (U64w.toBV (op_b_value air row) +
-          BitVec.signExtend 64 imm').toNat := by
-        rw [h_addr_bridge]
-        exact_mod_cast h_mem_spec.2.2.2.2.1 (by left; trivial)
       -- The row moves on by four.
       have h_halt : air.cols.is_halt row 0 = 0 :=
         is_halt_eq_zero_of_no_ecall air row h_ecall h_constraints
@@ -228,8 +224,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -242,11 +240,12 @@ namespace Equivalence
               (pc_val := U64w.toBV (pc air row))
               (r1_val := U64w.toBV (op_b_value air row))
               (data0 := 0#8) (data1 := 0#8) (data2 := 0#8) (data3 := 0#8)
-              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)
-              (h_align := h_align)]
+              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          simp +decide [OpcodeSpec.RV64.spec_LW, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+              deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+              deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LW,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
@@ -278,8 +277,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -294,7 +295,7 @@ namespace Equivalence
         have h_a_ext : U64w.toBV (op_a_value air row) = BitVec.signExtend 64 v32 := by
           have h : U64w.toBV (op_a_value air row) =
               BitVec.signExtend 64 (BitVec.truncate 32 (U64w.toBV (op_a_value air row))) :=
-            h_mem_spec.2.2.2.2.2.2.2.2.1 trivial h_a_is_x0
+            h_mem_spec.2.2.2.2.2.1 trivial h_a_is_x0
           have h32 : BitVec.truncate 32 (U64w.toBV (op_a_value air row)) = v32 := by
             rw [BitVec.truncate_eq_setWidth, U64w.setWidth_32_eq_low_U32w]
             simp [v32, op_a_value, U32w.toBV]
@@ -319,10 +320,11 @@ namespace Equivalence
               (data2 := BitVec.extractLsb' 16 8 v32)
               (data3 := BitVec.extractLsb' 24 8 v32)
               (state := state)
-              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)
-              (h_align := h_align)]
-        · simp +decide [OpcodeSpec.RV64.spec_LW, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
+        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+                deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+                deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LW,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
@@ -408,7 +410,7 @@ namespace Equivalence
                         (air.cols.op_c_access.access.value_2 row 0 : FKB),
                         (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
         rw [← h_op_c]; rfl
-      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat <
+      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 1 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
         have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
@@ -429,8 +431,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -445,8 +449,10 @@ namespace Equivalence
               (data0 := 0#8)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          simp +decide [OpcodeSpec.RV64.spec_LB, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+              deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+              deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LB,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
@@ -475,8 +481,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -490,7 +498,7 @@ namespace Equivalence
         have h_a_ext : U64w.toBV (op_a_value air row) = BitVec.signExtend 64 v8 := by
           have h : U64w.toBV (op_a_value air row) =
               BitVec.signExtend 64 (BitVec.truncate 8 (U64w.toBV (op_a_value air row))) :=
-            h_mem_spec.2.2.2.2.2.2.1 trivial h_a_is_x0
+            h_mem_spec.2.2.2.1 trivial h_a_is_x0
           have h8 : BitVec.truncate 8 (U64w.toBV (op_a_value air row)) = v8 := by
             rw [BitVec.truncate_eq_setWidth, toBV_setWidth_8]
             simp [v8, op_a_value]
@@ -512,8 +520,10 @@ namespace Equivalence
               (data0 := v8)
               (state := state)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-        · simp +decide [OpcodeSpec.RV64.spec_LB, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+                deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+                deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LB,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
@@ -595,16 +605,12 @@ namespace Equivalence
                         (air.cols.op_c_access.access.value_2 row 0 : FKB),
                         (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
         rw [← h_op_c]; rfl
-      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat <
+      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 2 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
         have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
-      have h_align : (2 : ℤ) ∣ (U64w.toBV (op_b_value air row) +
-          BitVec.signExtend 64 imm').toNat := by
-        rw [h_addr_bridge]
-        exact_mod_cast h_mem_spec.2.2.2.1 (by left; trivial)
       -- The row moves on by four.
       have h_halt : air.cols.is_halt row 0 = 0 :=
         is_halt_eq_zero_of_no_ecall air row h_ecall h_constraints
@@ -620,8 +626,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -634,11 +642,12 @@ namespace Equivalence
               (pc_val := U64w.toBV (pc air row))
               (r1_val := U64w.toBV (op_b_value air row))
               (data0 := 0#8) (data1 := 0#8)
-              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)
-              (h_align := h_align)]
+              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          simp +decide [OpcodeSpec.RV64.spec_LH, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+              deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+              deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LH,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
@@ -668,8 +677,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -683,7 +694,7 @@ namespace Equivalence
         have h_a_ext : U64w.toBV (op_a_value air row) = BitVec.signExtend 64 v16 := by
           have h : U64w.toBV (op_a_value air row) =
               BitVec.signExtend 64 (BitVec.truncate 16 (U64w.toBV (op_a_value air row))) :=
-            h_mem_spec.2.2.2.2.2.2.2.1 trivial h_a_is_x0
+            h_mem_spec.2.2.2.2.1 trivial h_a_is_x0
           have h16 : BitVec.truncate 16 (U64w.toBV (op_a_value air row)) = v16 := by
             rw [BitVec.truncate_eq_setWidth, toBV_setWidth_16]
             simp [v16, op_a_value]
@@ -706,10 +717,11 @@ namespace Equivalence
               (data0 := BitVec.extractLsb' 0 8 v16)
               (data1 := BitVec.extractLsb' 8 8 v16)
               (state := state)
-              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)
-              (h_align := h_align)]
-        · simp +decide [OpcodeSpec.RV64.spec_LH, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
+        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+                deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+                deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LH,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
@@ -793,7 +805,7 @@ namespace Equivalence
                         (air.cols.op_c_access.access.value_2 row 0 : FKB),
                         (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
         rw [← h_op_c]; rfl
-      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat <
+      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 1 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
         have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
@@ -814,8 +826,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -830,8 +844,10 @@ namespace Equivalence
               (data0 := 0#8)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          simp +decide [OpcodeSpec.RV64.spec_LBU, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+              deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+              deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LBU,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
@@ -860,8 +876,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -875,7 +893,7 @@ namespace Equivalence
         have h_a_ext : U64w.toBV (op_a_value air row) = BitVec.zeroExtend 64 v8 := by
           have h : U64w.toBV (op_a_value air row) =
               BitVec.zeroExtend 64 (BitVec.truncate 8 (U64w.toBV (op_a_value air row))) :=
-            h_mem_spec.2.2.2.2.2.2.2.2.2.1 trivial h_a_is_x0
+            h_mem_spec.2.2.2.2.2.2.1 trivial h_a_is_x0
           have h8 : BitVec.truncate 8 (U64w.toBV (op_a_value air row)) = v8 := by
             rw [BitVec.truncate_eq_setWidth, toBV_setWidth_8]
             simp [v8, op_a_value]
@@ -897,8 +915,10 @@ namespace Equivalence
               (data0 := v8)
               (state := state)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-        · simp +decide [OpcodeSpec.RV64.spec_LBU, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+                deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+                deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LBU,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
@@ -980,16 +1000,12 @@ namespace Equivalence
                         (air.cols.op_c_access.access.value_2 row 0 : FKB),
                         (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
         rw [← h_op_c]; rfl
-      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat <
+      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 2 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
         have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
-      have h_align : (2 : ℤ) ∣ (U64w.toBV (op_b_value air row) +
-          BitVec.signExtend 64 imm').toNat := by
-        rw [h_addr_bridge]
-        exact_mod_cast h_mem_spec.2.2.2.1 (by right; left; trivial)
       -- The row moves on by four.
       have h_halt : air.cols.is_halt row 0 = 0 :=
         is_halt_eq_zero_of_no_ecall air row h_ecall h_constraints
@@ -1005,8 +1021,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -1019,11 +1037,12 @@ namespace Equivalence
               (pc_val := U64w.toBV (pc air row))
               (r1_val := U64w.toBV (op_b_value air row))
               (data0 := 0#8) (data1 := 0#8)
-              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)
-              (h_align := h_align)]
+              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          simp +decide [OpcodeSpec.RV64.spec_LHU, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+              deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+              deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LHU,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
@@ -1053,8 +1072,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -1068,7 +1089,7 @@ namespace Equivalence
         have h_a_ext : U64w.toBV (op_a_value air row) = BitVec.zeroExtend 64 v16 := by
           have h : U64w.toBV (op_a_value air row) =
               BitVec.zeroExtend 64 (BitVec.truncate 16 (U64w.toBV (op_a_value air row))) :=
-            h_mem_spec.2.2.2.2.2.2.2.2.2.2.1 trivial h_a_is_x0
+            h_mem_spec.2.2.2.2.2.2.2.1 trivial h_a_is_x0
           have h16 : BitVec.truncate 16 (U64w.toBV (op_a_value air row)) = v16 := by
             rw [BitVec.truncate_eq_setWidth, toBV_setWidth_16]
             simp [v16, op_a_value]
@@ -1091,10 +1112,11 @@ namespace Equivalence
               (data0 := BitVec.extractLsb' 0 8 v16)
               (data1 := BitVec.extractLsb' 8 8 v16)
               (state := state)
-              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)
-              (h_align := h_align)]
-        · simp +decide [OpcodeSpec.RV64.spec_LHU, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
+        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+                deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+                deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LHU,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
@@ -1178,16 +1200,12 @@ namespace Equivalence
                         (air.cols.op_c_access.access.value_2 row 0 : FKB),
                         (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
         rw [← h_op_c]; rfl
-      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat <
+      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 4 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
         have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
-      have h_align : (4 : ℤ) ∣ (U64w.toBV (op_b_value air row) +
-          BitVec.signExtend 64 imm').toNat := by
-        rw [h_addr_bridge]
-        exact_mod_cast h_mem_spec.2.2.2.2.1 (by right; right; trivial)
       -- The row moves on by four.
       have h_halt : air.cols.is_halt row 0 = 0 :=
         is_halt_eq_zero_of_no_ecall air row h_ecall h_constraints
@@ -1203,8 +1221,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -1217,11 +1237,12 @@ namespace Equivalence
               (pc_val := U64w.toBV (pc air row))
               (r1_val := U64w.toBV (op_b_value air row))
               (data0 := 0#8) (data1 := 0#8) (data2 := 0#8) (data3 := 0#8)
-              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)
-              (h_align := h_align)]
+              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          simp +decide [OpcodeSpec.RV64.spec_LWU, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+              deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+              deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LWU,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
@@ -1253,8 +1274,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -1269,7 +1292,7 @@ namespace Equivalence
         have h_a_ext : U64w.toBV (op_a_value air row) = BitVec.zeroExtend 64 v32 := by
           have h : U64w.toBV (op_a_value air row) =
               BitVec.zeroExtend 64 (BitVec.truncate 32 (U64w.toBV (op_a_value air row))) :=
-            h_mem_spec.2.2.2.2.2.2.2.2.2.2.2 trivial h_a_is_x0
+            h_mem_spec.2.2.2.2.2.2.2.2 trivial h_a_is_x0
           have h32 : BitVec.truncate 32 (U64w.toBV (op_a_value air row)) = v32 := by
             rw [BitVec.truncate_eq_setWidth, U64w.setWidth_32_eq_low_U32w]
             simp [v32, op_a_value, U32w.toBV]
@@ -1294,10 +1317,11 @@ namespace Equivalence
               (data2 := BitVec.extractLsb' 16 8 v32)
               (data3 := BitVec.extractLsb' 24 8 v32)
               (state := state)
-              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)
-              (h_align := h_align)]
-        · simp +decide [OpcodeSpec.RV64.spec_LWU, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
+        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+                deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+                deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LWU,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
@@ -1383,16 +1407,12 @@ namespace Equivalence
                         (air.cols.op_c_access.access.value_2 row 0 : FKB),
                         (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
         rw [← h_op_c]; rfl
-      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat <
+      have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 8 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
         have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
-      have h_align : (8 : ℤ) ∣ (U64w.toBV (op_b_value air row) +
-          BitVec.signExtend 64 imm').toNat := by
-        rw [h_addr_bridge]
-        exact_mod_cast h_mem_spec.2.2.2.2.2.1 (by left; trivial)
       -- The row moves on by four.
       have h_halt : air.cols.is_halt row 0 = 0 :=
         is_halt_eq_zero_of_no_ecall air row h_ecall h_constraints
@@ -1408,8 +1428,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -1422,11 +1444,12 @@ namespace Equivalence
               (pc_val := U64w.toBV (pc air row))
               (r1_val := U64w.toBV (op_b_value air row))
               (data0 := 0#8) (data1 := 0#8) (data2 := 0#8) (data3 := 0#8) (data4 := 0#8) (data5 := 0#8) (data6 := 0#8) (data7 := 0#8)
-              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)
-              (h_align := h_align)]
+              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          simp +decide [OpcodeSpec.RV64.spec_LD, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+              deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+              deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LD,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
@@ -1462,8 +1485,10 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        simp +decide [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
-              deserialise_bus_row, raw_bus_row, MemoryBusEntry.deserialise, mem_width_of_opcode,
+        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+            deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+            deserialise_raw_bus_row_Memory] at h_bus
+        simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
               h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
               h_reg_rd, h_reg_rs1] at h_bus
         obtain ⟨ h_pc_read, h_read_b, h_rest ⟩ := h_bus
@@ -1503,10 +1528,11 @@ namespace Equivalence
               (data6 := BitVec.extractLsb' 48 8 v64)
               (data7 := BitVec.extractLsb' 56 8 v64)
               (state := state)
-              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)
-              (h_align := h_align)]
-        · simp +decide [OpcodeSpec.RV64.spec_LD, CPU_bus_operations,
-                RV64IM_Interactions.V3.bus_operations, deserialise_bus_row, raw_bus_row,
+              (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
+        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+                deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+                deserialise_raw_bus_row_Memory]
+          simp +decide [OpcodeSpec.RV64.spec_LD,
                 MemoryBusEntry.deserialise, mem_width_of_opcode,
                 h_is_real, h_opcode, h_imm_b, h_imm_c, h_memory, h_store, h_a_is_x0,
                 h_reg_rd, h_reg_rs1, rs1, BitVec.ofNatLT_eq_ofNat]
