@@ -458,18 +458,18 @@ equivalence files, are not replayed.
 **The job has not run.** GitHub runs a scheduled workflow only from the repository's default branch,
 and the workflow is on `pico-v3`, not on `main`. Until it runs, this section describes what it would
 check, not a result. Run by hand on the instruction-theorem files the build imports, `lake env
-leanchecker` replays all twelve: `Equivalence/Common`, `Equivalence/Addiw`, `Equivalence/RTypeW`,
-`Equivalence/ShiftIWOp`, `Equivalence/IType`, `Equivalence/ShiftIOp`, `Equivalence/RType`,
-`Equivalence/MulFamily`, `Equivalence/DivFamily`, `Equivalence/Jumps`, `Equivalence/BType` and
-`Equivalence/Stores`.
+leanchecker` replays all thirteen: `Equivalence/Common`, `Equivalence/Addiw`,
+`Equivalence/RTypeW`, `Equivalence/ShiftIWOp`, `Equivalence/IType`, `Equivalence/ShiftIOp`,
+`Equivalence/RType`, `Equivalence/MulFamily`, `Equivalence/DivFamily`, `Equivalence/Jumps`,
+`Equivalence/BType`, `Equivalence/Stores` and `Equivalence/Loads`.
 `Common`, `Jumps` and `BType` used to fail with "(kernel) deep recursion detected": one `simp`
 sorted all 17 messages of a CPU row at once, and the proof term it built was deeper than
 `leanchecker`'s kernel stack (`lake build` runs Lean with `--tstack=400000` in the lakefile). The
 parts of a sorted row are now separate lemmas checked by evaluation
 (`deserialise_raw_bus_row_Program`, `_State` and `_Memory` in `Equivalence/Common.lean`), and
 the lemmas that compute a row's bus operations rewrite with them.
-Of the other modules, `RVSail/Misaligned` and the Sail lemmas `RVSail/Opcodes/sh`, `sw` and `sd`
-replay too; the rest have not been replayed by hand.
+Of the other modules, `RVSail/Misaligned` and the Sail lemmas `RVSail/Opcodes/sh`, `sw`, `sd`,
+`lh`, `lhu`, `lw`, `lwu` and `ld` replay too; the rest have not been replayed by hand.
 
 ## D. Does the use of the results hold together?
 
