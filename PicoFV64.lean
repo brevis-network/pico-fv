@@ -33,6 +33,7 @@ import PicoFV.RV64IM.Extraction.LtSignedGadget
 import PicoFV.RV64IM.Extraction.LtUnsignedGadget
 import PicoFV.RV64IM.Extraction.LtWordU16Gadget
 import PicoFV.RV64IM.Extraction.MemoryReadWriteChip
+import PicoFV.RV64IM.Extraction.MemoryUnalignedChip
 import PicoFV.RV64IM.Extraction.MulChip
 import PicoFV.RV64IM.Extraction.MulGadget
 import PicoFV.RV64IM.Extraction.SLLChip
