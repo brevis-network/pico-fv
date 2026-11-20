@@ -63,9 +63,15 @@ with their statements in `signatures.txt`. They are of four kinds.
 - **Chip specifications** (`<Chip>.Spec.*`). For a row of a non-CPU chip that satisfies its
   extracted constraints, the bus messages it serves have the meaning the bus assumptions give them
   (for example, an ALU row really computes the operation it claims). Every chip's specification
-  is built; the checked list holds the memory chip's (`MemoryReadWriteChip.Spec.*`) and those of
-  the ALU chips already at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL,
-  ShiftRight) today.
+  is built; the checked list holds the read/write memory chip's at v3.1.6
+  (`MemoryReadWriteChip.Spec.*`) and those of the ALU chips already at v3.1.1 (Add, Sub, Addw,
+  Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight).
+
+  The memory chip's say that a row receiving the memory dispatch meets the memory promise
+  (`spec_LB` to `spec_SD`, one per opcode, and `wf_asrt`, which also gives the double word it
+  writes back 16-bit pieces), and that a store row misses the code range it looks up
+  (`store_misses_code_range`, through the gadget below). None says which memory a load reads or
+  a store writes: the promise does not ask it (A4).
 
   `DivRemChip`'s specifications are the one exception to "satisfies its extracted constraints":
   they are stated over the readable restatement `DivRemChip.ConstraintsAndBuses.AbsConstraints`
@@ -127,7 +133,7 @@ misaligned loads and stores, so the memory promise no longer says an address is 
 and A5), and the Program table changed after v3.1.1 (see A6).
 
 <!-- generated: pending -->
-1 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `MemoryReadWriteChip.lean`.
+Every extraction file is generated from the pinned Pico commit.
 <!-- end generated -->
 
 ## Summary of the risks
@@ -246,21 +252,24 @@ do not assume it. At an address that is not a multiple of the width, Sail splits
 naturally aligned pieces and writes the same bytes, which the Sail lemmas of `SH`, `SW` and `SD`
 prove (`RVSail/Misaligned.lean`). That case rests on the Sail model allowing misaligned access
 (`plat_enable_misaligned_access`, `true` in the model). The proofs also use the clause
-`misaligned_fault = NoFault` of `RISC_V_assumptions`, as the aligned case does. **Nothing in this
-repository discharges the Memory promise yet.** `MemoryReadWriteChip.Spec` still states its
-assumptions against the 2.x memory contract of `RVSail/Buses.lean`, and it is verified against a
-`MemoryReadWriteChip.lean` extraction that predates the pinned Pico commit (see the generated list
-under "What is proved" and `extractor/pending.txt`). So the serving side of the link a store theorem
-assumes is open, as A4 describes for chip composition generally.
+`misaligned_fault = NoFault` of `RISC_V_assumptions`, as the aligned case does. **The Memory
+promise is discharged only for the dispatches the read/write chip takes.**
+`MemoryReadWriteChip.Spec` proves it at the pinned commit for every dispatch that chip receives
+(`spec_SB`, `spec_SH`, `spec_SW` and `spec_SD` for the stores, and `wf_asrt`); that chip takes
+only accesses aligned to their width. The unaligned chip may take any access, aligned or not
+(`riscv_memory/unaligned/mod.rs:3-6` at v3.1.6), and has no proof yet. So the serving side of the
+link a store theorem assumes is open for every dispatch the unaligned chip takes, and the two sides
+are not yet composed, as A4 describes for chip composition generally.
 
 The seven load theorems rest on the same promise, and on one more part of it. Besides the address
 bound, `MemoryBus.Spec` says what extension the loaded word carries when the destination is not
 `x0`: sign for `LB`, `LH` and `LW`, zero for `LBU`, `LHU` and `LWU`, none for `LD`. That is the
 whole content of what a load writes to `rd`, so a load theorem says that the CPU row writes back
 whatever the memory chip promised, and, like the stores, it assumes that promise rather than
-resting on a proof of it. The CPU constraints alone do not tie the loaded word to memory. A load
-whose destination is `x0` needs only the address bound: the row writes zero to `x0`, and Sail's
-write to `x0` changes nothing. The loads hold at a misaligned address as the stores do: Sail splits
+resting on a proof of it; the read/write chip proves the promise for the loads it takes
+(`MemoryReadWriteChip.Spec.spec_LB` to `spec_LD`), the unaligned chip for none yet. The CPU
+constraints alone do not tie the loaded word to memory. A load whose destination is `x0` needs
+only the address bound: the row writes zero to `x0`, and Sail's write to `x0` changes nothing. The loads hold at a misaligned address as the stores do: Sail splits
 the load into aligned pieces and reads the same bytes, which the Sail lemmas of `LH`, `LHU`, `LW`,
 `LWU` and `LD` prove (`RVSail/Misaligned.lean`).
 
@@ -304,10 +313,9 @@ proves the v3.1.1 CPU chip sends, at whatever multiplicity it sends it (each mes
 carries a duty is sent 0 or 1 times, `CpuChip.Spec.multiplicity_eq_zero_or_one`). The theorem
 assumes only the Program table's and the register file's promises, not those of the ALU and
 memory chips it sends to, so the CPU's side of each of those links does not rest on the
-receiving chip's theorem. The read/write memory chip's specification still states its
-assumptions against the 2.x memory contract (`RVSail/Buses.lean`); the 3.x contract both memory
-chips will assume (`MemoryBus.externals` in `RVSail/BusesV3.lean`) is the one the CPU is proven
-to meet.
+receiving chip's theorem. The read/write memory chip's specification assumes of the CPU what
+the 3.x contract states (`MemoryBus.externals` in `RVSail/BusesV3.lean`), the duty the CPU is
+proven to meet.
 
 At v3.1.6, the pin, the memory dispatch has two receivers. Since v3.1.2 Pico has
 `MemoryUnalignedChip` (`vm/src/chips/chips/riscv_memory/unaligned/`), which takes the same
@@ -317,7 +325,8 @@ chip may take any load or store. The promise the CPU chip assumes of the dispatc
 (`MemoryBus.Spec` in `RVSail/BusesV3.lean`) therefore states only what holds whichever chip takes
 the message: a load's value has 16-bit pieces, the address `b + c` is at least `2^16` and below
 `2^32`, and, unless the destination is `x0`, a load's value is the sign or zero extension its
-opcode names. The address bound and the extensions follow from each chip's constraints at v3.1.6.
+opcode names. The address bound and the extensions follow from each chip's constraints at v3.1.6
+together with the CPU's duty that `b` and `c` have 16-bit pieces (`MemoryBus.externals`).
 The 16-bit pieces need more: in `MemoryReadWriteChip` they are pieces of the previous memory
 value, which the memory argument's promise bounds, and for a load into `x0` neither chip
 constrains the value, so there the clause holds because the CPU sends zero
@@ -326,9 +335,12 @@ It no longer says that a halfword, word or doubleword address is a multiple of t
 when drafted against v3.1.1, where `MemoryReadWriteChip` was the only receiver. It says nothing
 about which memory a load reads, or about the message's `chunk` and `clk` fields. That a store
 misses the program's code is not the memory promise's business: the store row proves it itself,
-through the `code_range` gadget, against the code-range contract below. Neither memory chip's proof against this promise exists yet: the
-read/write chip's proofs are against the 2.x contract, and the unaligned chip has none. The load
-and store theorems hold for a misaligned address too (A3).
+through the `code_range` gadget, against the code-range contract below. The read/write chip
+proves the promise for every dispatch it receives (`MemoryReadWriteChip.Spec.spec_LB` to
+`spec_SD` and `wf_asrt`); the unaligned chip has no proof yet. That a load returns what memory
+holds, and that a store writes it, is proven nowhere: the promise does not ask it, and the 2.x
+chip's theorems that tied the dispatch to the memory argument's read and write (`bus_equiv`)
+have no 3.x counterpart. The load and store theorems hold for a misaligned address too (A3).
 
 The contract now covers the merged branch-comparison rows. `ALUBus.validOpcode` contains the two
 opcodes 264 / 265 (`SLT` / `SLTU` + `LT_CMP_OPCODE_TAG`) that Pico's CPU sends for every branch,
@@ -419,7 +431,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 84 |
+| kernel + compiler | 77 |
 | kernel + compiler + RISC-V spec axioms | 60 |
 | kernel only | 1 |
 <!-- end generated -->
@@ -434,7 +446,7 @@ A proof that uses them also trusts the Lean compiler and runtime.
 branch's, so the uses only go down.
 
 <!-- generated: tactics -->
-127 uses of `native_decide`, `bv_decide` or `decide +native` in 8 files:
+54 uses of `native_decide`, `bv_decide` or `decide +native` in 7 files:
 
 - `PicoFV/Fundamentals/Core.lean`: 7
 - `PicoFV/Fundamentals/KoalaBear.lean`: 1
@@ -443,7 +455,6 @@ branch's, so the uses only go down.
 - `PicoFV/RV64IM/RVSail/Execution.lean`: 3
 - `PicoFV/RV64IM/Spec/BitwiseChip.lean`: 1
 - `PicoFV/RV64IM/Spec/DivRemChip.lean`: 1
-- `PicoFV/RV64IM/Spec/MemoryReadWriteChip.lean`: 73
 <!-- end generated -->
 
 ### C3. Declarations the kernel did not check
@@ -452,7 +463,7 @@ A weekly CI job (`.github/workflows/replay.yml`) is written to replay the declar
 module the build imports into the kernel with `leanchecker`, except the modules listed in C2:
 the kernel cannot replay what those tactics computed. Today that excludes `Fundamentals/Core`,
 `Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution` and the specifications of the
-Bitwise, DivRem and memory chips. Modules the build does not import, such as the parked
+Bitwise and DivRem chips. Modules the build does not import, such as the parked
 equivalence files, are not replayed.
 
 **The job has not run.** GitHub runs a scheduled workflow only from the repository's default branch,
@@ -468,8 +479,9 @@ sorted all 17 messages of a CPU row at once, and the proof term it built was dee
 parts of a sorted row are now separate lemmas checked by evaluation
 (`deserialise_raw_bus_row_Program`, `_State` and `_Memory` in `Equivalence/Common.lean`), and
 the lemmas that compute a row's bus operations rewrite with them.
-Of the other modules, `RVSail/Misaligned` and the Sail lemmas `RVSail/Opcodes/sh`, `sw`, `sd`,
-`lh`, `lhu`, `lw`, `lwu` and `ld` replay too; the rest have not been replayed by hand.
+Of the other modules, the read/write memory chip's `Airs`, `Constraints` and `Spec`,
+`Airs/SubAirs`, `RVSail/Misaligned` and the Sail lemmas `RVSail/Opcodes/sh`, `sw`, `sd`, `lh`, `lhu`, `lw`, `lwu`
+and `ld` replay too; the rest have not been replayed by hand.
 
 ## D. Does the use of the results hold together?
 
