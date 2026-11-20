@@ -129,7 +129,7 @@ Settled on 12 November 2026.
    They used the address bound `< 2^32`, the alignment clause and, for LW, the sign-extension
    clause. They did not use the lower bound `2^16`, the 16-bit range of a loaded value, or the
    `chunk` and `clk` fields, which stay without a promise. The alignment clause was required by
-   the Sail-side lemmas as they stand (`execute_LW_equiv`, `execute_SD_equiv`). The memory chip's
+   the Sail-side lemmas as they stood then (`execute_LW_equiv`, `execute_SD_equiv`). The memory chip's
    own proofs stay on the 2.x extraction and the 2.x contract until that chip moves, so until then
    the 11 load and store theorems rest on a promise with no Lean proof at v3.1.1; `SOUNDNESS.md`
    has to say so. Since v3.1.2, and so at the pin, the alignment clause no longer holds:

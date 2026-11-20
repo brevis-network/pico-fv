@@ -237,22 +237,22 @@ stores take the low 13 or 12 bits of the `op_c` value, and `JAL` the low 21 bits
 value.
 
 The four store theorems take their opcode alone too, as they did at `353238a`, and gain the
-whole-trace assumption, which their 2.x statements did not take. What a store rests on beyond the
-CPU's own constraints is one clause of the Memory message's promise (`MemoryBus.Spec` in
-`RVSail/BusesV3.lean`): the address `op_b + op_c` is below `2 ^ 32`, so the whole access lies in
-the memory region `RISC_V_assumptions` gives Sail (at least `2 ^ 48` bytes); Sail traps instead of
-storing outside it. The promise says nothing about alignment and the theorems do not assume it. At
-an address that is not a multiple of the width, Sail splits the store into naturally aligned
-pieces and writes the same bytes, which the Sail lemmas of `SH`, `SW` and `SD` prove
-(`RVSail/Misaligned.lean`). That case rests on the Sail model allowing misaligned access
-(`plat_enable_misaligned_access`, `true` in the model) and on the clause
-`misaligned_fault = NoFault` of `RISC_V_assumptions`. **Nothing in this repository discharges the
-promise yet.** `MemoryReadWriteChip.Spec` still states its assumptions against the 2.x memory
-contract of `RVSail/Buses.lean`, and it is verified against a `MemoryReadWriteChip.lean` extraction
-that predates the pinned Pico commit (see the generated list under "What is proved" and
-`extractor/pending.txt`). So the serving side of the link a store theorem assumes is
-open, as A4 describes for chip composition generally; the loads will assume the same promise when
-they return.
+whole-trace assumption, which their 2.x statements did not take. Like every restored theorem they
+rest on the Program table's promise (A4, A5). Of the Memory message's promise (`MemoryBus.Spec` in
+`RVSail/BusesV3.lean`) a store uses one clause: the address `op_b + op_c` is below `2 ^ 32`, so the
+whole access lies in the memory region `RISC_V_assumptions` gives Sail (at least `2 ^ 48` bytes);
+Sail traps instead of storing outside it. The promise says nothing about alignment and the theorems
+do not assume it. At an address that is not a multiple of the width, Sail splits the store into
+naturally aligned pieces and writes the same bytes, which the Sail lemmas of `SH`, `SW` and `SD`
+prove (`RVSail/Misaligned.lean`). That case rests on the Sail model allowing misaligned access
+(`plat_enable_misaligned_access`, `true` in the model). The proofs also use the clause
+`misaligned_fault = NoFault` of `RISC_V_assumptions`, as the aligned case does. **Nothing in this
+repository discharges the Memory promise yet.** `MemoryReadWriteChip.Spec` still states its
+assumptions against the 2.x memory contract of `RVSail/Buses.lean`, and it is verified against a
+`MemoryReadWriteChip.lean` extraction that predates the pinned Pico commit (see the generated list
+under "What is proved" and `extractor/pending.txt`). So the serving side of the link a store theorem
+assumes is open, as A4 describes for chip composition generally; the loads will assume the same
+promise when they return.
 
 The parked theorems were last recorded at `353238a`, against the 2.x constraints and the contracts
 of `RVSail/Buses.lean`, and are not checked while they move. Two definitions every instruction
@@ -459,7 +459,8 @@ sorted all 17 messages of a CPU row at once, and the proof term it built was dee
 parts of a sorted row are now separate lemmas checked by evaluation
 (`deserialise_raw_bus_row_Program`, `_State` and `_Memory` in `Equivalence/Common.lean`), and
 the lemmas that compute a row's bus operations rewrite with them.
-The other modules have not been replayed by hand.
+Of the other modules, `RVSail/Misaligned` and the Sail lemmas `RVSail/Opcodes/sh`, `sw` and `sd`
+replay too; the rest have not been replayed by hand.
 
 ## D. Does the use of the results hold together?
 

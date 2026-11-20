@@ -34,9 +34,10 @@ namespace Equivalence
     -- (`is_sequential_active_constraints`; Pico v3.1.6,
     -- `riscv_cpu/constraints.rs:318-326`).
     --
-    -- The width is the only thing that differs: the chip writes the first
-    -- limb of `op_a` for `SB` and `SH`, the first two for `SW` and all four
-    -- for `SD`, and Sail writes the matching low bits of `rs2`'s value.
+    -- The width is the only thing that differs: the chip writes the low byte
+    -- of the first limb of `op_a` for `SB`, the first limb for `SH`, the
+    -- first two for `SW` and all four for `SD`, and Sail writes the matching
+    -- low bits of `rs2`'s value.
     -- ========================================================================
 
     /-- The low `n` bits of a `U64w`'s value, for `n` at most one limb, are those of its first
@@ -213,7 +214,6 @@ namespace Equivalence
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat <
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
-        have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
       -- The row moves on by four, and writes back the value it read.
@@ -345,7 +345,6 @@ namespace Equivalence
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 2 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
-        have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
       -- The row moves on by four, and writes back the value it read.
@@ -477,7 +476,6 @@ namespace Equivalence
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 4 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
-        have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
       -- The row moves on by four, and writes back the value it read.
@@ -609,7 +607,6 @@ namespace Equivalence
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 8 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
-        have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
       -- The row moves on by four, and writes back the value it read.

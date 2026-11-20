@@ -4,9 +4,9 @@ import Mathlib.Tactic.IntervalCases
 
 /-! # Misaligned stores in Sail
 
-    With misaligned access enabled (`plat_enable_misaligned_access`, and `misaligned_fault =
-    NoFault` in `RISC_V_assumptions`), Sail's `vmem_write_addr` splits an access whose address
-    is not a multiple of its width into naturally aligned pieces: `split_misaligned` returns
+    With misaligned access enabled (`plat_enable_misaligned_access`, `true` in the model),
+    Sail's `vmem_write_addr` splits an access whose address is not a multiple of its width
+    into naturally aligned pieces: `split_misaligned` returns
     `(width / 2^k, 2^k)`, where `k` is the number of trailing zero bits of the address
     (`sys/vmem_utils.sail`; `LeanRV64D/VmemUtils.lean`), and a loop with that many passes writes
     one piece per pass.
