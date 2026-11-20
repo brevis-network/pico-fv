@@ -87,22 +87,24 @@ theorem split_misaligned_8_2 (v : BitVec 64) (h : v.toNat % 8 = 4) (s : PreSail.
     its `bind` and `pure` are still `ExceptT`'s, which `rfl` shows, but the instance as a whole
     is no longer syntactically `ExceptT.instMonad`. -/
 
-/-- A loop whose passes are known ends in the last of them. If pass `i` of the body takes loop
-    variables `xs i` and state `ss i` to `xs (i + 1)` and `ss (i + 1)`, and the first component
-    stays `false` strictly between the first and the last pass, then `d` passes from position
-    `k` end at `xs n` and `ss n`. By induction on the fuel `d`. -/
-theorem untilFuelM_go_steps {ε σ E β : Type} (inst : Monad (ExceptT E (EStateM ε σ)))
-    (hbind : ∀ {α γ : Type} (x : ExceptT E (EStateM ε σ) α) (g : α → ExceptT E (EStateM ε σ) γ),
-      @Bind.bind _ (@Monad.toBind _ inst) α γ x g = ExceptT.bind x g)
-    (hpure : ∀ {α : Type} (a : α),
-      @Pure.pure _ (@Applicative.toPure _ (@Monad.toApplicative _ inst)) α a = ExceptT.pure a)
-    (cond : Bool × β → ExceptT E (EStateM ε σ) Bool)
-    (hcond : ∀ x s, cond x s = EStateM.Result.ok (Except.ok x.1) s)
-    (f : Bool × β → ExceptT E (EStateM ε σ) (Bool × β))
-    (xs : Nat → Bool × β) (ss : Nat → σ) (n : Nat)
+/-- A loop whose passes are known ends in the last of them. The loop's condition reads a flag
+    `fin` off the loop variables. If pass `i` of the body takes loop variables `xs i` and state
+    `ss i` to `xs (i + 1)` and `ss (i + 1)`, and the flag stays `false` strictly between the
+    first and the last pass, then `d` passes from position `k` end at `xs n` and `ss n`. By
+    induction on the fuel `d`. The loop-variable type is free, so the lemma serves the store
+    loop, whose flag comes first, and the load loop, whose flag comes second. -/
+theorem untilFuelM_go_steps {ε σ E α : Type} (inst : Monad (ExceptT E (EStateM ε σ)))
+    (hbind : ∀ {β γ : Type} (x : ExceptT E (EStateM ε σ) β) (g : β → ExceptT E (EStateM ε σ) γ),
+      @Bind.bind _ (@Monad.toBind _ inst) β γ x g = ExceptT.bind x g)
+    (hpure : ∀ {β : Type} (a : β),
+      @Pure.pure _ (@Applicative.toPure _ (@Monad.toApplicative _ inst)) β a = ExceptT.pure a)
+    (cond : α → ExceptT E (EStateM ε σ) Bool) (fin : α → Bool)
+    (hcond : ∀ x s, cond x s = EStateM.Result.ok (Except.ok (fin x)) s)
+    (f : α → ExceptT E (EStateM ε σ) α)
+    (xs : Nat → α) (ss : Nat → σ) (n : Nat)
     (hstep : ∀ i, i < n →
       f (xs i) (ss i) = EStateM.Result.ok (Except.ok (xs (i + 1))) (ss (i + 1)))
-    (hrun : ∀ i, 0 < i → i < n → (xs i).1 = false) :
+    (hrun : ∀ i, 0 < i → i < n → fin (xs i) = false) :
     ∀ d k, k + d = n →
       @untilFuelM.go _ _ inst cond f (xs k) d (ss k) =
         EStateM.Result.ok (Except.ok (xs n)) (ss n) := by
@@ -122,7 +124,7 @@ theorem untilFuelM_go_steps {ε σ E β : Type} (inst : Monad (ExceptT E (EState
     have h3 := ih (k + 1) (by omega)
     unfold untilFuelM.go
     simp only [hbind, bind, ExceptT.bind, ExceptT.mk, ExceptT.bindCont, EStateM.bind, h1, h2]
-    by_cases hb : (xs (k + 1)).1 = true
+    by_cases hb : fin (xs (k + 1)) = true
     · rw [if_pos hb, hpure]
       have hkn : k + 1 = n := by
         by_contra hne
@@ -155,7 +157,7 @@ theorem untilFuelM_pieces {ε σ E : Type} (inst : Monad (ExceptT E (EStateM ε 
     @untilFuelM _ _ inst n cond (false, 0, true) f s0 =
       EStateM.Result.ok (Except.ok (true, n - 1, true)) (ss n) := by
   subst hs0
-  have h := untilFuelM_go_steps inst hbind hpure cond hcond f
+  have h := untilFuelM_go_steps inst hbind hpure cond Prod.fst hcond f
     (fun i => (decide (i = n), (if i = n then n - 1 else i), true)) ss n
     (by
       intro i hi
