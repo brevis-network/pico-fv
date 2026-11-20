@@ -5,20 +5,27 @@ open Plonky3
 set_option maxHeartbeats 1_000_000_000
 
 /-!
-# CodeRangeGadget — a store misses the program's code
+# CodeRangeGadget — a store misses the code range it looks up
 
 `CodeRangeCols::eval` (`vm/src/chips/gadgets/code_range.rs`, Pico v3.1.6) proves that a write of
-`width` bytes at `addr` lands on no byte of the program's code `[code_start, code_end)`: either it
-ends at or below the code's start, or it starts at or above its end.
+`width` bytes at `addr` lands on no byte of the range `[code_start, code_end)` it looks up from
+the Program table: either it ends at or below the range's start, or it starts at or above its
+end.
+
+What is proved is about the range as read from the row's own columns. The Program table's
+promise (`V3.CodeRangeBus.Spec`) gives only that its four pieces are below 2^16, not that they
+are this program's code range: no Lean statement names that range yet (`RVSail/BusesV3.lean`,
+`CodeRangeBus.Spec`). So these theorems do not yet say that a store misses the program's code;
+they say it misses whatever range the Program table answers.
 
 `gadget_spec` states this on the gadget's column values, for a chip that embeds the gadget;
 `spec` states it for the standalone wrapper air. Their premises are the ones the gadget's
 documentation (`code_range.rs`, the doc comments of `CodeRangeCols::eval` and `populate`) leaves
 to its caller: the row is a store (`is_store = 1`), `addr` is two 16-bit pieces and `width` is
 below 2^16. The rest comes from the gadget's constraints and two bus promises: the Program
-table answers the code-range lookup with four 16-bit pieces (`V3.CodeRangeBus.Spec`, assumed
-through `bus_row_code_range_wf_asm`), and the byte table's `U16Range` check bounds each piece of
-the distance (`ByteBus.Spec`, opcode 8, assumed through `bus_row_wf_asm`).
+table answers the code-range lookup with four 16-bit pieces (`V3.CodeRangeBus.Spec`), and the
+byte table's `U16Range` check bounds each piece of the distance (`ByteBus.Spec`, opcode 8). Both
+are assumed through `bus_row_all_wf_asm`, the check over all of the row's messages.
 
 The argument, from the comment in `eval`: with `below ∈ {0, 1}` and `borrow ∈ {0, 1, 2}`, every
 side of the two distance equations lies within 2^18 of zero, far below the field's modulus, so
@@ -37,19 +44,16 @@ namespace CodeRangeGadget.Spec
 
   set_option maxHeartbeats 1_000_000_000
 
-  /-- On a store row, the write `[addr, addr + width)` misses the code `[code_start, code_end)`:
-      it ends at or below the code's start, or starts at or above its end. Each address is read
-      from its two 16-bit pieces. -/
+  /-- On a store row, the write `[addr, addr + width)` misses the looked-up range
+      `[code_start, code_end)`: it ends at or below the range's start, or starts at or above its
+      end. Each address is read from its two 16-bit pieces. The range is the one in the row's
+      columns, which this statement does not tie to the program's code range. -/
   theorem gadget_spec
     (is_store addr_0 addr_1 store_width
      code_start_0 code_start_1 code_end_0 code_end_1
      below borrow distance_0 distance_1 : FKB)
-    (h_wf_asm :
-      bus_row_wf_asm
-        (CodeRangeGadget.AbsBuses is_store code_start_0 code_start_1 code_end_0 code_end_1
-          distance_0 distance_1))
-    (h_code_range_wf_asm :
-      bus_row_code_range_wf_asm
+    (h_bus_wf_asm :
+      bus_row_all_wf_asm
         (CodeRangeGadget.AbsBuses is_store code_start_0 code_start_1 code_end_0 code_end_1
           distance_0 distance_1))
     (h_constraints :
@@ -63,6 +67,7 @@ namespace CodeRangeGadget.Spec
         code_start_0.val + 65536 * code_start_1.val ∨
       code_end_0.val + 65536 * code_end_1.val ≤ addr_0.val + 65536 * addr_1.val
   := by
+    obtain ⟨ h_wf_asm, h_code_range_wf_asm ⟩ := h_bus_wf_asm
     subst h_is_store
     simp [bus_row_wf_asm, CodeRangeGadget.AbsBuses, RV64IM_Interactions.ByteBus.Spec]
       at h_wf_asm
@@ -112,13 +117,13 @@ namespace CodeRangeGadget.Spec
       left
       omega
 
-  /-- `gadget_spec` for the standalone wrapper air, on its named columns. -/
+  /-- `gadget_spec` for the standalone wrapper air, on its named columns. As there, the range is
+      the one in the row's columns, not yet tied to the program's code range. -/
   theorem spec
     [Field ExtF]
     (air : Valid_CodeRangeGadgetAir FKB ExtF)
     (row : ℕ)
-    (h_wf_asm : bus_row_wf_asm (bus_row air row))
-    (h_code_range_wf_asm : bus_row_code_range_wf_asm (bus_row air row))
+    (h_bus_wf_asm : bus_row_all_wf_asm (bus_row air row))
     (h_constraints : CodeRangeGadget.Extraction.allHold air row)
     (h_is_store : air.cols.is_store row 0 = 1)
     (h_addr : (air.cols.addr_0 row 0).val < 65536 ∧ (air.cols.addr_1 row 0).val < 65536)
@@ -130,9 +135,9 @@ namespace CodeRangeGadget.Spec
       (air.cols.gadget.code_end_0 row 0).val + 65536 * (air.cols.gadget.code_end_1 row 0).val ≤
         (air.cols.addr_0 row 0).val + 65536 * (air.cols.addr_1 row 0).val
   := by
-    rw [bus_row_abs] at h_wf_asm h_code_range_wf_asm
+    rw [bus_row_abs] at h_bus_wf_asm
     exact gadget_spec _ _ _ _ _ _ _ _ _ _ _ _
-      h_wf_asm h_code_range_wf_asm (allHold_abs air row h_constraints) h_is_store h_addr h_width
+      h_bus_wf_asm (allHold_abs air row h_constraints) h_is_store h_addr h_width
 
   /-- The gadget's messages promise nothing to the tables that answer them: no entry has
       multiplicity `-1` when `is_store` is boolean, as its caller keeps it. -/
@@ -142,9 +147,9 @@ namespace CodeRangeGadget.Spec
     (row : ℕ)
     (h_is_store : air.cols.is_store row 0 = 0 ∨ air.cols.is_store row 0 = 1)
   :
-    bus_row_wf_asrt (bus_row air row) ∧ bus_row_code_range_wf_asrt (bus_row air row)
+    bus_row_all_wf_asrt (bus_row air row)
   := by
-    simp [bus_row_wf_asrt, bus_row_code_range_wf_asrt, bus_row, CodeRangeGadget.AbsBuses,
+    simp [bus_row_all_wf_asrt, bus_row_wf_asrt, bus_row_code_range_wf_asrt, bus_row, CodeRangeGadget.AbsBuses,
       CodeRangeBusEntryInstance, CodeRangeBusEntry.deserialise]
     rcases h_is_store with h | h <;> simp [h]
 
@@ -154,9 +159,9 @@ namespace CodeRangeGadget.Spec
     (air : Valid_CodeRangeGadgetAir FKB ExtF)
     (row : ℕ)
   :
-    bus_row_ext_asrt (bus_row air row) ∧ bus_row_code_range_ext_asrt (bus_row air row)
+    bus_row_all_ext_asrt (bus_row air row)
   := by
-    simp [bus_row_ext_asrt, bus_row_code_range_ext_asrt, bus_row, CodeRangeGadget.AbsBuses,
+    simp [bus_row_all_ext_asrt, bus_row_ext_asrt, bus_row_code_range_ext_asrt, bus_row, CodeRangeGadget.AbsBuses,
       CodeRangeBusEntryInstance]
 
 end CodeRangeGadget.Spec

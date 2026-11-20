@@ -10,10 +10,10 @@ use pico_mle_core::air::{any_air::BaseAirWithPublicValues, symbolic::SymbolicRap
 use pico_vm::{
     chips::gadgets::{
         add::AddGadget, addw::AddwGadget, bitwise::BitWiseGadget, bitwise_u16::BitWiseU16Gadget,
-        code_range::CodeRangeCols, is_equal_word::IsEqualWordGadget, is_zero::IsZeroGadget, is_zero_word::IsZeroWordGadget,
-        lt_signed::LtSignedGadget, lt_unsigned::LtUnsignedGadget, lt_word_u16::LtWordU16Gadget,
-        msb::U16MSBGadget, mul::MulGadget, sub::SubGadget, subw::SubwGadget,
-        u16_to_u8::U16ToU8Gadget,
+        code_range::CodeRangeCols, is_equal_word::IsEqualWordGadget, is_zero::IsZeroGadget,
+        is_zero_word::IsZeroWordGadget, lt_signed::LtSignedGadget, lt_unsigned::LtUnsignedGadget,
+        lt_word_u16::LtWordU16Gadget, msb::U16MSBGadget, mul::MulGadget, sub::SubGadget,
+        subw::SubwGadget, u16_to_u8::U16ToU8Gadget,
     },
     compiler::word::Word,
 };
