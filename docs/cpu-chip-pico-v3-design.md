@@ -140,7 +140,8 @@ Settled on 12 November 2026.
    `SOUNDNESS.md`, the composition section, A4). The two trial proofs, kept on the prototype
    branch and not in this tree, use the dropped alignment clauses, so they would not pass
    unchanged against the current contract. The Sail-side lemmas of the eight halfword, word and
-   doubleword loads and stores then need a misaligned case instead of the alignment hypothesis.
+   doubleword loads and stores then need a misaligned case instead of the alignment hypothesis:
+   the three store lemmas have it (`RVSail/Misaligned.lean`), the five load lemmas do not yet.
 3. **The whole-trace assumption takes the `0x7800_0000` bound**, as in the next section, not
    the weakest bound the proofs need.
 4. **The CPU chip gets a theorem for what it guarantees as a sender** (`ext_asrt`). Each of

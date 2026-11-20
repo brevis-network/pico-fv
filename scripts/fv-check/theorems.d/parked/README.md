@@ -106,9 +106,9 @@ two (`op_c_value_setWidth_eq_op_c_0`). The decoder sign-extends the program's
 the low 16 bits of the result into `op_c_0`, so on a row the program decoded
 those bits are the program's immediate, but the statement does not tie
 `op_c_0` to the decoder. A class whose immediate the proof does not otherwise
-reach should be restored the same way. The branches, `JAL` and `JALR`, already
-restored, read theirs from the row's operand values (`op_c_value`, or
-`op_b_value` for `JAL`).
+reach should be restored the same way. The branches, `JAL`, `JALR` and the four
+stores, already restored, read theirs from the row's operand values
+(`op_c_value`, or `op_b_value` for `JAL`).
 
 Two definitions every statement names were also rewritten at v3.1.1, and
 `signatures.txt` shows only their names: `Equivalence.CPU_bus_operations` (the
