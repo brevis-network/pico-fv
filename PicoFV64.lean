@@ -107,6 +107,7 @@ import PicoFV.RV64IM.Constraints.CodeRangeGadget
 import PicoFV.RV64IM.Constraints.MulChip
 import PicoFV.RV64IM.Constraints.DivRemChip
 import PicoFV.RV64IM.Constraints.MemoryReadWriteChip
+import PicoFV.RV64IM.Constraints.MemoryUnalignedChip
 import PicoFV.RV64IM.Constraints.CpuChip
 import PicoFV.RV64IM.Constraints.CpuChipInterpretations
 
