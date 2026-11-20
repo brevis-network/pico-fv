@@ -93,7 +93,7 @@ namespace PureSpec.RV64
     read_xreg i.r2 state = EStateM.Result.ok i.r2_val state ∧
     (i.r1_val + BitVec.signExtend 64 i.imm).toNat + 8 ≤ Pico_address_space_size_64
 
-  set_option maxHeartbeats 0 in
+  set_option maxHeartbeats 8_000_000 in
   lemma execute_STORED_pure_equiv
     (input : SdInput)
     (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -118,9 +118,9 @@ namespace PureSpec.RV64
     swap
     · -- The address is not a multiple of the width: Sail splits the access.
       rcases (by omega : (input.r1_val + BitVec.signExtend 64 input.imm).toNat % 2 = 1 ∨ (input.r1_val + BitVec.signExtend 64 input.imm).toNat % 4 = 2 ∨ (input.r1_val + BitVec.signExtend 64 input.imm).toNat % 8 = 4) with h_k | h_k | h_k
-      · misaligned_store_tac split_misaligned_8_0 _ h_k, execute_STORED_pure, modify_memory_8
-      · misaligned_store_tac split_misaligned_8_1 _ h_k, execute_STORED_pure, modify_memory_8
-      · misaligned_store_tac split_misaligned_8_2 _ h_k, execute_STORED_pure, modify_memory_8
+      · misaligned_store_tac split_misaligned_8_0 _ h_k, execute_STORED_pure, modify_memory_8, 8, 1
+      · misaligned_store_tac split_misaligned_8_1 _ h_k, execute_STORED_pure, modify_memory_8, 4, 2
+      · misaligned_store_tac split_misaligned_8_2 _ h_k, execute_STORED_pure, modify_memory_8, 2, 4
     have h_align : (8 : ℤ) ∣ (input.r1_val + BitVec.signExtend 64 input.imm).toNat := by omega
     replace h_range : (input.r1_val + BitVec.signExtend 64 input.imm).toNat < Pico_address_space_size_64 := by omega
     rw [readReg_succ] at h_pc
