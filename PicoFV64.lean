@@ -79,6 +79,7 @@ import PicoFV.RV64IM.Airs.SLLChip
 import PicoFV.RV64IM.Airs.ShiftRightChip
 import PicoFV.RV64IM.Airs.DivRemChip
 import PicoFV.RV64IM.Airs.MemoryReadWriteChip
+import PicoFV.RV64IM.Airs.MemoryUnalignedChip
 import PicoFV.RV64IM.Airs.CpuChip
 
 -- Constraints (human-readable + identification lemmas)

@@ -69,3 +69,37 @@ pub struct MemoryReadWriteLiteCols<T> {   // riscv_memory/read_write/columns.rs:
   Column["prev_value_2"]
   Column["prev_value_3"]
   SubAir["access": "MemoryAccessLiteCols" width := 6]
+
+-- ============================================================================
+-- MemoryInstructionCols (24 columns)
+--
+-- `riscv_memory/read_write/columns.rs`. Both memory chips have one: `MemoryReadWriteChip`
+-- and, since Pico v3.1.2, `MemoryUnalignedChip`, which imports it from the read/write chip's
+-- module. It lives here because a chip's files may not import another chip's.
+-- ============================================================================
+
+#define_subair "MemoryInstructionCols" using "pico_encapsulation" where
+  Column["op_a_0"]
+  Column["is_lb"]
+  Column["is_lbu"]
+  Column["is_lh"]
+  Column["is_lhu"]
+  Column["is_lw"]
+  Column["is_lwu"]
+  Column["is_ld"]
+  Column["is_sb"]
+  Column["is_sh"]
+  Column["is_sw"]
+  Column["is_sd"]
+  Column["op_a_value_0"]
+  Column["op_a_value_1"]
+  Column["op_a_value_2"]
+  Column["op_a_value_3"]
+  Column["op_b_value_0"]
+  Column["op_b_value_1"]
+  Column["op_b_value_2"]
+  Column["op_b_value_3"]
+  Column["op_c_value_0"]
+  Column["op_c_value_1"]
+  Column["op_c_value_2"]
+  Column["op_c_value_3"]
