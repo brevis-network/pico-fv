@@ -33,6 +33,7 @@ import PicoFV.RV64IM.Extraction.LtSignedGadget
 import PicoFV.RV64IM.Extraction.LtUnsignedGadget
 import PicoFV.RV64IM.Extraction.LtWordU16Gadget
 import PicoFV.RV64IM.Extraction.MemoryReadWriteChip
+import PicoFV.RV64IM.Extraction.MemoryUnalignedChip
 import PicoFV.RV64IM.Extraction.MulChip
 import PicoFV.RV64IM.Extraction.MulGadget
 import PicoFV.RV64IM.Extraction.SLLChip
@@ -78,6 +79,7 @@ import PicoFV.RV64IM.Airs.SLLChip
 import PicoFV.RV64IM.Airs.ShiftRightChip
 import PicoFV.RV64IM.Airs.DivRemChip
 import PicoFV.RV64IM.Airs.MemoryReadWriteChip
+import PicoFV.RV64IM.Airs.MemoryUnalignedChip
 import PicoFV.RV64IM.Airs.CpuChip
 
 -- Constraints (human-readable + identification lemmas)
@@ -105,6 +107,7 @@ import PicoFV.RV64IM.Constraints.CodeRangeGadget
 import PicoFV.RV64IM.Constraints.MulChip
 import PicoFV.RV64IM.Constraints.DivRemChip
 import PicoFV.RV64IM.Constraints.MemoryReadWriteChip
+import PicoFV.RV64IM.Constraints.MemoryUnalignedChip
 import PicoFV.RV64IM.Constraints.CpuChip
 import PicoFV.RV64IM.Constraints.CpuChipInterpretations
 

@@ -26,7 +26,7 @@ use pico_vm::{
             mul::MulChip, sll::SLLChip, sr::traces::ShiftRightChip, sub::SubChip, subw::SubwChip,
         },
         riscv_cpu::CpuChip,
-        riscv_memory::read_write::MemoryReadWriteChip,
+        riscv_memory::{read_write::MemoryReadWriteChip, unaligned::MemoryUnalignedChip},
     },
     instances::chiptype::riscv_chiptype::RiscvChipType,
     machine::chip::ChipBehavior,
@@ -150,6 +150,7 @@ fn extract_all() -> Vec<(String, String)> {
         extract("DivRemChip", &DivRemChip::<F>::default()),
         extract("CpuChip", &CpuChip::<F>::default()),
         extract("MemoryReadWriteChip", &MemoryReadWriteChip::<F>::default()),
+        extract("MemoryUnalignedChip", &MemoryUnalignedChip::<F>::default()),
     ];
     for gadget in gadgets::ALL {
         modules.push(extract(gadget.lean_name(), &gadget));

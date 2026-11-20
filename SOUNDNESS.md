@@ -62,10 +62,12 @@ with their statements in `signatures.txt`. They are of four kinds.
   inside an accepted recursive proof rather than a chunk proof checked on its own.
 - **Chip specifications** (`<Chip>.Spec.*`). For a row of a non-CPU chip that satisfies its
   extracted constraints, the bus messages it serves have the meaning the bus assumptions give them
-  (for example, an ALU row really computes the operation it claims). Every chip's specification
-  is built; the checked list holds the read/write memory chip's at v3.1.6
+  (for example, an ALU row really computes the operation it claims). Every chip that has a
+  specification has it built; the checked list holds the read/write memory chip's at v3.1.6
   (`MemoryReadWriteChip.Spec.*`) and those of the ALU chips already at v3.1.1 (Add, Sub, Addw,
-  Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight).
+  Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight). `MemoryUnalignedChip` is the one chip that
+  is extracted at the pin without one: it has no `Airs/`, `Constraints/` or `Spec/` file yet, so
+  its extracted constraints are in the build and nothing is proved about them (A4).
 
   The memory chip's say that a row receiving the memory dispatch meets the memory promise
   (`spec_LB` to `spec_SD`, one per opcode, and `wf_asrt`, which also gives the double word it
