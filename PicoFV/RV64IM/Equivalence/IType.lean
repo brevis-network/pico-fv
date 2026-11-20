@@ -23,8 +23,13 @@ namespace Equivalence
     -- theorem takes `imm_c = 1`. The decoder fixes `imm_b = 0` for opcodes 2,
     -- 3, 4, 8 and 9 (`ALURowFacts.imm_b_eq_zero`). Opcode 0 is also `LUI` and
     -- `AUIPC` with `imm_b = 1` and `imm_c = 1`, so ADDI keeps `imm_b = 0` as a
-    -- hypothesis. All six close through `itype_by_alu_spec` below, which
-    -- takes the `imm_b = 0` proof as an argument.
+    -- hypothesis. Each theorem reads its 12-bit `imm` from the instruction's
+    -- encoded `op_c_0`, as it reads `rd` and `rs1`; the ALU chip works on the
+    -- `op_c` value the row sends, whose low 12 bits are those of `op_c_0`
+    -- (`op_c_value_setWidth_eq_op_c_0`) and whose 64-bit form is their sign
+    -- extension (`op_c_value_eq_signExtend_imm12`). All six close through
+    -- `itype_by_alu_spec` below, which takes the `imm_b = 0` proof as an
+    -- argument.
     -- ========================================================================
 
     set_option hygiene false in
@@ -35,9 +40,11 @@ namespace Equivalence
         `ALUBus.Spec` apart and names its result equation `h_spec_eq`.
 
         `eq_operation_list_effect_state_of_reg_imm` reads the pc and `rs1`, and leaves
-        the opcode's arm of `ALUBus.Spec`. `imm` is read back from `op_c`, and
-        `op_c_value_eq_signExtend_imm12` gives back the 64-bit value Sail adds, combines or
-        compares. Hygiene is off so the tactic
+        the opcode's arm of `ALUBus.Spec`. `imm` is the low 12 bits of the instruction's
+        `op_c_0`. `op_c_value_eq_signExtend_imm12` gives the 64-bit value Sail adds, combines or
+        compares as the sign extension of the low 12 bits of the `op_c` value the row sends;
+        `op_c_value_setWidth_eq_op_c_0` rewrites those bits in it (`h_imm`) into `imm`'s.
+        Hygiene is off so the tactic
         can name the theorem's hypotheses (`h_opcode`, `h_all_wf`, ...), which every theorem
         here declares under the same names. -/
     local macro "itype_by_alu_spec " imm_b:term ", " imm_c:term ", " exec_equiv:ident ", "
@@ -47,6 +54,8 @@ namespace Equivalence
       have h_imm_b : air.cols.opcode_selector.imm_b row 0 = 0 := $imm_b
       have h_imm := op_c_value_eq_signExtend_imm12 air row h_is_real (h_all_wf row h_row)
         (h_all_constraints row h_row) h_opcode.1 (by simp) h_imm_b $imm_c
+      rw [op_c_value_setWidth_eq_op_c_0 air row (n := 12) (by norm_num) $imm_c
+        (h_all_constraints row h_row)] at h_imm
       intro rd rs1 imm
       refine eq_operation_list_effect_state_of_reg_imm h_alu h_imm_b $imm_c h_bus_hypotheses _
         (fun h_pc h_rs1 => $exec_equiv (by rw [$spec_hyps:ident]; exact ⟨ h_pc, h_rs1 ⟩))
@@ -56,11 +65,11 @@ namespace Equivalence
       rw [show BitVec.signExtend 64 imm = U64w.toBV (op_c_value air row) from h_imm.symm]
       simp [op_a_value, op_b_value, op_c_value, h_spec_eq, execute_RTYPE_pure]))
 
-    /-- Equivalence for ADDI (opcode 0, `iop.ADDI`). `imm` is read back from the chip's `op_c`
-        columns, the low 12 bits of the sign-extended 64-bit form
+    /-- Equivalence for ADDI (opcode 0, `iop.ADDI`). `imm` is the low 12 bits of `op_c_0`, read
+        from the instruction as `rd` and `rs1` are; `op_c_value_setWidth_eq_op_c_0` ties it to the
+        `op_c` value the row sends, whose 64-bit form is its sign extension
         (`op_c_value_eq_signExtend_imm12`). Opcode 0 with `imm_c = 1` is also `LUI` or `AUIPC`
-        when `imm_b = 1` (`ProgramBusEntry.decoded_from` at 0), so the theorem takes
-        `imm_b = 0`.
+        when `imm_b = 1` (`ProgramBusEntry.decoded_from` at 0), so the theorem takes `imm_b = 0`.
 
         The bus assumptions are part of every instruction theorem's statement; the ones this
         proof does not read are named with a leading underscore. -/
@@ -85,7 +94,7 @@ namespace Equivalence
     :
       let rd  : regidx := .Regidx (air.cols.instruction.op_a row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.op_b_0 row 0).val
-      let imm : BitVec 12 := (U64w.toBV (op_c_value air row)).setWidth 12
+      let imm : BitVec 12 := ((air.cols.instruction.op_c_0 row 0).val : BitVec 12)
       execute_instruction (instruction.ITYPE (imm, rs1, rd, iop.ADDI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
@@ -93,10 +102,11 @@ namespace Equivalence
         OpcodeSpec.RV64.execute_ADDI_equiv, OpcodeSpec.RV64.spec_ADDI_hypotheses,
         ⟨ -, h_spec_eq ⟩
 
-    /-- Equivalence for XORI (opcode 2, `iop.XORI`). `imm` is read back from the chip's `op_c`
-        columns, the low 12 bits of the sign-extended 64-bit form
-        (`op_c_value_eq_signExtend_imm12`). The decoder gives opcode 2 a register `op_b`, so
-        the theorem does not take `imm_b = 0` (`imm_b_eq_zero_of_opcode`).
+    /-- Equivalence for XORI (opcode 2, `iop.XORI`). `imm` is the low 12 bits of `op_c_0`, read
+        from the instruction as `rd` and `rs1` are; `op_c_value_setWidth_eq_op_c_0` ties it to the
+        `op_c` value the row sends, whose 64-bit form is its sign extension
+        (`op_c_value_eq_signExtend_imm12`). The decoder gives opcode 2 a register `op_b`, so the
+        theorem does not take `imm_b = 0` (`imm_b_eq_zero_of_opcode`).
 
         The bus assumptions are part of every instruction theorem's statement; the ones this
         proof does not read are named with a leading underscore. -/
@@ -120,7 +130,7 @@ namespace Equivalence
     :
       let rd  : regidx := .Regidx (air.cols.instruction.op_a row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.op_b_0 row 0).val
-      let imm : BitVec 12 := (U64w.toBV (op_c_value air row)).setWidth 12
+      let imm : BitVec 12 := ((air.cols.instruction.op_c_0 row 0).val : BitVec 12)
       execute_instruction (instruction.ITYPE (imm, rs1, rd, iop.XORI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
@@ -128,10 +138,11 @@ namespace Equivalence
         OpcodeSpec.RV64.execute_XORI_equiv, OpcodeSpec.RV64.spec_XORI_hypotheses,
         ⟨ -, -, h_spec_eq ⟩
 
-    /-- Equivalence for ORI (opcode 3, `iop.ORI`). `imm` is read back from the chip's `op_c`
-        columns, the low 12 bits of the sign-extended 64-bit form
-        (`op_c_value_eq_signExtend_imm12`). The decoder gives opcode 3 a register `op_b`, so
-        the theorem does not take `imm_b = 0` (`imm_b_eq_zero_of_opcode`).
+    /-- Equivalence for ORI (opcode 3, `iop.ORI`). `imm` is the low 12 bits of `op_c_0`, read from
+        the instruction as `rd` and `rs1` are; `op_c_value_setWidth_eq_op_c_0` ties it to the
+        `op_c` value the row sends, whose 64-bit form is its sign extension
+        (`op_c_value_eq_signExtend_imm12`). The decoder gives opcode 3 a register `op_b`, so the
+        theorem does not take `imm_b = 0` (`imm_b_eq_zero_of_opcode`).
 
         The bus assumptions are part of every instruction theorem's statement; the ones this
         proof does not read are named with a leading underscore. -/
@@ -155,7 +166,7 @@ namespace Equivalence
     :
       let rd  : regidx := .Regidx (air.cols.instruction.op_a row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.op_b_0 row 0).val
-      let imm : BitVec 12 := (U64w.toBV (op_c_value air row)).setWidth 12
+      let imm : BitVec 12 := ((air.cols.instruction.op_c_0 row 0).val : BitVec 12)
       execute_instruction (instruction.ITYPE (imm, rs1, rd, iop.ORI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
@@ -163,10 +174,11 @@ namespace Equivalence
         OpcodeSpec.RV64.execute_ORI_equiv, OpcodeSpec.RV64.spec_ORI_hypotheses,
         ⟨ -, -, h_spec_eq ⟩
 
-    /-- Equivalence for ANDI (opcode 4, `iop.ANDI`). `imm` is read back from the chip's `op_c`
-        columns, the low 12 bits of the sign-extended 64-bit form
-        (`op_c_value_eq_signExtend_imm12`). The decoder gives opcode 4 a register `op_b`, so
-        the theorem does not take `imm_b = 0` (`imm_b_eq_zero_of_opcode`).
+    /-- Equivalence for ANDI (opcode 4, `iop.ANDI`). `imm` is the low 12 bits of `op_c_0`, read
+        from the instruction as `rd` and `rs1` are; `op_c_value_setWidth_eq_op_c_0` ties it to the
+        `op_c` value the row sends, whose 64-bit form is its sign extension
+        (`op_c_value_eq_signExtend_imm12`). The decoder gives opcode 4 a register `op_b`, so the
+        theorem does not take `imm_b = 0` (`imm_b_eq_zero_of_opcode`).
 
         The bus assumptions are part of every instruction theorem's statement; the ones this
         proof does not read are named with a leading underscore. -/
@@ -190,7 +202,7 @@ namespace Equivalence
     :
       let rd  : regidx := .Regidx (air.cols.instruction.op_a row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.op_b_0 row 0).val
-      let imm : BitVec 12 := (U64w.toBV (op_c_value air row)).setWidth 12
+      let imm : BitVec 12 := ((air.cols.instruction.op_c_0 row 0).val : BitVec 12)
       execute_instruction (instruction.ITYPE (imm, rs1, rd, iop.ANDI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
@@ -199,11 +211,12 @@ namespace Equivalence
         ⟨ -, -, h_spec_eq ⟩
 
     /-- Equivalence for SLTI (opcode 8, `iop.SLTI`), the signed set-less-than against an
-        immediate. `imm` is read back from the chip's `op_c` columns, the low 12 bits of the
-        sign-extended 64-bit form (`op_c_value_eq_signExtend_imm12`). The decoder gives
-        opcode 8 a register `op_b`, so the theorem does not take `imm_b = 0`
-        (`imm_b_eq_zero_of_opcode`). The ALU message at opcode 8 is the CPU's own `SLT`
-        request; the branch comparisons use opcodes 264 and 265.
+        immediate. `imm` is the low 12 bits of `op_c_0`, read from the instruction as `rd` and
+        `rs1` are; `op_c_value_setWidth_eq_op_c_0` ties it to the `op_c` value the row sends,
+        whose 64-bit form is its sign extension (`op_c_value_eq_signExtend_imm12`). The decoder
+        gives opcode 8 a register `op_b`, so the theorem does not take `imm_b = 0`
+        (`imm_b_eq_zero_of_opcode`). The ALU message at opcode 8 is the CPU's own `SLT` request;
+        the branch comparisons use opcodes 264 and 265.
 
         The bus assumptions are part of every instruction theorem's statement; the ones this
         proof does not read are named with a leading underscore. -/
@@ -227,7 +240,7 @@ namespace Equivalence
     :
       let rd  : regidx := .Regidx (air.cols.instruction.op_a row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.op_b_0 row 0).val
-      let imm : BitVec 12 := (U64w.toBV (op_c_value air row)).setWidth 12
+      let imm : BitVec 12 := ((air.cols.instruction.op_c_0 row 0).val : BitVec 12)
       execute_instruction (instruction.ITYPE (imm, rs1, rd, iop.SLTI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
@@ -236,12 +249,13 @@ namespace Equivalence
         ⟨ -, h_spec_eq ⟩
 
     /-- Equivalence for SLTIU (opcode 9, `iop.SLTIU`), the unsigned set-less-than against an
-        immediate. `imm` is read back from the chip's `op_c` columns, the low 12 bits of the
-        sign-extended 64-bit form (`op_c_value_eq_signExtend_imm12`); the comparison is
-        unsigned against that sign-extended value. The decoder gives opcode 9 a register
+        immediate. `imm` is the low 12 bits of `op_c_0`, read from the instruction as `rd` and
+        `rs1` are; `op_c_value_setWidth_eq_op_c_0` ties it to the `op_c` value the row sends,
+        whose 64-bit form is its sign extension (`op_c_value_eq_signExtend_imm12`). The comparison
+        is unsigned against that sign-extended value. The decoder gives opcode 9 a register
         `op_b`, so the theorem does not take `imm_b = 0` (`imm_b_eq_zero_of_opcode`). The ALU
-        message at opcode 9 is the CPU's own `SLTU` request; the branch comparisons use
-        opcodes 264 and 265.
+        message at opcode 9 is the CPU's own `SLTU` request; the branch comparisons use opcodes
+        264 and 265.
 
         The bus assumptions are part of every instruction theorem's statement; the ones this
         proof does not read are named with a leading underscore. -/
@@ -265,7 +279,7 @@ namespace Equivalence
     :
       let rd  : regidx := .Regidx (air.cols.instruction.op_a row 0).val
       let rs1 : regidx := .Regidx (air.cols.instruction.op_b_0 row 0).val
-      let imm : BitVec 12 := (U64w.toBV (op_c_value air row)).setWidth 12
+      let imm : BitVec 12 := ((air.cols.instruction.op_c_0 row 0).val : BitVec 12)
       execute_instruction (instruction.ITYPE (imm, rs1, rd, iop.SLTIU)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by

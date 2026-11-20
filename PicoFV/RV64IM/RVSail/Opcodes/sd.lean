@@ -1,4 +1,5 @@
 import PicoFV.RV64IM.RVSail.Auxiliaries
+import PicoFV.RV64IM.RVSail.Misaligned
 import PicoFV.RV64IM.RVSail.Operations
 import PicoFV.RV64IM.RVSail.Execution
 
@@ -90,8 +91,7 @@ namespace PureSpec.RV64
     Sail.readReg Register.PC state = EStateM.Result.ok i.PC state ∧
     read_xreg i.r1 state = EStateM.Result.ok i.r1_val state ∧
     read_xreg i.r2 state = EStateM.Result.ok i.r2_val state ∧
-    (i.r1_val + BitVec.signExtend 64 i.imm).toNat < Pico_address_space_size_64 ∧
-    (8 : ℤ) ∣ (i.r1_val + (BitVec.signExtend 64 i.imm)).toNat
+    (i.r1_val + BitVec.signExtend 64 i.imm).toNat + 8 ≤ Pico_address_space_size_64
 
   set_option maxHeartbeats 0 in
   lemma execute_STORED_pure_equiv
@@ -113,7 +113,16 @@ namespace PureSpec.RV64
     ) state
   := by
     have next_gma := RISC_V_assumptions_invariant_under_pc_increment risc_v_assumptions (val := input.PC + 4#64)
-    obtain ⟨ h_pc, h_r1, h_r2, h_range, h_align ⟩ := h_opcode_assumptions
+    obtain ⟨ h_pc, h_r1, h_r2, h_range ⟩ := h_opcode_assumptions
+    by_cases h_aligned : (input.r1_val + BitVec.signExtend 64 input.imm).toNat % 8 = 0
+    swap
+    · -- The address is not a multiple of the width: Sail splits the access.
+      rcases (by omega : (input.r1_val + BitVec.signExtend 64 input.imm).toNat % 2 = 1 ∨ (input.r1_val + BitVec.signExtend 64 input.imm).toNat % 4 = 2 ∨ (input.r1_val + BitVec.signExtend 64 input.imm).toNat % 8 = 4) with h_k | h_k | h_k
+      · misaligned_store_tac split_misaligned_8_0 _ h_k, execute_STORED_pure, modify_memory_8
+      · misaligned_store_tac split_misaligned_8_1 _ h_k, execute_STORED_pure, modify_memory_8
+      · misaligned_store_tac split_misaligned_8_2 _ h_k, execute_STORED_pure, modify_memory_8
+    have h_align : (8 : ℤ) ∣ (input.r1_val + BitVec.signExtend 64 input.imm).toNat := by omega
+    replace h_range : (input.r1_val + BitVec.signExtend 64 input.imm).toNat < Pico_address_space_size_64 := by omega
     rw [readReg_succ] at h_pc
     simp at h_range h_align
 
@@ -183,8 +192,7 @@ namespace OpcodeSpec.RV64
   lemma execute_SD_equiv
     (h : (operation_list_effect (spec_SD r1 r2 imm pc_val r1_val r2_val) state).hypotheses)
     (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_range : (r1_val + BitVec.signExtend 64 imm).toNat < Pico_address_space_size_64)
-    (h_align : (8 : ℤ) ∣ (r1_val + BitVec.signExtend 64 imm).toNat)
+    (h_range : (r1_val + BitVec.signExtend 64 imm).toNat + 8 ≤ Pico_address_space_size_64)
   :
     execute_instruction (instruction.STORE (imm, r2, r1, 8)) state =
     (operation_list_effect (spec_SD r1 r2 imm pc_val r1_val r2_val) state).state
@@ -200,7 +208,7 @@ namespace OpcodeSpec.RV64
 
     rw [spec_SD_hypotheses] at h
     obtain ⟨h_pc, h_r1, h_r2⟩ := h
-    simp at h_range h_align
+    simp at h_range
 
     have h_opcode_assumptions : PureSpec.RV64.sd_state_assumptions input state := by
       simp [PureSpec.RV64.sd_state_assumptions, input, *]

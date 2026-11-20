@@ -29,8 +29,9 @@ hypotheses, and the ALU chip's promise `alu_promise`. The bundle says nothing ab
 immediate flags, so every ALU-class row has one, `LUI` and `AUIPC` rows included; a theorem
 that does not fit either family uses its lemmas for the next pc
 (`ALURowFacts.toBV_next_pc_eq`) and the result's write
-(`operation_list_effect_state_writeReg_eq_op_a_value`). The two lemmas that compute a row's
-bus operations are private.
+(`operation_list_effect_state_writeReg_eq_op_a_value`). Of the lemmas that compute a row's
+bus operations, the register-register one is private; `CPU_bus_operations_eq_of_imm_c_eq_one`
+is shared with the branch theorems.
 -/
 
 namespace Equivalence
@@ -268,6 +269,111 @@ namespace Equivalence
       simp [pc, ← BitVec.toNat_inj, U64w.toNat]
       omega
 
+    /-! A row's bus operations are computed from its 17 messages (`raw_bus_row`). Sorting them
+        into a `BusRow` folds over all 17, and one `simp` through that fold builds a proof term
+        too deep for the kernel replay (`leanchecker`) at its default stack. The three lemmas
+        below give the parts of the sorted row that `bus_operations` reads, each as its own
+        declaration checked by evaluation (`rfl`). The lemmas that compute a row's bus
+        operations rewrite with them and then simplify short lists. -/
+
+    /-- The Program part of a sorted CPU row: its one instruction fetch, with multiplicity
+        `is_real` (the first message of `raw_bus_row`). -/
+    lemma deserialise_raw_bus_row_Program
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    :
+      (deserialise_bus_row (raw_bus_row air row)).Program =
+        [ ProgramBusEntry.deserialise (air.cols.is_real row 0,
+            #v[ air.cols.pc_0 row 0, air.cols.pc_1 row 0,
+                air.cols.instruction.opcode row 0, air.cols.instruction.opcode row 0,
+                air.cols.instruction.op_a row 0, air.cols.instruction.op_b_0 row 0,
+                air.cols.instruction.op_b_1 row 0, air.cols.instruction.op_b_sign row 0,
+                air.cols.instruction.op_c_0 row 0, air.cols.instruction.op_c_1 row 0,
+                air.cols.instruction.op_c_sign row 0, air.cols.instruction.op_a_is_x0 row 0,
+                air.cols.opcode_selector.imm_b row 0, air.cols.opcode_selector.imm_c row 0,
+                air.cols.opcode_selector.is_ecall row 0, air.cols.opcode_selector.is_memory row 0,
+                air.cols.opcode_selector.is_store row 0, air.cols.opcode_selector.is_beq row 0,
+                air.cols.opcode_selector.is_bne row 0, air.cols.opcode_selector.is_blt row 0,
+                air.cols.opcode_selector.is_bge row 0, air.cols.opcode_selector.is_bltu row 0,
+                air.cols.opcode_selector.is_bgeu row 0, air.cols.opcode_selector.is_jalr row 0,
+                air.cols.opcode_selector.is_jal row 0, air.cols.pc_carry row 0 ]) ]
+    := rfl
+
+    /-- The register-access part of a sorted CPU row, in message order: the previous and the
+        new access to `op_b`'s register (multiplicities `1 - imm_b` and its negation), the same
+        for `op_c` (`1 - imm_c`), and for `op_a` (`is_real`). Each entry's fields are the
+        chunk, the timestamp, the register as the pointer's three limbs and the value's four. -/
+    lemma deserialise_raw_bus_row_State
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    :
+      let b := air.cols.op_b_access
+      let c := air.cols.op_c_access
+      let a := air.cols.op_a_access
+      let clk := air.cols.clk row 0
+      let chunk := air.public_values 48
+      (deserialise_bus_row (raw_bus_row air row)).State =
+        [ RV64IM_Interactions.StateBusEntry.deserialise
+            (1 - air.cols.opcode_selector.imm_b row 0,
+             #v[ chunk,
+                 clk + 2 - (b.access.diff_16bit_limb row 0 + b.access.diff_hi9 row 0 * 65536) - 1,
+                 air.cols.instruction.op_b_0 row 0, 0, 0,
+                 b.access.value_0 row 0, b.access.value_1 row 0,
+                 b.access.value_2 row 0, b.access.value_3 row 0 ]),
+          RV64IM_Interactions.StateBusEntry.deserialise
+            (0 - (1 - air.cols.opcode_selector.imm_b row 0),
+             #v[ chunk, clk + 2, air.cols.instruction.op_b_0 row 0, 0, 0,
+                 b.access.value_0 row 0, b.access.value_1 row 0,
+                 b.access.value_2 row 0, b.access.value_3 row 0 ]),
+          RV64IM_Interactions.StateBusEntry.deserialise
+            (1 - air.cols.opcode_selector.imm_c row 0,
+             #v[ chunk,
+                 clk + 1 - (c.access.diff_16bit_limb row 0 + c.access.diff_hi9 row 0 * 65536) - 1,
+                 air.cols.instruction.op_c_0 row 0, 0, 0,
+                 c.access.value_0 row 0, c.access.value_1 row 0,
+                 c.access.value_2 row 0, c.access.value_3 row 0 ]),
+          RV64IM_Interactions.StateBusEntry.deserialise
+            (0 - (1 - air.cols.opcode_selector.imm_c row 0),
+             #v[ chunk, clk + 1, air.cols.instruction.op_c_0 row 0, 0, 0,
+                 c.access.value_0 row 0, c.access.value_1 row 0,
+                 c.access.value_2 row 0, c.access.value_3 row 0 ]),
+          RV64IM_Interactions.StateBusEntry.deserialise
+            (air.cols.is_real row 0,
+             #v[ chunk,
+                 clk + 3 - (a.access.diff_16bit_limb row 0 + a.access.diff_hi9 row 0 * 65536) - 1,
+                 air.cols.instruction.op_a row 0, 0, 0,
+                 a.prev_value_0 row 0, a.prev_value_1 row 0,
+                 a.prev_value_2 row 0, a.prev_value_3 row 0 ]),
+          RV64IM_Interactions.StateBusEntry.deserialise
+            (0 - air.cols.is_real row 0,
+             #v[ chunk, clk + 3, air.cols.instruction.op_a row 0, 0, 0,
+                 a.access.value_0 row 0, a.access.value_1 row 0,
+                 a.access.value_2 row 0, a.access.value_3 row 0 ]) ]
+    := rfl
+
+    /-- The memory-dispatch part of a sorted CPU row: its one message, with multiplicity
+        `is_memory`. Its fields are the opcode, the three operand values, `op_a_is_x0`,
+        `is_memory`, the chunk and the timestamp. -/
+    lemma deserialise_raw_bus_row_Memory
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+    :
+      let b := air.cols.op_b_access
+      let c := air.cols.op_c_access
+      let a := air.cols.op_a_access
+      (deserialise_bus_row (raw_bus_row air row)).Memory =
+        [ MemoryBusEntry.deserialise (air.cols.opcode_selector.is_memory row 0,
+            #v[ air.cols.instruction.opcode row 0,
+                a.access.value_0 row 0, a.access.value_1 row 0,
+                a.access.value_2 row 0, a.access.value_3 row 0,
+                b.access.value_0 row 0, b.access.value_1 row 0,
+                b.access.value_2 row 0, b.access.value_3 row 0,
+                c.access.value_0 row 0, c.access.value_1 row 0,
+                c.access.value_2 row 0, c.access.value_3 row 0,
+                air.cols.instruction.op_a_is_x0 row 0, air.cols.opcode_selector.is_memory row 0,
+                air.public_values 48, air.cols.clk row 0 ]) ]
+    := rfl
+
     /-- The operations a register-register ALU row's messages stand for (no class selector,
         both operands registers), in order: the pc read, a read and write back of `rs1` and of
         `rs2`, the read of `rd`'s old value and the write of the result, and the next pc. -/
@@ -297,24 +403,31 @@ namespace Equivalence
       obtain ⟨ h_row, h_is_real, h_all_wf, -, -, h_opcode, h_class ⟩ := h
       have h_wf := h_all_wf row h_row
       subst h_opcode
-      have h_s_mem := (alu_class_selectors_zero air row h_is_real h_wf h_class).2.1
       have h_no_mem := mem_width_of_opcode_eq_none_of_class_selectors h_class
       obtain ⟨ h_reg_rd, h_reg_rs1, h_reg_rs2 ⟩ := register_indices_lt air row h_is_real h_wf
-      simp [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations, deserialise_bus_row,
-            raw_bus_row, MemoryBusEntry.deserialise, h_no_mem, h_is_real, h_imm_b, h_imm_c,
-            h_s_mem, h_reg_rd, h_reg_rs1 h_imm_b, h_reg_rs2 h_imm_c, BitVec.ofNatLT_eq_ofNat,
+      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+          deserialise_raw_bus_row_Memory]
+      simp [MemoryBusEntry.deserialise, h_no_mem, h_is_real, h_imm_b, h_imm_c,
+            h_reg_rd, h_reg_rs1 h_imm_b, h_reg_rs2 h_imm_c, BitVec.ofNatLT_eq_ofNat,
             toBV_pc_eq_ofNat air row h_is_real h_wf,
             op_a_prev_value, op_a_value, op_b_value, op_c_value]
 
-    /-- The operations a register-immediate ALU row's messages stand for (no class selector,
-        `imm_b = 0`, `imm_c = 1`): as `CPU_bus_operations_eq_of_reg_reg`, without `rs2`, since
-        `op_c` is the instruction's immediate and sends no message. -/
-    private lemma CPU_bus_operations_eq_of_reg_imm
+    /-- The operations a row's messages stand for when `op_b` is a register (`imm_b = 0`),
+        `op_c` is the instruction's immediate (`imm_c = 1`) and the opcode has no memory width,
+        in order: the pc read, a read and write back of `rs1`, the read of `op_a`'s old value
+        and the write of its new one, and the next pc. `op_c` sends no message.
+
+        A register-immediate ALU row is one such row, and so is a branch row, whose `op_a` is
+        `rs2` and whose `op_c` is the offset. -/
+    lemma CPU_bus_operations_eq_of_imm_c_eq_one
       [Field ExtF]
-      {air : Valid_CpuChip FKB ExtF} {row : ℕ} {op : FKB}
-      (h : ALURowFacts air row op)
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_wf : bus_row_wf_asm (bus_row air row))
       (h_imm_b : air.cols.opcode_selector.imm_b row 0 = 0)
       (h_imm_c : air.cols.opcode_selector.imm_c row 0 = 1)
+      (h_width : mem_width_of_opcode (air.cols.instruction.opcode row 0) = none)
     :
       CPU_bus_operations air row =
         [ .ReadPC (U64w.toBV (pc air row)),
@@ -328,15 +441,12 @@ namespace Equivalence
             (U64w.toBV (op_a_value air row)),
           .WritePC (U64w.toBV (next_pc air row)) ]
     := by
-      obtain ⟨ h_row, h_is_real, h_all_wf, -, -, h_opcode, h_class ⟩ := h
-      have h_wf := h_all_wf row h_row
-      subst h_opcode
-      have h_s_mem := (alu_class_selectors_zero air row h_is_real h_wf h_class).2.1
-      have h_no_mem := mem_width_of_opcode_eq_none_of_class_selectors h_class
       obtain ⟨ h_reg_rd, h_reg_rs1, - ⟩ := register_indices_lt air row h_is_real h_wf
-      simp [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations, deserialise_bus_row,
-            raw_bus_row, MemoryBusEntry.deserialise, h_no_mem, h_is_real, h_imm_b, h_imm_c,
-            h_s_mem, h_reg_rd, h_reg_rs1 h_imm_b, BitVec.ofNatLT_eq_ofNat,
+      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
+          deserialise_raw_bus_row_Memory]
+      simp [MemoryBusEntry.deserialise, h_width, h_is_real, h_imm_b, h_imm_c,
+            h_reg_rd, h_reg_rs1 h_imm_b, BitVec.ofNatLT_eq_ofNat,
             toBV_pc_eq_ofNat air row h_is_real h_wf,
             op_a_prev_value, op_a_value, op_b_value]
 
@@ -496,7 +606,9 @@ namespace Equivalence
     :
       exec = (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have h_ops := CPU_bus_operations_eq_of_reg_imm h h_imm_b h_imm_c
+      have h_ops := CPU_bus_operations_eq_of_imm_c_eq_one air row h.is_real
+        (h.all_wf row h.row_le) h_imm_b h_imm_c
+        (h.opcode_eq ▸ mem_width_of_opcode_eq_none_of_class_selectors h.class_selectors)
       rw [h_ops, operation_list_effect_hypotheses_readPC] at h_bus_hypotheses
       obtain ⟨ h_pc, h_bus ⟩ := h_bus_hypotheses
       rw [operation_list_effect_hypotheses_readReg] at h_bus
@@ -526,9 +638,10 @@ namespace Equivalence
     /-- On a row of `ADDI`, `XORI`, `ORI`, `ANDI`, `SLTI`, `SLTIU` (opcodes 0, 2, 3, 4, 8, 9 with
         `imm_b = 0`, `imm_c = 1`) or `ADDIW` (40 with `imm_c = 1`), the `op_c` value is the
         sign extension of its own low 12 bits: the decoder writes the instruction's 12-bit
-        immediate there, sign-extended (`Transpiler.V3.imm_operand`, constraints 4 to 7). An
-        instruction theorem that reads `imm` back from `op_c` uses it to recover the 64-bit
-        value Sail adds or compares. -/
+        immediate there, sign-extended (`Transpiler.V3.imm_operand`, constraints 4 to 7). The
+        `ITYPE` and `ADDIW` theorems read `imm` from the instruction's `op_c_0`; they rewrite
+        the low 12 bits on the right with `op_c_value_setWidth_eq_op_c_0` and use the result to
+        recover the 64-bit value Sail adds or compares. -/
     lemma op_c_value_eq_signExtend_imm12
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ) {op : FKB}
@@ -572,9 +685,10 @@ namespace Equivalence
 
     /-- On a row whose `op_c` is an immediate (`imm_c = 1`), the low `n ≤ 16` bits of the `op_c`
         value the row sends to the ALU chip are those of the instruction's encoded `op_c_0`
-        (constraint 4, through `imm_c_eq_1_constraints`). A shift-by-immediate theorem reads its
-        shift amount from `op_c_0`, as it reads `rd` and `rs1` from the instruction, and uses
-        this lemma to reach the amount the ALU chip shifts by. -/
+        (constraint 4, through `imm_c_eq_1_constraints`). The register-immediate theorems read
+        their immediate from `op_c_0`, as they read `rd` and `rs1` from the instruction, and use
+        this lemma to reach the value the ALU chip works on: the shifts at `n` = 6 or 5, the
+        `ITYPE` and `ADDIW` theorems at `n` = 12. -/
     lemma op_c_value_setWidth_eq_op_c_0
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ) {n : ℕ} (hn : n ≤ 16)
