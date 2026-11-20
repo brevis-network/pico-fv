@@ -87,9 +87,10 @@ statements lose nothing here.
 
 A restored memory theorem also names what the Memory message promises it
 (`MemoryBus.Spec` in `RVSail/BusesV3.lean`) only through the bus assumptions,
-as the ALU classes name `ALUBus.Spec`. The promise's serving side is not proven
-at v3.1.1 yet: `SOUNDNESS.md` A3 says so for the stores and the loads, and a
-pull request that changes what a memory theorem assumes should keep those two
+as the ALU classes name `ALUBus.Spec`. The promise's serving side is proven only
+for the dispatches the read/write memory chip takes, not for those the unaligned
+chip takes: `SOUNDNESS.md` A3 says so for the stores and the loads, and a pull
+request that changes what a memory theorem assumes should keep those two
 paragraphs true.
 
 The register-immediate theorems read their immediate from the instruction's

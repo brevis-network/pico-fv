@@ -42,12 +42,13 @@ Pico v3.1.6, commit [`6aa644efe`](https://github.com/brevis-network/pico/commit/
 <!-- end generated -->
 
 Each proof is about the Pico revision named in the first line of the `PicoFV/RV64IM/Extraction/`
-file it uses; the files listed in `extractor/pending.txt` still predate the pinned commit and are
-being moved chip by chip. Re-extracting the CPU chip, the ten ALU chips and their gadgets at
+file it uses; every file is extracted from the pinned commit (`extractor/pending.txt`, the list of
+files that predate it, is empty). Re-extracting the CPU chip, the ten ALU chips and their gadgets at
 v3.1.6 gives the same constraints and bus messages as at v3.1.1, so what this README says about
 those chips at v3.1.1 holds at v3.1.6. This was checked at v3.1.6; if the pin above names a later
-version, it has not been checked there yet. The memory chips differ, and since v3.1.2 Pico has a second
-memory chip for misaligned loads and stores (see [SOUNDNESS.md](SOUNDNESS.md), A4).
+version, it has not been checked there yet. The read/write memory chip changed after v3.1.1 and is
+proven at v3.1.6, and since v3.1.2 Pico has a second memory chip for misaligned loads and stores
+(see [SOUNDNESS.md](SOUNDNESS.md), A4).
 [SOUNDNESS.md](SOUNDNESS.md) says what the proofs establish and what they trust.
 
 For each opcode, the equivalence theorem states: under the chip's row
@@ -58,8 +59,8 @@ applying the chip's emitted CPU-bus operations.
 In the course of this development, 13 chip-side soundness gaps were found in
 the Pico implementation, across `LtChip`, `ShiftRightChip`, `SLLChip`,
 `JalrChip`, `DivRemChip`, and `MemoryReadWriteChip` (see `Report.pdf`). Which
-Pico 3.x constraint closes each of them is being recorded as the chips move to
-the pinned commit.
+Pico 3.x constraint closes each of them is recorded for every one of them at the
+pinned commit.
 
 ### RV32IM (historical)
 
@@ -122,8 +123,8 @@ fetching mathlib's binary cache.
 ## Checking the theorems
 
 After `lake build`, `scripts/fv-check/check.sh` checks the top-level theorems
-listed in `scripts/fv-check/theorems.d/`: the memory chip's `spec_*` /
-`bus_equiv*` theorems, and the specifications of the ALU chips already at v3.1.1
+listed in `scripts/fv-check/theorems.d/`: the read/write memory chip's specification at v3.1.6,
+and the specifications of the ALU chips already at v3.1.1
 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight), and the
 equivalence theorems the branch proves at v3.1.1 (listed above). The lists of
 the other opcode equivalence theorems are parked in `theorems.d/parked/` while
@@ -154,6 +155,7 @@ parked lists' README are current), and
 
 The 13 RV64IM soundness gaps found during the formalisation are described in
 `Report.pdf` and, for the memory chip, in
-[`RV64_MemoryReadWriteChip_soundness_gaps.md`](RV64_MemoryReadWriteChip_soundness_gaps.md).
+[`RV64_MemoryReadWriteChip_soundness_gaps.md`](https://github.com/brevis-network/pico-fv/blob/c8b945581cb4218f0bd72baa81ce7a100e67f33d/RV64_MemoryReadWriteChip_soundness_gaps.md)
+(removed from the tree once its three gaps were filled in the mapping below).
 [`docs/rv64-bug-mapping.md`](docs/rv64-bug-mapping.md) records the Pico 3.x constraint that closes
-each of them, filled in as the chips move to the pinned commit.
+each of them at the pinned commit.

@@ -113,8 +113,8 @@ This matches `Extraction/CpuChip.lean`, which uses every index in
 `0..57`.
 
 The three register accesses use the lite layouts `MemoryReadWriteLiteCols`
-(10 columns) and `MemoryReadLiteCols` (6), defined in `Airs/SubAirs.lean`
-beside the 2.x layouts, because Pico's memory chip uses the same lite
+(10 columns) and `MemoryReadLiteCols` (6), defined in `Airs/SubAirs.lean`,
+because Pico's memory chip uses the same lite
 layout (`riscv_memory/read_write/columns.rs:73`).
 -/
 
