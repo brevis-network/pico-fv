@@ -11,13 +11,13 @@ being rewritten one instruction class at a time while the CPU chip moves to
 Pico v3.1.1.
 
 <!-- generated: restored -->
-For now the branch proves 49 of them against the v3.1.1 chip: `ADD`, `ADDI`,
+For now the branch proves 53 of them against the v3.1.1 chip: `ADD`, `ADDI`,
 `ADDIW`, `ADDW`, `AND`, `ANDI`, `BEQ`, `BGE`, `BGEU`, `BLT`, `BLTU`, `BNE`,
 `DIV`, `DIVU`, `DIVUW`, `DIVW`, `JAL`, `JALR`, `MUL`, `MULH`, `MULHSU`, `MULHU`,
-`MULW`, `OR`, `ORI`, `REM`, `REMU`, `REMUW`, `REMW`, `SLL`, `SLLI`, `SLLIW`,
-`SLLW`, `SLT`, `SLTI`, `SLTIU`, `SLTU`, `SRA`, `SRAI`, `SRAIW`, `SRAW`, `SRL`,
-`SRLI`, `SRLIW`, `SRLW`, `SUB`, `SUBW`, `XOR` and `XORI`. The other 13 are out
-of the build and `check.sh` does not check them (see
+`MULW`, `OR`, `ORI`, `REM`, `REMU`, `REMUW`, `REMW`, `SB`, `SD`, `SH`, `SLL`,
+`SLLI`, `SLLIW`, `SLLW`, `SLT`, `SLTI`, `SLTIU`, `SLTU`, `SRA`, `SRAI`, `SRAIW`,
+`SRAW`, `SRL`, `SRLI`, `SRLIW`, `SRLW`, `SUB`, `SUBW`, `SW`, `XOR` and `XORI`.
+The other 9 are out of the build and `check.sh` does not check them (see
 [SOUNDNESS.md](SOUNDNESS.md)).
 <!-- end generated -->
 
