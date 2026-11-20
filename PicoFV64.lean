@@ -22,6 +22,7 @@ import PicoFV.RV64IM.Extraction.Attributes
 import PicoFV.RV64IM.Extraction.BitwiseChip
 import PicoFV.RV64IM.Extraction.BitwiseGadget
 import PicoFV.RV64IM.Extraction.BitwiseU16Gadget
+import PicoFV.RV64IM.Extraction.CodeRangeGadget
 import PicoFV.RV64IM.Extraction.CpuChip
 import PicoFV.RV64IM.Extraction.DivRemChip
 import PicoFV.RV64IM.Extraction.IsEqualWordGadget
@@ -63,6 +64,7 @@ import PicoFV.RV64IM.Airs.LtWordU16Gadget
 import PicoFV.RV64IM.Airs.LtSignedGadget
 import PicoFV.RV64IM.Airs.LtUnsignedGadget
 import PicoFV.RV64IM.Airs.MulGadget
+import PicoFV.RV64IM.Airs.CodeRangeGadget
 
 -- Air wrappers (chips)
 import PicoFV.RV64IM.Airs.AddChip
@@ -99,6 +101,7 @@ import PicoFV.RV64IM.Constraints.IsZeroWordGadget
 import PicoFV.RV64IM.Constraints.IsEqualWordGadget
 import PicoFV.RV64IM.Constraints.U16ToU8GadgetSafe
 import PicoFV.RV64IM.Constraints.MulGadget
+import PicoFV.RV64IM.Constraints.CodeRangeGadget
 import PicoFV.RV64IM.Constraints.MulChip
 import PicoFV.RV64IM.Constraints.DivRemChip
 import PicoFV.RV64IM.Constraints.MemoryReadWriteChip
@@ -127,6 +130,7 @@ import PicoFV.RV64IM.Spec.IsEqualWordGadget
 import PicoFV.RV64IM.Spec.U16ToU8GadgetSafe
 import PicoFV.RV64IM.Spec.MulGadgetCore
 import PicoFV.RV64IM.Spec.MulGadget
+import PicoFV.RV64IM.Spec.CodeRangeGadget
 import PicoFV.RV64IM.Spec.MulChip
 import PicoFV.RV64IM.Spec.DivRemChip
 import PicoFV.RV64IM.Spec.MemoryReadWriteChip
