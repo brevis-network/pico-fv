@@ -1,0 +1,2 @@
+CpuChip.Spec.ext_asrt
+CpuChip.Spec.multiplicity_eq_zero_or_one

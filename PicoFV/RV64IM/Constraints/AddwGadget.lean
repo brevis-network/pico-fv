@@ -77,8 +77,8 @@ namespace AddwGadget
       Program := [],
       ALU := [],
       Byte := List.map ByteBusEntry.deserialise [
-        (-(is_real), #v[8, value_0, 0, 0, 0]),
-        (-(is_real), #v[8, value_1, 0, 0, 0])
+        ((is_real), #v[8, value_0, 0, 0, 0]),
+        ((is_real), #v[8, value_1, 0, 0, 0])
       ],
       State := [],
       Memory := []

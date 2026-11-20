@@ -43,7 +43,7 @@ The 15 algebraic constraints (in extraction order) are:
 - c14: `bit ∈ {0, 1}`
 
 The 1 ByteBus entry is `U16Range` on `(comp_0 - comp_1) + bit * 65536`,
-gated by `-is_real`. The standard Δ + bit·2¹⁶ trick: combined with the
+gated by `+is_real`. The standard Δ + bit·2¹⁶ trick: combined with the
 constraints above, it forces `bit = 1 ⟺ comp_0 < comp_1`.
 
 The gadget has no standalone wrapping Air — used only by `LtSignedGadget`
@@ -91,7 +91,7 @@ namespace LtWordU16Gadget
 
   /-- The single bus entry the Pico `LtWordU16Gadget` contributes per
       row: a `ByteBus` U16Range on `(comp_0 - comp_1) + bit * 65536`,
-      gated by `-is_real`. -/
+      gated by `+is_real`. -/
   def AbsBuses
     (is_real comparison_limbs_0 comparison_limbs_1 bit : FKB)
   : BusRow :=
@@ -99,7 +99,7 @@ namespace LtWordU16Gadget
       Program := [],
       ALU := [],
       Byte := List.map ByteBusEntry.deserialise [
-        (-(is_real),
+        ((is_real),
           #v[8, (comparison_limbs_0 - comparison_limbs_1) + bit * 65536, 0, 0, 0])
       ],
       State := [],

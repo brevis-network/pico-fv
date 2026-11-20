@@ -1,0 +1,6 @@
+Equivalence.equivalence_BEQ
+Equivalence.equivalence_BGE
+Equivalence.equivalence_BGEU
+Equivalence.equivalence_BLT
+Equivalence.equivalence_BLTU
+Equivalence.equivalence_BNE

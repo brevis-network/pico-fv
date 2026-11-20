@@ -420,7 +420,7 @@ namespace BitwiseChip.Spec
         have h_and : air.cols.values.is_and row 0 = 0 := by grind
         simp [h_xor, h_or, h_and]
         exact spec_XOR air row h_wf h_constraints h_xor
-    -- Byte entries: vacuous (multiplicity = -is_real ∈ {0, -1}, never 1).
+    -- Byte entries: vacuous (multiplicity = +is_real ∈ {0, 1}, never -1).
     . split_ands <;> intro h <;> exfalso <;> grind
 
 end BitwiseChip.Spec

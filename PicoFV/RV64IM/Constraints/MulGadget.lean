@@ -103,19 +103,19 @@ b_byte[8..15]  = b_sign_extend · 255    -- 0x00 / 0xff fill
 
 ## Bus interactions (35 entries, all `ByteBus`)
 
-- 4 `(opcode 4, sub-op 7) = U8Pair` entries gated by `-is_real` for
+- 4 `(opcode 5, sub-op 7) = U8Pair` entries gated by `+is_real` for
   `(b_lower_byte_i, (b_i - b_lower_byte_i) · 256⁻¹)` — the
   `U16ToU8GadgetSafe(b)` range-check (low byte / high byte).
 - 4 similar entries for `c`.
-- 2 `(4, 6) = MSB` entries gated by `-is_real`: `MSB(b_msb, byte 7 of
+- 2 `(5, 6) = MSB` entries gated by `+is_real`: `MSB(b_msb, byte 7 of
   b)` and `MSB(c_msb, byte 7 of c)`. These tie `b_msb`/`c_msb` to the
   top bit of the top byte of `b`/`c`.
-- 1 `(4, 8) = U16Range` entry gated by `-is_mulw`: `2 · a_1 -
+- 1 `(5, 8) = U16Range` entry gated by `+is_mulw`: `2 · a_1 -
   product_msb · 65536` — the `U16MSBGadget` consistency check on
   `a_1`.
-- 16 `(4, 8) = U16Range` entries gated by `-is_real`: u16-range-check
+- 16 `(5, 8) = U16Range` entries gated by `+is_real`: u16-range-check
   on each `carry_0..carry_15`.
-- 8 `(4, 7) = U8Pair` entries gated by `-is_real`: u8-range-check on
+- 8 `(5, 7) = U8Pair` entries gated by `+is_real`: u8-range-check on
   `(product[2i], product[2i+1])` for `i ∈ [0, 7]` — the
   `slice_range_check_u8` pair form.
 
@@ -317,9 +317,9 @@ namespace MulGadget
     (c_sign_extend * (c_msb - 1) = 0)
 
   /-- The 35 byte-bus entries the Pico `MulGadget` contributes per row.
-      All entries are gated by `-is_real`, except the
+      All entries are gated by `+is_real`, except the
       `U16MSBGadget(product_msb)` consistency check on `a_1` which is
-      gated by `-is_mulw`. -/
+      gated by `+is_mulw`. -/
   def AbsBuses
     (is_real is_mulw
      a_1
@@ -349,36 +349,36 @@ namespace MulGadget
       ALU := [],
       Byte := List.map ByteBusEntry.deserialise [
         -- 2 × MSB lookup (sub-op 6) for b_msb, c_msb on top byte
-        (-(is_real), #v[6, b_msb, 0, (b_3 - b_lower_byte_3) * 2122383361, 0]),
-        (-(is_real), #v[6, c_msb, 0, (c_3 - c_lower_byte_3) * 2122383361, 0]),
+        ((is_real), #v[6, b_msb, 0, (b_3 - b_lower_byte_3) * 2122383361, 0]),
+        ((is_real), #v[6, c_msb, 0, (c_3 - c_lower_byte_3) * 2122383361, 0]),
         -- 1 × U16MSBGadget(product_msb) byte-bus consistency on a_1
-        (-(is_mulw), #v[8, 2 * a_1 - product_msb * 65536, 0, 0, 0]),
+        ((is_mulw), #v[8, 2 * a_1 - product_msb * 65536, 0, 0, 0]),
         -- 16 × U16Range on carry (sub-op 8)
-        (-(is_real), #v[8, carry_0, 0, 0, 0]),
-        (-(is_real), #v[8, carry_1, 0, 0, 0]),
-        (-(is_real), #v[8, carry_2, 0, 0, 0]),
-        (-(is_real), #v[8, carry_3, 0, 0, 0]),
-        (-(is_real), #v[8, carry_4, 0, 0, 0]),
-        (-(is_real), #v[8, carry_5, 0, 0, 0]),
-        (-(is_real), #v[8, carry_6, 0, 0, 0]),
-        (-(is_real), #v[8, carry_7, 0, 0, 0]),
-        (-(is_real), #v[8, carry_8, 0, 0, 0]),
-        (-(is_real), #v[8, carry_9, 0, 0, 0]),
-        (-(is_real), #v[8, carry_10, 0, 0, 0]),
-        (-(is_real), #v[8, carry_11, 0, 0, 0]),
-        (-(is_real), #v[8, carry_12, 0, 0, 0]),
-        (-(is_real), #v[8, carry_13, 0, 0, 0]),
-        (-(is_real), #v[8, carry_14, 0, 0, 0]),
-        (-(is_real), #v[8, carry_15, 0, 0, 0]),
+        ((is_real), #v[8, carry_0, 0, 0, 0]),
+        ((is_real), #v[8, carry_1, 0, 0, 0]),
+        ((is_real), #v[8, carry_2, 0, 0, 0]),
+        ((is_real), #v[8, carry_3, 0, 0, 0]),
+        ((is_real), #v[8, carry_4, 0, 0, 0]),
+        ((is_real), #v[8, carry_5, 0, 0, 0]),
+        ((is_real), #v[8, carry_6, 0, 0, 0]),
+        ((is_real), #v[8, carry_7, 0, 0, 0]),
+        ((is_real), #v[8, carry_8, 0, 0, 0]),
+        ((is_real), #v[8, carry_9, 0, 0, 0]),
+        ((is_real), #v[8, carry_10, 0, 0, 0]),
+        ((is_real), #v[8, carry_11, 0, 0, 0]),
+        ((is_real), #v[8, carry_12, 0, 0, 0]),
+        ((is_real), #v[8, carry_13, 0, 0, 0]),
+        ((is_real), #v[8, carry_14, 0, 0, 0]),
+        ((is_real), #v[8, carry_15, 0, 0, 0]),
         -- 8 × U8Pair on product[2i], product[2i+1]
-        (-(is_real), #v[7, 0, 0, product_0, product_1]),
-        (-(is_real), #v[7, 0, 0, product_2, product_3]),
-        (-(is_real), #v[7, 0, 0, product_4, product_5]),
-        (-(is_real), #v[7, 0, 0, product_6, product_7]),
-        (-(is_real), #v[7, 0, 0, product_8, product_9]),
-        (-(is_real), #v[7, 0, 0, product_10, product_11]),
-        (-(is_real), #v[7, 0, 0, product_12, product_13]),
-        (-(is_real), #v[7, 0, 0, product_14, product_15])
+        ((is_real), #v[7, 0, 0, product_0, product_1]),
+        ((is_real), #v[7, 0, 0, product_2, product_3]),
+        ((is_real), #v[7, 0, 0, product_4, product_5]),
+        ((is_real), #v[7, 0, 0, product_6, product_7]),
+        ((is_real), #v[7, 0, 0, product_8, product_9]),
+        ((is_real), #v[7, 0, 0, product_10, product_11]),
+        ((is_real), #v[7, 0, 0, product_12, product_13]),
+        ((is_real), #v[7, 0, 0, product_14, product_15])
       ],
       State := [],
       Memory := []

@@ -64,10 +64,10 @@ namespace SubGadget
       Program := [],
       ALU := [],
       Byte := List.map ByteBusEntry.deserialise [
-        (-(is_real), #v[8, value_0, 0, 0, 0]),
-        (-(is_real), #v[8, value_1, 0, 0, 0]),
-        (-(is_real), #v[8, value_2, 0, 0, 0]),
-        (-(is_real), #v[8, value_3, 0, 0, 0])
+        ((is_real), #v[8, value_0, 0, 0, 0]),
+        ((is_real), #v[8, value_1, 0, 0, 0]),
+        ((is_real), #v[8, value_2, 0, 0, 0]),
+        ((is_real), #v[8, value_3, 0, 0, 0])
       ],
       State := [],
       Memory := []

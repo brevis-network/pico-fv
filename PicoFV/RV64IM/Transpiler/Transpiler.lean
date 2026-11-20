@@ -263,7 +263,7 @@ namespace Transpiler
       Maps a Sail `instruction` to the program-bus payload row carried on the
       `Program` lookup bus, expressed as a `Vector FKB 43`. The 43-element
       layout follows the RV64 `CpuChip` program-bus call extracted from
-      `Extraction/CpuChip.lean:451`:
+      `Extraction/CpuChip.lean:453` at the tag `pico-v3-before-cpu` (2.x):
 
       ```
       [ pc[0], pc[1], pc[2],

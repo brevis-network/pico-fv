@@ -1,0 +1,7 @@
+MulChip.Spec.spec_MUL
+MulChip.Spec.spec_MULH
+MulChip.Spec.spec_MULHU
+MulChip.Spec.spec_MULHSU
+MulChip.Spec.spec_MULW
+MulChip.Spec.ext_asrt
+MulChip.Spec.wf_asrt

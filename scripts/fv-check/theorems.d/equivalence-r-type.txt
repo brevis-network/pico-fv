@@ -1,0 +1,10 @@
+Equivalence.equivalence_ADD
+Equivalence.equivalence_AND
+Equivalence.equivalence_OR
+Equivalence.equivalence_SLL
+Equivalence.equivalence_SLT
+Equivalence.equivalence_SLTU
+Equivalence.equivalence_SRA
+Equivalence.equivalence_SRL
+Equivalence.equivalence_SUB
+Equivalence.equivalence_XOR

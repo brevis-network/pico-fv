@@ -15,8 +15,8 @@ set_option linter.unusedVariables false
 # ShiftRightChip (64-bit)
 
 Lean formalisation of `ShiftRightCols` / `ShiftRightValueCols` from
-`vm/src/chips/chips/alu/sr/columns.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
+`vm/src/chips/chips/alu/sr/columns.rs` at Pico v3.1.1
+(`2acc7c1828fb4ec1bed5963511bb370870c5b608`).
 
 ```rust
 pub struct ShiftRightCols<F: Copy> {

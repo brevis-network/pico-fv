@@ -1,0 +1,8 @@
+Equivalence.equivalence_DIV
+Equivalence.equivalence_DIVU
+Equivalence.equivalence_DIVUW
+Equivalence.equivalence_DIVW
+Equivalence.equivalence_REM
+Equivalence.equivalence_REMU
+Equivalence.equivalence_REMUW
+Equivalence.equivalence_REMW

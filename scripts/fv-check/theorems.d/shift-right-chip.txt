@@ -1,0 +1,6 @@
+ShiftRightChip.Spec.spec_SRL
+ShiftRightChip.Spec.spec_SRA
+ShiftRightChip.Spec.spec_SRLW
+ShiftRightChip.Spec.spec_SRAW
+ShiftRightChip.Spec.ext_asrt
+ShiftRightChip.Spec.wf_asrt
