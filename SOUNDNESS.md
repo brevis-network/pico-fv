@@ -23,7 +23,7 @@ with their statements in `signatures.txt`. They are of four kinds.
   bus.
 
   <!-- generated: restored -->
-  **53 of these 62 theorems are checked at the moment**, in 11 files of
+  **60 of these 62 theorems are checked at the moment**, in 12 files of
   `PicoFV/RV64IM/Equivalence/`:
 
   - `Addiw.lean`: `ADDIW`
@@ -31,6 +31,7 @@ with their statements in `signatures.txt`. They are of four kinds.
   - `DivFamily.lean`: `DIV`, `DIVU`, `DIVUW`, `DIVW`, `REM`, `REMU`, `REMUW` and `REMW`
   - `IType.lean`: `ADDI`, `ANDI`, `ORI`, `SLTI`, `SLTIU` and `XORI`
   - `Jumps.lean`: `JAL` and `JALR`
+  - `Loads.lean`: `LB`, `LBU`, `LD`, `LH`, `LHU`, `LW` and `LWU`
   - `MulFamily.lean`: `MUL`, `MULH`, `MULHSU`, `MULHU` and `MULW`
   - `RTypeW.lean`: `ADDW`, `SLLW`, `SRAW`, `SRLW` and `SUBW`
   - `RType.lean`: `ADD`, `AND`, `OR`, `SLL`, `SLT`, `SLTU`, `SRA`, `SRL`, `SUB` and `XOR`
@@ -38,10 +39,9 @@ with their statements in `signatures.txt`. They are of four kinds.
   - `ShiftIWOp.lean`: `SLLIW`, `SRAIW` and `SRLIW`
   - `Stores.lean`: `SB`, `SD`, `SH` and `SW`
 
-  The other 9, in 2 files, are out of the build, with their lists parked in
+  The other 2, in 1 file, are out of the build, with their lists parked in
   `scripts/fv-check/theorems.d/parked/`:
 
-  - `Loads.lean`: `LB`, `LBU`, `LD`, `LH`, `LHU`, `LW` and `LWU`
   - `UType.lean`: `AUIPC` and `LUI`
   <!-- end generated -->
 
@@ -232,9 +232,9 @@ zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign fl
 `false`), and writes the low 16 bits of the result into `op_c_0`, the next 16 into `op_c_1` and
 the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
 amount or 12-bit immediate; the theorems do not state that link. The other checked theorems with
-an immediate still read it from the row's operand values: the six branches, `JALR` and the four
-stores take the low 13 or 12 bits of the `op_c` value, and `JAL` the low 21 bits of the `op_b`
-value.
+an immediate still read it from the row's operand values: the six branches, `JALR`, the four
+stores and the seven loads take the low 13 or 12 bits of the `op_c` value, and `JAL` the low 21
+bits of the `op_b` value.
 
 The four store theorems take their opcode alone too, as they did at `353238a`, and gain the
 whole-trace assumption, which their 2.x statements did not take. Like every restored theorem they
@@ -251,8 +251,18 @@ repository discharges the Memory promise yet.** `MemoryReadWriteChip.Spec` still
 assumptions against the 2.x memory contract of `RVSail/Buses.lean`, and it is verified against a
 `MemoryReadWriteChip.lean` extraction that predates the pinned Pico commit (see the generated list
 under "What is proved" and `extractor/pending.txt`). So the serving side of the link a store theorem
-assumes is open, as A4 describes for chip composition generally; the loads will assume the same
-promise when they return.
+assumes is open, as A4 describes for chip composition generally.
+
+The seven load theorems rest on the same promise, and on one more part of it. Besides the address
+bound, `MemoryBus.Spec` says what extension the loaded word carries when the destination is not
+`x0`: sign for `LB`, `LH` and `LW`, zero for `LBU`, `LHU` and `LWU`, none for `LD`. That is the
+whole content of what a load writes to `rd`, so a load theorem says that the CPU row writes back
+whatever the memory chip promised, and, like the stores, it assumes that promise rather than
+resting on a proof of it. The CPU constraints alone do not tie the loaded word to memory. A load
+whose destination is `x0` needs only the address bound: the row writes zero to `x0`, and Sail's
+write to `x0` changes nothing. The loads hold at a misaligned address as the stores do: Sail splits
+the load into aligned pieces and reads the same bytes, which the Sail lemmas of `LH`, `LHU`, `LW`,
+`LWU` and `LD` prove (`RVSail/Misaligned.lean`).
 
 The parked theorems were last recorded at `353238a`, against the 2.x constraints and the contracts
 of `RVSail/Buses.lean`, and are not checked while they move. Two definitions every instruction
@@ -317,8 +327,8 @@ when drafted against v3.1.1, where `MemoryReadWriteChip` was the only receiver. 
 about which memory a load reads, or about the message's `chunk` and `clk` fields. That a store
 misses the program's code is not the memory promise's business: the store row proves it itself,
 through the `code_range` gadget, against the code-range contract below. Neither memory chip's proof against this promise exists yet: the
-read/write chip's proofs are against the 2.x contract, and the unaligned chip has none. The store
-theorems hold for a misaligned address too (A3); the load theorems, still parked, have to.
+read/write chip's proofs are against the 2.x contract, and the unaligned chip has none. The load
+and store theorems hold for a misaligned address too (A3).
 
 The contract now covers the merged branch-comparison rows. `ALUBus.validOpcode` contains the two
 opcodes 264 / 265 (`SLT` / `SLTU` + `LT_CMP_OPCODE_TAG`) that Pico's CPU sends for every branch,
@@ -410,7 +420,7 @@ C2) or the specification axioms of A2.
 | Axioms the theorem depends on | Theorems |
 |---|---:|
 | kernel + compiler | 84 |
-| kernel + compiler + RISC-V spec axioms | 53 |
+| kernel + compiler + RISC-V spec axioms | 60 |
 | kernel only | 1 |
 <!-- end generated -->
 
@@ -424,12 +434,11 @@ A proof that uses them also trusts the Lean compiler and runtime.
 branch's, so the uses only go down.
 
 <!-- generated: tactics -->
-134 uses of `native_decide`, `bv_decide` or `decide +native` in 9 files:
+127 uses of `native_decide`, `bv_decide` or `decide +native` in 8 files:
 
 - `PicoFV/Fundamentals/Core.lean`: 7
 - `PicoFV/Fundamentals/KoalaBear.lean`: 1
 - `PicoFV/Fundamentals/Word.lean`: 39
-- `PicoFV/RV64IM/Equivalence/Loads.lean`: 7
 - `PicoFV/RV64IM/Equivalence/UType.lean`: 2
 - `PicoFV/RV64IM/RVSail/Execution.lean`: 3
 - `PicoFV/RV64IM/Spec/BitwiseChip.lean`: 1
@@ -449,18 +458,18 @@ equivalence files, are not replayed.
 **The job has not run.** GitHub runs a scheduled workflow only from the repository's default branch,
 and the workflow is on `pico-v3`, not on `main`. Until it runs, this section describes what it would
 check, not a result. Run by hand on the instruction-theorem files the build imports, `lake env
-leanchecker` replays all twelve: `Equivalence/Common`, `Equivalence/Addiw`, `Equivalence/RTypeW`,
-`Equivalence/ShiftIWOp`, `Equivalence/IType`, `Equivalence/ShiftIOp`, `Equivalence/RType`,
-`Equivalence/MulFamily`, `Equivalence/DivFamily`, `Equivalence/Jumps`, `Equivalence/BType` and
-`Equivalence/Stores`.
+leanchecker` replays all thirteen: `Equivalence/Common`, `Equivalence/Addiw`,
+`Equivalence/RTypeW`, `Equivalence/ShiftIWOp`, `Equivalence/IType`, `Equivalence/ShiftIOp`,
+`Equivalence/RType`, `Equivalence/MulFamily`, `Equivalence/DivFamily`, `Equivalence/Jumps`,
+`Equivalence/BType`, `Equivalence/Stores` and `Equivalence/Loads`.
 `Common`, `Jumps` and `BType` used to fail with "(kernel) deep recursion detected": one `simp`
 sorted all 17 messages of a CPU row at once, and the proof term it built was deeper than
 `leanchecker`'s kernel stack (`lake build` runs Lean with `--tstack=400000` in the lakefile). The
 parts of a sorted row are now separate lemmas checked by evaluation
 (`deserialise_raw_bus_row_Program`, `_State` and `_Memory` in `Equivalence/Common.lean`), and
 the lemmas that compute a row's bus operations rewrite with them.
-Of the other modules, `RVSail/Misaligned` and the Sail lemmas `RVSail/Opcodes/sh`, `sw` and `sd`
-replay too; the rest have not been replayed by hand.
+Of the other modules, `RVSail/Misaligned` and the Sail lemmas `RVSail/Opcodes/sh`, `sw`, `sd`,
+`lh`, `lhu`, `lw`, `lwu` and `ld` replay too; the rest have not been replayed by hand.
 
 ## D. Does the use of the results hold together?
 

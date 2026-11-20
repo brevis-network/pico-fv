@@ -2,20 +2,21 @@ import PicoFV.RV64IM.RVSail.Auxiliaries
 import PicoFV.RV64IM.RVSail.Execution
 import Mathlib.Tactic.IntervalCases
 
-/-! # Misaligned stores in Sail
+/-! # Misaligned loads and stores in Sail
 
     With misaligned access enabled (`plat_enable_misaligned_access`, `true` in the model),
-    Sail's `vmem_write_addr` splits an access whose address is not a multiple of its width
-    into naturally aligned pieces: `split_misaligned` returns
+    Sail's `vmem_read_addr` and `vmem_write_addr` split an access whose address is not a
+    multiple of its width into naturally aligned pieces: `split_misaligned` returns
     `(width / 2^k, 2^k)`, where `k` is the number of trailing zero bits of the address
-    (`sys/vmem_utils.sail`; `LeanRV64D/VmemUtils.lean`), and a loop with that many passes writes
-    one piece per pass.
+    (`sys/vmem_utils.sail`; `LeanRV64D/VmemUtils.lean`), and a loop with that many passes reads
+    or writes one piece per pass.
 
-    This file gives the split for each width and offset class the store lemmas meet
-    (`split_misaligned_W_K`), a lemma that replaces the loop by its last state once each pass is
-    known (`untilFuelM_pieces`), and the tactic that proves the misaligned case of a store lemma
-    with them. `Auxiliaries.lean` marks `split_misaligned`, `untilFuelM` and `untilFuelM.go`
-    `simp`, so a proof that uses these lemmas removes them from its `simp` set. -/
+    This file gives the split for each width and offset class the load and store lemmas meet
+    (`split_misaligned_W_K`), lemmas that replace the loop by its last state once each pass is
+    known (`untilFuelM_pieces` for a store, `untilFuelM_pieces_read` for a load), and the tactics
+    that prove the misaligned case of a store or load lemma with them. `Auxiliaries.lean` marks
+    `split_misaligned`, `untilFuelM` and `untilFuelM.go` `simp`, so a proof that uses these lemmas
+    removes them from its `simp` set. -/
 
 namespace RV64IM
 
@@ -177,6 +178,49 @@ theorem untilFuelM_pieces {ε σ E : Type} (inst : Monad (ExceptT E (EStateM ε 
   simp only [h0, decide_false, if_false, decide_true, if_true] at h
   exact h
 
+/-- Sail's loop over the `n` pieces of a split load, replaced by its result. The loop variables
+    are `(data, finished, i)`. If pass `i` of the body, started with `(ds i, false, i)` in state
+    `ss i`, succeeds in state `ss (i + 1)` with the data `ds (i + 1)` and moves `finished` and
+    `i` as Sail's loop does, then the loop started with `(ds 0, false, 0)` in `ss 0` returns
+    `(ds n, true, n - 1)` in state `ss n`. -/
+theorem untilFuelM_pieces_read {ε σ E D : Type} (inst : Monad (ExceptT E (EStateM ε σ)))
+    (hbind : ∀ {α γ : Type} (x : ExceptT E (EStateM ε σ) α) (g : α → ExceptT E (EStateM ε σ) γ),
+      @Bind.bind _ (@Monad.toBind _ inst) α γ x g = ExceptT.bind x g)
+    (hpure : ∀ {α : Type} (a : α),
+      @Pure.pure _ (@Applicative.toPure _ (@Monad.toApplicative _ inst)) α a = ExceptT.pure a)
+    (n : Nat) (hn : 0 < n)
+    (cond : D × Bool × Nat → ExceptT E (EStateM ε σ) Bool)
+    (hcond : ∀ x s, cond x s = EStateM.Result.ok (Except.ok x.2.1) s)
+    (f : D × Bool × Nat → ExceptT E (EStateM ε σ) (D × Bool × Nat))
+    (ds : Nat → D) (d0 : D) (hd0 : ds 0 = d0)
+    (ss : Nat → σ) (s0 : σ) (hs0 : ss 0 = s0)
+    (hstep : ∀ i, i < n → f (ds i, false, i) (ss i) =
+      EStateM.Result.ok
+        (Except.ok (ds (i + 1), decide (i + 1 = n), (if i + 1 = n then i else i + 1)))
+        (ss (i + 1))) :
+    @untilFuelM _ _ inst n cond (d0, false, 0) f s0 =
+      EStateM.Result.ok (Except.ok (ds n, true, n - 1)) (ss n) := by
+  subst hs0 hd0
+  have h := untilFuelM_go_steps inst hbind hpure cond (fun x => x.2.1) hcond f
+    (fun i => (ds i, decide (i = n), (if i = n then n - 1 else i))) ss n
+    (by
+      intro i hi
+      have hne : i ≠ n := by omega
+      simp only [hne, decide_false, if_false]
+      rw [hstep i hi]
+      by_cases h : i + 1 = n
+      · have : n - 1 = i := by omega
+        simp [h, this]
+      · simp [h])
+    (by
+      intro i _ hi
+      have hne : i ≠ n := by omega
+      simp [hne])
+    n 0 (by omega)
+  have h0 : (0 : Nat) ≠ n := by omega
+  simp only [h0, decide_false, if_false, decide_true, if_true] at h
+  exact h
+
 
 /-! ## The states a split store passes through -/
 
@@ -208,6 +252,18 @@ variable {w : Nat} (s : PreSail.SequentialState RegisterType Sail.trivialChoiceS
     (state_store_bytes s a v k).sailOutput = s.sailOutput := rfl
 
 end
+
+
+/-! ## The data a split load builds -/
+
+/-- The `w`-bit data of a split load after its first `k` pieces of `b` bytes: it starts at zero,
+    and pass `i` puts piece `get i` at bit `8 * b * i`, clearing what was there, as Sail's read
+    loop does with `updateSubrange`. -/
+def load_data (w b : Nat) (get : Nat → BitVec (8 * b)) : Nat → BitVec w
+  | 0 => 0#w
+  | k + 1 =>
+    (~~~(BitVec.setWidth w (BitVec.allOnes (8 * b)) <<< (8 * b * k)) &&& load_data w b get k) |||
+      (BitVec.setWidth w (get k) <<< (8 * b * k))
 
 
 /-! ## The misaligned case of a store lemma
@@ -283,5 +339,73 @@ macro "misaligned_store_tac" split:term "," pure:ident "," modify:ident "," n:nu
     interval_cases i <;> misaligned_store_piece
   simp [$pure:ident, EStateM.set, $modify:ident, state_store_bytes, mem_store_bytes,
     BitVec.extractLsb, BitVec.extractLsb']))
+
+
+/-! ## The misaligned case of a load lemma
+
+    `misaligned_load_tac` runs in a `PureSpec.RV64.execute_*_pure_equiv` proof, on the branch
+    where the address is not a multiple of the width, after the caller has split on whether the
+    destination is `x0`. In scope: `input`, `state`, `risc_v_assumptions`, `h_pc`, `h_r1`,
+    `h_range` and `next_gma`, as for a store, and `h_mem`, a conjunction of facts
+    `state.mem[addr + j]? = some v_j`, one per byte of the access. `bytes` lists the `v_j`, so that
+    piece `i` of `b` bytes is the concatenation of bytes `b * i` to `b * i + b - 1`, highest first;
+    `val` is the concatenation of all of them, highest first. The tactic keeps Sail's loop folded,
+    replaces it with `untilFuelM_pieces_read`, where the data after `i` pieces is `load_data`, and
+    proves each pass on its own; the memory and the registers do not change. Then `load_data` at
+    the last piece is `val`, bit by bit. -/
+
+set_option hygiene false in
+/-- One pass of the loop over the pieces of a split load: the body, run on the data of the
+    earlier pieces, succeeds and adds this piece. The goal is one `hstep` instance of
+    `untilFuelM_pieces_read` at a literal index. -/
+macro "misaligned_load_piece" : tactic => `(tactic| (
+  simp only []
+  set_option maxRecDepth 16384 in repeat (first
+    | simp (disch := omega) only [if_pos, if_neg,
+        Nat.mod_eq_of_lt, mod_add_eq_add_mod_of_lt, Nat.add_assoc, Nat.reduceAdd]
+    | simp [-LeanRV64D.Functions.split_misaligned, Sail.readReg, PreSail.readReg, h_mstatus,
+        h_mprv2, h_priv, h_pma_regions, h_pma_base, h_pma_readable, h_pma_misaligned, h_htif,
+        h_misa, h_mseccfg, h_range', write_reg_state_mem, h_mem])
+  simp [load_data]))
+
+set_option hygiene false in
+/-- The misaligned case of a load lemma. `split` is the `split_misaligned_W_K` lemma for the
+    case, applied to its offset hypothesis; `pure` is the opcode's `execute_*_pure`; `n` and `b`
+    are the split, `n` pieces of `b` bytes, and `w` the access width in bits; `pieces` lists the
+    pieces and `val` is their concatenation, highest first. -/
+macro "misaligned_load_tac" split:term "," pure:ident "," n:num "," b:num "," w:num ","
+    pieces:term "," val:term : tactic => `(tactic| (
+  misaligned_setup
+  simp (disch := omega) only [BitVec.toNat_add, Nat.add_mod_mod, mod_add_eq_add_mod_of_lt,
+    Nat.add_assoc, Nat.reduceAdd] at h_mem
+  simp [Sail.readReg, PreSail.readReg, writeReg_state_success, LeanRV64D.Functions.execute, h_pc]
+  simp [-LeanRV64D.Functions.split_misaligned, LeanRV64D.Functions.execute_LOAD,
+    LeanRV64D.Functions.vmem_read, EStateM.map, h_r1_val]
+  simp [-LeanRV64D.Functions.split_misaligned, -untilFuelM, -untilFuelM.go,
+    LeanRV64D.Functions.vmem_read_addr, ExceptT.run, $split:term]
+  rw [untilFuelM_pieces_read (n := $n) (hn := by decide)
+    (ds := load_data $w $b (fun k => ($pieces : List (BitVec (8 * $b))).getD k 0))
+    (ss := fun _ => write_reg_state state Register.nextPC (input.PC + 4#64))]
+  rotate_left
+  · intros; rfl
+  · intros; rfl
+  · intro _ _; rfl
+  · rfl
+  · rfl
+  · intro i hi
+    interval_cases i <;> misaligned_load_piece
+  have h_val :
+      load_data $w $b (fun k => ($pieces : List (BitVec (8 * $b))).getD k 0) $n = $val := by
+    apply BitVec.eq_of_getLsbD_eq
+    intro i hi
+    simp only [load_data, List.getD_cons_succ, List.getD_cons_zero, BitVec.getLsbD_or,
+      BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth,
+      BitVec.getLsbD_allOnes, BitVec.getLsbD_append, BitVec.getLsbD_zero]
+    interval_cases i <;> simp
+  rw [h_val]
+  first
+    | (simp [$pure:ident, wX_write_xreg_equiv]; done)
+    | (simp [*, $pure:ident, write_reg_state, LeanRV64D.Functions.wX_bits, LeanRV64D.Functions.wX,
+        write_xreg]; done)))
 
 end RV64IM

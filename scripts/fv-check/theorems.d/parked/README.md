@@ -1,7 +1,7 @@
 # Parked theorem lists
 
 <!-- generated: parked -->
-The 2 lists here name 9 of the 62 instruction theorems of
+The 1 list here names 2 of the 62 instruction theorems of
 `PicoFV/RV64IM/Equivalence/`.
 <!-- end generated -->
 
@@ -88,8 +88,9 @@ statements lose nothing here.
 A restored memory theorem also names what the Memory message promises it
 (`MemoryBus.Spec` in `RVSail/BusesV3.lean`) only through the bus assumptions,
 as the ALU classes name `ALUBus.Spec`. The promise's serving side is not proven
-at v3.1.1 yet: `SOUNDNESS.md` A3 says so, and a restoring pull request for
-`Loads.lean` should keep that paragraph true.
+at v3.1.1 yet: `SOUNDNESS.md` A3 says so for the stores and the loads, and a
+pull request that changes what a memory theorem assumes should keep those two
+paragraphs true.
 
 The register-immediate theorems read their immediate from the instruction's
 encoded `instruction.op_c_0` instead of the `op_c` value the row sends to the
@@ -106,9 +107,9 @@ two (`op_c_value_setWidth_eq_op_c_0`). The decoder sign-extends the program's
 the low 16 bits of the result into `op_c_0`, so on a row the program decoded
 those bits are the program's immediate, but the statement does not tie
 `op_c_0` to the decoder. A class whose immediate the proof does not otherwise
-reach should be restored the same way. The branches, `JAL`, `JALR` and the four
-stores, already restored, read theirs from the row's operand values
-(`op_c_value`, or `op_b_value` for `JAL`).
+reach should be restored the same way. The branches, `JAL`, `JALR`, the four
+stores and the seven loads, already restored, read theirs from the row's
+operand values (`op_c_value`, or `op_b_value` for `JAL`).
 
 Two definitions every statement names were also rewritten at v3.1.1, and
 `signatures.txt` shows only their names: `Equivalence.CPU_bus_operations` (the
