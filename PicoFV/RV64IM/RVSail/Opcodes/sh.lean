@@ -57,7 +57,7 @@ namespace PureSpec.RV64
     read_xreg i.r2 state = EStateM.Result.ok i.r2_val state ∧
     (i.r1_val + BitVec.signExtend 64 i.imm).toNat + 2 ≤ Pico_address_space_size_64
 
-  set_option maxHeartbeats 0 in
+  set_option maxHeartbeats 2_000_000 in
   lemma execute_STOREH_pure_equiv
     (input : ShInput)
     (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -82,7 +82,7 @@ namespace PureSpec.RV64
     swap
     · -- The address is not a multiple of the width: Sail splits the access.
       have h_k : (input.r1_val + BitVec.signExtend 64 input.imm).toNat % 2 = 1 := by omega
-      misaligned_store_tac split_misaligned_2_0 _ h_k, execute_STOREH_pure, modify_memory_2
+      misaligned_store_tac split_misaligned_2_0 _ h_k, execute_STOREH_pure, modify_memory_2, 2, 1
     have h_align : (2 : ℤ) ∣ (input.r1_val + BitVec.signExtend 64 input.imm).toNat := by omega
     replace h_range : (input.r1_val + BitVec.signExtend 64 input.imm).toNat < Pico_address_space_size_64 := by omega
     rw [readReg_succ] at h_pc

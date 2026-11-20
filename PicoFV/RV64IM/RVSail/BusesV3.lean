@@ -6,13 +6,15 @@ import PicoFV.RV64IM.RVSail.Operations
 
 set_option maxHeartbeats 1_000_000_000
 
-/-! # Bus contracts of the Pico v3.1.1 CPU chip
+/-! # Bus contracts of Pico 3.x
 
     The Pico v3.1.1 `CpuChip` sends 17 messages per row (`riscv_cpu/constraints.rs`, extracted
     in `Extraction/CpuChip.lean`). This file states what the CPU chip may assume about the
     messages other tables answer, and what it must guarantee about the ones it sends, for the
-    message formats that changed from 2.x. It sits beside `Buses.lean`, whose 2.x contracts stay
-    unchanged because the memory chip's proofs still use them.
+    message formats that changed from 2.x. It also holds the v3.1.6 code-range contract between
+    the rows that write guest memory (store rows of the two memory chips, and precompile rows)
+    and the Program table, which the CPU chip never sends. It sits beside `Buses.lean`, whose
+    2.x contracts stay unchanged because the memory chip's proofs still use them.
 
     | message | tag (`LookupType`) | fields | contract |
     |---------|-----|----|----------|
@@ -22,6 +24,13 @@ set_option maxHeartbeats 1_000_000_000
     | ALU dispatch, ALU compare | 4 (Alu) | 13 | `ALUBusEntry`, `Buses.lean` |
     | byte range checks | 5 (Byte) | 5 | `ByteBusEntry`, `Buses.lean`, unchanged |
     | Ecall | 13 (Ecall) | 20 | none: ignored, as tag 8 was in 2.x |
+    | code range | 2 (Program) | 4 | `V3.CodeRangeBusEntry`, this file |
+
+    The CPU chip does not send the code-range message: a store row of either memory chip, and a
+    precompile row for what it writes, does, through the `code_range` gadget
+    (`gadgets/code_range.rs:1-11`, `Spec/CodeRangeGadget.lean`), and the Program table answers it. It
+    shares the Program tag with the instruction fetch and is told apart by its length, 4 against
+    26 (`riscv_program/constraints.rs:55-57` at v3.1.6).
 
     The register-access message keeps its 2.x shape `[chunk, clk, addr(3), value(4)]`
     (`machine/builder/riscv_memory.rs:174-208`), so its 2.x contract is reused: a value read
@@ -32,8 +41,9 @@ set_option maxHeartbeats 1_000_000_000
     Open `RV64IM_Interactions.V3`, not `RV64IM_Interactions`, in a file that uses these: the
     entry, row and predicate names are the same as the 2.x ones.
 
-    Pico line numbers in this file are at v3.1.1 (`2acc7c1828fb`), except in `MemoryBus.Spec`
-    and the memory chips' citations in `MemoryBusEntry`, which are at v3.1.6 (`6aa644efeff9`).
+    Pico line numbers in this file are at v3.1.1 (`2acc7c1828fb`), except in `MemoryBus.Spec`,
+    the memory chips' citations in `MemoryBusEntry` and the code-range section, which are at
+    v3.1.6 (`6aa644efeff9`).
     From v3.1.1 to v3.1.6 the CPU chip's constraint files are unchanged; its trace generation
     (`riscv_cpu/event.rs`, `traces.rs`) changed, as did the Program chip's and
     `MemoryReadWriteChip`'s columns, constraints and trace generation. Since v3.1.2 the memory
@@ -816,15 +826,103 @@ namespace RV64IM_Interactions.V3
 
   end MemoryBus
 
+  section CodeRangeBus
+
+    variable (F : Type) [Field F]
+
+    /-- Code-range entry, payload size 4: `[code_start(2), code_end(2)]`, each end of the
+        program's code as two 16-bit pieces (`gadgets/code_range.rs`, `code_range_message`). A
+        store row of either memory chip sends it with multiplicity `is_store`, and every
+        precompile chip sends it for what its event writes (`code_range.rs:1-11`,
+        `CodeRangeCols::eval`, the `looking` call); the Program table answers it with a
+        prover-chosen multiplicity (`riscv_program/constraints.rs:58-66`, `columns.rs:46-52`).
+
+        Multiplicities summed onto one row. Trace generation puts the record's whole count of
+        code-range lookups, one per store and one per precompile event
+        (`code_range.rs:71-73`), on Program row 0 (`riscv_program/columns.rs:48-51`,
+        `traces.rs:178-180`). With `N` such lookups in a chunk, the table answers once at
+        multiplicity `-N`. `wf_assert_cond` holds only at `-1` (`Fundamentals/Interaction.lean`),
+        so for `N ≠ 1` a Program-chip `wf_asrt` would ask nothing of this answer, while each
+        sender assumes `CodeRangeBus.Spec` at `+1`. The two sides line up only through Pico's
+        LogUp argument, which no Lean theorem states (`SOUNDNESS.md`, A4); a composition
+        theorem has to treat a multiplicity summed onto one row. Here the promise holds whatever
+        the multiplicity, since every Program row carries the same preprocessed range. -/
+    structure CodeRangeBusEntry where
+      multiplicity : F
+      code_start_0 : F
+      code_start_1 : F
+      code_end_0 : F
+      code_end_1 : F
+    deriving BEq, DecidableEq, Inhabited
+
+    @[simp, grind]
+    def CodeRangeBusEntry.deserialise
+      (entry : FKB × Vector FKB 4)
+    : CodeRangeBusEntry FKB :=
+      {
+        multiplicity := entry.1,
+        code_start_0 := entry.2[0],
+        code_start_1 := entry.2[1],
+        code_end_0 := entry.2[2],
+        code_end_1 := entry.2[3],
+      }
+
+    /-- What the Program table delivers: four 16-bit pieces.
+
+        The Program table answers with its preprocessed columns `code_start` and `code_end`
+        (`riscv_program/constraints.rs:58-66`, `columns.rs:36-40`). Pico fills them at keygen
+        with `limbs(value) = [value as u16, (value >> 16) as u16]` of the program's code range,
+        the same on every row (`riscv_program/traces.rs:132-136`), so each field is below
+        2^16. The message being the program's own code range is not stated here: no Lean
+        statement names that range yet. -/
+    def CodeRangeBus.Spec (code_start_0 code_start_1 code_end_0 code_end_1 : FKB) : Prop :=
+      code_start_0.val < 65536 ∧ code_start_1.val < 65536 ∧
+      code_end_0.val < 65536 ∧ code_end_1.val < 65536
+
+    @[simp, grind]
+    instance CodeRangeBusEntryInstance
+    : BusEntry FKB (CodeRangeBusEntry FKB) :=
+    {
+        multiplicity := fun entry => entry.1,
+
+        data_length := 4,
+        data := fun ⟨_, code_start_0, code_start_1, code_end_0, code_end_1⟩ =>
+                  #v[code_start_0, code_start_1, code_end_0, code_end_1]
+
+        axioms := fun _ => True
+
+        -- A store row asserts nothing to the Program table.
+        externals := fun _ => True
+
+        wf_properties := fun ⟨_, code_start_0, code_start_1, code_end_0, code_end_1⟩ =>
+          CodeRangeBus.Spec code_start_0 code_start_1 code_end_0 code_end_1
+
+        deserialise := CodeRangeBusEntry.deserialise
+
+        inv_deser_ser := by simp [CodeRangeBusEntry.deserialise]
+        inv_ser_deser := by
+          simp_all [CodeRangeBusEntry.deserialise]
+          intro b; cases b
+          simp_all; grind
+    }
+
+  end CodeRangeBus
+
   section ChipRows
 
-    /-- The CPU chip's messages on one row, sorted by contract. -/
+    /-- A row's messages, sorted by contract. `CodeRange` is last and empty by default, so a row
+        written without it, as every CPU-chip row is, has none. The five checks below
+        (`bus_row_wf_asm` and its siblings) cover the other five lists only; `CodeRange` has its
+        own (`bus_row_code_range_wf_asm` and the rest). The checks over the whole row, all six
+        lists, are `bus_row_all_wf_asm` and its siblings: a theorem about a row that may carry
+        code-range messages states its bus duties with those. -/
     structure BusRow where
       Program : List (ProgramBusEntry FKB)
       ALU : List (ALUBusEntry FKB)
       Byte : List (ByteBusEntry FKB)
       State : List (StateBusEntry FKB)
       Memory : List (MemoryBusEntry FKB)
+      CodeRange : List (CodeRangeBusEntry FKB) := []
 
     def bus_row_axioms (row : BusRow) : Prop :=
       List.Forall id
@@ -866,10 +964,73 @@ namespace RV64IM_Interactions.V3
          row.State.map (BusEntry.wf_assert FKB) ++
          row.Memory.map (BusEntry.wf_assert FKB))
 
+    /-! The five checks above leave out `CodeRange`; these are their counterparts for it. A row
+        that sends code-range messages, as a store row of a memory chip does, takes both. They
+        are kept apart because adding `CodeRange` to the five made the branch and jump
+        equivalence proofs (`Equivalence/BType.lean`, `Jumps.lean`) time out, though no CPU row
+        has a code-range message. -/
+
+    def bus_row_code_range_axioms (row : BusRow) : Prop :=
+      List.Forall id (row.CodeRange.map (BusEntry.axioms FKB))
+
+    def bus_row_code_range_ext_asm (row : BusRow) : Prop :=
+      List.Forall id (row.CodeRange.map (BusEntry.ext_assume FKB))
+
+    def bus_row_code_range_ext_asrt (row : BusRow) : Prop :=
+      List.Forall id (row.CodeRange.map (BusEntry.ext_assert FKB))
+
+    def bus_row_code_range_wf_asm (row : BusRow) : Prop :=
+      List.Forall id (row.CodeRange.map (BusEntry.wf_assume FKB))
+
+    def bus_row_code_range_wf_asrt (row : BusRow) : Prop :=
+      List.Forall id (row.CodeRange.map (BusEntry.wf_assert FKB))
+
+    /-! The checks over the whole row: the five above together with their code-range
+        counterparts. A theorem about a row that may carry code-range messages, as a store row
+        of a memory chip does, states its bus duties with these, so none of the row's messages
+        is left out. For a row with no code-range message, as every CPU-chip row is, each is the
+        five-list check (`bus_row_all_wf_asm_iff` and its siblings). -/
+
+    def bus_row_all_axioms (row : BusRow) : Prop :=
+      bus_row_axioms row ∧ bus_row_code_range_axioms row
+
+    def bus_row_all_ext_asm (row : BusRow) : Prop :=
+      bus_row_ext_asm row ∧ bus_row_code_range_ext_asm row
+
+    def bus_row_all_ext_asrt (row : BusRow) : Prop :=
+      bus_row_ext_asrt row ∧ bus_row_code_range_ext_asrt row
+
+    def bus_row_all_wf_asm (row : BusRow) : Prop :=
+      bus_row_wf_asm row ∧ bus_row_code_range_wf_asm row
+
+    def bus_row_all_wf_asrt (row : BusRow) : Prop :=
+      bus_row_wf_asrt row ∧ bus_row_code_range_wf_asrt row
+
+    theorem bus_row_all_axioms_iff {row : BusRow} (h : row.CodeRange = []) :
+        bus_row_all_axioms row ↔ bus_row_axioms row := by
+      simp [bus_row_all_axioms, bus_row_code_range_axioms, h]
+
+    theorem bus_row_all_ext_asm_iff {row : BusRow} (h : row.CodeRange = []) :
+        bus_row_all_ext_asm row ↔ bus_row_ext_asm row := by
+      simp [bus_row_all_ext_asm, bus_row_code_range_ext_asm, h]
+
+    theorem bus_row_all_ext_asrt_iff {row : BusRow} (h : row.CodeRange = []) :
+        bus_row_all_ext_asrt row ↔ bus_row_ext_asrt row := by
+      simp [bus_row_all_ext_asrt, bus_row_code_range_ext_asrt, h]
+
+    theorem bus_row_all_wf_asm_iff {row : BusRow} (h : row.CodeRange = []) :
+        bus_row_all_wf_asm row ↔ bus_row_wf_asm row := by
+      simp [bus_row_all_wf_asm, bus_row_code_range_wf_asm, h]
+
+    theorem bus_row_all_wf_asrt_iff {row : BusRow} (h : row.CodeRange = []) :
+        bus_row_all_wf_asrt row ↔ bus_row_wf_asrt row := by
+      simp [bus_row_all_wf_asrt, bus_row_code_range_wf_asrt, h]
+
     /-- Sort a raw row of messages (multiplicity, `[tag, ...data]`) into a `BusRow`. Tags are
         Pico's `LookupType` discriminants: Memory 1 (register access, 9 fields, and memory
-        dispatch, 17 fields, told apart by length), Program 2 (26), Alu 4 (13), Byte 5 (5).
-        Ecall 13 and every other tag are ignored. -/
+        dispatch, 17 fields, told apart by length), Program 2 (instruction fetch, 26 fields, and
+        code range, 4, told apart by length), Alu 4 (13), Byte 5 (5). Ecall 13 and every other
+        tag are ignored. -/
     def deserialise_bus_row (row : List (FKB × List FKB)) : BusRow :=
       let initial_bus_row : BusRow :=
         { Program := [], ALU := [], Byte := [], State := [], Memory := [] }
@@ -895,7 +1056,13 @@ namespace RV64IM_Interactions.V3
               let entry_data_vector : Vector FKB 26 := ⟨ entry_data.toArray, by simp; omega ⟩
               let bus_entry := ProgramBusEntry.deserialise (multiplicity, entry_data_vector)
               { result with Program := result.Program ++ [ bus_entry ] }
-            else result
+            else (
+              if _ : entry_data.length = 4 then
+                let entry_data_vector : Vector FKB 4 := ⟨ entry_data.toArray, by simp; omega ⟩
+                let bus_entry := CodeRangeBusEntry.deserialise (multiplicity, entry_data_vector)
+                { result with CodeRange := result.CodeRange ++ [ bus_entry ] }
+              else result
+            )
           | 4 =>
               if _ : entry_data.length = 13 then
                 let entry_data_vector : Vector FKB 13 := ⟨ entry_data.toArray, by simp; omega ⟩

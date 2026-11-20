@@ -1,6 +1,7 @@
 7 PicoFV/Fundamentals/Core.lean
 1 PicoFV/Fundamentals/KoalaBear.lean
 39 PicoFV/Fundamentals/Word.lean
+7 PicoFV/RV64IM/Equivalence/Loads.lean
 2 PicoFV/RV64IM/Equivalence/UType.lean
 3 PicoFV/RV64IM/RVSail/Execution.lean
 1 PicoFV/RV64IM/Spec/BitwiseChip.lean

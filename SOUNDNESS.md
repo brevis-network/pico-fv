@@ -14,7 +14,7 @@ repository; CI fails when one is out of date. The rest of the text is reviewed b
 ## What is proved
 
 The theorems checked by `scripts/fv-check/check.sh` are listed in `scripts/fv-check/theorems.d/`,
-with their statements in `signatures.txt`. They are of three kinds.
+with their statements in `signatures.txt`. They are of four kinds.
 
 - **Opcode equivalence** (`Equivalence.equivalence_*`, one per RV64IM opcode except `ECALL`). For
   a CPU chip row that satisfies its extracted constraints, if the bus messages the row exchanges
@@ -98,6 +98,16 @@ with their statements in `signatures.txt`. They are of three kinds.
   messages ask nothing of the sender, and the Ecall message has no contract. The memory chip's
   address addition `b + c` is exact only for 16-bit pieces, which it takes from the sender, so
   the meaning of the load and store theorems rests on this theorem.
+- **Gadget specifications** (`CodeRangeGadget.Spec.*`). The `code_range` gadget, which both
+  memory chips and every precompile chip embed at v3.1.6, is proven on its own:
+  `gadget_spec` and `spec` say that on a store row (`is_store = 1`, `addr` two 16-bit pieces,
+  `width` below 2^16) that satisfies the gadget's constraints, the write `[addr, addr + width)`
+  misses the range `[code_start, code_end)` the row looks up from the Program table.
+  That range is read from the row's own columns: the Program table's promise
+  (`V3.CodeRangeBus.Spec`) gives only that its four pieces are below 2^16, not that they are this
+  program's code range, so these theorems do not yet say that a store misses the program's code
+  (see A4). `wf_asrt` and `ext_asrt` say the gadget's messages owe nothing to the tables that
+  answer them.
 
 The proofs are about this Pico revision:
 
@@ -171,6 +181,19 @@ Each equivalence theorem assumes:
 - the hypotheses of the operations the row emits, and `RISC_V_assumptions` on the machine state;
 - at v3.1.1, the whole-trace assumption described below.
 
+Since v3.1.6 a row's messages fall into six lists, not five: the code-range message
+(`V3.CodeRangeBusEntry`), which a store row and a precompile row send to the Program table, has
+its own list, `CodeRange`, empty on every CPU-chip row. The four checks above (and
+`bus_row_ext_asrt`) cover the other five lists only; the code range has its own checks
+(`bus_row_code_range_wf_asm` and its siblings), kept apart because adding the list to the five
+made the branch and jump equivalence proofs time out. The checks over all six lists are
+`bus_row_all_axioms`, `bus_row_all_ext_asm`, `bus_row_all_ext_asrt`, `bus_row_all_wf_asm` and
+`bus_row_all_wf_asrt`, each the five-list check together with its code-range counterpart. A
+theorem about a row that may carry code-range messages states its bus hypotheses and duties with
+these; the `CodeRangeGadget.Spec` theorems do. For a row with no code-range message each is the
+five-list check (`bus_row_all_wf_asm_iff` and its siblings), so the equivalence theorems, which
+use the five-list checks, leave out no message their rows send.
+
 The instruction theorems checked at the moment (listed under "What is proved") are recorded at
 v3.1.1, against the v3.1.1 CPU constraints and the v3.1.1 contracts (`RV64IM_Interactions.V3` in
 `RVSail/BusesV3.lean`). `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`, `ANDI`, `SLTI`, `SLTIU`,
@@ -209,31 +232,27 @@ zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign fl
 `false`), and writes the low 16 bits of the result into `op_c_0`, the next 16 into `op_c_1` and
 the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
 amount or 12-bit immediate; the theorems do not state that link. The other checked theorems with
-an immediate still read it from the row's operand values: the six branches and `JALR` take the
-low 13 or 12 bits of the `op_c` value, and `JAL` the low 21 bits of the `op_b` value.
+an immediate still read it from the row's operand values: the six branches, `JALR` and the four
+stores take the low 13 or 12 bits of the `op_c` value, and `JAL` the low 21 bits of the `op_b`
+value.
 
 The four store theorems take their opcode alone too, as they did at `353238a`, and gain the
-whole-trace assumption, which their 2.x statements did not take. What a store rests on beyond the
-CPU's own constraints is the Memory message's promise (`MemoryBus.Spec` in `RVSail/BusesV3.lean`):
-that the address `op_b + op_c` is below `2 ^ 32`, so the stored bytes lie inside the memory region
-the RISC-V assumptions give. The address need not be a multiple of the width: Sail then splits the
-store into naturally aligned pieces (`split_misaligned`), and the Sail lemmas of `SH`, `SW` and `SD`
-(`RVSail/Opcodes/`) prove that the pieces write the same bytes as one aligned store would
-(`RVSail/Misaligned.lean`). **Nothing in this
-repository discharges that promise yet.** `MemoryReadWriteChip.Spec` still states its assumptions
-against the 2.x memory contract of `RVSail/Buses.lean`, and it is verified against a
+whole-trace assumption, which their 2.x statements did not take. Like every restored theorem they
+rest on the Program table's promise (A4, A5). Of the Memory message's promise (`MemoryBus.Spec` in
+`RVSail/BusesV3.lean`) a store uses one clause: the address `op_b + op_c` is below `2 ^ 32`, so the
+whole access lies in the memory region `RISC_V_assumptions` gives Sail (at least `2 ^ 48` bytes);
+Sail traps instead of storing outside it. The promise says nothing about alignment and the theorems
+do not assume it. At an address that is not a multiple of the width, Sail splits the store into
+naturally aligned pieces and writes the same bytes, which the Sail lemmas of `SH`, `SW` and `SD`
+prove (`RVSail/Misaligned.lean`). That case rests on the Sail model allowing misaligned access
+(`plat_enable_misaligned_access`, `true` in the model). The proofs also use the clause
+`misaligned_fault = NoFault` of `RISC_V_assumptions`, as the aligned case does. **Nothing in this
+repository discharges the Memory promise yet.** `MemoryReadWriteChip.Spec` still states its
+assumptions against the 2.x memory contract of `RVSail/Buses.lean`, and it is verified against a
 `MemoryReadWriteChip.lean` extraction that predates the pinned Pico commit (see the generated list
-in A1 and `extractor/pending.txt`). So the serving side of the link a store theorem assumes is
-open, as A4 describes for chip composition generally.
-
-The seven load theorems rest on the same promise, and on one more part of it. Besides the address
-range and the width's alignment, `MemoryBus.Spec` says what extension the loaded word carries:
-sign for `LB`, `LH` and `LW`, zero for `LBU`, `LHU` and `LWU`, none for `LD`. That is the whole
-content of what a load writes to `rd`, so a load theorem says that the CPU row writes back
-whatever the memory chip promised — and, like the stores, it is assuming that promise rather than
-resting on a proof of it. The CPU constraints alone do not tie the loaded word to memory at all.
-A load whose destination is `x0` is the one case that needs nothing of the promise: the chip sends
-`ReadMemAny` and writes no register, and so does Sail.
+under "What is proved" and `extractor/pending.txt`). So the serving side of the link a store theorem
+assumes is open, as A4 describes for chip composition generally; the loads will assume the same
+promise when they return.
 
 The parked theorems were last recorded at `353238a`, against the 2.x constraints and the contracts
 of `RVSail/Buses.lean`, and are not checked while they move. Two definitions every instruction
@@ -295,10 +314,11 @@ constrains the value, so there the clause holds because the CPU sends zero
 (`MemoryBus.externals`). Its doc comment cites the constraint of each chip behind each clause.
 It no longer says that a halfword, word or doubleword address is a multiple of the width, as it did
 when drafted against v3.1.1, where `MemoryReadWriteChip` was the only receiver. It says nothing
-about which memory a load reads, about the message's `chunk` and `clk` fields, or that a store
-misses the program's code. Neither memory chip's proof against this promise exists yet: the
-read/write chip's proofs are against the 2.x contract, and the unaligned chip has none. The load
-and store theorems, still parked, have to hold for a misaligned address too.
+about which memory a load reads, or about the message's `chunk` and `clk` fields. That a store
+misses the program's code is not the memory promise's business: the store row proves it itself,
+through the `code_range` gadget, against the code-range contract below. Neither memory chip's proof against this promise exists yet: the
+read/write chip's proofs are against the 2.x contract, and the unaligned chip has none. The store
+theorems hold for a misaligned address too (A3); the load theorems, still parked, have to.
 
 The contract now covers the merged branch-comparison rows. `ALUBus.validOpcode` contains the two
 opcodes 264 / 265 (`SLT` / `SLTU` + `LT_CMP_OPCODE_TAG`) that Pico's CPU sends for every branch,
@@ -309,6 +329,27 @@ What the CPU does with the two bits is the CPU chip's side, and the six branch t
 the two bits, `branch_taken` builds the taken condition from them, and the next-pc constraints
 send the row to `pc + offset` or `pc + 4` as Sail does.
 
+The code-range message rests on a chip that is not covered. A store row of either memory chip,
+and every precompile chip for what it writes, looks up the code's range `[code_start, code_end)`
+from the Program table (`gadgets/code_range.rs:1-11` at v3.1.6), and the
+`CodeRangeGadget.Spec` theorems assume what the table answers: four pieces below 2^16
+(`V3.CodeRangeBus.Spec`). The Program chip has no proof here (A5), so that promise is trusted.
+It is also weaker than what Pico intends: it does not say the four pieces are this program's
+code range, which the Program table's preprocessed columns hold
+(`riscv_program/columns.rs:36-40`, `traces.rs:132-136`) and `program_commit` fixes, so no theorem
+here yet says that a store misses the program's code.
+
+How the table answers it does not fit the framework's conditions either. Trace generation puts
+the chunk's whole count of code-range lookups, one per store and one per precompile event
+(`code_range.rs:71-73`), on Program row 0 (`riscv_program/columns.rs:48-51`,
+`traces.rs:178-180`). With `N` lookups in a chunk the table answers once, at multiplicity `-N`.
+A contract's promise binds a receiver only at multiplicity `-1` (`wf_assert_cond` in
+`Fundamentals/Interaction.lean`), so for `N ≠ 1` a Program-chip theorem stated with
+`bus_row_all_wf_asrt` would ask nothing of that answer, while each sender assumes the promise at
+`+1`. The two sides meet only through the LogUp balance, which is not proven; a composition
+theorem has to treat a multiplicity summed onto one row. The promise itself holds whatever the
+multiplicity, since every Program row carries the same preprocessed range.
+
 Messages a chip serves but the contract does not specify are still not covered in general; there
 are none among the RV64IM ALU chips at v3.1.6.
 
@@ -316,7 +357,10 @@ are none among the RV64IM ALU chips at v3.1.6.
 
 `ECALL` and syscalls, the precompile chips, the program, global memory and memory
 initialisation chips, `MemoryUnalignedChip` (new since v3.1.2; see A4), the recursion layers, and
-Pico's proof system itself.
+Pico's proof system itself. The `CodeRangeGadget.Spec` theorems assume the Program chip's
+code-range promise (`V3.CodeRangeBus.Spec`), which rests on the Program chip and so is trusted
+(see A4). The precompile chips also send the code-range message; no theorem here covers their
+side of it.
 
 ### A6. The instruction decoder
 
@@ -365,7 +409,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 80 |
+| kernel + compiler | 84 |
 | kernel + compiler + RISC-V spec axioms | 60 |
 | kernel only | 1 |
 <!-- end generated -->
@@ -380,11 +424,12 @@ A proof that uses them also trusts the Lean compiler and runtime.
 branch's, so the uses only go down.
 
 <!-- generated: tactics -->
-127 uses of `native_decide`, `bv_decide` or `decide +native` in 8 files:
+134 uses of `native_decide`, `bv_decide` or `decide +native` in 9 files:
 
 - `PicoFV/Fundamentals/Core.lean`: 7
 - `PicoFV/Fundamentals/KoalaBear.lean`: 1
 - `PicoFV/Fundamentals/Word.lean`: 39
+- `PicoFV/RV64IM/Equivalence/Loads.lean`: 7
 - `PicoFV/RV64IM/Equivalence/UType.lean`: 2
 - `PicoFV/RV64IM/RVSail/Execution.lean`: 3
 - `PicoFV/RV64IM/Spec/BitwiseChip.lean`: 1
@@ -404,16 +449,18 @@ equivalence files, are not replayed.
 **The job has not run.** GitHub runs a scheduled workflow only from the repository's default branch,
 and the workflow is on `pico-v3`, not on `main`. Until it runs, this section describes what it would
 check, not a result. Run by hand on the instruction-theorem files the build imports, `lake env
-leanchecker` replays all eleven: `Equivalence/Common`, `Equivalence/Addiw`, `Equivalence/RTypeW`,
+leanchecker` replays all twelve: `Equivalence/Common`, `Equivalence/Addiw`, `Equivalence/RTypeW`,
 `Equivalence/ShiftIWOp`, `Equivalence/IType`, `Equivalence/ShiftIOp`, `Equivalence/RType`,
-`Equivalence/MulFamily`, `Equivalence/DivFamily`, `Equivalence/Jumps` and `Equivalence/BType`.
+`Equivalence/MulFamily`, `Equivalence/DivFamily`, `Equivalence/Jumps`, `Equivalence/BType` and
+`Equivalence/Stores`.
 `Common`, `Jumps` and `BType` used to fail with "(kernel) deep recursion detected": one `simp`
 sorted all 17 messages of a CPU row at once, and the proof term it built was deeper than
 `leanchecker`'s kernel stack (`lake build` runs Lean with `--tstack=400000` in the lakefile). The
 parts of a sorted row are now separate lemmas checked by evaluation
 (`deserialise_raw_bus_row_Program`, `_State` and `_Memory` in `Equivalence/Common.lean`), and
 the lemmas that compute a row's bus operations rewrite with them.
-The other modules have not been replayed by hand.
+Of the other modules, `RVSail/Misaligned` and the Sail lemmas `RVSail/Opcodes/sh`, `sw` and `sd`
+replay too; the rest have not been replayed by hand.
 
 ## D. Does the use of the results hold together?
 

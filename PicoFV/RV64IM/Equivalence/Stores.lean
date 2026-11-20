@@ -17,20 +17,27 @@ namespace Equivalence
     -- STORES — the four store opcodes: SB = 15, SH = 16, SW = 17, SD = 47.
     -- None is shared (`ProgramBusEntry.decoded_from`), so the decoder fixes
     -- both immediate flags and the row's class selectors, and no statement
-    -- takes them, as none did at 2.x either.
+    -- takes them.
     --
     -- A store row reads `rs2` into `op_a` and writes it back unchanged
-    -- (`op_a_kept`), reads `rs1` into `op_b`, and carries the 12-bit offset in
-    -- `op_c` (`imm_c = 1`). It sends one Memory message, whose promise
-    -- (`memory_message_spec`, the contract of `RVSail/BusesV3.lean`) gives the
-    -- address `op_b + op_c` its guest range and the width's alignment — the
-    -- two conditions Sail needs to take the store rather than trap. The row
-    -- sets no branch or jump selector, so its next pc is `pc + 4`
-    -- (`is_sequential_active_constraints`).
+    -- (`op_a_kept`; Pico v3.1.6, `riscv_cpu/register/constraints.rs:117-123`),
+    -- reads `rs1` into `op_b`, and carries the 12-bit offset in `op_c`
+    -- (`imm_c = 1`). It sends one Memory message (Pico v3.1.6,
+    -- `riscv_cpu/constraints.rs:117-133`), whose promise
+    -- (`memory_message_spec`, the contract of `RVSail/BusesV3.lean`) puts the
+    -- address `op_b + op_c` below `2 ^ 32`, inside the memory region
+    -- `RISC_V_assumptions` gives Sail. The promise says nothing about
+    -- alignment: at an address that is not a multiple of the width Sail
+    -- splits the store into aligned pieces, which the Sail lemmas of `SH`,
+    -- `SW` and `SD` cover (`RVSail/Misaligned.lean`). The row sets no branch
+    -- or jump selector, so its next pc is `pc + 4`
+    -- (`is_sequential_active_constraints`; Pico v3.1.6,
+    -- `riscv_cpu/constraints.rs:318-326`).
     --
-    -- The width is the only thing that differs: the chip writes the first
-    -- limb of `op_a` for `SB` and `SH`, the first two for `SW` and all four
-    -- for `SD`, and Sail writes the matching low bits of `rs2`'s value.
+    -- The width is the only thing that differs: the chip writes the low byte
+    -- of the first limb of `op_a` for `SB`, the first limb for `SH`, the
+    -- first two for `SW` and all four for `SD`, and Sail writes the matching
+    -- low bits of `rs2`'s value.
     -- ========================================================================
 
     /-- The low `n` bits of a `U64w`'s value, for `n` at most one limb, are those of its first
@@ -207,7 +214,6 @@ namespace Equivalence
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat <
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
-        have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
       -- The row moves on by four, and writes back the value it read.
@@ -339,7 +345,6 @@ namespace Equivalence
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 2 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
-        have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
       -- The row moves on by four, and writes back the value it read.
@@ -471,7 +476,6 @@ namespace Equivalence
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 4 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
-        have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
       -- The row moves on by four, and writes back the value it read.
@@ -603,7 +607,6 @@ namespace Equivalence
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 8 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
-        have h_space : Pico_address_space_size_64 = 2 ^ 48 := rfl
         have := h_mem_spec.2.2.1
         omega
       -- The row moves on by four, and writes back the value it read.
