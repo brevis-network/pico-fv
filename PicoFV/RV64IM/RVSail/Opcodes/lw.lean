@@ -45,7 +45,7 @@ namespace PureSpec.RV64
            state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 3]? = .some i.data3) ∧
     (i.r1_val + BitVec.signExtend 64 i.imm).toNat + 4 ≤ Pico_address_space_size_64
 
-  set_option maxHeartbeats 0 in
+  set_option maxHeartbeats 8_000_000 in
   lemma execute_LOADW_pure_equiv
     (input : LwInput)
     (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -71,8 +71,26 @@ namespace PureSpec.RV64
     swap
     · -- The address is not a multiple of the width: Sail splits the access.
       rcases (by omega : (input.r1_val + BitVec.signExtend 64 input.imm).toNat % 2 = 1 ∨ (input.r1_val + BitVec.signExtend 64 input.imm).toNat % 4 = 2) with h_k | h_k
-      · misaligned_load_tac split_misaligned_4_0 _ h_k, execute_LOADW_pure
-      · misaligned_load_tac split_misaligned_4_1 _ h_k, execute_LOADW_pure
+      all_goals by_cases h_rd : input.rd = 0 <;>
+        simp only [h_rd, beq_self_eq_true, if_true, beq_iff_eq, if_false] at h_mem
+      · simp only [Option.isSome_iff_exists] at h_mem
+        obtain ⟨⟨v0, h0⟩, ⟨v1, h1⟩, ⟨v2, h2⟩, ⟨v3, h3⟩⟩ := h_mem
+        have h_mem := And.intro h0 (And.intro h1 (And.intro h2 h3))
+        misaligned_load_tac split_misaligned_4_0 _ h_k, execute_LOADW_pure, 4, 1, 32,
+          [v0, v1, v2, v3],
+          (v3 ++ v2 ++ v1 ++ v0)
+      · misaligned_load_tac split_misaligned_4_0 _ h_k, execute_LOADW_pure, 4, 1, 32,
+          [input.data0, input.data1, input.data2, input.data3],
+          (input.data3 ++ input.data2 ++ input.data1 ++ input.data0)
+      · simp only [Option.isSome_iff_exists] at h_mem
+        obtain ⟨⟨v0, h0⟩, ⟨v1, h1⟩, ⟨v2, h2⟩, ⟨v3, h3⟩⟩ := h_mem
+        have h_mem := And.intro h0 (And.intro h1 (And.intro h2 h3))
+        misaligned_load_tac split_misaligned_4_1 _ h_k, execute_LOADW_pure, 2, 2, 32,
+          [v1 ++ v0, v3 ++ v2],
+          (v3 ++ v2 ++ v1 ++ v0)
+      · misaligned_load_tac split_misaligned_4_1 _ h_k, execute_LOADW_pure, 2, 2, 32,
+          [input.data1 ++ input.data0, input.data3 ++ input.data2],
+          (input.data3 ++ input.data2 ++ input.data1 ++ input.data0)
     have h_align : (4 : ℤ) ∣ (input.r1_val + BitVec.signExtend 64 input.imm).toNat := by omega
     replace h_range : (input.r1_val + BitVec.signExtend 64 input.imm).toNat < Pico_address_space_size_64 := by omega
     rw [readReg_succ] at h_pc

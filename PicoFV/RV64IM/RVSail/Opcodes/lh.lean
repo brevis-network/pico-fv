@@ -39,7 +39,7 @@ namespace PureSpec.RV64
            state.mem[(i.r1_val + BitVec.signExtend 64 i.imm).toNat + 1]? = .some i.data1) ∧
     (i.r1_val + BitVec.signExtend 64 i.imm).toNat + 2 ≤ Pico_address_space_size_64
 
-  set_option maxHeartbeats 0 in
+  set_option maxHeartbeats 4_000_000 in
   lemma execute_LOADH_pure_equiv
     (input : LhInput)
     (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
@@ -65,7 +65,17 @@ namespace PureSpec.RV64
     swap
     · -- The address is not a multiple of the width: Sail splits the access.
       have h_k : (input.r1_val + BitVec.signExtend 64 input.imm).toNat % 2 = 1 := by omega
-      misaligned_load_tac split_misaligned_2_0 _ h_k, execute_LOADH_pure
+      by_cases h_rd : input.rd = 0 <;>
+        simp only [h_rd, beq_self_eq_true, if_true, beq_iff_eq, if_false] at h_mem
+      · simp only [Option.isSome_iff_exists] at h_mem
+        obtain ⟨⟨v0, h0⟩, ⟨v1, h1⟩⟩ := h_mem
+        have h_mem := And.intro h0 h1
+        misaligned_load_tac split_misaligned_2_0 _ h_k, execute_LOADH_pure, 2, 1, 16,
+          [v0, v1],
+          (v1 ++ v0)
+      · misaligned_load_tac split_misaligned_2_0 _ h_k, execute_LOADH_pure, 2, 1, 16,
+          [input.data0, input.data1],
+          (input.data1 ++ input.data0)
     have h_align : (2 : ℤ) ∣ (input.r1_val + BitVec.signExtend 64 input.imm).toNat := by omega
     replace h_range : (input.r1_val + BitVec.signExtend 64 input.imm).toNat < Pico_address_space_size_64 := by omega
     rw [readReg_succ] at h_pc
