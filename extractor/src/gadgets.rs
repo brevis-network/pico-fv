@@ -10,7 +10,7 @@ use pico_mle_core::air::{any_air::BaseAirWithPublicValues, symbolic::SymbolicRap
 use pico_vm::{
     chips::gadgets::{
         add::AddGadget, addw::AddwGadget, bitwise::BitWiseGadget, bitwise_u16::BitWiseU16Gadget,
-        is_equal_word::IsEqualWordGadget, is_zero::IsZeroGadget, is_zero_word::IsZeroWordGadget,
+        code_range::CodeRangeCols, is_equal_word::IsEqualWordGadget, is_zero::IsZeroGadget, is_zero_word::IsZeroWordGadget,
         lt_signed::LtSignedGadget, lt_unsigned::LtUnsignedGadget, lt_word_u16::LtWordU16Gadget,
         msb::U16MSBGadget, mul::MulGadget, sub::SubGadget, subw::SubwGadget,
         u16_to_u8::U16ToU8Gadget,
@@ -36,9 +36,10 @@ pub enum Gadget {
     Mul,
     U16ToU8Safe,
     U16ToU8Unsafe,
+    CodeRange,
 }
 
-pub const ALL: [Gadget; 16] = [
+pub const ALL: [Gadget; 17] = [
     Gadget::Add,
     Gadget::Sub,
     Gadget::Addw,
@@ -55,6 +56,7 @@ pub const ALL: [Gadget; 16] = [
     Gadget::Mul,
     Gadget::U16ToU8Safe,
     Gadget::U16ToU8Unsafe,
+    Gadget::CodeRange,
 ];
 
 impl Gadget {
@@ -77,6 +79,7 @@ impl Gadget {
             Gadget::Mul => "MulGadget",
             Gadget::U16ToU8Safe => "U16ToU8GadgetSafe",
             Gadget::U16ToU8Unsafe => "U16ToU8GadgetUnsafe",
+            Gadget::CodeRange => "CodeRangeGadget",
         }
     }
 }
@@ -95,6 +98,7 @@ impl<F: Field> BaseAir<F> for Gadget {
             Gadget::Bitwise | Gadget::BitwiseU16 => 26,
             Gadget::Mul => 63,
             Gadget::U16ToU8Safe | Gadget::U16ToU8Unsafe => 9,
+            Gadget::CodeRange => 12,
         }
     }
 }
@@ -232,6 +236,17 @@ impl<F: Field> Air<SymbolicRapBuilder<F>> for Gadget {
                     builder,
                     expr_array(&l[0..4]),
                     *l[4..8].borrow(),
+                );
+            }
+            // `addr` (two u16 limbs), `width`, the gadget's 8 columns, `is_store`.
+            Gadget::CodeRange => {
+                let cols: &CodeRangeCols<_> = l[3..11].borrow();
+                CodeRangeCols::<F>::eval(
+                    builder,
+                    cols,
+                    expr_array(&l[0..2]),
+                    l[2].into(),
+                    l[11].into(),
                 );
             }
         }
