@@ -102,8 +102,19 @@ with their statements in `signatures.txt`. They are of three kinds.
 The proofs are about this Pico revision:
 
 <!-- generated: pin -->
-Pico commit [`2acc7c182`](https://github.com/brevis-network/pico/commit/2acc7c1828fb4ec1bed5963511bb370870c5b608).
+Pico v3.1.6, commit [`6aa644efe`](https://github.com/brevis-network/pico/commit/6aa644efeff9ddbec6beb538200f98f2a70f5d8e).
 <!-- end generated -->
+
+Re-extracting the CPU chip, the ten ALU chips and their gadgets at v3.1.6 gives the same
+constraints and bus messages as at v3.1.1: each extraction file differs only in its first line,
+which names the Pico commit. So what this document says about those chips' own constraints at
+v3.1.1 holds at v3.1.6. The claims in this document that name v3.1.6 were checked there; if the
+pin above names a later version, they have not been checked there yet. Pico's per-chip constraint digests (`vm/tests/riscv_constraint_dump.txt`)
+cannot show this at v3.1.6, which changed every chip's digest when it rewrote how chunks are joined;
+the re-extraction does. A chip's constraints also cannot show which chips receive its messages. At
+the pin the CPU chip's memory dispatch has a second receiver, `MemoryUnalignedChip`, which serves
+misaligned loads and stores, so the memory promise no longer says an address is aligned (see A4
+and A5), and the Program table changed after v3.1.1 (see A6).
 
 <!-- generated: pending -->
 1 extraction file(s) still predate the pinned commit and are verified against the Pico revision named in their first line: `MemoryReadWriteChip.lean`.
@@ -118,7 +129,7 @@ Pico commit [`2acc7c182`](https://github.com/brevis-network/pico/commit/2acc7c18
 | A3 | A theorem holds only under a hypothesis | Hypotheses are part of each statement, snapshotted in `signatures.txt` |
 | A4 | The chips' bus messages do not compose as assumed | None yet: not proven (see A4) |
 | A5 | A part of Pico is not covered | Listed in A5 |
-| A6 | The Lean model of Pico's v3.1.1 instruction decoder differs from Pico's | Compared line by line in review; Pico's decoder tests restated as Lean `example`s |
+| A6 | The Lean model of Pico's instruction decoder differs from Pico's at the pinned commit | Compared line by line in review; Pico's decoder tests restated as Lean `example`s |
 | C1 | The Lean kernel or its axioms are unsound | None |
 | C2 | A proof trusts compiled code | Ratchet in `check_tactics.sh`; listed in C2 |
 | C3 | A declaration reached the environment unchecked | Weekly kernel replay in CI, except the modules of C2 |
@@ -183,14 +194,32 @@ every one of them. The six branch theorems take their opcode alone too, as they 
 `353238a`: opcodes 18 to 23 are the six branches alone. Their comparison is not made in the CPU
 chip. The row sends it on the ALU bus — opcode 264 for `BLT` and `BGE`, signed, and 265 for the
 other four, unsigned — so the two comparison bits are what `ALUBus.Spec` promises for those
-opcodes, which `LtChip.Spec.spec_SLT` and `spec_SLTU` discharge on the serving chip's side, and
-the branch theorems assume nothing about the operands themselves.
+opcodes, which `LtChip.Spec.spec_CMP_SLT` and `spec_CMP_SLTU` discharge on the serving chip's
+side, and the branch theorems assume nothing about the operands themselves.
+
+The thirteen register-immediate theorems (the six shifts, `ADDI`, `XORI`, `ORI`, `ANDI`,
+`SLTI`, `SLTIU` and `ADDIW`) read their immediate from the instruction's encoded `op_c_0`, as
+they read `rd` and `rs1`, instead of from the `op_c` value the row sends to the ALU chip. The
+proofs link the two through the CPU constraint that, on a row whose third operand is an
+immediate, copies `op_c_0` into the first 16-bit piece of the `op_c` value
+(`op_c_value_setWidth_eq_op_c_0`, through `imm_c_eq_1_constraints`). A shift's amount is
+`op_c_0`'s low 6 bits (5 for the 32-bit shifts), that is `op_c_0` modulo 64 (or 32); the other
+seven take `op_c_0`'s low 12 bits. The decoder sign-extends the seven 12-bit immediates and
+zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign flag `true` or
+`false`), and writes the low 16 bits of the result into `op_c_0`, the next 16 into `op_c_1` and
+the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
+amount or 12-bit immediate; the theorems do not state that link. The other checked theorems with
+an immediate still read it from the row's operand values: the six branches and `JALR` take the
+low 13 or 12 bits of the `op_c` value, and `JAL` the low 21 bits of the `op_b` value.
 
 The four store theorems take their opcode alone too, as they did at `353238a`, and gain the
 whole-trace assumption, which their 2.x statements did not take. What a store rests on beyond the
 CPU's own constraints is the Memory message's promise (`MemoryBus.Spec` in `RVSail/BusesV3.lean`):
-that the address `op_b + op_c` is below `2 ^ 32` and aligned for the width. Sail traps instead of
-storing without those two, so a store theorem cannot be stated without them. **Nothing in this
+that the address `op_b + op_c` is below `2 ^ 32`, so the stored bytes lie inside the memory region
+the RISC-V assumptions give. The address need not be a multiple of the width: Sail then splits the
+store into naturally aligned pieces (`split_misaligned`), and the Sail lemmas of `SH`, `SW` and `SD`
+(`RVSail/Opcodes/`) prove that the pieces write the same bytes as one aligned store would
+(`RVSail/Misaligned.lean`). **Nothing in this
 repository discharges that promise yet.** `MemoryReadWriteChip.Spec` still states its assumptions
 against the 2.x memory contract of `RVSail/Buses.lean`, and it is verified against a
 `MemoryReadWriteChip.lean` extraction that predates the pinned Pico commit (see the generated list
@@ -206,27 +235,23 @@ resting on a proof of it. The CPU constraints alone do not tie the loaded word t
 A load whose destination is `x0` is the one case that needs nothing of the promise: the chip sends
 `ReadMemAny` and writes no register, and so does Sail.
 
-The six shift-immediate theorems also read their shift amount from the instruction's encoded
-`op_c_0`, as they read `rd` and `rs1`, instead of from the `op_c` value the row sends to the ALU
-chip. The proofs link the two through the CPU constraint that, on a row whose third operand is
-an immediate, copies `op_c_0` into the first 16-bit piece of the `op_c` value
-(`op_c_value_setWidth_eq_op_c_0`, through `imm_c_eq_1_constraints`). The amount is `op_c_0`'s
-low 6 bits (5 for the 32-bit shifts), that is `op_c_0` modulo 64 (or 32). The decoder writes the
-instruction's shift amount into `op_c_0` unchanged (`Transpiler.V3.imm_operand`), so on a row
-the program decoded the two are equal; the theorems do not state that link.
-
 The parked theorems were last recorded at `353238a`, against the 2.x constraints and the contracts
 of `RVSail/Buses.lean`, and are not checked while they move. Two definitions every instruction
 theorem names were rewritten at v3.1.1 behind unchanged names: `Equivalence.CPU_bus_operations`, the
 operations the theorem compares the Sail step against (now a two-piece pc, with the memory width and
 direction taken from the opcode), and `CpuChip.Interpretations.bus_row`, which sorts the row's
-messages (now with the v3.1.1 deserialiser).
+messages (now with the v3.1.1 deserialiser). A third was rewritten against v3.1.6:
+`V3.MemoryBus.Spec`, the memory chips' promise, which every checked 3.x instruction theorem
+assumes through its `bus_row_wf_asm` hypothesis. It lost its three alignment clauses (see the
+composition section below), so that hypothesis now assumes less, and each theorem says more.
 
 The whole-trace assumption, `pico_CpuChip_control_flow_assumptions`, bounds the chunk's final
 pc (public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The
 v3.1.1 chip does not check this itself; Pico's recursion circuit makes it hold for every chunk
 of an accepted recursive proof (`docs/cpu-chip-pico-v3-design.md`, "The whole-trace
-assumption"). So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
+assumption"). That circuit was read again at v3.1.6, which rewrote it: the three checks the
+argument uses (the pc carried from chunk to chunk, a chunk with no CPU keeping its pc, the last
+chunk ending at pc zero) are still there. So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
 proof, not a chunk proof checked on its own. The eight branch and jump theorems already name the
 assumption, whose definition grew, so it is not what changes their recorded statements: all eight
 are recorded at v3.1.1 now, and changed for the other reasons above. What they assume did change,
@@ -250,41 +275,76 @@ proves the v3.1.1 CPU chip sends, at whatever multiplicity it sends it (each mes
 carries a duty is sent 0 or 1 times, `CpuChip.Spec.multiplicity_eq_zero_or_one`). The theorem
 assumes only the Program table's and the register file's promises, not those of the ALU and
 memory chips it sends to, so the CPU's side of each of those links does not rest on the
-receiving chip's theorem. The memory chip's specification still states its assumptions
-against the 2.x memory contract (`RVSail/Buses.lean`); the v3.1.1 contract it will assume
-(`MemoryBus.externals` in `RVSail/BusesV3.lean`) is the one the CPU is proven to meet.
+receiving chip's theorem. The read/write memory chip's specification still states its
+assumptions against the 2.x memory contract (`RVSail/Buses.lean`); the 3.x contract both memory
+chips will assume (`MemoryBus.externals` in `RVSail/BusesV3.lean`) is the one the CPU is proven
+to meet.
+
+At v3.1.6, the pin, the memory dispatch has two receivers. Since v3.1.2 Pico has
+`MemoryUnalignedChip` (`vm/src/chips/chips/riscv_memory/unaligned/`), which takes the same
+17-field message on the same bus as `MemoryReadWriteChip` and serves loads and stores whose
+address is not a multiple of their width. The CPU chip's constraints did not change, so either
+chip may take any load or store. The promise the CPU chip assumes of the dispatch
+(`MemoryBus.Spec` in `RVSail/BusesV3.lean`) therefore states only what holds whichever chip takes
+the message: a load's value has 16-bit pieces, the address `b + c` is at least `2^16` and below
+`2^32`, and, unless the destination is `x0`, a load's value is the sign or zero extension its
+opcode names. The address bound and the extensions follow from each chip's constraints at v3.1.6.
+The 16-bit pieces need more: in `MemoryReadWriteChip` they are pieces of the previous memory
+value, which the memory argument's promise bounds, and for a load into `x0` neither chip
+constrains the value, so there the clause holds because the CPU sends zero
+(`MemoryBus.externals`). Its doc comment cites the constraint of each chip behind each clause.
+It no longer says that a halfword, word or doubleword address is a multiple of the width, as it did
+when drafted against v3.1.1, where `MemoryReadWriteChip` was the only receiver. It says nothing
+about which memory a load reads, about the message's `chunk` and `clk` fields, or that a store
+misses the program's code. Neither memory chip's proof against this promise exists yet: the
+read/write chip's proofs are against the 2.x contract, and the unaligned chip has none. The load
+and store theorems, still parked, have to hold for a misaligned address too.
 
 The contract now covers the merged branch-comparison rows. `ALUBus.validOpcode` contains the two
 opcodes 264 / 265 (`SLT` / `SLTU` + `LT_CMP_OPCODE_TAG`) that Pico's CPU sends for every branch,
 `ALUBus.Spec` gives them their meaning — piece 0 is `[b < c]`, piece 1 is `[c < b]`, pieces 2 and
 3 are zero — and `LtChip.Spec.spec_CMP_SLT` / `spec_CMP_SLTU` prove that `LtChip` serves them.
-What the CPU does with the two bits is not proven here: that is the CPU chip's side. Its
-v3.1.1 constraints, including the comparison message and the taken-branch condition, are
-restated in `Constraints/CpuChip.lean`, but the branch theorems that use them are parked while
-the CPU chip moves.
+What the CPU does with the two bits is the CPU chip's side, and the six branch theorems in
+`Equivalence/BType.lean` prove it: `branch_compare_spec` turns the promise into the meaning of
+the two bits, `branch_taken` builds the taken condition from them, and the next-pc constraints
+send the row to `pc + offset` or `pc + 4` as Sail does.
 
 Messages a chip serves but the contract does not specify are still not covered in general; there
-are none among the RV64IM ALU chips at the pinned commit.
+are none among the RV64IM ALU chips at v3.1.6.
 
 ### A5. What is not covered
 
 `ECALL` and syscalls, the precompile chips, the program, global memory and memory
-initialisation chips, the recursion layers, and Pico's proof system itself.
+initialisation chips, `MemoryUnalignedChip` (new since v3.1.2; see A4), the recursion layers, and
+Pico's proof system itself.
 
-### A6. The instruction decoder (Pico v3.1.1)
+### A6. The instruction decoder
 
-The Pico v3.1.1 Program contract
-(`RV64IM_Interactions.V3.ProgramBusEntry.operand_properties` in
+The Program contract (`RV64IM_Interactions.V3.ProgramBusEntry.operand_properties` in
 `PicoFV/RV64IM/RVSail/BusesV3.lean`; the 2.x contract of the same short name is in `Buses.lean`)
 says that a fetched instruction is the row the Lean decoder `Transpiler.V3.transpile_op`
-(`PicoFV/RV64IM/Transpiler/TranspilerV3.lean`) gives some Sail instruction at a 4-aligned
-address below `0x7800_0000`. That decoder models Pico's decoder
+(`PicoFV/RV64IM/Transpiler/TranspilerV3.lean`) gives some Sail instruction at a 4-aligned address
+below `0x7800_0000`. That decoder models Pico's decoder
 (`vm/src/compiler/riscv/disassembler/rrs.rs`) and Program table builder
-(`vm/src/chips/chips/riscv_program/traces.rs`) at the pinned commit. Only review compares the
-Lean decoder with the Rust one; Pico's own decoder tests are restated as `example`s at the end
-of `TranspilerV3.lean`. The decoder starts from an already-decoded Sail instruction, not from
-the 32-bit word: that a word decodes to the same instruction in Sail and in Pico is not
-modelled.
+(`vm/src/chips/chips/riscv_program/traces.rs`). It was written against v3.1.1. Only review compares
+the Lean decoder with the Rust one; Pico's own decoder tests are restated as `example`s at the end
+of `TranspilerV3.lean`. The decoder starts from an already-decoded Sail instruction, not from the
+32-bit word: that a word decodes to the same instruction in Sail and in Pico is not modelled.
+
+The contract was read again against v3.1.5, and again against v3.1.6, the pinned commit. The decoder
+(`rrs.rs`), the opcodes and the instruction type did not change. The Program table builds each
+instruction's row as before, at the same addresses under the same asserts; since v3.1.2 the table
+adds the program's code range to every row in four new columns, `code_start` and `code_end`. The
+Program chip still receives the CPU's 26-field instruction message, and it now also serves a 4-field
+message giving that range, which store rows look up to prove that they do not write into the code.
+Pico's LogUp fingerprint includes a message's length (`eval_interaction` in
+`mle-core/src/prover/logup_zerocheck/evaluator.rs`), so the two messages never match each other. The
+Lean reader of the CPU row's messages (`deserialise_bus_row` in `RVSail/BusesV3.lean`) takes only
+26-field messages as instructions. The ELF loader (`vm/src/compiler/riscv/disassembler/elf.rs`)
+rejects more files than at v3.1.1 (32-bit ELFs, segments that are both writable and executable, an
+entry point outside the code) and builds the instructions in the same way. From v3.1.5 to v3.1.6
+none of the decoder, the Program chip's files or the ELF loader changed. So the Program contract
+holds at v3.1.6 as written.
 
 The fences have no row of their own. Pico runs every fence word (`fence`, `fence.tso` and
 `pause`) as the no-op `ADD x0, x0, 0`, the row of `ADDI x0, x0, 0`. Sail decodes them as three
@@ -344,16 +404,16 @@ equivalence files, are not replayed.
 **The job has not run.** GitHub runs a scheduled workflow only from the repository's default branch,
 and the workflow is on `pico-v3`, not on `main`. Until it runs, this section describes what it would
 check, not a result. Run by hand on the instruction-theorem files the build imports, `lake env
-leanchecker` replays `Equivalence/Addiw`, `Equivalence/RTypeW`, `Equivalence/ShiftIWOp`,
-`Equivalence/IType`, `Equivalence/ShiftIOp`, `Equivalence/RType`, `Equivalence/MulFamily` and
-`Equivalence/DivFamily`, and fails on `Equivalence/Common`, `Equivalence/Jumps`,
-`Equivalence/BType`, `Equivalence/Stores` and `Equivalence/Loads` with "(kernel) deep recursion
-detected": `lake build` runs Lean with a larger kernel stack (`--tstack=400000` in the lakefile),
-which `leanchecker` does not get. Until that is fixed, the declarations of those five modules — so
-`equivalence_JAL`, `equivalence_JALR`, the six branch theorems, the four store theorems, the seven
-load theorems, and the shared lemmas every instruction theorem closes through — are not replayed.
-That is 19 of the 60 instruction theorems checked at the moment. The other modules have not been
-replayed by hand.
+leanchecker` replays all eleven: `Equivalence/Common`, `Equivalence/Addiw`, `Equivalence/RTypeW`,
+`Equivalence/ShiftIWOp`, `Equivalence/IType`, `Equivalence/ShiftIOp`, `Equivalence/RType`,
+`Equivalence/MulFamily`, `Equivalence/DivFamily`, `Equivalence/Jumps` and `Equivalence/BType`.
+`Common`, `Jumps` and `BType` used to fail with "(kernel) deep recursion detected": one `simp`
+sorted all 17 messages of a CPU row at once, and the proof term it built was deeper than
+`leanchecker`'s kernel stack (`lake build` runs Lean with `--tstack=400000` in the lakefile). The
+parts of a sorted row are now separate lemmas checked by evaluation
+(`deserialise_raw_bus_row_Program`, `_State` and `_Memory` in `Equivalence/Common.lean`), and
+the lemmas that compute a row's bus operations rewrite with them.
+The other modules have not been replayed by hand.
 
 ## D. Does the use of the results hold together?
 

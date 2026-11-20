@@ -1,9 +1,10 @@
 # Moving the CPU chip to Pico v3.1.1: design
 
 The design questions were settled on 12 November 2026; see "Decisions". Pico references are
-to the commit `extractor/` pins (`2acc7c1828fb`, v3.1.1); pico-fv references are to `pico-v3`
-at `ca52d7a`, which the work targets. Pico paths below are under `vm/src/chips/chips/` unless
-they start with `vm/`; `rrs.rs` is `vm/src/compiler/riscv/disassembler/rrs.rs`.
+to v3.1.1 (`2acc7c1828fb`, the commit `extractor/` pinned when this was written); pico-fv
+references are to `pico-v3` at `ca52d7a`, which the work targets. Pico paths below are under
+`vm/src/chips/chips/` unless they start with `vm/`; `rrs.rs` is
+`vm/src/compiler/riscv/disassembler/rrs.rs`.
 
 ## What changed and why it is a redesign
 
@@ -55,8 +56,10 @@ It says a real row's fetch message is a row of the table Pico builds at keygen: 
 preprocessed, so the whole message matches one such row (`riscv_cpu/constraints.rs:42-75`).
 
 The memory-dispatch contract keeps the 2.x content keyed on the opcode, since the width
-selectors are gone, with the address bound the v3.1.1 memory chip proves: `2^16 <= b + c < 2^32`
-(`riscv_memory/read_write/constraints.rs:209-255`). Its `chunk` and `clk` fields carry no
+selectors are gone, except the three alignment clauses, with the address bound the memory
+chips prove: `2^16 <= b + c < 2^32` (at v3.1.1, `riscv_memory/read_write/constraints.rs:209-255`).
+The alignment clauses were dropped at v3.1.6, where a second memory chip takes misaligned
+accesses (the decision on the memory contract, below). Its `chunk` and `clk` fields carry no
 promise yet.
 
 Two deliberate differences from the 2.x decoder, both about which traces the theorems apply to:
@@ -119,15 +122,25 @@ Settled on 12 November 2026.
      `RVSail/Opcodes/fence.lean` proves that Sail's `FENCE`, `FENCE_TSO` and `PAUSE` execute
      as `ADDI x0, x0, 0` (`FENCE` in machine mode, the standing assumption).
 
-   The promise is read against Pico again when the pin moves.
-2. **The memory contract is as drafted** (question 5). Two trial proofs, LW and SD, pass
-   against it unchanged. They use the address bound `< 2^32`, the alignment clause and, for
-   LW, the sign-extension clause. They do not use the lower bound `2^16`, the 16-bit range of
-   a loaded value, or the `chunk` and `clk` fields, which stay without a promise. The
-   alignment clause is required by the Sail-side lemmas (`execute_LW_equiv`,
-   `execute_SD_equiv`). The memory chip's own proofs stay on the 2.x extraction and the 2.x
-   contract until that chip moves, so until then the 11 load and store theorems rest on a
-   promise with no Lean proof at v3.1.1; `SOUNDNESS.md` has to say so.
+   The promise is read against Pico again when the pin moves. It was read against v3.1.5 and
+   v3.1.6 and holds as written (`SOUNDNESS.md`, A6).
+2. **The memory contract states what both memory chips prove** (question 5). As first drafted,
+   against v3.1.1, it was settled unchanged: two trial proofs, LW and SD, passed against it.
+   They used the address bound `< 2^32`, the alignment clause and, for LW, the sign-extension
+   clause. They did not use the lower bound `2^16`, the 16-bit range of a loaded value, or the
+   `chunk` and `clk` fields, which stay without a promise. The alignment clause was required by
+   the Sail-side lemmas as they stand (`execute_LW_equiv`, `execute_SD_equiv`). The memory chip's
+   own proofs stay on the 2.x extraction and the 2.x contract until that chip moves, so until then
+   the 11 load and store theorems rest on a promise with no Lean proof at v3.1.1; `SOUNDNESS.md`
+   has to say so. Since v3.1.2, and so at the pin, the alignment clause no longer holds:
+   `MemoryUnalignedChip` also serves the memory dispatch and takes any byte offset. The contract
+   was rewritten against v3.1.6 to what both memory chips prove: the alignment clauses are
+   dropped, and the 16-bit range of a loaded value, the address bound and the six extension
+   clauses stay (`MemoryBus.Spec`'s doc comment cites each chip's constraint;
+   `SOUNDNESS.md`, the composition section, A4). The two trial proofs, kept on the prototype
+   branch and not in this tree, use the dropped alignment clauses, so they would not pass
+   unchanged against the current contract. The Sail-side lemmas of the eight halfword, word and
+   doubleword loads and stores then need a misaligned case instead of the alignment hypothesis.
 3. **The whole-trace assumption takes the `0x7800_0000` bound**, as in the next section, not
    the weakest bound the proofs need.
 4. **The CPU chip gets a theorem for what it guarantees as a sender** (`ext_asrt`). Each of
@@ -176,10 +189,13 @@ slightly stronger, is the guest address bound Pico itself uses, and also covers 
 offsets, which need `p - 2^20`.
 
 Where Pico enforces it, outside the chips, in the recursion circuit
-(`vm/src/mle/compiler/recursion/lowering.rs`): each chunk's final pc equals the next chunk's
-first pc (`assert_child_continuity`, 1081-1090); a chunk that runs no CPU passes its pc through
-unchanged (1436-1440); the root requires the last chunk's final pc to be zero
-(`assert_root_complete`, 1748-1754). A chunk's first pc is its row 0's pc
+(`vm/src/mle/compiler/recursion/lowering.rs`; lines at v3.1.1, then at v3.1.6): each chunk's
+final pc equals the next chunk's first pc (`assert_child_continuity`, 1081-1090; 1194-1199); a
+chunk that runs no CPU passes its pc through unchanged (1436-1440; 1559-1563); the root requires
+the last chunk's final pc to be zero (`assert_root_complete`, 1748-1754; 1776-1779). v3.1.6
+rewrote this file for the global LogUp; the three checks are unchanged, and it adds others
+(a CPU chunk's first pc is not zero, a chunk with no CPU is not chunk 1) that only narrow what is
+accepted. A chunk's first pc is its row 0's pc
 (`riscv_cpu/public_values/constraints.rs:26-33`), row 0 is real
 (`riscv_cpu/constraints.rs:340-341`) and its fetch matches the Program table, whose pcs are
 4-aligned and below `0x7800_0000` (`riscv_program/traces.rs:83-110`). So in an accepted proof the
@@ -229,7 +245,8 @@ the Sail state as one step of the instruction does"):
 - `equivalence_JALR`: the four-carry addition `rs1 + imm = next_pc + lsb` (`jalr_sum`), the
   cleared low bit, bit 1 of the target, and the return address `pc + 4` from `pc_carry`.
 
-`Equivalence/TrialV3Mem.lean` adds two against the memory-dispatch contract:
+`Equivalence/TrialV3Mem.lean` adds two against the memory-dispatch contract as drafted at
+v3.1.1, with its alignment clauses (since dropped; see the decision on the memory contract):
 
 - `equivalence_LW`: the address `rs1 + imm` with the bound and the 4-byte alignment from the
   memory promise, the sign-extended value, and the destination `x0` case, where the proof

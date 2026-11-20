@@ -35,9 +35,19 @@ The 62 opcodes:
 
 `ECALL` is intentionally out of scope.
 
-The extraction tool in `extractor/` is pinned to Pico v3.1.1. Each proof is about the Pico
-revision named in the first line of the `PicoFV/RV64IM/Extraction/` file it uses; the files
-listed in `extractor/pending.txt` still predate v3.1.1 and are being moved chip by chip.
+The extraction tool in `extractor/` is pinned to this Pico revision:
+
+<!-- generated: pin -->
+Pico v3.1.6, commit [`6aa644efe`](https://github.com/brevis-network/pico/commit/6aa644efeff9ddbec6beb538200f98f2a70f5d8e).
+<!-- end generated -->
+
+Each proof is about the Pico revision named in the first line of the `PicoFV/RV64IM/Extraction/`
+file it uses; the files listed in `extractor/pending.txt` still predate the pinned commit and are
+being moved chip by chip. Re-extracting the CPU chip, the ten ALU chips and their gadgets at
+v3.1.6 gives the same constraints and bus messages as at v3.1.1, so what this README says about
+those chips at v3.1.1 holds at v3.1.6. This was checked at v3.1.6; if the pin above names a later
+version, it has not been checked there yet. The memory chips differ, and since v3.1.2 Pico has a second
+memory chip for misaligned loads and stores (see [SOUNDNESS.md](SOUNDNESS.md), A4).
 [SOUNDNESS.md](SOUNDNESS.md) says what the proofs establish and what they trust.
 
 For each opcode, the equivalence theorem states: under the chip's row
@@ -49,7 +59,7 @@ In the course of this development, 13 chip-side soundness gaps were found in
 the Pico implementation, across `LtChip`, `ShiftRightChip`, `SLLChip`,
 `JalrChip`, `DivRemChip`, and `MemoryReadWriteChip` (see `Report.pdf`). Which
 Pico 3.x constraint closes each of them is being recorded as the chips move to
-v3.1.1.
+the pinned commit.
 
 ### RV32IM (historical)
 
@@ -146,4 +156,4 @@ The 13 RV64IM soundness gaps found during the formalisation are described in
 `Report.pdf` and, for the memory chip, in
 [`RV64_MemoryReadWriteChip_soundness_gaps.md`](RV64_MemoryReadWriteChip_soundness_gaps.md).
 [`docs/rv64-bug-mapping.md`](docs/rv64-bug-mapping.md) records the Pico 3.x constraint that closes
-each of them, filled in as the chips move to v3.1.1.
+each of them, filled in as the chips move to the pinned commit.

@@ -13,7 +13,8 @@ set_option linter.constructorNameAsVariable false
 Readable facts about one row of the v3.1.1 `CpuChip`, derived from the restated constraints of
 `Constraints/CpuChip.lean` and the bus contracts of `RVSail/BusesV3.lean`: first what every
 instruction class needs, then what one class does — the branch and jump targets, the JALR
-addition, the comparison message and the memory dispatch.
+addition, the comparison message and the memory dispatch. Pico line numbers are at v3.1.1
+(`2acc7c1828fb`).
 
 The v3.1.1 chip checks much less itself than the 2.x one did, so the facts come from different
 places:
@@ -1704,10 +1705,11 @@ namespace CpuChip.Interpretations
   -- Memory rows
   -- ============================================================================
 
-  /-- A memory row sends the memory dispatch, so the memory chip's promise holds for it: the
-      address `op_b + op_c` is at least `2^16` and below `2^32` and aligned for the width, and a
-      load's value has the opcode's extension. The promise does not give the `0x7800_0000`
-      guest bound. -/
+  /-- A memory row sends the memory dispatch, so the memory chips' promise holds for it: the
+      address `op_b + op_c` is at least `2^16` and below `2^32`, a load's value has 16-bit
+      pieces, and, when the destination is not `x0` (`op_a_is_x0 = 0`), a load's value is the
+      opcode's sign or zero extension. The address need not be a multiple of the access width,
+      and the promise does not give the `0x7800_0000` guest bound. -/
   lemma memory_message_spec
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)

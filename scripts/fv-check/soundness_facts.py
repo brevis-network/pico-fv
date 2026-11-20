@@ -13,8 +13,10 @@ COMPILER = {'Lean.ofReduceBool', 'Lean.trustCompiler'}
 
 
 def pin():
-    rev = re.search(r'PICO_REV: &str = "([0-9a-f]{40})"', (ROOT / 'extractor/src/main.rs').read_text())[1]
-    return f'Pico commit [`{rev[:9]}`](https://github.com/brevis-network/pico/commit/{rev}).'
+    main = (ROOT / 'extractor/src/main.rs').read_text()
+    rev = re.search(r'PICO_REV: &str = "([0-9a-f]{40})"', main)[1]
+    tag = re.search(r'PICO_TAG: &str = "([^"]+)"', main)[1]
+    return f'Pico {tag}, commit [`{rev[:9]}`](https://github.com/brevis-network/pico/commit/{rev}).'
 
 
 def pending():
@@ -129,7 +131,7 @@ def parked_summary():
 FILES = {
     'SOUNDNESS.md': {'restored': restored_detail, 'pin': pin, 'pending': pending, 'axioms': axioms,
                      'tactics': tactics},
-    'README.md': {'restored': restored_summary},
+    'README.md': {'pin': pin, 'restored': restored_summary},
     'scripts/fv-check/theorems.d/parked/README.md': {'parked': parked_summary},
 }
 
