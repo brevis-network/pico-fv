@@ -13,10 +13,12 @@ set_option linter.unusedVariables false
 /-!
 # Shared sub-air definitions (64-bit memory)
 
-The memory-access column layouts from `vm/src/chips/chips/riscv_memory/read_write/columns.rs` at
-Pico v3.1.6 (`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`), shared by the CPU chip (its three
-register accesses) and `MemoryReadWriteChip` (its data access,
-`riscv_memory/read_write/columns.rs:74`).
+The column layouts from `vm/src/chips/chips/riscv_memory/read_write/columns.rs` at Pico v3.1.6
+(`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`) that more than one chip uses. The memory-access
+layouts are shared by the CPU chip (its three register accesses), `MemoryReadWriteChip` (its data
+access, `riscv_memory/read_write/columns.rs:74`) and `MemoryUnalignedChip` (its two dword
+accesses, `riscv_memory/unaligned/columns.rs:41-45`); `MemoryInstructionCols` by the two memory
+chips.
 
 ```rust
 pub struct MemoryAccessLiteCols<T> {      // riscv_memory/read_write/columns.rs:410-419
@@ -73,9 +75,10 @@ pub struct MemoryReadWriteLiteCols<T> {   // riscv_memory/read_write/columns.rs:
 -- ============================================================================
 -- MemoryInstructionCols (24 columns)
 --
--- `riscv_memory/read_write/columns.rs`. Both memory chips have one: `MemoryReadWriteChip`
--- and, since Pico v3.1.2, `MemoryUnalignedChip`, which imports it from the read/write chip's
--- module. It lives here because a chip's files may not import another chip's.
+-- `riscv_memory/read_write/columns.rs:146-179`. Both memory chips have one: `MemoryReadWriteChip`
+-- and `MemoryUnalignedChip`, which imports it from the read/write chip's module
+-- (`riscv_memory/unaligned/columns.rs:3-5`). It lives here because a chip's files may not import
+-- another chip's.
 -- ============================================================================
 
 #define_subair "MemoryInstructionCols" using "pico_encapsulation" where

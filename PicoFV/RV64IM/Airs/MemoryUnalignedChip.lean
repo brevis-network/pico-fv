@@ -17,15 +17,14 @@ set_option linter.unusedVariables false
 # MemoryUnalignedChip (64-bit)
 
 Lean formalisation of `MemoryUnalignedCols` from
-`vm/src/chips/chips/riscv_memory/unaligned/columns.rs` at Pico v3.1.6
+`vm/src/chips/chips/riscv_memory/unaligned/columns.rs:21-68` at Pico v3.1.6
 (`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`).
 
-Since Pico v3.1.2 this chip receives the same memory dispatch as `MemoryReadWriteChip` and
-proves the loads and stores whose address is not a multiple of their width; it is correct for
-an aligned access too, so which of the two takes an aligned one changes nothing
-(`riscv_memory/unaligned/mod.rs:1-6`). It reads the dword holding the access's first byte at
-`clk + Memory`, and, when the access runs past that dword, the next one at `clk + C`
-(`mod.rs:7-12`).
+This chip receives the same memory dispatch as `MemoryReadWriteChip` and proves the loads and
+stores whose address is not a multiple of their width; it is correct for an aligned access too,
+so which of the two takes an aligned one changes nothing (`riscv_memory/unaligned/mod.rs:1-6`).
+It reads the dword holding the access's first byte at `clk + Memory`, and, when the access runs
+past that dword, the next one at `clk + C` (`riscv_memory/unaligned/mod.rs:8-12`).
 
 ```rust
 pub struct MemoryUnalignedCols<F> {
@@ -64,9 +63,9 @@ array: the columns are the row.
 | 5..12   | `offset_0` … `offset_7` | the address's byte offset in its dword, one-hot |
 | 13      | `cross` | the access runs past its dword into the next |
 | 14      | `next_carry` | the next dword's address carries into limb 1 |
-| 15      | `next_carry_inv` | inverse of the low limb less `0xfff8`, where it does not carry |
+| 15      | `next_carry_inv` | inverse of the dword's low limb less `0xfff8`, where it does not carry |
 | 16..25  | `first.*` | the access to the dword holding the first byte, at `clk + Memory` |
-| 26..35  | `second.*` | the access to the next dword, at `clk + C`; zero on a row that does not cross |
+| 26..35  | `second.*` | the access to the next dword, at `clk + C`, on a row that crosses (see below) |
 | 36..39  | `first_bytes.low_bytes_0..3` | the low byte of each limb of the first dword's previous value |
 | 40..43  | `second_bytes.low_bytes_0..3` | the same for the second dword |
 | 44..47  | `value_bytes.low_bytes_0..3` | the low byte of each limb of `op_a`, a store's value |
@@ -76,6 +75,11 @@ array: the columns are the row.
 | 54      | `msb` | a signed load's sign bit; zero on the unsigned loads and on `LD` |
 | 55..78  | `instruction.*` | `op_a_0`, the eleven instruction flags and the three operands |
 | 79..86  | `code_range.*` | the `code_range` gadget (`Airs/CodeRangeGadget.lean`) |
+
+On a row that does not cross, every message about `second` has multiplicity `cross` and is off,
+and no constraint sets the `second` columns to zero: constraints 33 to 35, 48, 50, 52 and 54
+relate them to other columns whatever `cross` is. Pico's trace generator fills them with zero
+(`riscv_memory/unaligned/columns.rs:43-45`); the constraints do not enforce it.
 
 `MemoryInstructionCols` is in `Airs/SubAirs.lean`: both memory chips have one, and a chip's
 files may not import another chip's.

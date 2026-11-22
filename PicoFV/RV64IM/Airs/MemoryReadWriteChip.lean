@@ -15,9 +15,11 @@ set_option linter.unusedVariables false
 /-!
 # MemoryReadWriteChip (64-bit)
 
-Lean formalisation of `MemoryChipCols` / `MemoryChipValueCols` / `MemoryInstructionCols` from
+Lean formalisation of `MemoryChipCols` / `MemoryChipValueCols` from
 `vm/src/chips/chips/riscv_memory/read_write/columns.rs` at Pico v3.1.6
-(`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`).
+(`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`). `MemoryInstructionCols`, quoted below for the
+table, is formalised in `Airs/SubAirs.lean`: `MemoryUnalignedChip` has one too, and a chip's files
+may not import another chip's.
 
 ```rust
 pub struct MemoryChipCols<F> {
