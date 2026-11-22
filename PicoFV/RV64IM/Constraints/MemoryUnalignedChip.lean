@@ -1,7 +1,5 @@
-import PicoFV.RV64IM.RVSail.BusesV3
 import PicoFV.RV64IM.Extraction.MemoryUnalignedChip
 import PicoFV.RV64IM.Airs.MemoryUnalignedChip
-import PicoFV.RV64IM.Constraints.CodeRangeGadget
 
 open Plonky3
 
@@ -14,7 +12,7 @@ set_option maxHeartbeats 1_000_000_000
 v3.1.6 `6aa644efeff9ddbec6beb538200f98f2a70f5d8e`) emits 59 constraints and 28 bus messages,
 extracted in `PicoFV.RV64IM.Extraction.MemoryUnalignedChip`. This file restates the constraints
 on the named columns of `Valid_MemoryUnalignedChip` (`Airs/MemoryUnalignedChip.lean`). Pico paths
-below are at v3.1.6, each naming one file under `vm/src/`.
+below are under `vm/src/chips/chips/`, `vm/src/chips/` or `vm/src/`, at v3.1.6.
 
 The chip takes the loads and stores whose address is not a multiple of their width, and is
 correct for an aligned one too (`riscv_memory/unaligned/mod.rs:1-6`). A row reads the dword
@@ -34,8 +32,9 @@ the next dword, `130-154` the next dword's address, `155-177` the two accesses, 
 byte splits, `211-272` what a load reads and its sign, `273-309` what a store writes, and
 `310-324` that a store misses the program's code.
 
-The 30 constraints that make a column or an expression boolean carry a docstring with their
-Pico line; the other 29 carry none.
+Each constraint's docstring gives its Pico line. In those of constraints 32 to 54, `w` is the
+sixteen bytes of the two dwords before the access and `r` the eight of `op_a`, as in
+`constraints.rs`.
 
 The bus messages are not restated: `allHold_simplified` keeps the extracted
 `constrain_interactions`.
@@ -242,6 +241,9 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_15 air row ↔ constraint_15 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- `addr_limb1_inv · addr_word_1 = is_lb + … + is_sd`: on a real row the address's limb 1 is
+          not 0, so the access is at or above `2^16`
+          (`riscv_memory/unaligned/constraints.rs:90-93`). -/
       @[constraint_and_interaction_simplification]
       def constraint_16 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -340,6 +342,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_24 air row ↔ constraint_24 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- `offset_0 + … + offset_7 = is_lb + … + is_sd`: with each offset boolean, exactly one is
+          set on a real row and none on padding (`riscv_memory/unaligned/constraints.rs:108`). -/
       @[constraint_and_interaction_simplification]
       def constraint_25 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -350,6 +354,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_25 air row ↔ constraint_25 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- `cross` says the access runs into the next dword: a halfword from offset 7, a word from 5,
+          a doubleword from 1 (`riscv_memory/unaligned/constraints.rs:122-128`). -/
       @[constraint_and_interaction_simplification]
       def constraint_26 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -371,6 +377,9 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_27 air row ↔ constraint_27 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- `next_carry · (dword0 - 0xfff8) = 0`, where `dword0 = addr_word_0 - Σ k · offset_k` is the
+          low limb of the dword's address: the next dword's address carries only from `0xfff8`
+          (`riscv_memory/unaligned/constraints.rs:138`, `dword0` at `:109`). `65528` is `0xfff8`. -/
       @[constraint_and_interaction_simplification]
       def constraint_28 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -381,6 +390,9 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_28 air row ↔ constraint_28 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- `(dword0 - 0xfff8) · next_carry_inv = is_lb + … + is_sd - next_carry`: on a real row with
+          no carry, `dword0 ≠ 0xfff8`. With constraint 28, `next_carry` is 1 on a real row exactly
+          when `dword0 = 0xfff8` (`riscv_memory/unaligned/constraints.rs:139-142`). -/
       @[constraint_and_interaction_simplification]
       def constraint_29 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -417,6 +429,12 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_31 air row ↔ constraint_31 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- `seen_0` is limb 0 of the eight bytes from the address on,
+          `Σ_k offset_k · (w[k] + 256 · w[k+1])` (`riscv_memory/unaligned/constraints.rs:216-222`).
+          `w` is the sixteen bytes of the two dwords before the access
+          (`riscv_memory/unaligned/constraints.rs:206`): limb `i`'s low byte is `low_bytes_i` and
+          its high byte `(prev_value_i - low_bytes_i) / 256` (`gadgets/u16_to_u8.rs:71-72`).
+          `2122383361` is `256`'s inverse. -/
       @[constraint_and_interaction_simplification]
       def constraint_32 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -427,6 +445,9 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_32 air row ↔ constraint_32 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- `seen_1` is limb 1 of the eight bytes from the address on,
+          `Σ_k offset_k · (w[k+2] + 256 · w[k+3])`
+          (`riscv_memory/unaligned/constraints.rs:216-222`). -/
       @[constraint_and_interaction_simplification]
       def constraint_33 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -437,6 +458,9 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_33 air row ↔ constraint_33 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- `seen_2` is limb 2 of the eight bytes from the address on,
+          `Σ_k offset_k · (w[k+4] + 256 · w[k+5])`
+          (`riscv_memory/unaligned/constraints.rs:216-222`). -/
       @[constraint_and_interaction_simplification]
       def constraint_34 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -447,6 +471,9 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_34 air row ↔ constraint_34 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- `seen_3` is limb 3 of the eight bytes from the address on,
+          `Σ_k offset_k · (w[k+6] + 256 · w[k+7])`
+          (`riscv_memory/unaligned/constraints.rs:216-222`). -/
       @[constraint_and_interaction_simplification]
       def constraint_35 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -457,6 +484,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_35 air row ↔ constraint_35 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- `seen_byte = Σ_k offset_k · w[k]`, the byte at the address, which a byte load reads
+          (`riscv_memory/unaligned/constraints.rs:223-227`). -/
       @[constraint_and_interaction_simplification]
       def constraint_36 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -467,6 +496,10 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_36 air row ↔ constraint_36 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- When `op_a_0 = 0`, limb 0 of `op_a` is `seen_byte` on `LB` and `LBU`, plus `0xff00` on
+          `LB` when `msb` is set; `seen_0` on the wider loads; and `op_a`'s own on a store row
+          (`riscv_memory/unaligned/constraints.rs:237-240`, asserted at `:247-250`). `65280` is
+          `0xff00`. -/
       @[constraint_and_interaction_simplification]
       def constraint_37 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -477,6 +510,9 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_37 air row ↔ constraint_37 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- When `op_a_0 = 0`, limb 1 of `op_a` is `seen_1` on `LW`, `LWU` and `LD`; the sign fill
+          `msb · 0xffff` on `LB` and `LH`; 0 on `LBU` and `LHU`; and `op_a`'s own on a store row
+          (`riscv_memory/unaligned/constraints.rs:241-243`, asserted at `:247-250`). -/
       @[constraint_and_interaction_simplification]
       def constraint_38 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -487,6 +523,9 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_38 air row ↔ constraint_38 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- When `op_a_0 = 0`, limb 2 of `op_a` is `seen_2` on `LD`; the sign fill `msb · 0xffff` on
+          `LB`, `LH` and `LW`; 0 on the other loads; and `op_a`'s own on a store row
+          (`riscv_memory/unaligned/constraints.rs:244`, asserted at `:247-250`). -/
       @[constraint_and_interaction_simplification]
       def constraint_39 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -497,6 +536,9 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_39 air row ↔ constraint_39 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- When `op_a_0 = 0`, limb 3 of `op_a` is `seen_3` on `LD`; the sign fill `msb · 0xffff` on
+          `LB`, `LH` and `LW`; 0 on the other loads; and `op_a`'s own on a store row
+          (`riscv_memory/unaligned/constraints.rs:245`, asserted at `:247-250`). -/
       @[constraint_and_interaction_simplification]
       def constraint_40 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -518,6 +560,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_41 air row ↔ constraint_41 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- On `LB`, `sign_src = 256 · seen_byte`, whose bit 15 is the byte's bit 7
+          (`riscv_memory/unaligned/constraints.rs:256-258`). -/
       @[constraint_and_interaction_simplification]
       def constraint_42 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -528,6 +572,7 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_42 air row ↔ constraint_42 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- On `LH`, `sign_src = seen_0` (`riscv_memory/unaligned/constraints.rs:259`). -/
       @[constraint_and_interaction_simplification]
       def constraint_43 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -538,6 +583,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_43 air row ↔ constraint_43 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- On `LW`, `sign_src = seen_1`, the loaded word's limb 1
+          (`riscv_memory/unaligned/constraints.rs:260`). -/
       @[constraint_and_interaction_simplification]
       def constraint_44 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -559,6 +606,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_45 air row ↔ constraint_45 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- `msb = 0` on `LBU`, `LHU`, `LWU` and `LD`
+          (`riscv_memory/unaligned/constraints.rs:262-264`). -/
       @[constraint_and_interaction_simplification]
       def constraint_46 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -569,6 +618,12 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_46 air row ↔ constraint_46 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- Limb 0 of the first dword after the access is `written(0) + 256 · written(1)`
+          (`riscv_memory/unaligned/constraints.rs:303`). `written(i)` is byte `i` of `w` plus
+          `offset_k · cov[i-k] · (r[i-k] - w[i])` for each offset `k`: a store at offset `k` that
+          covers its byte `i - k` writes that byte of `op_a` (`r`,
+          `riscv_memory/unaligned/constraints.rs:200-205`), and every other byte keeps its value
+          (`written` at `:291-298`, `cov` at `:281-290`). -/
       @[constraint_and_interaction_simplification]
       def constraint_47 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -579,6 +634,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_47 air row ↔ constraint_47 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- Limb 0 of the second dword after the access is `written(8) + 256 · written(9)`
+          (`riscv_memory/unaligned/constraints.rs:304-307`; `written` as in constraint 47). -/
       @[constraint_and_interaction_simplification]
       def constraint_48 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -589,6 +646,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_48 air row ↔ constraint_48 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- Limb 1 of the first dword after the access is `written(2) + 256 · written(3)`
+          (`riscv_memory/unaligned/constraints.rs:303`). -/
       @[constraint_and_interaction_simplification]
       def constraint_49 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -599,6 +658,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_49 air row ↔ constraint_49 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- Limb 1 of the second dword after the access is `written(10) + 256 · written(11)`
+          (`riscv_memory/unaligned/constraints.rs:304-307`). -/
       @[constraint_and_interaction_simplification]
       def constraint_50 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -609,6 +670,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_50 air row ↔ constraint_50 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- Limb 2 of the first dword after the access is `written(4) + 256 · written(5)`
+          (`riscv_memory/unaligned/constraints.rs:303`). -/
       @[constraint_and_interaction_simplification]
       def constraint_51 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -619,6 +682,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_51 air row ↔ constraint_51 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- Limb 2 of the second dword after the access is `written(12) + 256 · written(13)`
+          (`riscv_memory/unaligned/constraints.rs:304-307`). -/
       @[constraint_and_interaction_simplification]
       def constraint_52 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -629,6 +694,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_52 air row ↔ constraint_52 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- Limb 3 of the first dword after the access is `written(6) + 256 · written(7)`
+          (`riscv_memory/unaligned/constraints.rs:303`). -/
       @[constraint_and_interaction_simplification]
       def constraint_53 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -639,6 +706,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_53 air row ↔ constraint_53 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- Limb 3 of the second dword after the access is `written(14) + 256 · written(15)`
+          (`riscv_memory/unaligned/constraints.rs:304-307`). -/
       @[constraint_and_interaction_simplification]
       def constraint_54 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -661,6 +730,8 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_55 air row ↔ constraint_55 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- `code_range.borrow ∈ {0, 1, 2}` (`gadgets/code_range.rs:137-139`, called at
+          `riscv_memory/unaligned/constraints.rs:316-322`). -/
       @[constraint_and_interaction_simplification]
       def constraint_56 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -671,6 +742,11 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_56 air row ↔ constraint_56 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- On a store row, `code_range.distance_0 = low + 2^16 · borrow`, where `low` is
+          `code_start_0 - addr_word_0 - width` below the code and `addr_word_0 - code_end_0` above
+          it (`gadgets/code_range.rs:149-150, 154-156`). The width is
+          `is_sb + 2 · is_sh + 4 · is_sw + 8 · is_sd`
+          (`riscv_memory/unaligned/constraints.rs:311-315`). -/
       @[constraint_and_interaction_simplification]
       def constraint_57 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols
@@ -681,6 +757,9 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
       : MemoryUnalignedChip.Extraction.constraint_57 air row ↔ constraint_57 air row
       := by simp [pico_encapsulation, extracted_constraint_definition, constraint_and_interaction_simplification]
 
+      /-- On a store row, `code_range.distance_1 = high - borrow`, where `high` is
+          `code_start_1 - addr_word_1` below the code and `addr_word_1 - code_end_1` above it
+          (`gadgets/code_range.rs:151-152, 157-159`). -/
       @[constraint_and_interaction_simplification]
       def constraint_58 (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : Prop :=
         let v := air.cols

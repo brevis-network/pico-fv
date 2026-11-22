@@ -51,9 +51,9 @@ pub struct MemoryUnalignedCols<F> {
 ```
 
 Layout: 1 + 1 + 2 + 1 + 8 + 1 + 1 + 1 + 10 + 10 + 4 + 4 + 4 + 4 + 1 + 1 + 1 + 24 + 8 = 87
-columns, the width `NUM_MEMORY_UNALIGNED_COLS` gives and the extraction at
-`Extraction/MemoryUnalignedChip.lean` uses. Unlike `MemoryReadWriteChip` there is no `values`
-array: the columns are the row.
+columns, the width `NUM_MEMORY_UNALIGNED_COLS` (`riscv_memory/unaligned/columns.rs:13`) gives and
+the extraction at `Extraction/MemoryUnalignedChip.lean` uses. Unlike `MemoryReadWriteChip` there
+is no `values` array: the columns are the row.
 
 | columns | name | meaning |
 |---------|------|---------|
@@ -78,8 +78,10 @@ array: the columns are the row.
 
 On a row that does not cross, every message about `second` has multiplicity `cross` and is off,
 and no constraint sets the `second` columns to zero: constraints 33 to 35, 48, 50, 52 and 54
-relate them to other columns whatever `cross` is. Pico's trace generator fills them with zero
-(`riscv_memory/unaligned/columns.rs:43-45`); the constraints do not enforce it.
+relate them to other columns whatever `cross` is. Pico's trace generator leaves them zero: the
+trace starts all zero (`riscv_memory/unaligned/traces.rs:54`), and only a row that crosses fills
+`second` and `second_bytes` (`riscv_memory/unaligned/traces.rs:186-197`). The constraints do not
+enforce it.
 
 `MemoryInstructionCols` is in `Airs/SubAirs.lean`: both memory chips have one, and a chip's
 files may not import another chip's.
