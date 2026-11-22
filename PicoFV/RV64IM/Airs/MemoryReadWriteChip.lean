@@ -15,9 +15,11 @@ set_option linter.unusedVariables false
 /-!
 # MemoryReadWriteChip (64-bit)
 
-Lean formalisation of `MemoryChipCols` / `MemoryChipValueCols` / `MemoryInstructionCols` from
+Lean formalisation of `MemoryChipCols` / `MemoryChipValueCols` from
 `vm/src/chips/chips/riscv_memory/read_write/columns.rs` at Pico v3.1.6
-(`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`).
+(`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`). `MemoryInstructionCols`, quoted below for the
+table, is formalised in `Airs/SubAirs.lean`: `MemoryUnalignedChip` has one too, and a chip's files
+may not import another chip's.
 
 ```rust
 pub struct MemoryChipCols<F> {
@@ -78,36 +80,6 @@ Layout: 1 + 1 + 2 + 3 + 1 + 10 + 7 + 24 + 8 = 57 columns, the width
 | 37..48  | `instruction.op_{a,b,c}_value_0..3` | the three operands, four 16-bit pieces each |
 | 49..56  | `code_range.*` | the `code_range` gadget (`Airs/CodeRangeGadget.lean`) |
 -/
-
--- ============================================================================
--- MemoryInstructionCols (24 columns)
--- ============================================================================
-
-#define_subair "MemoryInstructionCols" using "pico_encapsulation" where
-  Column["op_a_0"]
-  Column["is_lb"]
-  Column["is_lbu"]
-  Column["is_lh"]
-  Column["is_lhu"]
-  Column["is_lw"]
-  Column["is_lwu"]
-  Column["is_ld"]
-  Column["is_sb"]
-  Column["is_sh"]
-  Column["is_sw"]
-  Column["is_sd"]
-  Column["op_a_value_0"]
-  Column["op_a_value_1"]
-  Column["op_a_value_2"]
-  Column["op_a_value_3"]
-  Column["op_b_value_0"]
-  Column["op_b_value_1"]
-  Column["op_b_value_2"]
-  Column["op_b_value_3"]
-  Column["op_c_value_0"]
-  Column["op_c_value_1"]
-  Column["op_c_value_2"]
-  Column["op_c_value_3"]
 
 -- ============================================================================
 -- MemoryChipValueCols (57 columns)
