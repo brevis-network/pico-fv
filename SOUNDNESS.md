@@ -67,7 +67,8 @@ with their statements in `signatures.txt`. They are of four kinds.
   (`MemoryReadWriteChip.Spec.*`) and those of the ALU chips already at v3.1.1 (Add, Sub, Addw,
   Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight). `MemoryUnalignedChip` is the one chip that
   is extracted at the pin without one: it has an `Airs/` layout and a `Constraints/` restatement
-  but no `Spec/` file, so its constraints are in the build and nothing is proved about them (A4).
+  but no `Spec/` file, so its constraints are in the build and no specification is proved about
+  them (A4).
 
   The memory chip's say that a row receiving the memory dispatch meets the memory promise
   (`spec_LB` to `spec_SD`, one per opcode, and `wf_asrt`, which also gives the double word it

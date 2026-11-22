@@ -67,8 +67,8 @@ is no `values` array: the columns are the row.
 | 16..25  | `first.*` | the access to the dword holding the first byte, at `clk + Memory` |
 | 26..35  | `second.*` | the access to the next dword, at `clk + C`, on a row that crosses (see below) |
 | 36..39  | `first_bytes.low_bytes_0..3` | the low byte of each limb of the first dword's previous value |
-| 40..43  | `second_bytes.low_bytes_0..3` | the same for the second dword |
-| 44..47  | `value_bytes.low_bytes_0..3` | the low byte of each limb of `op_a`, a store's value |
+| 40..43  | `second_bytes.low_bytes_0..3` | the same for the second dword, on a row that crosses (see below) |
+| 44..47  | `value_bytes.low_bytes_0..3` | the low byte of each limb of `op_a`, a store's value; free on a load |
 | 48..51  | `seen_0..3` | the eight bytes from the address on, across the two dwords |
 | 52      | `seen_byte` | the first of those bytes, which a byte load reads |
 | 53      | `sign_src` | the value whose bit 15 is a signed load's sign |
@@ -76,12 +76,12 @@ is no `values` array: the columns are the row.
 | 55..78  | `instruction.*` | `op_a_0`, the eleven instruction flags and the three operands |
 | 79..86  | `code_range.*` | the `code_range` gadget (`Airs/CodeRangeGadget.lean`) |
 
-On a row that does not cross, every message about `second` has multiplicity `cross` and is off,
-and no constraint sets the `second` columns to zero: constraints 33 to 35, 48, 50, 52 and 54
-relate them to other columns whatever `cross` is. Pico's trace generator leaves them zero: the
-trace starts all zero (`riscv_memory/unaligned/traces.rs:54`), and only a row that crosses fills
-`second` and `second_bytes` (`riscv_memory/unaligned/traces.rs:186-197`). The constraints do not
-enforce it.
+On a row that does not cross, every message about `second` or `second_bytes` has multiplicity
+`cross` and is off, and no constraint sets those columns to zero: constraints 32 to 35, 48, 50,
+52 and 54 relate them to other columns whatever `cross` is. Pico's trace generator leaves them
+zero: the trace starts all zero (`riscv_memory/unaligned/traces.rs:54`), and only a row that
+crosses fills `second` and `second_bytes` (`riscv_memory/unaligned/traces.rs:186-197`). The
+constraints do not enforce it.
 
 `MemoryInstructionCols` is in `Airs/SubAirs.lean`: both memory chips have one, and a chip's
 files may not import another chip's.
