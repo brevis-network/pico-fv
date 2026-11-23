@@ -113,7 +113,9 @@ MemoryReadWriteChip.Spec.spec_SH Classical.choice,Lean.ofReduceBool,Lean.trustCo
 MemoryReadWriteChip.Spec.spec_SW Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 MemoryReadWriteChip.Spec.store_misses_code_range Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 MemoryReadWriteChip.Spec.wf_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+MemoryUnalignedChip.ConstraintsAndBuses.allHold_iff_allHold_simplified Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 MemoryUnalignedChip.Interactions.bus_row_equiv Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+MemoryUnalignedChip.Spec.aligned_address Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 MemoryUnalignedChip.Spec.ext_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 MemoryUnalignedChip.Spec.spec_LB Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 MemoryUnalignedChip.Spec.spec_LBU Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
