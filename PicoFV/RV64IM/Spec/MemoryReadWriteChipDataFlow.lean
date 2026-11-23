@@ -19,18 +19,20 @@ the pair as a double-word `ReadMem` and `WriteMem` at the aligned address, and t
 access of its opcode's width at `b + c`: a `WriteMem` of `a` for a store, a `ReadMem` of `a` for
 a load, or a `ReadMemAny` for a load into `x0`.
 
-- `data_flow`: on every row, in any Sail state that holds the double word the row reads, the
-  dispatch's read holds too, so a load returns the bytes of that double word at `b + c`
-  (`riscv_memory/read_write/constraints.rs:407-442` at v3.1.6); and the two operation lists leave
-  the same state, so a store writes the double word back with the stored bytes patched in and a
-  load writes it back unchanged (`riscv_memory/read_write/constraints.rs:565-595` at v3.1.6).
+- `dataFlow_of_allHold`: on every row, in any Sail state that holds the double word the row
+  reads, the dispatch's read holds too, so a load's value, taken at the load's width, is the
+  bytes of that double word at `b + c` (`riscv_memory/read_write/constraints.rs:423-442` at
+  v3.1.6); and the two operation lists leave the same state, so a store writes the double word
+  back with the stored bytes patched in and a load writes it back unchanged
+  (`riscv_memory/read_write/constraints.rs:565-595` at v3.1.6). The sign or zero fill above a
+  load's width is not read here: it is the Memory promise's (`spec_LB` to `spec_LWU`).
 
-`data_flow` assumes what the Memory promise's theorems assume (`Spec/MemoryReadWriteChip.lean`):
-the row's constraints (`allHold`) and what its messages are promised (`bus_row_all_ext_asm`,
-`bus_row_all_wf_asm`). That the double word read is the one memory holds is the memory
-argument's promise, which `data_flow` takes as the hypothesis of `DataFlow`. `bus_operations`
-does not read the messages' `chunk`, `clk` and `prev_clk` fields, and nothing here is said about
-them.
+`dataFlow_of_allHold` assumes what the Memory promise's theorems assume
+(`Spec/MemoryReadWriteChip.lean`): the row's constraints (`allHold`) and what its messages are
+promised (`bus_row_all_ext_asm`, `bus_row_all_wf_asm`). That the double word read is the one
+memory holds is the memory argument's promise, which `dataFlow_of_allHold` takes as the
+hypothesis of `DataFlow`. `bus_operations` does not read the messages' `chunk`, `clk` and
+`prev_clk` fields, and nothing here is said about them.
 -/
 
 namespace MemoryReadWriteChip.Spec
@@ -134,8 +136,6 @@ namespace MemoryReadWriteChip.Spec
     have h256 : (256 : FKB).val = 256 := rfl
     have hm : (256 * r).val = 256 * r.val := by rw [val_mul_of_lt (by rw [h256]; omega), h256]
     rw [e2, val_add_of_lt (by rw [hm]; omega), hm]
-
-  private lemma add_sub_cancel' (x y : FKB) : x + (y - x) = y := by ring
 
   /-! ### The operations of an access and of a dispatch
 
@@ -454,11 +454,11 @@ namespace MemoryReadWriteChip.Spec
 
   /-! ### One opcode at a time -/
 
-  private theorem data_flow_LB
+  private theorem dataFlow_LB
     [Field ExtF]
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (air : Valid_MemoryReadWriteChip FKB ExtF)
     (row : ℕ)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_ext_asm : bus_row_all_ext_asm (bus_row air row))
     (h_wf_asm : bus_row_all_wf_asm (bus_row air row))
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
@@ -534,11 +534,11 @@ namespace MemoryReadWriteChip.Spec
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Byte (by omega)
         (by simp only [RV64IM.width_of_mem_width]; omega) rfl
 
-  private theorem data_flow_LBU
+  private theorem dataFlow_LBU
     [Field ExtF]
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (air : Valid_MemoryReadWriteChip FKB ExtF)
     (row : ℕ)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_ext_asm : bus_row_all_ext_asm (bus_row air row))
     (h_wf_asm : bus_row_all_wf_asm (bus_row air row))
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
@@ -605,11 +605,11 @@ namespace MemoryReadWriteChip.Spec
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Byte (by omega)
         (by simp only [RV64IM.width_of_mem_width]; omega) rfl
 
-  private theorem data_flow_LH
+  private theorem dataFlow_LH
     [Field ExtF]
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (air : Valid_MemoryReadWriteChip FKB ExtF)
     (row : ℕ)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_ext_asm : bus_row_all_ext_asm (bus_row air row))
     (h_wf_asm : bus_row_all_wf_asm (bus_row air row))
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
@@ -672,11 +672,11 @@ namespace MemoryReadWriteChip.Spec
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Half (by omega)
         (by simp only [RV64IM.width_of_mem_width]; omega) rfl
 
-  private theorem data_flow_LHU
+  private theorem dataFlow_LHU
     [Field ExtF]
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (air : Valid_MemoryReadWriteChip FKB ExtF)
     (row : ℕ)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_ext_asm : bus_row_all_ext_asm (bus_row air row))
     (h_wf_asm : bus_row_all_wf_asm (bus_row air row))
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
@@ -739,11 +739,11 @@ namespace MemoryReadWriteChip.Spec
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Half (by omega)
         (by simp only [RV64IM.width_of_mem_width]; omega) rfl
 
-  private theorem data_flow_LW
+  private theorem dataFlow_LW
     [Field ExtF]
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (air : Valid_MemoryReadWriteChip FKB ExtF)
     (row : ℕ)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_ext_asm : bus_row_all_ext_asm (bus_row air row))
     (h_wf_asm : bus_row_all_wf_asm (bus_row air row))
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
@@ -813,11 +813,11 @@ namespace MemoryReadWriteChip.Spec
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Word (by omega)
         (by simp only [RV64IM.width_of_mem_width]; omega) rfl
 
-  private theorem data_flow_LWU
+  private theorem dataFlow_LWU
     [Field ExtF]
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (air : Valid_MemoryReadWriteChip FKB ExtF)
     (row : ℕ)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_ext_asm : bus_row_all_ext_asm (bus_row air row))
     (h_wf_asm : bus_row_all_wf_asm (bus_row air row))
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
@@ -887,11 +887,11 @@ namespace MemoryReadWriteChip.Spec
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Word (by omega)
         (by simp only [RV64IM.width_of_mem_width]; omega) rfl
 
-  private theorem data_flow_LD
+  private theorem dataFlow_LD
     [Field ExtF]
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (air : Valid_MemoryReadWriteChip FKB ExtF)
     (row : ℕ)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_ext_asm : bus_row_all_ext_asm (bus_row air row))
     (h_wf_asm : bus_row_all_wf_asm (bus_row air row))
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
@@ -942,11 +942,11 @@ namespace MemoryReadWriteChip.Spec
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Double (by omega)
         (by simp only [RV64IM.width_of_mem_width]; omega) rfl
 
-  private theorem data_flow_SB
+  private theorem dataFlow_SB
     [Field ExtF]
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (air : Valid_MemoryReadWriteChip FKB ExtF)
     (row : ℕ)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_ext_asm : bus_row_all_ext_asm (bus_row air row))
     (h_wf_asm : bus_row_all_wf_asm (bus_row air row))
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
@@ -1026,11 +1026,11 @@ namespace MemoryReadWriteChip.Spec
       apply BitVec.eq_of_toNat_eq <;> simp only [BitVec.toNat_ofNat, Nat.reducePow] <;>
       clear * - n0 n1 n2 n3 hk h_sp h_hi h_lo h_rsp h_rhi h_rlo <;> omega
 
-  private theorem data_flow_SH
+  private theorem dataFlow_SH
     [Field ExtF]
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (air : Valid_MemoryReadWriteChip FKB ExtF)
     (row : ℕ)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_ext_asm : bus_row_all_ext_asm (bus_row air row))
     (h_wf_asm : bus_row_all_wf_asm (bus_row air row))
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
@@ -1085,7 +1085,7 @@ namespace MemoryReadWriteChip.Spec
       simp only [o1, o2, sub_zero, sub_self, one_mul, mul_one, zero_mul, mul_zero, add_zero,
         zero_add] at c37 c38 c39 c40 <;>
       simp only [c36] at c37 c38 c39 c40 <;>
-      simp only [← hsl, add_sub_cancel'] at c37 c38 c39 c40 <;>
+      simp only [← hsl, add_sub_cancel] at c37 c38 c39 c40 <;>
       have n0 := congrArg Fin.val c37 <;> have n1 := congrArg Fin.val c38 <;>
       have n2 := congrArg Fin.val c39 <;> have n3 := congrArg Fin.val c40 <;>
       rw [o1, o2] <;> simp only [l0, l2, l4, l6] <;>
@@ -1095,11 +1095,11 @@ namespace MemoryReadWriteChip.Spec
       apply BitVec.eq_of_toNat_eq <;> simp only [BitVec.toNat_ofNat, Nat.reducePow] <;>
       clear * - n0 n1 n2 n3 <;> omega
 
-  private theorem data_flow_SW
+  private theorem dataFlow_SW
     [Field ExtF]
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (air : Valid_MemoryReadWriteChip FKB ExtF)
     (row : ℕ)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_ext_asm : bus_row_all_ext_asm (bus_row air row))
     (h_wf_asm : bus_row_all_wf_asm (bus_row air row))
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
@@ -1154,7 +1154,7 @@ namespace MemoryReadWriteChip.Spec
     obtain ⟨ b0, b1, b2, b3 ⟩ := word_bytes (air.cols.values.instruction.op_a_value_0 row 0).val
       (air.cols.values.instruction.op_a_value_1 row 0).val
     rcases c19 with o2 | o2 <;>
-      simp only [o2, sub_zero, sub_self, one_mul, zero_mul, add_zero, add_sub_cancel']
+      simp only [o2, sub_zero, sub_self, one_mul, zero_mul, add_zero, add_sub_cancel]
         at c37 c38 c39 c40 <;>
       have n0 := congrArg Fin.val c37 <;> have n1 := congrArg Fin.val c38 <;>
       have n2 := congrArg Fin.val c39 <;> have n3 := congrArg Fin.val c40 <;>
@@ -1165,11 +1165,11 @@ namespace MemoryReadWriteChip.Spec
       apply BitVec.eq_of_toNat_eq <;> simp only [BitVec.toNat_ofNat, Nat.reducePow] <;>
       clear * - n0 n1 n2 n3 <;> omega
 
-  private theorem data_flow_SD
+  private theorem dataFlow_SD
     [Field ExtF]
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (air : Valid_MemoryReadWriteChip FKB ExtF)
     (row : ℕ)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_ext_asm : bus_row_all_ext_asm (bus_row air row))
     (h_wf_asm : bus_row_all_wf_asm (bus_row air row))
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
@@ -1193,7 +1193,7 @@ namespace MemoryReadWriteChip.Spec
       rw [← h_off, ho0, ho1, ho2]; exact offset_lits.1
     simp only [constraint_36, constraint_37, constraint_38, constraint_39, constraint_40, f7, f8,
       f9, f10, zero_mul, add_zero, sub_zero, one_mul, sub_eq_zero] at c36 c37 c38 c39 c40
-    simp only [c36, mul_zero, add_zero, zero_add, add_sub_cancel'] at c37 c38 c39 c40
+    simp only [c36, mul_zero, add_zero, zero_add, add_sub_cancel] at c37 c38 c39 c40
     unfold DataFlow
     dsimp only
     rw [access_ops air row h_ext_asm h_wf_asm h_constraints h_mem, c37, c38, c39, c40]
@@ -1216,11 +1216,11 @@ namespace MemoryReadWriteChip.Spec
       row's data flow holds in every Sail state. A row with no flag set sends its messages at
       multiplicity 0 and its dispatch with opcode 0, which `bus_operations` reads as no
       operation. -/
-  theorem data_flow
+  theorem dataFlow_of_allHold
     [Field ExtF]
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (air : Valid_MemoryReadWriteChip FKB ExtF)
     (row : ℕ)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_ext_asm : bus_row_all_ext_asm (bus_row air row))
     (h_wf_asm : bus_row_all_wf_asm (bus_row air row))
     (h_constraints : MemoryReadWriteChip.Extraction.allHold air row)
@@ -1234,16 +1234,16 @@ namespace MemoryReadWriteChip.Spec
       simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
         RV64IM_Interactions.V3.mem_width_of_opcode, RV64IM.operation_list_effect, f0, f1, f2, f3,
         f4, f5, f6, f7, f8, f9, f10]
-    · exact data_flow_LB air row h_ext_asm h_wf_asm h_constraints f0
-    · exact data_flow_LBU air row h_ext_asm h_wf_asm h_constraints f1
-    · exact data_flow_LH air row h_ext_asm h_wf_asm h_constraints f2
-    · exact data_flow_LHU air row h_ext_asm h_wf_asm h_constraints f3
-    · exact data_flow_LW air row h_ext_asm h_wf_asm h_constraints f4
-    · exact data_flow_LWU air row h_ext_asm h_wf_asm h_constraints f5
-    · exact data_flow_LD air row h_ext_asm h_wf_asm h_constraints f6
-    · exact data_flow_SB air row h_ext_asm h_wf_asm h_constraints f7
-    · exact data_flow_SH air row h_ext_asm h_wf_asm h_constraints f8
-    · exact data_flow_SW air row h_ext_asm h_wf_asm h_constraints f9
-    · exact data_flow_SD air row h_ext_asm h_wf_asm h_constraints f10
+    · exact dataFlow_LB air row state h_ext_asm h_wf_asm h_constraints f0
+    · exact dataFlow_LBU air row state h_ext_asm h_wf_asm h_constraints f1
+    · exact dataFlow_LH air row state h_ext_asm h_wf_asm h_constraints f2
+    · exact dataFlow_LHU air row state h_ext_asm h_wf_asm h_constraints f3
+    · exact dataFlow_LW air row state h_ext_asm h_wf_asm h_constraints f4
+    · exact dataFlow_LWU air row state h_ext_asm h_wf_asm h_constraints f5
+    · exact dataFlow_LD air row state h_ext_asm h_wf_asm h_constraints f6
+    · exact dataFlow_SB air row state h_ext_asm h_wf_asm h_constraints f7
+    · exact dataFlow_SH air row state h_ext_asm h_wf_asm h_constraints f8
+    · exact dataFlow_SW air row state h_ext_asm h_wf_asm h_constraints f9
+    · exact dataFlow_SD air row state h_ext_asm h_wf_asm h_constraints f10
 
 end MemoryReadWriteChip.Spec

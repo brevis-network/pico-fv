@@ -74,9 +74,9 @@ with their statements in `signatures.txt`. They are of four kinds.
   (`spec_LB` to `spec_SD`, one per opcode, and `wf_asrt`, which also gives the double word it
   writes back 16-bit pieces), that a store row misses the code range it looks up
   (`store_misses_code_range`, through the gadget below), and what a row does to memory
-  (`data_flow`): in a state that holds the double word the row reads from the memory argument,
-  a load returns that double word's bytes at `b + c`, and the row writes the double word back
-  with a store's bytes patched in. That the double word read is the one memory holds is the
+  (`dataFlow_of_allHold`): in a state that holds the double word the row reads from the memory
+  argument, a load's value, at its width, is that double word's bytes at `b + c`, and the row
+  writes the double word back with a store's bytes patched in. That the double word read is the one memory holds is the
   memory argument's promise, which stays on trust (A4).
 
   `DivRemChip`'s specifications are the one exception to "satisfies its extracted constraints":
@@ -345,13 +345,16 @@ through the `code_range` gadget, against the code-range contract below. The read
 proves the promise for every dispatch it receives (`MemoryReadWriteChip.Spec.spec_LB` to
 `spec_SD` and `wf_asrt`); the unaligned chip has no proof yet. Which memory a load reads and a
 store writes the promise does not ask; the read/write chip proves it apart, for every row
-(`MemoryReadWriteChip.Spec.data_flow`): in a Sail state that holds the double word the row reads
-from the memory argument, the dispatch's read holds, and the row's write back leaves the state
-the dispatch's operation leaves. A load therefore returns the bytes at `b + c` of the double
-word read, and a store writes that double word back with its bytes patched in. What stays on
-trust is the memory argument: that the double word a row reads is the last one written at that
-address, which rests on the memory bus balancing, as above. The unaligned chip has no such
-theorem yet. The load and store theorems hold for a misaligned address too (A3).
+(`MemoryReadWriteChip.Spec.dataFlow_of_allHold`): in a Sail state that holds the double word the
+row reads from the memory argument, the dispatch's read holds, and the row's write back leaves
+the state the dispatch's operation leaves. A load's value, at its width, is therefore the bytes
+at `b + c` of the double word read; the sign or zero fill above that width is the promise's
+(`spec_LB` to `spec_LWU`). A store writes that double word back with its bytes patched in. What
+stays on trust is the memory argument: that the double word a row reads is the last one written
+at that address. That rests on the memory bus balancing, as above; on the timestamp ordering,
+since no checked theorem states `clk > prev_clk` and `DataFlow` does not read the clocks; and
+on the memory initialisation and finalisation chips (A5). The unaligned chip has no such theorem
+yet. The load and store theorems hold for a misaligned address too (A3).
 
 The contract now covers the merged branch-comparison rows. `ALUBus.validOpcode` contains the two
 opcodes 264 / 265 (`SLT` / `SLTU` + `LT_CMP_OPCODE_TAG`) that Pico's CPU sends for every branch,
