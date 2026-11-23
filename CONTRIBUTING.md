@@ -18,8 +18,8 @@ must be justified by its source and checked before it is merged.
 
 ## Branches
 
-`main` holds the reviewed results. The move to Pico 3.x (the commit `extractor/` pins) happens
-on `pico-v3`: pull requests target `pico-v3`, which merges into `main` once every chip has moved.
+`main` holds the reviewed results, proved against the Pico commit `extractor/` pins. Pull
+requests target `main`.
 
 ## Layout and ownership
 

@@ -230,8 +230,8 @@ The other inputs are pinned as well:
 - The extractor: Rust `nightly-2026-09-27` (`extractor/rust-toolchain.toml`); Pico and Plonky3 in
   `extractor/Cargo.toml` and `extractor/Cargo.lock`.
 
-CI (`.github/workflows/ci.yml`) runs on every pull request and every push to `main` and
-`pico-v3`: its `extractor` job regenerates every generated file from the pinned Pico and fails if
+CI (`.github/workflows/ci.yml`) runs on every pull request and every push to `main`: its
+`extractor` job regenerates every generated file from the pinned Pico and fails if
 one differs from the committed file, and its `build` job rebuilds the proofs and runs `check.sh`.
 
 ## Summary of the risks
@@ -695,9 +695,9 @@ the kernel cannot replay what those tactics computed. Today that excludes `Funda
 `Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution` and the specifications of the
 Bitwise and DivRem chips. Modules the build does not import are not replayed.
 
-**The job has not run.** GitHub runs a scheduled workflow only from the repository's default branch,
-and the workflow is on `pico-v3`, not on `main`. Until it runs, this section describes what it would
-check, not a result. Run by hand on the fourteen `Equivalence/` modules the build imports (the
+**The job has not run yet.** GitHub runs a scheduled workflow only from the repository's default
+branch, `main`, so its first scheduled run is the Monday after the workflow reaches `main`. Until it
+runs, this section describes what it would check, not a result. Run by hand on the fourteen `Equivalence/` modules the build imports (the
 thirteen class files and `Common`), `lake env leanchecker` replays them all: `Equivalence/Common`,
 `Equivalence/Addiw`, `Equivalence/RTypeW`, `Equivalence/ShiftIWOp`, `Equivalence/IType`,
 `Equivalence/ShiftIOp`, `Equivalence/RType`, `Equivalence/MulFamily`, `Equivalence/DivFamily`,
