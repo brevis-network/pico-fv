@@ -31,11 +31,14 @@ namespace Equivalence
     -- `pc + immediate` for `AUIPC`. Each theorem therefore takes the shape
     -- its instruction has, and `utype_row_cases` shows the two shapes cover
     -- every such row. Both operands are immediates, so the row reads no
-    -- register: its operations are `JAL`'s.
+    -- source register: its operations are `JAL`'s (the pc read, the read of
+    -- `rd`'s old value and the write of `rd`, and the next pc).
     --
-    -- The shapes are not exclusive: a row whose pc is a multiple of `2 ^ 12`
-    -- can be read as either, and both theorems then hold of it, because
-    -- `LUI imm` and `AUIPC imm'` agree exactly there.
+    -- The shapes are not exclusive: a row whose `op_b` is zero and whose
+    -- `op_c` is the row's pc has both, as `AUIPC 0` and as the `LUI` of the
+    -- pc's upper bits (which needs the pc to be a multiple of `2 ^ 12`, but
+    -- is not implied by it). Both theorems then hold of the row, because
+    -- both instructions write the pc.
     -- ========================================================================
 
     /-- The operations a `LUI` or `AUIPC` row's messages stand for, in order: the pc read, the
@@ -69,31 +72,43 @@ namespace Equivalence
             h_is_real, h_op, h_imm_b, h_imm_c, h_s_mem, h_reg_rd, BitVec.ofNatLT_eq_ofNat,
             toBV_pc_eq_ofNat air row h_is_real h_wf, op_a_prev_value, op_a_value]
 
-    /-- The close shared by `LUI` and `AUIPC`: if Sail's step reads the pc and writes `pc + 4`
-        and then `v` to `rd`, and the ALU chip's promise for opcode 0 pins `v` to the row's
-        `op_a` value, Sail's step leaves the state the row's messages do. -/
+    /-- The proof shared by `LUI` and `AUIPC`, in one call. `exec` is the Sail step: given the
+        pc read, `h_exec` rewrites it into "read the pc, write `pc + 4`, write `v` to `rd`".
+        `h_v` says `v` is `op_b + op_c`, which the ALU chip's promise for opcode 0 makes the
+        row's `op_a` value. Then `exec` is the state the row's messages leave. -/
     private lemma eq_operation_list_effect_state_of_utype
       [Field ExtF]
       {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+      {exec : EStateM.Result (Sail.Error exception)
+        (PreSail.SequentialState RegisterType Sail.trivialChoiceSource) ExecutionResult}
       {air : Valid_CpuChip FKB ExtF} {row : ℕ}
       (h : ALURowFacts air row 0)
       (h_imm : air.cols.opcode_selector.imm_b row 0 = 1 ∧
                air.cols.opcode_selector.imm_c row 0 = 1)
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
       (v : BitVec 64)
-      (h_v : alu_promise air row 0 v)
+      (h_exec :
+        Sail.readReg Register.PC state = .ok (U64w.toBV (pc air row)) state →
+        exec = (operation_list_effect
+          [ .ReadPC (U64w.toBV (pc air row)),
+            .WritePC (U64w.toBV (pc air row) + 4#64),
+            .WriteReg (.Regidx (air.cols.instruction.op_a row 0).val) v ] state).state)
+      (h_v : U64w.toBV (op_b_value air row) + U64w.toBV (op_c_value air row) = v)
     :
-      (operation_list_effect
-        [ .ReadPC (U64w.toBV (pc air row)),
-          .WritePC (U64w.toBV (pc air row) + 4#64),
-          .WriteReg (.Regidx (air.cols.instruction.op_a row 0).val) v ] state).state =
-      (operation_list_effect (CPU_bus_operations air row) state).state
+      exec = (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      rw [CPU_bus_operations_eq_of_utype air row h.is_real (h.all_wf row h.row_le)
-            ⟨ h.opcode_eq, h_imm ⟩]
+      have h_ops := CPU_bus_operations_eq_of_utype air row h.is_real (h.all_wf row h.row_le)
+        ⟨ h.opcode_eq, h_imm ⟩
+      rw [h_ops, operation_list_effect_hypotheses_readPC] at h_bus_hypotheses
+      rw [h_exec h_bus_hypotheses.1, h_ops]
       rw [operation_list_effect_state_readPC, operation_list_effect_state_swap_writePC_writeReg,
           operation_list_effect_state_readPC, operation_list_effect_state_readReg,
           h.toBV_next_pc_eq]
-      exact operation_list_effect_state_writeReg_eq_op_a_value h v h_v _
+      refine operation_list_effect_state_writeReg_eq_op_a_value h v (fun h_spec => ?_) _
+      -- `ALUBus.Spec 0`: the `op_a` value is `op_b + op_c`.
+      simp only [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
+      exact h_v.symm.trans h_spec.2.symm
 
     /-- Every row of opcode 0 with both immediate flags set has one of the two U-type shapes:
         `op_b` zero with the immediate in `op_c` (`LUI`), or the immediate in `op_b` with the
@@ -181,26 +196,13 @@ namespace Equivalence
       execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have h_wf := h_all_wf row h_row
-      have h_alu : ALURowFacts air row 0 :=
-        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, h_opcode.1, rfl ⟩
-      have h_pc_read : Sail.readReg Register.PC state = .ok (U64w.toBV (pc air row)) state := by
-        rw [CPU_bus_operations_eq_of_utype air row h_is_real h_wf h_opcode,
-            operation_list_effect_hypotheses_readPC] at h_bus_hypotheses
-        exact h_bus_hypotheses.1
       intro rd
-      have h_exec := OpcodeSpec.RV64.execute_LUI_equiv (rd := rd) (imm := imm)
-        (pc_val := U64w.toBV (pc air row)) (state := state)
-        (by rw [OpcodeSpec.RV64.spec_LUI_hypotheses]; exact h_pc_read)
-      rw [h_exec, OpcodeSpec.RV64.spec_LUI]
-      refine eq_operation_list_effect_state_of_utype h_alu h_opcode.2 _ (fun h_spec => ?_)
-      -- `ALUBus.Spec 0`: `op_a = op_b + op_c`, with `op_b` zero and `op_c` the immediate.
-      simp only [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
-      obtain ⟨ -, h_sum ⟩ := h_spec
-      rw [show U64w.toBV (op_a_value air row) =
-            U64w.toBV (op_b_value air row) + U64w.toBV (op_c_value air row) from h_sum,
-          h_op_b, h_op_c]
-      simp
+      exact eq_operation_list_effect_state_of_utype
+        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, h_opcode.1, rfl ⟩
+        h_opcode.2 h_bus_hypotheses _
+        (fun h_pc => OpcodeSpec.RV64.execute_LUI_equiv
+          (by rw [OpcodeSpec.RV64.spec_LUI_hypotheses]; exact h_pc))
+        (by rw [h_op_b, h_op_c]; simp)
 
     /-- Equivalence for AUIPC (opcode 0 with `imm_b = 1` and `imm_c = 1`,
         `instruction.UTYPE (imm, rd, .AUIPC)`). The row's `op_b` is the immediate
@@ -240,25 +242,13 @@ namespace Equivalence
       execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      have h_wf := h_all_wf row h_row
-      have h_alu : ALURowFacts air row 0 :=
-        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, h_opcode.1, rfl ⟩
-      have h_pc_read : Sail.readReg Register.PC state = .ok (U64w.toBV (pc air row)) state := by
-        rw [CPU_bus_operations_eq_of_utype air row h_is_real h_wf h_opcode,
-            operation_list_effect_hypotheses_readPC] at h_bus_hypotheses
-        exact h_bus_hypotheses.1
       intro rd
-      have h_exec := OpcodeSpec.RV64.execute_AUIPC_equiv (rd := rd) (imm := imm)
-        (pc_val := U64w.toBV (pc air row)) (state := state)
-        (by rw [OpcodeSpec.RV64.spec_AUIPC_hypotheses]; exact h_pc_read)
-      rw [h_exec, OpcodeSpec.RV64.spec_AUIPC]
-      refine eq_operation_list_effect_state_of_utype h_alu h_opcode.2 _ (fun h_spec => ?_)
-      -- `ALUBus.Spec 0`: `op_a = op_b + op_c`, with `op_b` the immediate and `op_c` the pc.
-      simp only [alu_spec_of_row, RV64IM_Interactions.ALUBus.Spec] at h_spec
-      obtain ⟨ -, h_sum ⟩ := h_spec
-      rw [show U64w.toBV (op_a_value air row) =
-            U64w.toBV (op_b_value air row) + U64w.toBV (op_c_value air row) from h_sum,
-          h_op_b, h_op_c, BitVec.add_comm]
+      exact eq_operation_list_effect_state_of_utype
+        ⟨ h_row, h_is_real, h_all_wf, h_all_constraints, pico_assumptions, h_opcode.1, rfl ⟩
+        h_opcode.2 h_bus_hypotheses _
+        (fun h_pc => OpcodeSpec.RV64.execute_AUIPC_equiv
+          (by rw [OpcodeSpec.RV64.spec_AUIPC_hypotheses]; exact h_pc))
+        (by rw [h_op_b, h_op_c, BitVec.add_comm])
 
   end UTYPE
 
