@@ -7,18 +7,18 @@ specification](https://github.com/NethermindEth/sail-riscv-lean/tree/v4.28.0-rc1
 
 The development covers the **RV64IM** variant of Pico. Its 62 opcodes were
 equivalence-proven against Pico 2.x. On the `pico-v3` branch those proofs are
-being rewritten one instruction class at a time while the CPU chip moves to
-Pico v3.1.1.
+rewritten, one instruction class at a time, against the CPU chip at Pico
+v3.1.1.
 
 <!-- generated: restored -->
-For now the branch proves 60 of them against the v3.1.1 chip: `ADD`, `ADDI`,
-`ADDIW`, `ADDW`, `AND`, `ANDI`, `BEQ`, `BGE`, `BGEU`, `BLT`, `BLTU`, `BNE`,
-`DIV`, `DIVU`, `DIVUW`, `DIVW`, `JAL`, `JALR`, `LB`, `LBU`, `LD`, `LH`, `LHU`,
-`LW`, `LWU`, `MUL`, `MULH`, `MULHSU`, `MULHU`, `MULW`, `OR`, `ORI`, `REM`,
-`REMU`, `REMUW`, `REMW`, `SB`, `SD`, `SH`, `SLL`, `SLLI`, `SLLIW`, `SLLW`,
-`SLT`, `SLTI`, `SLTIU`, `SLTU`, `SRA`, `SRAI`, `SRAIW`, `SRAW`, `SRL`, `SRLI`,
-`SRLIW`, `SRLW`, `SUB`, `SUBW`, `SW`, `XOR` and `XORI`. The other 2 are out of
-the build and `check.sh` does not check them (see [SOUNDNESS.md](SOUNDNESS.md)).
+The branch proves all 62 of them against the v3.1.1 chip: `ADD`, `ADDI`,
+`ADDIW`, `ADDW`, `AND`, `ANDI`, `AUIPC`, `BEQ`, `BGE`, `BGEU`, `BLT`, `BLTU`,
+`BNE`, `DIV`, `DIVU`, `DIVUW`, `DIVW`, `JAL`, `JALR`, `LB`, `LBU`, `LD`, `LH`,
+`LHU`, `LUI`, `LW`, `LWU`, `MUL`, `MULH`, `MULHSU`, `MULHU`, `MULW`, `OR`,
+`ORI`, `REM`, `REMU`, `REMUW`, `REMW`, `SB`, `SD`, `SH`, `SLL`, `SLLI`, `SLLIW`,
+`SLLW`, `SLT`, `SLTI`, `SLTIU`, `SLTU`, `SRA`, `SRAI`, `SRAIW`, `SRAW`, `SRL`,
+`SRLI`, `SRLIW`, `SRLW`, `SUB`, `SUBW`, `SW`, `XOR` and `XORI` (see
+[SOUNDNESS.md](SOUNDNESS.md)).
 <!-- end generated -->
 
 The 62 opcodes:
@@ -126,9 +126,9 @@ After `lake build`, `scripts/fv-check/check.sh` checks the top-level theorems
 listed in `scripts/fv-check/theorems.d/`: the two memory chips' specifications at v3.1.6,
 and the specifications of the ALU chips already at v3.1.1
 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight), and the
-equivalence theorems the branch proves at v3.1.1 (listed above). The lists of
-the other opcode equivalence theorems are parked in `theorems.d/parked/` while
-the CPU chip moves (see the README there). It fails if a theorem is missing,
+equivalence theorems the branch proves at v3.1.1 (listed above), with
+`Equivalence.utype_row_cases`, which shows that the `LUI` and `AUIPC` theorems
+together cover the row shape the two instructions share. It fails if a theorem is missing,
 depends on an axiom (a statement Lean accepts without proof) outside two lists,
 or its axioms or statement differ from the snapshots in `axioms.txt` and
 `signatures.txt`:

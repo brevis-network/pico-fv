@@ -32,8 +32,9 @@ dispatch, that `b` and `c` have 16-bit pieces, so does a store's `a`, and `a = 0
 range has 16-bit pieces. The per-opcode theorems also take the row's flag.
 
 Nothing here says which memory a load reads or a store writes: the Memory promise does not ask
-it. The chip takes only accesses aligned to their width (constraints 20 to 22); the promise does
-not ask that either, since the unaligned chip receives the same message.
+it. `Spec/MemoryReadWriteChipDataFlow.lean` proves that apart, for every row
+(`dataFlow_of_allHold`). The chip takes only accesses aligned to their width (constraints 20 to
+22); the promise does not ask that either, since the unaligned chip receives the same message.
 -/
 
 namespace MemoryReadWriteChip.Spec
