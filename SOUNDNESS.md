@@ -14,19 +14,23 @@ repository; CI fails when one is out of date. The rest of the text is reviewed b
 ## What is proved
 
 The theorems checked by `scripts/fv-check/check.sh` are listed in `scripts/fv-check/theorems.d/`,
-with their statements in `signatures.txt`. They are of four kinds. Beside them, under the
-first, are eighteen decoding lemmas that discharge the decoded instruction theorems' `h_decode`
-(listed with the stores, the loads, the two register-register classes, the four
-register-immediate classes, the multiply and divide classes, the branches, the jumps and the
-U-type theorems, A3), and
-`Equivalence.utype_row_cases`, which discharges the shape hypotheses of the unchecked column
-forms of `LUI` and `AUIPC`; no checked theorem takes those hypotheses.
+with their statements in `signatures.txt`. They are of four kinds. Beside them, under the first, are
+eighteen decoding lemmas, which show that on a real row of the class's opcode, with the immediate
+flag that tells the class apart where an opcode is shared (`imm_c = 0` for `RTYPE` except `SUB` and
+for `RTYPEW` except `SUBW`; `imm_c = 1` for `ITYPE`, `ADDIW` and the shift-immediate classes, with
+`imm_b = 0` for `ADDI`; `imm_b = 1` for U-type), some instruction meets the decoded instruction
+theorems' `h_decode` (for U-type, a `LUI` or an `AUIPC`, without saying which), listed with the
+stores, the loads, the two register-register classes, the four register-immediate classes, the
+multiply and divide classes, the branches, the jumps and the U-type theorems (A3). So is
+`Equivalence.utype_row_cases`, which discharges the shape hypotheses of the unchecked column forms
+of `LUI` and `AUIPC`, hypotheses no checked theorem takes.
 
-- **Opcode equivalence** (`Equivalence.equivalence_*`, one per RV64IM opcode except `ECALL`). For
-  a CPU chip row that satisfies its extracted constraints, if the bus messages the row exchanges
-  satisfy the bus assumptions below, then one step of the Sail RISC-V specification on that
-  instruction gives the same post-state as the register and memory operations the row puts on the
-  bus.
+- **Opcode equivalence** (`Equivalence.equivalence_<OP>`, the `equivalence_<OP>` names among those
+  listed in `theorems.d/equivalence-*.txt`, one per RV64IM opcode except `ECALL`; the column forms
+  `equivalence_<OP>_row` are not checked). For a CPU chip row that satisfies its extracted
+  constraints, if the bus messages the row exchanges satisfy the bus assumptions below, then one
+  step of the Sail RISC-V specification on that instruction gives the same post-state as the
+  register and memory operations the row puts on the bus.
 
   <!-- generated: restored -->
   **All 62 of these theorems are checked**, in 13 files of `PicoFV/RV64IM/Equivalence/`:
@@ -58,22 +62,22 @@ forms of `LUI` and `AUIPC`; no checked theorem takes those hypotheses.
   theorem: `LUI` and `AUIPC` share a row shape at v3.1.1, and it shows that every row of that
   shape has the operand shape of one of the two column-form theorems (see A3).
 
-  The lists of `Stores.lean`, `Loads.lean`, `RType.lean`, `RTypeW.lean`, `IType.lean`,
-  `Addiw.lean`, `ShiftIOp.lean`, `ShiftIWOp.lean`, `MulFamily.lean`, `DivFamily.lean`,
-  `BType.lean`, `Jumps.lean` and `UType.lean`
-  also hold `Equivalence.store_decode_satisfiable`, `Equivalence.load_decode_satisfiable`,
-  `Equivalence.rtype_decode_satisfiable`, `Equivalence.rtypew_decode_satisfiable`,
-  `Equivalence.itype_decode_satisfiable`, `Equivalence.addiw_decode_satisfiable`,
-  `Equivalence.shiftiop_decode_satisfiable`, `Equivalence.shiftiwop_decode_satisfiable`,
-  `Equivalence.mul_decode_satisfiable`, `Equivalence.mulw_decode_satisfiable`,
-  `Equivalence.div_decode_satisfiable`, `Equivalence.divw_decode_satisfiable`,
-  `Equivalence.rem_decode_satisfiable`, `Equivalence.remw_decode_satisfiable`,
-  `Equivalence.btype_decode_satisfiable`, `Equivalence.jal_decode_satisfiable`,
-  `Equivalence.jalr_decode_satisfiable` and `Equivalence.utype_decode_satisfiable`, which are not
-  instruction theorems either: the store, load, register-register, register-immediate, multiply,
-  divide, branch, jump and U-type theorems take an instruction whose decoding is the row's Program
-  message, and the eighteen show, from the row's Program promise (in `bus_row_wf_asm`), that every
-  real row of a store, load, multiply, divide, remainder, branch or jump opcode, of a register-register opcode (with `imm_c = 0` where an
+  The lists of `Stores.lean`, `Loads.lean`, `RType.lean`, `RTypeW.lean`, `IType.lean`, `Addiw.lean`,
+  `ShiftIOp.lean`, `ShiftIWOp.lean`, `MulFamily.lean`, `DivFamily.lean`, `BType.lean`, `Jumps.lean`
+  and `UType.lean` also hold `Equivalence.store_decode_satisfiable`,
+  `Equivalence.load_decode_satisfiable`, `Equivalence.rtype_decode_satisfiable`,
+  `Equivalence.rtypew_decode_satisfiable`, `Equivalence.itype_decode_satisfiable`,
+  `Equivalence.addiw_decode_satisfiable`, `Equivalence.shiftiop_decode_satisfiable`,
+  `Equivalence.shiftiwop_decode_satisfiable`, `Equivalence.mul_decode_satisfiable`,
+  `Equivalence.mulw_decode_satisfiable`, `Equivalence.div_decode_satisfiable`,
+  `Equivalence.divw_decode_satisfiable`, `Equivalence.rem_decode_satisfiable`,
+  `Equivalence.remw_decode_satisfiable`, `Equivalence.btype_decode_satisfiable`,
+  `Equivalence.jal_decode_satisfiable`, `Equivalence.jalr_decode_satisfiable` and
+  `Equivalence.utype_decode_satisfiable`, which are not instruction theorems either: the store,
+  load, register-register, register-immediate, multiply, divide, branch, jump and U-type theorems
+  take an instruction whose decoding is the row's Program message, and the eighteen show, from the
+  row's Program promise (in `bus_row_wf_asm`), that every real row of a store, load, multiply,
+  divide, remainder, branch or jump opcode, of a register-register opcode (with `imm_c = 0` where an
   immediate form shares the opcode), of a register-immediate opcode (with `imm_c = 1`, and
   `imm_b = 0` for `ADDI`), or of opcode 0 with `imm_b = 1` (U-type; an `ADD` or `ADDI` row has no
   U-type decoding), has one (see A3).
@@ -88,6 +92,23 @@ forms of `LUI` and `AUIPC`; no checked theorem takes those hypotheses.
   specification has it built; the checked list holds the two memory chips' at v3.2.0
   (`MemoryReadWriteChip.Spec.*`, `MemoryUnalignedChip.Spec.*`) and those of the ALU chips already
   at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight).
+
+  The ALU chips' specifications (Add, Addw, Bitwise, DivRem, Lt, Mul, ShiftRight, SLL, Sub and Subw,
+  with the gadgets they embed) are stated over the 2.x row: `RV64IM_Interactions.BusRow`, its
+  `deserialise_bus_row` and its checks `bus_row_ext_asm`, `bus_row_wf_asm`, `bus_row_ext_asrt` and
+  `bus_row_wf_asrt` (`RVSail/Buses.lean`). The CPU, memory and code-range results use the 3.x ones
+  (`RV64IM_Interactions.V3`, `RVSail/BusesV3.lean`). For the ALU chips the two say the same. Their
+  rows exchange only tag 4 (ALU, 13 fields) and tag 5 (byte, 5 fields) messages: each chip receives
+  one ALU message, its own operation, and sends byte messages, and DivRem also sends two ALU
+  messages (`Extraction/DivRemChip.lean:871, 873`). Every entry of the interaction lists in
+  `Extraction/AddChip.lean:31-39`, `AddwChip.lean:31-37`, `BitwiseChip.lean:29-45`,
+  `DivRemChip.lean:715-955`, `LtChip.lean:85-91`, `MulChip.lean:121-191`,
+  `ShiftRightChip.lean:149-173`, `SLLChip.lean:125-145`, `SubChip.lean:31-39` and
+  `SubwChip.lean:31-37` has one of those two tags. Both deserialisers sort those two tags alike,
+  into the same `ALUBusEntry` and `ByteBusEntry` lists (`RVSail/Buses.lean:1394-1405`,
+  `RVSail/BusesV3.lean:1066-1077`), so on these rows Program, State and Memory stay empty, as does
+  the 3.x row's `CodeRange`, and each check is the same condition on the ALU and byte entries in
+  either row.
 
   The memory chips' say that a row receiving the memory dispatch meets the memory promise
   (`spec_LB` to `spec_SD`, one per opcode, and `wf_asrt`, which also gives each double word the
@@ -297,27 +318,27 @@ decoder fixes for their opcodes, and `SUBW` and `SUB` no longer assume `imm_c = 
 for opcodes 41 and 1. `ADDI`'s column form assumes `imm_b = 0`: its opcode 0 with `imm_c = 1` is
 also `LUI` or `AUIPC`, which set `imm_b = 1`. `ADD` does not assume it, although the decoder does
 not fix it for opcode 0: on a row with `imm_c = 0` the flag is 0 whatever the opcode
-(`imm_b_eq_zero_of_imm_c_eq_zero`). The decoder does not fix `imm_c` for an opcode that an
-immediate form shares with a register-register one: 40 (`ADDIW` and `ADDW`), 42 to 44 (`SLLIW`,
-`SRLIW`, `SRAIW` and `SLLW`, `SRLW`, `SRAW`), 5 to 7 (`SLLI`, `SRLI`, `SRAI` and `SLL`, `SRL`,
-`SRA`), and 0, 2, 3, 4, 8 and 9 (the six `ITYPE` theorems and `ADD`, `XOR`, `OR`, `AND`, `SLT`,
-`SLTU`). Neither those thirteen immediate-form theorems nor those thirteen register-register
-theorems assume an immediate flag: they take their instruction in decoded form (below), whose
-decoding fixes both flags; their column forms still assume `imm_c = 1` (and `ADDI`'s
-`imm_b = 0`) or `imm_c = 0`. The multiply, divide and remainder theorems take no immediate flag,
-as at `353238a`: the decoder fixes both to 0 for opcodes 30 to 37 and 48 to 52. They take no opcode
-either: they take their instruction in decoded form (below); their column forms take the opcode
-alone. The divide and remainder theorems assume nothing about the divisor: the ALU chip's promise for their opcodes already gives Sail's
+(`imm_b_eq_zero_of_imm_c_eq_zero`). The decoder does not fix `imm_c` for an opcode that an immediate
+form shares with a register-register one: 40 (`ADDIW` and `ADDW`), 42 to 44 (`SLLIW`, `SRLIW`,
+`SRAIW` and `SLLW`, `SRLW`, `SRAW`), 5 to 7 (`SLLI`, `SRLI`, `SRAI` and `SLL`, `SRL`, `SRA`), and 0,
+2, 3, 4, 8 and 9 (the six `ITYPE` theorems and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`). Neither
+those thirteen immediate-form theorems nor those thirteen register-register theorems assume an
+immediate flag: they take their instruction in decoded form (below), whose decoding fixes both
+flags; their column forms still assume `imm_c = 1` (and `ADDI`'s `imm_b = 0`) or `imm_c = 0`. The
+multiply, divide and remainder theorems take no immediate flag, as at `353238a`: the decoder fixes
+both to 0 for opcodes 30 to 37 and 48 to 52. They take no opcode either: they take their instruction
+in decoded form (below); their column forms take the opcode alone. The divide and remainder theorems
+assume nothing about the divisor: the ALU chip's promise for their opcodes already gives Sail's
 result on division by zero and on signed overflow. `JAL` and `JALR` take no opcode: the decoding
 fixes it (below). Their `_row` forms take it alone: they assume neither immediate flag, nor the
 row's `is_jal` / `is_jalr` selector, all three of which their 2.x statements took, because opcodes
 24 and 25 are the two jumps alone and the decoder fixes every one of them. The six branch theorems
 take no opcode either; their `_row` forms take it alone, as the branch theorems did at `353238a`:
-opcodes 18 to 23 are the six branches alone. Their comparison is not made in the CPU
-chip. The row sends it on the ALU bus — opcode 264 for `BLT` and `BGE`, signed, and 265 for the
-other four, unsigned — so the two comparison bits are what `ALUBus.Spec` promises for those
-opcodes, which `LtChip.Spec.spec_CMP_SLT` and `spec_CMP_SLTU` discharge on the serving chip's
-side, and the branch theorems assume nothing about the operands themselves.
+opcodes 18 to 23 are the six branches alone. Their comparison is not made in the CPU chip. The row
+sends it on the ALU bus — opcode 264 for `BLT` and `BGE`, signed, and 265 for the other four,
+unsigned — so the two comparison bits are what `ALUBus.Spec` promises for those opcodes, which
+`LtChip.Spec.spec_CMP_SLT` and `spec_CMP_SLTU` discharge on the serving chip's side, and the branch
+theorems assume nothing about the operands themselves.
 
 The column forms of the thirteen register-immediate theorems (the six shifts, `ADDI`, `XORI`,
 `ORI`, `ANDI`, `SLTI`, `SLTIU` and `ADDIW`) read their immediate from the row's encoded `op_c_0`,
@@ -332,14 +353,15 @@ zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign fl
 the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
 amount or 12-bit immediate; the column forms do not state that link.
 
-The four store, the seven load and the thirteen register-immediate theorems state it, and so do the
-fifteen register-register theorems (`RType.lean`, `RTypeW.lean`), the five multiply theorems
-(`MulFamily.lean`) and the eight divide and remainder theorems (`DivFamily.lean`), which have no
-immediate but whose registers the decoding fixes in the same way, the six branch theorems (`BType.lean`), `JAL` and
-`JALR` (`Jumps.lean`) and `LUI` and `AUIPC` (`UType.lean`). Each takes the instruction itself,
-written in the statement (`instruction.STORE (imm, rs2, rs1, 8)` for `SD`,
-`instruction.ITYPE (imm, rs1, rd, iop.ADDI)` for `ADDI`, `instruction.RTYPE (rs2, rs1, rd, rop.ADD)`
-for `ADD`, `instruction.BTYPE (imm, rs2, rs1, bop.BEQ)` for `BEQ`, `instruction.JAL (imm, rd)`,
+The four store, the seven load and the thirteen register-immediate theorems state it. So do the
+theorems of the four register classes: the fifteen register-register theorems (`RType.lean`,
+`RTypeW.lean`), the five multiply theorems (`MulFamily.lean`) and the eight divide and remainder
+theorems (`DivFamily.lean`), which have no immediate but whose registers the decoding fixes in the
+same way. So do the six branch theorems (`BType.lean`), `JAL` and `JALR` (`Jumps.lean`), and `LUI`
+and `AUIPC` (`UType.lean`). Each takes the instruction itself, written in the statement
+(`instruction.STORE (imm, rs2, rs1, 8)` for `SD`, `instruction.ITYPE (imm, rs1, rd, iop.ADDI)` for
+`ADDI`, `instruction.RTYPE (rs2, rs1, rd, rop.ADD)` for `ADD`,
+`instruction.BTYPE (imm, rs2, rs1, bop.BEQ)` for `BEQ`, `instruction.JAL (imm, rd)`,
 `instruction.UTYPE (imm, rd, uop.LUI)`), with the hypothesis `h_decode` that the decoder
 (`Transpiler.V3.transpile_op`, at multiplicity 1 and some address `addr`) turns it into the row's
 Program message, and concludes that Sail's step on that instruction equals the row's effect. The
@@ -358,18 +380,19 @@ row's Program promise, the decoding hypothesis is no stronger than the hypothese
 `Equivalence.jalr_decode_satisfiable` (checked, listed with their classes) derive it, for some
 instruction fields and a 4-aligned address below `Transpiler.V3.code_address_bound`, from
 `is_real = 1`, the opcode of each store or load width, register-register, register-immediate,
-multiply or divide operation, branch or jump (with `imm_c = 0` for a register-register opcode an immediate form
-shares, as its column form takes it, and on the opcodes of `SUB` and `SUBW` the promise gives it;
-with `imm_c = 1` for a register-immediate opcode, and `imm_b = 0` for `ADDI`'s, as their column
-forms take them), and that promise (in `bus_row_wf_asm`, which the instruction theorems take for
-every row as `h_all_wf`). For opcode 30 (`MUL`) it holds at every signedness with
-`result_part := .Low`, which the decoder does not read. `Equivalence.utype_decode_satisfiable` derives it from `is_real = 1`,
-opcode 0, `imm_b = 1` and the promise, for a `LUI` or an `AUIPC`, as the row does not say which
-(below). Each decoded theorem is proved from a column-form theorem of the same name with `_row`
-appended (`equivalence_SD_row`), which reads `rs1`, `rs2` or `rd` (and the offset or immediate)
-off the row and is not checked. `equivalence_LUI_row` and `equivalence_AUIPC_row` read `rd` off
-the row but take the immediate as a parameter, pinned by their shape hypotheses `h_op_b` and
-`h_op_c` (below).
+multiply, divide or remainder operation, branch or jump (with `imm_c = 0` for a register-register
+opcode an immediate form shares, as its column form takes it, and on the opcodes of `SUB` and `SUBW`
+the promise gives it; with `imm_c = 1` for a register-immediate opcode, and `imm_b = 0` for
+`ADDI`'s, as their column forms take them), and that promise (in `bus_row_wf_asm`, which the
+instruction theorems take for every row as `h_all_wf`). For opcode 30 (`MUL`) it holds at every
+signedness with `result_part := .Low`, which the decoder does not read.
+`Equivalence.utype_decode_satisfiable` derives it from `is_real = 1`, opcode 0, `imm_b = 1` and the
+promise, for a `LUI` or an `AUIPC`: the opcode and the flags do not say which; the operand shapes
+tell them apart except where they overlap, and there both hold (below). Each decoded theorem is
+proved from a column-form theorem of the same name with `_row` appended (`equivalence_SD_row`),
+which reads `rs1`, `rs2` or `rd` (and the offset or immediate) off the row and is not checked.
+`equivalence_LUI_row` and `equivalence_AUIPC_row` read `rd` off the row but take the immediate as a
+parameter, pinned by their shape hypotheses `h_op_b` and `h_op_c` (below).
 
 The four store theorems take no opcode: the decoding fixes it (their `_row` forms take it alone,
 as the store theorems did at `353238a`). They gain the whole-trace assumption, which their 2.x
@@ -392,19 +415,18 @@ The two sides of the link a store theorem assumes are not yet composed, as A4 de
 composition generally.
 
 The seven load theorems take no opcode either: the decoding fixes it (their `_row` forms take it
-alone, as the load theorems did at `353238a`). They gain the whole-trace assumption, which their
-2.x statements did not take. They rest on the same promise, and
-on one more part of it. Besides the address
-bound, `MemoryBus.Spec` says what extension the loaded word carries when the destination is not
-`x0`: sign for `LB`, `LH` and `LW`, zero for `LBU`, `LHU` and `LWU`, none for `LD`. That is the
+alone, as the load theorems did at `353238a`). They gain the whole-trace assumption, which their 2.x
+statements did not take. They rest on the same promise, and on one more part of it. Besides the
+address bound, `MemoryBus.Spec` says what extension the loaded word carries when the destination is
+not `x0`: sign for `LB`, `LH` and `LW`, zero for `LBU`, `LHU` and `LWU`, none for `LD`. That is the
 whole content of what a load writes to `rd`, so a load theorem says that the CPU row writes back
-whatever the memory chip promised, and, like the stores, it assumes that promise rather than
-resting on a proof of it; both memory chips prove the promise for the loads they take
-(`spec_LB` to `spec_LD` in `MemoryReadWriteChip.Spec` and in `MemoryUnalignedChip.Spec`). The CPU
-constraints alone do not tie the loaded word to memory. A load whose destination is `x0` needs
-only the address bound: the row writes zero to `x0`, and Sail's write to `x0` changes nothing. The loads hold at a misaligned address as the stores do: Sail splits
-the load into aligned pieces and reads the same bytes, which the Sail lemmas of `LH`, `LHU`, `LW`,
-`LWU` and `LD` prove (`RVSail/Misaligned.lean`).
+whatever the memory chip promised, and, like the stores, it assumes that promise rather than resting
+on a proof of it; both memory chips prove the promise for the loads they take (`spec_LB` to
+`spec_LD` in `MemoryReadWriteChip.Spec` and in `MemoryUnalignedChip.Spec`). The CPU constraints
+alone do not tie the loaded word to memory. A load whose destination is `x0` needs only the address
+bound: the row writes zero to `x0`, and Sail's write to `x0` changes nothing. The loads hold at a
+misaligned address as the stores do: Sail splits the load into aligned pieces and reads the same
+bytes, which the Sail lemmas of `LH`, `LHU`, `LW`, `LWU` and `LD` prove (`RVSail/Misaligned.lean`).
 
 The two U-type theorems share a row shape: the v3.1.1 decoder gives `LUI` and `AUIPC` alike opcode 0
 with both immediate flags (`ProgramBusEntry.decoded_from`), and the chip has no `AUIPC` opcode and
@@ -442,23 +464,48 @@ messages (now with the v3.1.1 deserialiser). A third was rewritten against v3.1.
 assumes through its `bus_row_wf_asm` hypothesis. It lost its three alignment clauses (see the
 composition section below), so that hypothesis now assumes less, and each theorem says more.
 
-The whole-trace assumption, `pico_CpuChip_control_flow_assumptions`, bounds the chunk's final
-pc (public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The
-v3.1.1 chip does not check this itself; Pico's recursion circuit makes it hold for every chunk
-of an accepted recursive proof (`docs/cpu-chip-pico-v3-design.md`, "The whole-trace
-assumption"). That circuit was read again at v3.1.6, which rewrote it: the three checks the
-argument uses (the pc carried from chunk to chunk, a chunk with no CPU keeping its pc, the last
-chunk ending at pc zero) are still there. The file is unchanged at v3.2.0 (`git diff v3.1.6 v3.2.0`
-over it is empty). So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
-proof, not a chunk proof checked on its own. The eight branch and jump theorems already name the
-assumption, whose definition grew, so it is not what changes their recorded statements: all eight
-are recorded at v3.1.1 now, and changed for the other reasons above. What they assume did change,
-behind the unchanged name. The other 54 gain it as a new hypothesis, as those recorded at v3.1.1
-have.
+The whole-trace assumption, `pico_CpuChip_control_flow_assumptions`, bounds the chunk's final pc
+(public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The chip does
+not check this itself; Pico's recursion circuit makes it hold for every chunk of an accepted
+recursive proof ("The whole-trace assumption" below). That circuit was read again at v3.1.6, which
+rewrote it: the three checks the argument uses (the pc carried from chunk to chunk, a chunk with no
+CPU keeping its pc, the last chunk ending at pc zero) are still there. The file is unchanged at
+v3.2.0 (`git diff v3.1.6 v3.2.0` over it is empty). So the instruction theorems cover a chunk inside
+an accepted recursive proof, not a chunk proof checked on its own. The eight branch and jump
+theorems already name the assumption, whose definition grew, so it is not what changes their
+recorded statements: all eight are recorded at v3.1.1 now, and changed for the other reasons above.
+What they assume did change, behind the unchanged name. The other 54 gain it as a new hypothesis, as
+those recorded at v3.1.1 have.
 
 A change that weakens or strengthens a hypothesis changes `signatures.txt`, and `check.sh` fails
 until the change is reviewed and recorded. A change to the definition behind a hypothesis's name
 does not, so it has to be listed in the pull request that makes it.
+
+#### The whole-trace assumption
+
+Public values 43 and 44 are the two pieces of the chunk's final pc; the chip pins 45 to zero
+itself. On the last real row the chip sets its `next_pc` to them (extracted constraints 41-43,
+`riscv_cpu/public_values/constraints.rs:35-50` at v3.2.0), and nothing in the chip range-checks
+them. The proofs need each part: the 16-bit pieces and the alignment for the JALR addition, its
+cleared low bit and BEQ's aligned target, and a bound on the value to read the `pc + 4` and
+branch-target field equations as integer equations. The weakest bound those readings need is
+`p - 4096` (`p` the KoalaBear prime, `4096` the largest backward branch); `0x7800_0000` is
+slightly stronger, is the guest address bound Pico itself uses, and also covers JAL's 21-bit
+offsets, which need `p - 2^20`.
+
+Pico enforces it outside the chips, in the recursion circuit
+(`vm/src/mle/compiler/recursion/lowering.rs` at v3.2.0): each chunk's final pc equals the next
+chunk's first pc (`assert_child_continuity`, `recursion/lowering.rs:1194-1199`); a chunk that runs
+no CPU passes its pc through unchanged (`recursion/lowering.rs:1559-1563`); the root requires the
+last chunk's final pc to be zero (`assert_root_complete`, `recursion/lowering.rs:1776-1779`). The
+circuit has other checks (a CPU chunk's first pc is not zero, `recursion/lowering.rs:1510-1516`; a
+chunk with no CPU is not chunk 1, `recursion/lowering.rs:1522-1527`) that only narrow what is
+accepted. A chunk's first pc is its row 0's pc (`riscv_cpu/public_values/constraints.rs:26-33` at
+v3.2.0), row 0 is real (`riscv_cpu/constraints.rs:340-341` at v3.2.0) and its fetch matches the
+Program table, whose pcs are 4-aligned and below `0x7800_0000` (`riscv_program/traces.rs:86-113` at
+v3.2.0). So in an accepted proof the final pc is either zero or a Program-table pc, which satisfies
+the assumption. No check of its own on the public value was found outside the chips (no range or
+alignment check in the recursion circuit or the verifiers).
 
 ### A4. Composition of the chips (not proven)
 
@@ -650,11 +697,12 @@ Bitwise and DivRem chips. Modules the build does not import are not replayed.
 
 **The job has not run.** GitHub runs a scheduled workflow only from the repository's default branch,
 and the workflow is on `pico-v3`, not on `main`. Until it runs, this section describes what it would
-check, not a result. Run by hand on the instruction-theorem files the build imports, `lake env
-leanchecker` replays all thirteen: `Equivalence/Common`, `Equivalence/Addiw`,
-`Equivalence/RTypeW`, `Equivalence/ShiftIWOp`, `Equivalence/IType`, `Equivalence/ShiftIOp`,
-`Equivalence/RType`, `Equivalence/MulFamily`, `Equivalence/DivFamily`, `Equivalence/Jumps`,
-`Equivalence/BType`, `Equivalence/Stores` and `Equivalence/Loads`.
+check, not a result. Run by hand on the fourteen `Equivalence/` modules the build imports (the
+thirteen class files and `Common`), `lake env leanchecker` replays them all: `Equivalence/Common`,
+`Equivalence/Addiw`, `Equivalence/RTypeW`, `Equivalence/ShiftIWOp`, `Equivalence/IType`,
+`Equivalence/ShiftIOp`, `Equivalence/RType`, `Equivalence/MulFamily`, `Equivalence/DivFamily`,
+`Equivalence/Jumps`, `Equivalence/BType`, `Equivalence/Stores`, `Equivalence/Loads` and
+`Equivalence/UType`.
 `Common`, `Jumps` and `BType` used to fail with "(kernel) deep recursion detected": one `simp`
 sorted all 17 messages of a CPU row at once, and the proof term it built was deeper than
 `leanchecker`'s kernel stack (`lake build` runs Lean with `--tstack=400000` in the lakefile). The

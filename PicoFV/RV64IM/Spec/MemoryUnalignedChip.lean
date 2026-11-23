@@ -44,7 +44,8 @@ bytes its width reads, and those lie in the second dword only when the row cross
 split on the one-hot offset (constraints 17 to 25) where they need the bytes.
 
 Nothing here says which memory a load reads or a store writes: the Memory promise does not ask
-it.
+it. `Spec/MemoryUnalignedChipDataFlow.lean` proves that apart, for every row
+(`dataFlow_of_allHold`).
 -/
 
 namespace MemoryUnalignedChip.Interpretations

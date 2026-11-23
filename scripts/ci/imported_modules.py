@@ -2,9 +2,8 @@
 """Prints, one per line and sorted, the source path of every PicoFV module that PicoFV64.lean
 imports, directly or through other PicoFV modules.
 
-Files under PicoFV/ that nothing imports (parked work, such as the equivalence files while the
-CPU chip moves) are left out, so a job that walks this list never asks for a module the build
-did not produce.
+A file under PicoFV/ that nothing imports is left out, so a job that walks this list never asks
+for a module the build did not produce.
 """
 import re
 import sys

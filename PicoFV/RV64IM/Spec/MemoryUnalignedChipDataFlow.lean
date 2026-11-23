@@ -11,12 +11,14 @@ The data flow of a row of `MemoryUnalignedChip` (`MemoryUnalignedChip::eval`,
 `vm/src/chips/chips/riscv_memory/unaligned/constraints.rs`, Pico v3.2.0
 `fcfa504624657d0c417c43f1233d5d891f293ff9`; messages in `Constraints/MemoryUnalignedChip.lean`).
 
-A real row sends the memory argument the read of the double word holding the access's first byte
-and receives its write back, at the aligned address `A`, `b + c` with its three low bits cleared;
-on a row whose access runs into the next double word (`cross = 1`) it does the same for the
-double word at `A + 8` (`riscv_memory/unaligned/constraints.rs:155-176` at v3.2.0). It receives
-the memory dispatch from the CPU chip. `V3.bus_operations` reads each State pair as a
-double-word `ReadMem` and `WriteMem`, and the dispatch as one access of its opcode's width at
+A real row sends the memory argument the read of the double word holding the access's first byte and
+receives its write back, at the aligned address `A`, `b + c` with its three low bits cleared; on a
+row whose access runs into the next double word (`cross = 1`) it does the same for the double word
+at `A + 8` (`riscv_memory/unaligned/constraints.rs:155-176` at v3.2.0); each read is sent at
+multiplicity 1 and each write back received at -1 (`machine/builder/riscv_memory.rs:194-208` at
+v3.2.0). It receives the memory dispatch from the CPU chip
+(`riscv_memory/unaligned/constraints.rs:39-63` at v3.2.0). `V3.bus_operations` reads each State pair
+as a double-word `ReadMem` and `WriteMem`, and the dispatch as one access of its opcode's width at
 `b + c`: a `WriteMem` of `a` for a store, a `ReadMem` of `a` for a load, or a `ReadMemAny` for a
 load into `x0`.
 
@@ -38,8 +40,8 @@ hypothesis of `DataFlow`. `bus_operations` does not read the messages' `chunk`, 
 
 The proof reads the row as bytes: `wnat` is the sixteen bytes of the two double words before the
 access (`w` in `constraints.rs`), `rnat` the eight bytes of `op_a` (`r`), and `wrnat` the sixteen
-after the access. A double word's bytes past the first are read only on a row that crosses,
-which is where the second double word's byte splits are range-checked.
+after the access. The second double word's bytes are read only on a row that crosses, which is
+where its byte splits are range-checked.
 -/
 
 namespace MemoryUnalignedChip.Spec
@@ -457,7 +459,6 @@ namespace MemoryUnalignedChip.Spec
       interval_cases i <;>
         simp only [w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15] <;>
         with_reducible assumption
-
 
   /-- On a real row, with `off` the address's low three bits: `seen_byte` is the window's byte
       `off`, each `seen_l` its bytes `off + 2l` and `off + 2l + 1` where those lie in the first
@@ -1134,9 +1135,6 @@ namespace MemoryUnalignedChip.Spec
       exact row_any air row state h_ext_asm h_wf_asm h_constraints h_mem 1 _
         (read_any_effect state _ .Byte) (by norm_num) (fun _ => by omega) h_load
 
-
-
-
   private theorem dataFlow_LBU
     [Field ExtF]
     (air : Valid_MemoryUnalignedChip FKB ExtF)
@@ -1745,5 +1743,3 @@ namespace MemoryUnalignedChip.Spec
     · exact dataFlow_SD air row state h_ext_asm h_wf_asm h_constraints f10
 
 end MemoryUnalignedChip.Spec
-
-

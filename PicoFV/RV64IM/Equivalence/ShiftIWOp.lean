@@ -162,8 +162,12 @@ namespace Equivalence
     -- The checked SHIFTIWOP theorems, in decoded form: each takes the instruction
     -- and an address whose decoding (`Transpiler.V3.transpile_op`, at
     -- multiplicity 1) is the row's Program message, and is proved from its
-    -- column form. The proofs pass hypotheses as `@h`, which Lean elaborates
-    -- without unfolding their types.
+    -- column form.
+    --
+    -- The proofs pass hypotheses as `@h`. On the store and load sections,
+    -- passing them as `@h` elaborated about 2.3 times faster than passing them
+    -- bare. It does not avoid every unfolding: checking `@h_bus_hypotheses`
+    -- against its expected type still unfolds `operation_list_effect`.
     -- ========================================================================
 
     /-- What the decoding of a 32-bit shift by an immediate says about the row: it is real, its

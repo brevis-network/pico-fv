@@ -14,7 +14,7 @@ set_option maxHeartbeats 1_000_000_000
     message formats that changed from 2.x. It also holds the v3.2.0 code-range contract between
     the rows that write guest memory (store rows of the two memory chips, and precompile rows)
     and the Program table, which the CPU chip never sends. It sits beside `Buses.lean`, whose
-    2.x contracts stay unchanged because the memory chip's proofs still use them.
+    2.x contracts stay unchanged because the ALU chips' proofs still use them.
 
     | message | tag (`LookupType`) | fields | contract |
     |---------|-----|----|----------|
