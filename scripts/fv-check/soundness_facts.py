@@ -10,6 +10,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 CHECK = ROOT / 'scripts/fv-check'
 CORE = {'propext', 'Classical.choice', 'Quot.sound'}
 COMPILER = {'Lean.ofReduceBool', 'Lean.trustCompiler'}
+OPCODES = 62  # RV64IM opcodes with an instruction theorem (every one but `ECALL`)
 
 
 def pin():
@@ -64,9 +65,11 @@ def instruction_lists(directory):
             sys.exit(f'{path.relative_to(ROOT)} names no file Equivalence/{module}.lean')
         # A list may also name a lemma about its class's rows (`Equivalence.utype_row_cases`);
         # `check.sh` checks it, but it is not an instruction theorem.
-        out[module] = [l.strip().removeprefix('Equivalence.equivalence_')
-                       for l in path.read_text().splitlines()
-                       if l.strip().startswith('Equivalence.equivalence_')]
+        names = [l.strip().removeprefix('Equivalence.equivalence_')
+                 for l in path.read_text().splitlines()
+                 if l.strip().startswith('Equivalence.equivalence_')]
+        if names:
+            out[module] = names
     return out
 
 
@@ -80,6 +83,13 @@ def parked():
 
 def count(lists):
     return sum(len(v) for v in lists.values())
+
+
+def all_checked(done):
+    """The count of checked instruction theorems when none is parked, which must be every opcode."""
+    if count(done) != OPCODES:
+        sys.exit(f'nothing is parked, but the lists name {count(done)} instruction theorems, not {OPCODES}')
+    return count(done)
 
 
 def opcodes(names):
@@ -105,7 +115,7 @@ def restored_detail():
     # SOUNDNESS.md keeps lines to 100 characters, and the block sits in a list item (2 more).
     width = 98
     if not rest:
-        out = [fill(f'**All {count(done)} of these theorems are checked**, in '
+        out = [fill(f'**All {all_checked(done)} of these theorems are checked**, in '
                     f'{plural(len(done), "file")} of `PicoFV/RV64IM/Equivalence/`:', width), '']
         return '\n'.join(out + by_file(done, width))
     out = [fill(f'**{count(done)} of these {count(done) + count(rest)} theorems are checked at the '
@@ -121,7 +131,7 @@ def restored_summary():
     done, rest = checked(), parked()
     names = sorted(n for v in done.values() for n in v)
     if not rest:
-        return fill(f'The branch proves all {len(names)} of them against the v3.1.1 chip: '
+        return fill(f'The branch proves all {all_checked(done)} of them against the v3.1.1 chip: '
                     f'{opcodes(names)} (see [SOUNDNESS.md](SOUNDNESS.md)).')
     text = (f'For now the branch proves {len(names)} of them against the v3.1.1 chip: {opcodes(names)}. '
             f'The other {count(rest)} are out of the build and `check.sh` does not check them (see '
@@ -132,7 +142,7 @@ def restored_summary():
 def parked_summary():
     done, rest = checked(), parked()
     if not rest:
-        return fill(f'No list is parked here: all {count(done)} instruction theorems of '
+        return fill(f'No list is parked here: all {all_checked(done)} instruction theorems of '
                     '`PicoFV/RV64IM/Equivalence/` are checked from `theorems.d/`.')
     verb = 'names' if len(rest) == 1 else 'name'
     text = (f'The {plural(len(rest), "list")} here {verb} {count(rest)} of the '
