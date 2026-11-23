@@ -81,12 +81,12 @@ theorem split_misaligned_8_2 (v : BitVec 64) (h : v.toNat % 8 = 4) (s : PreSail.
 
 /-! ## Sail's loop over the pieces
 
-    `untilFuelM fuel cond init f` runs `f` at most `fuel` times, stopping early once `cond`
-    holds. Sail's piece loop carries `(finished, i, write_success)` and its condition returns
-    `finished`. The lemmas take the monad instance as an argument, with what they need of it as
-    hypotheses, because `simp` has unfolded the instance by the time the loop is in the goal:
-    its `bind` and `pure` are still `ExceptT`'s, which `rfl` shows, but the instance as a whole
-    is no longer syntactically `ExceptT.instMonad`. -/
+    `untilFuelM fuel cond init f` runs `f` at most `fuel` times, stopping early once `cond` holds.
+    Sail's store loop carries `(finished, i, write_success)`, its load loop `(data, finished, i)`,
+    and each loop's condition returns `finished`. The lemmas take the monad instance as an argument,
+    with what they need of it as hypotheses, because `simp` has unfolded the instance by the time
+    the loop is in the goal: its `bind` and `pure` are still `ExceptT`'s, which `rfl` shows, but the
+    instance as a whole is no longer syntactically `ExceptT.instMonad`. -/
 
 /-- A loop whose passes are known ends in the last of them. The loop's condition reads a flag
     `fin` off the loop variables. If pass `i` of the body takes loop variables `xs i` and state
@@ -347,8 +347,8 @@ macro "misaligned_store_tac" split:term "," pure:ident "," modify:ident "," n:nu
     where the address is not a multiple of the width, after the caller has split on whether the
     destination is `x0`. In scope: `input`, `state`, `risc_v_assumptions`, `h_pc`, `h_r1`,
     `h_range` and `next_gma`, as for a store, and `h_mem`, a conjunction of facts
-    `state.mem[addr + j]? = some v_j`, one per byte of the access. `bytes` lists the `v_j`, so that
-    piece `i` of `b` bytes is the concatenation of bytes `b * i` to `b * i + b - 1`, highest first;
+    `state.mem[addr + j]? = some v_j`, one per byte of the access. `pieces` lists the pieces: piece
+    `i` of `b` bytes is the concatenation of `v_(b * i)` to `v_(b * i + b - 1)`, highest first;
     `val` is the concatenation of all of them, highest first. The tactic keeps Sail's loop folded,
     replaces it with `untilFuelM_pieces_read`, where the data after `i` pieces is `load_data`, and
     proves each pass on its own; the memory and the registers do not change. Then `load_data` at
