@@ -14,7 +14,8 @@ repository; CI fails when one is out of date. The rest of the text is reviewed b
 ## What is proved
 
 The theorems checked by `scripts/fv-check/check.sh` are listed in `scripts/fv-check/theorems.d/`,
-with their statements in `signatures.txt`. They are of four kinds.
+with their statements in `signatures.txt`. They are of four kinds, and one lemma beside them that
+discharges two instruction theorems' hypotheses (`Equivalence.utype_row_cases`, under the first).
 
 - **Opcode equivalence** (`Equivalence.equivalence_*`, one per RV64IM opcode except `ECALL`). For
   a CPU chip row that satisfies its extracted constraints, if the bus messages the row exchanges
@@ -23,8 +24,7 @@ with their statements in `signatures.txt`. They are of four kinds.
   bus.
 
   <!-- generated: restored -->
-  **60 of these 62 theorems are checked at the moment**, in 12 files of
-  `PicoFV/RV64IM/Equivalence/`:
+  **All 62 of these theorems are checked**, in 13 files of `PicoFV/RV64IM/Equivalence/`:
 
   - `Addiw.lean`: `ADDIW`
   - `BType.lean`: `BEQ`, `BGE`, `BGEU`, `BLT`, `BLTU` and `BNE`
@@ -38,23 +38,20 @@ with their statements in `signatures.txt`. They are of four kinds.
   - `ShiftIOp.lean`: `SLLI`, `SRAI` and `SRLI`
   - `ShiftIWOp.lean`: `SLLIW`, `SRAIW` and `SRLIW`
   - `Stores.lean`: `SB`, `SD`, `SH` and `SW`
-
-  The other 2, in 1 file, are out of the build, with their lists parked in
-  `scripts/fv-check/theorems.d/parked/`:
-
   - `UType.lean`: `AUIPC` and `LUI`
   <!-- end generated -->
 
-  The CPU chip is moving to Pico v3.1.1, which is a rewrite of the chip rather than a patch: 58
+  The CPU chip moved to Pico v3.1.1, which is a rewrite of the chip rather than a patch: 58
   columns instead of 132, 65 constraints instead of 218 and 17 messages instead of 36. Its `Airs/`,
-  `Constraints/` and interpretations files are at v3.1.1 here, with the lemmas the instruction
-  classes need — both the shared ones and those of the branch, jump, load and store rows; the
-  instruction-theorem files that still read the 2.x layout are out of the build until each is
-  rewritten against it. Until they return, this repository says nothing about the opcodes whose
-  lists are parked. Commit `353238a` is the last at which all 62 were checked, against the 2.x CPU
-  extraction and the bus contract as it stood then (which already covered the branch-comparison
-  opcodes). The 2.x interpretations file is unchanged from the tag `pico-v3-before-cpu` (`35259d8`)
-  to that commit.
+  `Constraints/` and interpretations files are at v3.1.1 here, and every instruction-theorem file
+  is rewritten against them. Commit `353238a` is the last at which all 62 were checked against the
+  2.x CPU extraction and the bus contract as it stood then (which already covered the
+  branch-comparison opcodes). The 2.x interpretations file is unchanged from the tag
+  `pico-v3-before-cpu` (`35259d8`) to that commit.
+
+  `UType.lean`'s list also holds `Equivalence.utype_row_cases`, which is not an instruction
+  theorem: `LUI` and `AUIPC` share a row shape at v3.1.1, and it shows that every row of that
+  shape is one the two theorems cover (see A3).
 
   Every v3.1.1 instruction theorem also assumes the chunk's final pc is a well-formed guest
   address (`Equivalence.pico_CpuChip_control_flow_assumptions`; see A3). Pico enforces that in
@@ -242,8 +239,9 @@ zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign fl
 the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
 amount or 12-bit immediate; the theorems do not state that link. The other checked theorems with
 an immediate still read it from the row's operand values: the six branches, `JALR`, the four
-stores and the seven loads take the low 13 or 12 bits of the `op_c` value, and `JAL` the low 21
-bits of the `op_b` value.
+stores and the seven loads take the low 13 or 12 bits of the `op_c` value, `JAL` the low 21 bits
+of the `op_b` value, and `LUI` and `AUIPC` take their 20-bit immediate as a parameter pinned by a
+hypothesis on the `op_c` value (`LUI`) or the `op_b` value (`AUIPC`).
 
 The four store theorems take their opcode alone too, as they did at `353238a`, and gain the
 whole-trace assumption, which their 2.x statements did not take. Like every restored theorem they
@@ -264,7 +262,9 @@ only accesses aligned to their width. The unaligned chip may take any access, al
 link a store theorem assumes is open for every dispatch the unaligned chip takes, and the two sides
 are not yet composed, as A4 describes for chip composition generally.
 
-The seven load theorems rest on the same promise, and on one more part of it. Besides the address
+The seven load theorems take their opcode alone too, as they did at `353238a`, and gain the
+whole-trace assumption, which their 2.x statements did not take. They rest on the same promise, and
+on one more part of it. Besides the address
 bound, `MemoryBus.Spec` says what extension the loaded word carries when the destination is not
 `x0`: sign for `LB`, `LH` and `LW`, zero for `LBU`, `LHU` and `LWU`, none for `LD`. That is the
 whole content of what a load writes to `rd`, so a load theorem says that the CPU row writes back
@@ -276,8 +276,30 @@ only the address bound: the row writes zero to `x0`, and Sail's write to `x0` ch
 the load into aligned pieces and reads the same bytes, which the Sail lemmas of `LH`, `LHU`, `LW`,
 `LWU` and `LD` prove (`RVSail/Misaligned.lean`).
 
-The parked theorems were last recorded at `353238a`, against the 2.x constraints and the contracts
-of `RVSail/Buses.lean`, and are not checked while they move. Two definitions every instruction
+The two U-type theorems share a row shape: the v3.1.1 decoder gives `LUI` and `AUIPC` alike opcode 0
+with both immediate flags (`ProgramBusEntry.decoded_from`), and the chip has no `AUIPC` opcode and
+no `is_auipc` selector. So besides the opcode and both flags, each theorem takes its instruction's
+operand shape as hypotheses, with the 20-bit immediate `imm` as a parameter: for `LUI`, the `op_b`
+value is zero and the `op_c` value is `signExtend 64 (imm ++ 0#12)`; for `AUIPC`, the `op_b` value
+is that immediate and the `op_c` value is the row's pc. At `353238a` `LUI` was opcode 0 with both
+flags and read its immediate out of the `op_c` value, and `AUIPC` was opcode 27 with
+`is_auipc = 1`; neither took the whole-trace assumption, which both now do. The shapes are not left
+for anything else to discharge: `Equivalence.utype_row_cases`, checked with them, proves that every
+real row of opcode 0 with both flags has one of the two, so the pair covers the opcode. It takes two
+of the instruction theorems' own hypotheses: every row's extracted CPU constraints, and every row's
+`bus_row_wf_asm`, the whole bus assumption with the ALU and Memory promises in it, although its
+proof reads only the row's Program message (the Program table's promise). The shapes overlap
+exactly when the `op_b` value is zero and the `op_c` value is the row's pc: the row is `AUIPC 0`
+and also the `LUI` of the pc's upper bits, which needs the pc to be a multiple of `2 ^ 12` but is
+not implied by it (`LUI 5` at pc `0x1000` has the `op_c` value `0x5000`). There both theorems hold,
+because both instructions write the pc. `op_b = 0` alone would not identify a `LUI` row: an `AUIPC`
+row whose immediate is 0 has it, and writes the pc. Both theorems rest on the ALU chip's promise for
+opcode 0 (`op_a = op_b + op_c`), as `ADD` and `ADDI` do. The row reads no source register: its
+operations are `JAL`'s, the pc read, the read of `rd`'s old value and the write of `rd`, and the
+next pc.
+
+The 2.x statements were last recorded at `353238a`, against the 2.x constraints and the contracts
+of `RVSail/Buses.lean`. Two definitions every instruction
 theorem names were rewritten at v3.1.1 behind unchanged names: `Equivalence.CPU_bus_operations`, the
 operations the theorem compares the Sail step against (now a two-piece pc, with the memory width and
 direction taken from the opcode), and `CpuChip.Interpretations.bus_row`, which sorts the row's
@@ -434,8 +456,8 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 77 |
-| kernel + compiler + RISC-V spec axioms | 60 |
+| kernel + compiler | 78 |
+| kernel + compiler + RISC-V spec axioms | 62 |
 | kernel only | 1 |
 <!-- end generated -->
 
@@ -449,12 +471,11 @@ A proof that uses them also trusts the Lean compiler and runtime.
 branch's, so the uses only go down.
 
 <!-- generated: tactics -->
-54 uses of `native_decide`, `bv_decide` or `decide +native` in 7 files:
+52 uses of `native_decide`, `bv_decide` or `decide +native` in 6 files:
 
 - `PicoFV/Fundamentals/Core.lean`: 7
 - `PicoFV/Fundamentals/KoalaBear.lean`: 1
 - `PicoFV/Fundamentals/Word.lean`: 39
-- `PicoFV/RV64IM/Equivalence/UType.lean`: 2
 - `PicoFV/RV64IM/RVSail/Execution.lean`: 3
 - `PicoFV/RV64IM/Spec/BitwiseChip.lean`: 1
 - `PicoFV/RV64IM/Spec/DivRemChip.lean`: 1
@@ -466,8 +487,7 @@ A weekly CI job (`.github/workflows/replay.yml`) is written to replay the declar
 module the build imports into the kernel with `leanchecker`, except the modules listed in C2:
 the kernel cannot replay what those tactics computed. Today that excludes `Fundamentals/Core`,
 `Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution` and the specifications of the
-Bitwise and DivRem chips. Modules the build does not import, such as the parked
-equivalence files, are not replayed.
+Bitwise and DivRem chips. Modules the build does not import are not replayed.
 
 **The job has not run.** GitHub runs a scheduled workflow only from the repository's default branch,
 and the workflow is on `pico-v3`, not on `main`. Until it runs, this section describes what it would
