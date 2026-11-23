@@ -11,79 +11,98 @@ open Plonky3
 set_option linter.unusedVariables false
 
 /-!
-# Shared Sub-air definitions (64-bit memory)
+# Shared sub-air definitions (64-bit memory)
 
-Common column structures from
-`vm/src/chips/chips/riscv_memory/read_write/columns.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`. These are reused across chips
-(`CpuChip`, `MemoryReadWriteChip`, …).
+The column layouts from `vm/src/chips/chips/riscv_memory/read_write/columns.rs` at Pico v3.2.0
+(`fcfa504624657d0c417c43f1233d5d891f293ff9`) that more than one chip uses. The memory-access
+layouts are shared by the CPU chip (its three register accesses), `MemoryReadWriteChip` (its data
+access, `riscv_memory/read_write/columns.rs:74`) and `MemoryUnalignedChip` (its two dword
+accesses, `riscv_memory/unaligned/columns.rs:41-45`); `MemoryInstructionCols` by the two memory
+chips.
 
 ```rust
-pub struct MemoryAccessCols<T> {
-    pub value: Word<T>,           // 4 limbs
-    pub prev_chunk: T,
-    pub prev_clk: T,
-    pub compare_clk: T,
+pub struct MemoryAccessLiteCols<T> {      // riscv_memory/read_write/columns.rs:410-419
+    pub value: Word<T>,                   // 4 limbs
     pub diff_16bit_limb: T,
-    pub diff_8bit_limb: T,
-}                                 // 9 cols total
+    pub diff_hi9: T,
+}                                         // 6 cols total
 
-pub struct MemoryReadCols<T> {
-    pub access: MemoryAccessCols<T>,
-}                                 // 9 cols total
+pub struct MemoryReadLiteCols<T> {        // riscv_memory/read_write/columns.rs:387-389
+    pub access: MemoryAccessLiteCols<T>,
+}                                         // 6 cols total
 
-pub struct MemoryWriteCols<T> {
+pub struct MemoryReadWriteLiteCols<T> {   // riscv_memory/read_write/columns.rs:394-397
     pub prev_value: Word<T>,
-    pub access: MemoryAccessCols<T>,
-}                                 // 13 cols total
-
-pub struct MemoryReadWriteCols<T> {
-    pub prev_value: Word<T>,
-    pub access: MemoryAccessCols<T>,
-}                                 // 13 cols total
+    pub access: MemoryAccessLiteCols<T>,
+}                                         // 10 cols total
 ```
 -/
 
 -- ============================================================================
--- MemoryAccessCols (9 columns)
+-- MemoryAccessLiteCols (6 columns)
+--
+-- `riscv_memory/read_write/columns.rs:410-419`. No committed `prev_clk`:
+-- the AIR defines it as `clk - (diff_16bit_limb + diff_hi9 * 2^16) - 1`,
+-- so the two difference limbs carry the timestamp argument alone.
 -- ============================================================================
 
-#define_subair "MemoryAccessCols" using "pico_encapsulation" where
+#define_subair "MemoryAccessLiteCols" using "pico_encapsulation" where
   Column["value_0"]
   Column["value_1"]
   Column["value_2"]
   Column["value_3"]
-  Column["prev_chunk"]
-  Column["prev_clk"]
-  Column["compare_clk"]
   Column["diff_16bit_limb"]
-  Column["diff_8bit_limb"]
+  Column["diff_hi9"]
 
 -- ============================================================================
--- MemoryReadCols (9 columns) — same shape as MemoryAccessCols
+-- MemoryReadLiteCols (6 columns) — same shape as MemoryAccessLiteCols
 -- ============================================================================
 
-#define_subair "MemoryReadCols" using "pico_encapsulation" where
-  SubAir["access": "MemoryAccessCols" width := 9]
+#define_subair "MemoryReadLiteCols" using "pico_encapsulation" where
+  SubAir["access": "MemoryAccessLiteCols" width := 6]
 
 -- ============================================================================
--- MemoryWriteCols (13 columns)
+-- MemoryReadWriteLiteCols (10 columns)
 -- ============================================================================
 
-#define_subair "MemoryWriteCols" using "pico_encapsulation" where
+#define_subair "MemoryReadWriteLiteCols" using "pico_encapsulation" where
   Column["prev_value_0"]
   Column["prev_value_1"]
   Column["prev_value_2"]
   Column["prev_value_3"]
-  SubAir["access": "MemoryAccessCols" width := 9]
+  SubAir["access": "MemoryAccessLiteCols" width := 6]
 
 -- ============================================================================
--- MemoryReadWriteCols (13 columns) — same shape as MemoryWriteCols
+-- MemoryInstructionCols (24 columns)
+--
+-- `riscv_memory/read_write/columns.rs:146-179`. Both memory chips have one: `MemoryReadWriteChip`
+-- and `MemoryUnalignedChip`, which imports it from the read/write chip's module
+-- (`riscv_memory/unaligned/columns.rs:3-5`). It lives here because a chip's files may not import
+-- another chip's.
 -- ============================================================================
 
-#define_subair "MemoryReadWriteCols" using "pico_encapsulation" where
-  Column["prev_value_0"]
-  Column["prev_value_1"]
-  Column["prev_value_2"]
-  Column["prev_value_3"]
-  SubAir["access": "MemoryAccessCols" width := 9]
+#define_subair "MemoryInstructionCols" using "pico_encapsulation" where
+  Column["op_a_0"]
+  Column["is_lb"]
+  Column["is_lbu"]
+  Column["is_lh"]
+  Column["is_lhu"]
+  Column["is_lw"]
+  Column["is_lwu"]
+  Column["is_ld"]
+  Column["is_sb"]
+  Column["is_sh"]
+  Column["is_sw"]
+  Column["is_sd"]
+  Column["op_a_value_0"]
+  Column["op_a_value_1"]
+  Column["op_a_value_2"]
+  Column["op_a_value_3"]
+  Column["op_b_value_0"]
+  Column["op_b_value_1"]
+  Column["op_b_value_2"]
+  Column["op_b_value_3"]
+  Column["op_c_value_0"]
+  Column["op_c_value_1"]
+  Column["op_c_value_2"]
+  Column["op_c_value_3"]

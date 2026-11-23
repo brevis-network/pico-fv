@@ -23,7 +23,7 @@ Algebraic constraints (2):
 - `msb * (msb - 1) = 0`             — `msb ∈ {0, 1}`
 
 Bus interactions (1):
-- ByteBus `U16Range` on `2 * value - msb * 65536`, gated by `-is_real`.
+- ByteBus `U16Range` on `2 * value - msb * 65536`, gated by `+is_real`.
   Combined with `value < 65536` (which the parent must supply), this
   forces `msb` to be exactly bit-15 of `value`.
 
@@ -60,7 +60,7 @@ namespace U16MSBGadget
       Program := [],
       ALU := [],
       Byte := List.map ByteBusEntry.deserialise [
-        (-(is_real), #v[8, 2 * value - msb * 65536, 0, 0, 0])
+        ((is_real), #v[8, 2 * value - msb * 65536, 0, 0, 0])
       ],
       State := [],
       Memory := []

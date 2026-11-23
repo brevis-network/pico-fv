@@ -4,9 +4,11 @@ import PicoFV.Fundamentals.Word
 import PicoFV.Fundamentals.Interaction
 
 import PicoFV.RV64IM.Transpiler.Transpiler
+import PicoFV.RV64IM.Transpiler.TranspilerV3
 
 import PicoFV.RV64IM.RVSail.Auxiliaries
 import PicoFV.RV64IM.RVSail.Buses
+import PicoFV.RV64IM.RVSail.BusesV3
 import PicoFV.RV64IM.RVSail.Execution
 import PicoFV.RV64IM.RVSail.Operations
 import PicoFV.RV64IM.RVSail.Opcodes.Opcodes
@@ -20,6 +22,7 @@ import PicoFV.RV64IM.Extraction.Attributes
 import PicoFV.RV64IM.Extraction.BitwiseChip
 import PicoFV.RV64IM.Extraction.BitwiseGadget
 import PicoFV.RV64IM.Extraction.BitwiseU16Gadget
+import PicoFV.RV64IM.Extraction.CodeRangeGadget
 import PicoFV.RV64IM.Extraction.CpuChip
 import PicoFV.RV64IM.Extraction.DivRemChip
 import PicoFV.RV64IM.Extraction.IsEqualWordGadget
@@ -30,6 +33,7 @@ import PicoFV.RV64IM.Extraction.LtSignedGadget
 import PicoFV.RV64IM.Extraction.LtUnsignedGadget
 import PicoFV.RV64IM.Extraction.LtWordU16Gadget
 import PicoFV.RV64IM.Extraction.MemoryReadWriteChip
+import PicoFV.RV64IM.Extraction.MemoryUnalignedChip
 import PicoFV.RV64IM.Extraction.MulChip
 import PicoFV.RV64IM.Extraction.MulGadget
 import PicoFV.RV64IM.Extraction.SLLChip
@@ -61,6 +65,7 @@ import PicoFV.RV64IM.Airs.LtWordU16Gadget
 import PicoFV.RV64IM.Airs.LtSignedGadget
 import PicoFV.RV64IM.Airs.LtUnsignedGadget
 import PicoFV.RV64IM.Airs.MulGadget
+import PicoFV.RV64IM.Airs.CodeRangeGadget
 
 -- Air wrappers (chips)
 import PicoFV.RV64IM.Airs.AddChip
@@ -74,6 +79,7 @@ import PicoFV.RV64IM.Airs.SLLChip
 import PicoFV.RV64IM.Airs.ShiftRightChip
 import PicoFV.RV64IM.Airs.DivRemChip
 import PicoFV.RV64IM.Airs.MemoryReadWriteChip
+import PicoFV.RV64IM.Airs.MemoryUnalignedChip
 import PicoFV.RV64IM.Airs.CpuChip
 
 -- Constraints (human-readable + identification lemmas)
@@ -97,9 +103,11 @@ import PicoFV.RV64IM.Constraints.IsZeroWordGadget
 import PicoFV.RV64IM.Constraints.IsEqualWordGadget
 import PicoFV.RV64IM.Constraints.U16ToU8GadgetSafe
 import PicoFV.RV64IM.Constraints.MulGadget
+import PicoFV.RV64IM.Constraints.CodeRangeGadget
 import PicoFV.RV64IM.Constraints.MulChip
 import PicoFV.RV64IM.Constraints.DivRemChip
 import PicoFV.RV64IM.Constraints.MemoryReadWriteChip
+import PicoFV.RV64IM.Constraints.MemoryUnalignedChip
 import PicoFV.RV64IM.Constraints.CpuChip
 import PicoFV.RV64IM.Constraints.CpuChipInterpretations
 
@@ -125,9 +133,14 @@ import PicoFV.RV64IM.Spec.IsEqualWordGadget
 import PicoFV.RV64IM.Spec.U16ToU8GadgetSafe
 import PicoFV.RV64IM.Spec.MulGadgetCore
 import PicoFV.RV64IM.Spec.MulGadget
+import PicoFV.RV64IM.Spec.CodeRangeGadget
 import PicoFV.RV64IM.Spec.MulChip
 import PicoFV.RV64IM.Spec.DivRemChip
 import PicoFV.RV64IM.Spec.MemoryReadWriteChip
+import PicoFV.RV64IM.Spec.MemoryReadWriteChipDataFlow
+import PicoFV.RV64IM.Spec.MemoryUnalignedChip
+import PicoFV.RV64IM.Spec.MemoryUnalignedChipDataFlow
+import PicoFV.RV64IM.Spec.CpuChip
 
 -- Equivalence (Sail ↔ Pico)
 import PicoFV.RV64IM.Equivalence.Equivalence

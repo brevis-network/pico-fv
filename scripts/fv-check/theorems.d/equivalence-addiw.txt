@@ -1,0 +1,2 @@
+Equivalence.addiw_decode_satisfiable
+Equivalence.equivalence_ADDIW

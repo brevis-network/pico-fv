@@ -1,0 +1,12 @@
+Equivalence.equivalence_DIV
+Equivalence.equivalence_DIVU
+Equivalence.equivalence_DIVUW
+Equivalence.equivalence_DIVW
+Equivalence.equivalence_REM
+Equivalence.equivalence_REMU
+Equivalence.equivalence_REMUW
+Equivalence.equivalence_REMW
+Equivalence.div_decode_satisfiable
+Equivalence.divw_decode_satisfiable
+Equivalence.rem_decode_satisfiable
+Equivalence.remw_decode_satisfiable

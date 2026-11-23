@@ -22,7 +22,7 @@ Layout mirrors `PicoFV.RV32IM.Spec.AddSubAir`:
 - `spec_addition` — the semantic statement `value = b + c` (RV64
                     analogue of `spec_ADD`).
 - `wf_asrt`      — well-formedness assertions on emitted entries
-                    (vacuous: all entries have multiplicity `-is_real`,
+                    (vacuous: all entries have multiplicity `+is_real`,
                     so `wf_assert_cond` is never satisfied).
 -/
 
@@ -189,9 +189,9 @@ namespace AddGadget.Spec
 
   -- =====================================================================
   -- Well-formedness: trivially holds because every byte-bus entry the
-  -- gadget emits has multiplicity `-(is_real)`. Since `is_real ∈ {0, 1}`
-  -- (by `selector_breakdown`), the multiplicity is either `0` or `-1` —
-  -- never `1` — so `wf_assert_cond` (= multiplicity equals `1`) is
+  -- gadget emits has multiplicity `+(is_real)`. Since `is_real ∈ {0, 1}`
+  -- (by `selector_breakdown`), the multiplicity is either `0` or `1` —
+  -- never `-1` — so `wf_assert_cond` (= multiplicity equals `-1`) is
   -- vacuously false on every entry.
   -- =====================================================================
 

@@ -1,0 +1,4 @@
+Equivalence.equivalence_JAL
+Equivalence.equivalence_JALR
+Equivalence.jal_decode_satisfiable
+Equivalence.jalr_decode_satisfiable

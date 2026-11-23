@@ -37,8 +37,8 @@ The 5+1 algebraic constraints emitted by the chip are:
   (the initial "carry-in" of `b + (¬c) + 1`).
 
 The bus interactions are:
-- 4 ByteBus entries (opcode 4, sub-op 8) — u16 range-check each `value_i`.
-- 1 ALU entry (opcode 3, sub-op 1 = `Opcode::SUB`) — issued only when
+- 4 ByteBus entries (opcode 5, sub-op 8) — u16 range-check each `value_i`.
+- 1 ALU entry (opcode 4, sub-op 1 = `Opcode::SUB`) — issued only when
   `is_sub = 1` and carries `(value, operand_1, operand_2)`.
 -/
 
@@ -61,7 +61,7 @@ namespace SubChip
     ({
       Program := [],
       ALU := List.map ALUBusEntry.deserialise [
-        (is_sub,
+        (-(is_sub),
           #v[ 1,
               value_0, value_1, value_2, value_3,
               operand_1_0, operand_1_1, operand_1_2, operand_1_3,
@@ -199,10 +199,10 @@ namespace SubChip.ConstraintsAndBuses
 
       -- =====================================================================
       -- Bus interactions emitted by `SubChip::eval` (per row):
-      -- 4 ByteBus entries (opcode 4, sub-op 8): u16 range-check `value_i`,
-      --   gated by `-is_sub`.
-      -- 1 ALU entry (opcode 3, sub-op 1 = Opcode::SUB): carry the operation,
-      --   gated by `+is_sub`. Format: [3, opcode_field=1,
+      -- 4 ByteBus entries (opcode 5, sub-op 8): u16 range-check `value_i`,
+      --   gated by `+is_sub`.
+      -- 1 ALU entry (opcode 4, sub-op 1 = Opcode::SUB): carry the operation,
+      --   gated by `-is_sub`. Format: [4, opcode_field=1,
       --                                 value_0..3 (a),
       --                                 operand_1_0..3 (b),
       --                                 operand_2_0..3 (c)].
@@ -210,12 +210,12 @@ namespace SubChip.ConstraintsAndBuses
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_SubChip FKB ExtF) (row : ℕ) : List (FKB × List FKB) :=
-        [ (-(air.cols.values.is_sub row 0), [4, 8, (air.cols.values.sub_operation.value_0 row 0), 0, 0, 0]),
-          (-(air.cols.values.is_sub row 0), [4, 8, (air.cols.values.sub_operation.value_1 row 0), 0, 0, 0]),
-          (-(air.cols.values.is_sub row 0), [4, 8, (air.cols.values.sub_operation.value_2 row 0), 0, 0, 0]),
-          (-(air.cols.values.is_sub row 0), [4, 8, (air.cols.values.sub_operation.value_3 row 0), 0, 0, 0]),
-          ((air.cols.values.is_sub row 0),
-            [3, 1,
+        [ ((air.cols.values.is_sub row 0), [5, 8, (air.cols.values.sub_operation.value_0 row 0), 0, 0, 0]),
+          ((air.cols.values.is_sub row 0), [5, 8, (air.cols.values.sub_operation.value_1 row 0), 0, 0, 0]),
+          ((air.cols.values.is_sub row 0), [5, 8, (air.cols.values.sub_operation.value_2 row 0), 0, 0, 0]),
+          ((air.cols.values.is_sub row 0), [5, 8, (air.cols.values.sub_operation.value_3 row 0), 0, 0, 0]),
+          (-(air.cols.values.is_sub row 0),
+            [4, 1,
               (air.cols.values.sub_operation.value_0 row 0),
               (air.cols.values.sub_operation.value_1 row 0),
               (air.cols.values.sub_operation.value_2 row 0),

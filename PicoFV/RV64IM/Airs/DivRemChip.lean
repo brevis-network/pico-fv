@@ -21,7 +21,7 @@ set_option linter.unusedVariables false
 
 Lean formalisation of `DivRemCols` / `DivRemValueCols` from
 `vm/src/chips/chips/alu/divrem/columns.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
+`2acc7c1828fb4ec1bed5963511bb370870c5b608` (Pico v3.1.1).
 
 ```rust
 pub struct DivRemCols<F: Copy> {
@@ -32,6 +32,8 @@ pub struct DivRemValueCols<F: Copy> {
     pub a: Word<F>,
     pub b: Word<F>,
     pub c: Word<F>,
+    pub b_raw: Word<F>,
+    pub c_raw: Word<F>,
     pub quotient: Word<F>,
     pub quotient_comp: Word<F>,
     pub remainder_comp: Word<F>,
@@ -75,18 +77,22 @@ pub struct DivRemValueCols<F: Copy> {
 }
 ```
 
-Layout: 4*10 (10 Words) + 8 (`c_times_quotient`) + 45 (`c_times_quotient_lower`)
+Layout: 4*12 (12 Words) + 8 (`c_times_quotient`) + 45 (`c_times_quotient_lower`)
 + 45 (`c_times_quotient_upper`) + 8 (`remainder_lt_gadget`) + 4 (`c_neg_gadget`)
 + 4 (`rem_neg_gadget`) + 8 (`carry`) + 11 (`is_c_0`) + 8 (op selectors) + 1
 (`is_overflow`) + 11 (`is_overflow_b`) + 11 (`is_overflow_c`) + 4 (4 ×
 `U16MSBGadget`) + 4 (`b_neg`/etc.) + 4 (`rem_neg`/etc.) + 2
-(`is_real`/`remainder_check_multiplicity`) = 218 columns.
+(`is_real`/`remainder_check_multiplicity`) = 226 columns.
+
+`b` and `c` are the operands in computational form (for word operations the
+low 32 bits, zero- or sign-extended); `b_raw` and `c_raw` are the register
+values the CPU sent, which the ALU bus carries.
 
 This matches the extraction at `Extraction/DivRemChip.lean`.
 -/
 
 -- ============================================================================
--- DivRemValueCols (218 columns)
+-- DivRemValueCols (226 columns)
 -- ============================================================================
 
 #define_subair "DivRemValueCols" using "pico_encapsulation" where
@@ -105,6 +111,16 @@ This matches the extraction at `Extraction/DivRemChip.lean`.
   Column["c_1"]
   Column["c_2"]
   Column["c_3"]
+  -- b_raw (Word) — first input operand as read from the register
+  Column["b_raw_0"]
+  Column["b_raw_1"]
+  Column["b_raw_2"]
+  Column["b_raw_3"]
+  -- c_raw (Word) — second input operand as read from the register
+  Column["c_raw_0"]
+  Column["c_raw_1"]
+  Column["c_raw_2"]
+  Column["c_raw_3"]
   -- quotient (Word)
   Column["quotient_0"]
   Column["quotient_1"]
@@ -205,18 +221,18 @@ This matches the extraction at `Extraction/DivRemChip.lean`.
   Column["remainder_check_multiplicity"]
 
 -- ============================================================================
--- DivRemCols (218 columns — single DivRemValueCols, DIVREM_DATAPAR = 1)
+-- DivRemCols (226 columns — single DivRemValueCols, DIVREM_DATAPAR = 1)
 -- ============================================================================
 
 #define_subair "DivRemCols" using "pico_encapsulation" where
-  SubAir["values": "DivRemValueCols" width := 218]
+  SubAir["values": "DivRemValueCols" width := 226]
 
 -- ============================================================================
 -- Air definition
 -- ============================================================================
 
 #define_air "DivRemChip" using "pico_encapsulation" where
-  MainSubAir["cols": "DivRemCols" width := 218]
+  MainSubAir["cols": "DivRemCols" width := 226]
 
 -- ============================================================================
 -- Computed values

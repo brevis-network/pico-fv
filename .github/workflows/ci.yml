@@ -1,0 +1,147 @@
+# Build the proofs and check the theorems; check that the extraction files match the pinned
+# Pico; and run the checks that need no build.
+
+name: ci
+
+on:
+  push:
+    branches: [main, pico-v3]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/pico-v3' }}
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: layers
+        run: scripts/fv-check/check_layers.sh
+      # On a pull request the baseline may not rise above the base branch's.
+      - name: compiled-code tactics
+        if: ${{ !cancelled() }}
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: scripts/fv-check/check_tactics.sh ${BASE:+--against "$BASE"}
+      - name: SOUNDNESS facts
+        if: ${{ !cancelled() }}
+        run: python3 scripts/fv-check/soundness_facts.py --check
+
+  extractor:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: extractor
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # rustup reads the toolchain from extractor/rust-toolchain.toml.
+      - name: toolchain
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            extractor/target
+          key: extractor-${{ runner.os }}-${{ hashFiles('extractor/Cargo.lock', 'extractor/rust-toolchain.toml') }}
+      - name: tests
+        run: cargo test --release --locked
+      - name: extraction files match the pinned Pico
+        run: cargo run --release --locked -- --check ../PicoFV/RV64IM/Extraction
+
+  # A cold build takes hours, so it runs in stages, and on main and pico-v3 each stage saves the
+  # builds: a runner lost mid-build keeps the earlier stages, and a rerun resumes from them.
+  # Pull requests only restore, so their entries do not evict the branches' from the cache.
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      BUILDS: |
+        .lake/build
+        .lake/packages/LeanRV/.lake/build
+        .lake/packages/Sail/.lake/build
+        .lake/packages/LeanZKCircuit_Plonky3/.lake/build
+      SAVE: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/pico-v3' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: install elan
+        run: scripts/ci/install_elan.sh
+      # Also clones the Lake packages, which the restore below needs in place.
+      - name: Mathlib cache
+        run: lake exe cache get
+      - name: cache key
+        env:
+          DEPS: ${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
+        run: |
+          echo "PREFIX=picofv-build-$RUNNER_OS-$DEPS" >> "$GITHUB_ENV"
+          echo "SUFFIX=$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+      # Only after Lake has cloned the packages: it discards a package directory that is not a
+      # checkout of the pinned revision, so restoring earlier would lose these builds. Every save
+      # adds a stage suffix, so the restore keys do the matching: the newest save for this commit
+      # first, so a rerun resumes where the last run stopped.
+      - name: restore builds
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.BUILDS }}
+          key: ${{ env.PREFIX }}-${{ github.sha }}
+          restore-keys: |
+            ${{ env.PREFIX }}-${{ github.sha }}-
+            ${{ env.PREFIX }}-
+      # A failed stage still saves what it built; a lost runner saves nothing of its stage.
+      - name: build the heaviest modules, one at a time
+        id: stage1
+        run: |
+          mapfile -t heavy < <(grep -v -e '^#' -e '^[[:space:]]*$' scripts/ci/heavy-modules.txt)
+          scripts/ci/build_stage.sh --alone "${heavy[@]}"
+      - name: save the heaviest modules
+        if: ${{ !cancelled() && env.SAVE == 'true' && steps.stage1.outputs.built == 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.BUILDS }}
+          key: ${{ env.PREFIX }}-${{ env.SUFFIX }}-1
+      - name: build the foundations
+        id: stage2
+        run: >-
+          scripts/ci/build_stage.sh PicoFV/Fundamentals PicoFV/RV64IM/Transpiler
+          PicoFV/RV64IM/RVSail PicoFV/RV64IM/Extraction PicoFV/RV64IM/Airs
+      - name: save the foundations
+        if: ${{ !cancelled() && env.SAVE == 'true' && steps.stage2.outputs.built == 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.BUILDS }}
+          key: ${{ env.PREFIX }}-${{ env.SUFFIX }}-2
+      - name: build the chip constraints and specifications
+        id: stage3
+        run: scripts/ci/build_stage.sh PicoFV/RV64IM/Constraints PicoFV/RV64IM/Spec
+      - name: save the chip constraints and specifications
+        if: ${{ !cancelled() && env.SAVE == 'true' && steps.stage3.outputs.built == 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.BUILDS }}
+          key: ${{ env.PREFIX }}-${{ env.SUFFIX }}-3
+      - name: build the rest
+        id: stage4
+        run: scripts/ci/build_stage.sh PicoFV64
+      - name: save the builds
+        if: ${{ !cancelled() && env.SAVE == 'true' && steps.stage4.outputs.built == 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.BUILDS }}
+          key: ${{ env.PREFIX }}-${{ env.SUFFIX }}-4
+      - name: theorems
+        run: scripts/fv-check/check.sh

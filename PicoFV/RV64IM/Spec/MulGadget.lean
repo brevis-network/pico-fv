@@ -488,7 +488,7 @@ namespace MulGadget.Spec
       rcases h_cse_b with h | h <;> simp [h]
     -- Carry u16-bounds and product u8-bounds from `h_rest_wf`. The bus
     -- entry order in `MulGadget.AbsBuses` is: 2 MSB byte lookups (b, c),
-    -- 1 conditional U16MSBGadget entry (gated by `-is_mulw`), 16 ×
+    -- 1 conditional U16MSBGadget entry (gated by `+is_mulw`), 16 ×
     -- U16Range on `carry_i`, 8 × U8Pair on `(product[2i], product[2i+1])`.
     -- After `simp [bus_row_wf_asm, h_is_real, ByteBus.Spec, and_assoc]`
     -- the entries split into a flat ∧-conjunction.

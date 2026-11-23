@@ -1,4 +1,4 @@
---Extracted on 2026-5-11 at 15:37:39.508101486 using git commit "e1280624bd"
+--Extracted from pico commit "fcfa504624657d0c417c43f1233d5d891f293ff9" by extractor/. Do not edit.
 import Mathlib.Data.List.Defs
 
 import LeanZKCircuit_Plonky3.Plonky3.Circuit
@@ -35,4 +35,3 @@ def allHold {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] 
   constrain_interactions c ∧
   List.Forall (·) (constraint_list c row)
 end IsZeroGadget.Extraction
-------

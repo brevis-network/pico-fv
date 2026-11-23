@@ -45,9 +45,9 @@ The 24 algebraic constraints decompose as:
 
 The 3 byte-bus entries decompose as:
 - 1 from each `U16MSBGadget` (the `2*v - msb*65536` consistency check
-  for `a_3` and `b_3`, gated by `-is_signed`)
+  for `a_3` and `b_3`, gated by `+is_signed`)
 - 1 from `LtWordU16Gadget` (the `Δ + bit*65536` comparison entry,
-  gated by `-is_real`)
+  gated by `+is_real`)
 -/
 
 namespace LtSignedGadget
@@ -88,8 +88,8 @@ namespace LtSignedGadget
 
   /-- Bus entries emitted by Pico's `LtSignedGadget`: 2 byte-bus msb
       consistency entries (from each `U16MSBGadget`, gated by
-      `-is_signed`) plus 1 byte-bus comparison entry (from
-      `LtWordU16Gadget`, gated by `-is_real`). -/
+      `+is_signed`) plus 1 byte-bus comparison entry (from
+      `LtWordU16Gadget`, gated by `+is_real`). -/
   def AbsBuses
     (is_real is_signed
      a_3 b_3

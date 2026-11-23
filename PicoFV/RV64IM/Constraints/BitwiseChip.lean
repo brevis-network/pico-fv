@@ -42,10 +42,10 @@ The 5 algebraic constraints emitted by the chip are:
 The bus interactions are:
 - 8 ByteBus entries (opcode `is_xor*2 + is_or*1 + is_and*0`, sub-op
   `result_byte_j`) — one bitwise byte lookup per byte of the 64-bit
-  result, gated by `-(is_xor + is_or + is_and)`. The byte operands
+  result, gated by `+(is_xor + is_or + is_and)`. The byte operands
   alternate between explicit low bytes and inline high bytes
   `(limb - low_byte) * inv(256)`.
-- 1 ALU entry (opcode 3, sub-op `is_xor*2 + is_or*3 + is_and*4` ∈
+- 1 ALU entry (opcode 4, sub-op `is_xor*2 + is_or*3 + is_and*4` ∈
   {2 (XOR), 3 (OR), 4 (AND)}) — issued only when the sum-selector is
   1; carries the recomposed u16 result limbs `result_{2i} +
   result_{2i+1} * 256` along with `b_0..3` and `c_0..3`.
@@ -165,15 +165,15 @@ namespace BitwiseChip.ConstraintsAndBuses
 
       -- =====================================================================
       -- Bus interactions emitted by `BitwiseChip::eval` (per row):
-      -- 8 ByteBus entries (opcode 4 prefix, byte-op = is_xor*2 + is_or):
+      -- 8 ByteBus entries (opcode 5 prefix, byte-op = is_xor*2 + is_or):
       --   for each limb i ∈ {0,1,2,3}, two entries:
       --     - low byte: bitwise(b_low_byte_i, c_low_byte_i) = result_{2i}
       --     - high byte: bitwise((b_i - b_low_byte_i)*inv(256),
       --                          (c_i - c_low_byte_i)*inv(256))
       --                  = result_{2i+1}
-      --   all gated by `-(is_xor + is_or + is_and)`.
-      -- 1 ALU entry (opcode 3 prefix, op = is_xor*2 + is_or*3 + is_and*4):
-      --   gated by `+(is_xor + is_or + is_and)`. Carries the recomposed
+      --   all gated by `+(is_xor + is_or + is_and)`.
+      -- 1 ALU entry (opcode 5 prefix, op = is_xor*2 + is_or*3 + is_and*4):
+      --   gated by `-(is_xor + is_or + is_and)`. Carries the recomposed
       --   u16 result limbs `result_{2i} + result_{2i+1}*256` (i=0..3)
       --   and the operand limbs `b_0..3`, `c_0..3`.
       -- =====================================================================
@@ -186,31 +186,31 @@ namespace BitwiseChip.ConstraintsAndBuses
             + (air.cols.values.is_and row 0) * 0
         let mult : FKB := air.cols.values.is_real row 0
         [
-          (-mult, [4, op, (air.cols.values.bitwise.bitwise.result_0 row 0), 0,
+          (mult, [5, op, (air.cols.values.bitwise.bitwise.result_0 row 0), 0,
             (air.cols.values.bitwise.b_low_bytes.low_bytes_0 row 0),
             (air.cols.values.bitwise.c_low_bytes.low_bytes_0 row 0)]),
-          (-mult, [4, op, (air.cols.values.bitwise.bitwise.result_1 row 0), 0,
+          (mult, [5, op, (air.cols.values.bitwise.bitwise.result_1 row 0), 0,
             ((air.cols.values.b_0 row 0) - (air.cols.values.bitwise.b_low_bytes.low_bytes_0 row 0)) * 2122383361,
             ((air.cols.values.c_0 row 0) - (air.cols.values.bitwise.c_low_bytes.low_bytes_0 row 0)) * 2122383361]),
-          (-mult, [4, op, (air.cols.values.bitwise.bitwise.result_2 row 0), 0,
+          (mult, [5, op, (air.cols.values.bitwise.bitwise.result_2 row 0), 0,
             (air.cols.values.bitwise.b_low_bytes.low_bytes_1 row 0),
             (air.cols.values.bitwise.c_low_bytes.low_bytes_1 row 0)]),
-          (-mult, [4, op, (air.cols.values.bitwise.bitwise.result_3 row 0), 0,
+          (mult, [5, op, (air.cols.values.bitwise.bitwise.result_3 row 0), 0,
             ((air.cols.values.b_1 row 0) - (air.cols.values.bitwise.b_low_bytes.low_bytes_1 row 0)) * 2122383361,
             ((air.cols.values.c_1 row 0) - (air.cols.values.bitwise.c_low_bytes.low_bytes_1 row 0)) * 2122383361]),
-          (-mult, [4, op, (air.cols.values.bitwise.bitwise.result_4 row 0), 0,
+          (mult, [5, op, (air.cols.values.bitwise.bitwise.result_4 row 0), 0,
             (air.cols.values.bitwise.b_low_bytes.low_bytes_2 row 0),
             (air.cols.values.bitwise.c_low_bytes.low_bytes_2 row 0)]),
-          (-mult, [4, op, (air.cols.values.bitwise.bitwise.result_5 row 0), 0,
+          (mult, [5, op, (air.cols.values.bitwise.bitwise.result_5 row 0), 0,
             ((air.cols.values.b_2 row 0) - (air.cols.values.bitwise.b_low_bytes.low_bytes_2 row 0)) * 2122383361,
             ((air.cols.values.c_2 row 0) - (air.cols.values.bitwise.c_low_bytes.low_bytes_2 row 0)) * 2122383361]),
-          (-mult, [4, op, (air.cols.values.bitwise.bitwise.result_6 row 0), 0,
+          (mult, [5, op, (air.cols.values.bitwise.bitwise.result_6 row 0), 0,
             (air.cols.values.bitwise.b_low_bytes.low_bytes_3 row 0),
             (air.cols.values.bitwise.c_low_bytes.low_bytes_3 row 0)]),
-          (-mult, [4, op, (air.cols.values.bitwise.bitwise.result_7 row 0), 0,
+          (mult, [5, op, (air.cols.values.bitwise.bitwise.result_7 row 0), 0,
             ((air.cols.values.b_3 row 0) - (air.cols.values.bitwise.b_low_bytes.low_bytes_3 row 0)) * 2122383361,
             ((air.cols.values.c_3 row 0) - (air.cols.values.bitwise.c_low_bytes.low_bytes_3 row 0)) * 2122383361]),
-          (mult, [3,
+          (-(mult), [4,
             (air.cols.values.is_xor row 0) * 2
               + (air.cols.values.is_or row 0) * 3
               + (air.cols.values.is_and row 0) * 4,
@@ -270,7 +270,7 @@ namespace BitwiseChip.Interactions
     {
       Program := [],
       ALU := List.map ALUBusEntry.deserialise [
-        (mult,
+        (-(mult),
           #v[
             (air.cols.values.is_xor row 0) * 2
               + (air.cols.values.is_or row 0) * 3
@@ -285,28 +285,28 @@ namespace BitwiseChip.Interactions
             (air.cols.values.c_2 row 0), (air.cols.values.c_3 row 0) ])
       ],
       Byte := List.map ByteBusEntry.deserialise [
-        (-mult, #v[op, (air.cols.values.bitwise.bitwise.result_0 row 0), 0,
+        (mult, #v[op, (air.cols.values.bitwise.bitwise.result_0 row 0), 0,
           (air.cols.values.bitwise.b_low_bytes.low_bytes_0 row 0),
           (air.cols.values.bitwise.c_low_bytes.low_bytes_0 row 0)]),
-        (-mult, #v[op, (air.cols.values.bitwise.bitwise.result_1 row 0), 0,
+        (mult, #v[op, (air.cols.values.bitwise.bitwise.result_1 row 0), 0,
           ((air.cols.values.b_0 row 0) - (air.cols.values.bitwise.b_low_bytes.low_bytes_0 row 0)) * 2122383361,
           ((air.cols.values.c_0 row 0) - (air.cols.values.bitwise.c_low_bytes.low_bytes_0 row 0)) * 2122383361]),
-        (-mult, #v[op, (air.cols.values.bitwise.bitwise.result_2 row 0), 0,
+        (mult, #v[op, (air.cols.values.bitwise.bitwise.result_2 row 0), 0,
           (air.cols.values.bitwise.b_low_bytes.low_bytes_1 row 0),
           (air.cols.values.bitwise.c_low_bytes.low_bytes_1 row 0)]),
-        (-mult, #v[op, (air.cols.values.bitwise.bitwise.result_3 row 0), 0,
+        (mult, #v[op, (air.cols.values.bitwise.bitwise.result_3 row 0), 0,
           ((air.cols.values.b_1 row 0) - (air.cols.values.bitwise.b_low_bytes.low_bytes_1 row 0)) * 2122383361,
           ((air.cols.values.c_1 row 0) - (air.cols.values.bitwise.c_low_bytes.low_bytes_1 row 0)) * 2122383361]),
-        (-mult, #v[op, (air.cols.values.bitwise.bitwise.result_4 row 0), 0,
+        (mult, #v[op, (air.cols.values.bitwise.bitwise.result_4 row 0), 0,
           (air.cols.values.bitwise.b_low_bytes.low_bytes_2 row 0),
           (air.cols.values.bitwise.c_low_bytes.low_bytes_2 row 0)]),
-        (-mult, #v[op, (air.cols.values.bitwise.bitwise.result_5 row 0), 0,
+        (mult, #v[op, (air.cols.values.bitwise.bitwise.result_5 row 0), 0,
           ((air.cols.values.b_2 row 0) - (air.cols.values.bitwise.b_low_bytes.low_bytes_2 row 0)) * 2122383361,
           ((air.cols.values.c_2 row 0) - (air.cols.values.bitwise.c_low_bytes.low_bytes_2 row 0)) * 2122383361]),
-        (-mult, #v[op, (air.cols.values.bitwise.bitwise.result_6 row 0), 0,
+        (mult, #v[op, (air.cols.values.bitwise.bitwise.result_6 row 0), 0,
           (air.cols.values.bitwise.b_low_bytes.low_bytes_3 row 0),
           (air.cols.values.bitwise.c_low_bytes.low_bytes_3 row 0)]),
-        (-mult, #v[op, (air.cols.values.bitwise.bitwise.result_7 row 0), 0,
+        (mult, #v[op, (air.cols.values.bitwise.bitwise.result_7 row 0), 0,
           ((air.cols.values.b_3 row 0) - (air.cols.values.bitwise.b_low_bytes.low_bytes_3 row 0)) * 2122383361,
           ((air.cols.values.c_3 row 0) - (air.cols.values.bitwise.c_low_bytes.low_bytes_3 row 0)) * 2122383361])
       ],

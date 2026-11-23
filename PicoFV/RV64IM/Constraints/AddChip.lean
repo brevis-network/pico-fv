@@ -36,8 +36,8 @@ The 5+1 algebraic constraints emitted by the chip are:
   with `inv(2^16) ≡ 2130673921 (mod KB_prime)` and `carry_{-1} = 0`.
 
 The bus interactions are:
-- 4 ByteBus entries (opcode 4, sub-op 8) — u16 range-check each `value_i`.
-- 1 ALU entry (opcode 3, sub-op 0 = `Opcode::ADD`) — issued only when
+- 4 ByteBus entries (opcode 5, sub-op 8) — u16 range-check each `value_i`.
+- 1 ALU entry (opcode 4, sub-op 0 = `Opcode::ADD`) — issued only when
   `is_add = 1` and carries `(value, operand_1, operand_2)`.
 -/
 
@@ -63,7 +63,7 @@ namespace AddChip
     ({
       Program := [],
       ALU := List.map ALUBusEntry.deserialise [
-        (is_add,
+        (-(is_add),
           #v[ 0,
               value_0, value_1, value_2, value_3,
               operand_1_0, operand_1_1, operand_1_2, operand_1_3,
@@ -200,10 +200,10 @@ namespace AddChip.ConstraintsAndBuses
 
       -- =====================================================================
       -- Bus interactions emitted by `AddChip::eval` (per row):
-      -- 4 ByteBus entries (opcode 4, sub-op 8): u16 range-check `value_i`,
-      --   gated by `-is_add`.
-      -- 1 ALU entry (opcode 3, sub-op 0 = Opcode::ADD): carry the operation,
-      --   gated by `+is_add`. Format: [3, opcode_field=0,
+      -- 4 ByteBus entries (opcode 5, sub-op 8): u16 range-check `value_i`,
+      --   gated by `+is_add`.
+      -- 1 ALU entry (opcode 4, sub-op 0 = Opcode::ADD): carry the operation,
+      --   gated by `-is_add`. Format: [4, opcode_field=0,
       --                                 value_0..3 (a),
       --                                 operand_1_0..3 (b),
       --                                 operand_2_0..3 (c)].
@@ -211,12 +211,12 @@ namespace AddChip.ConstraintsAndBuses
 
       @[constraint_and_interaction_simplification]
       def raw_bus_row (air : Valid_AddChip FKB ExtF) (row : ℕ) : List (FKB × List FKB) :=
-        [ (-(air.cols.values.is_add row 0), [4, 8, (air.cols.values.add_operation.value_0 row 0), 0, 0, 0]),
-          (-(air.cols.values.is_add row 0), [4, 8, (air.cols.values.add_operation.value_1 row 0), 0, 0, 0]),
-          (-(air.cols.values.is_add row 0), [4, 8, (air.cols.values.add_operation.value_2 row 0), 0, 0, 0]),
-          (-(air.cols.values.is_add row 0), [4, 8, (air.cols.values.add_operation.value_3 row 0), 0, 0, 0]),
-          ((air.cols.values.is_add row 0),
-            [3, 0,
+        [ ((air.cols.values.is_add row 0), [5, 8, (air.cols.values.add_operation.value_0 row 0), 0, 0, 0]),
+          ((air.cols.values.is_add row 0), [5, 8, (air.cols.values.add_operation.value_1 row 0), 0, 0, 0]),
+          ((air.cols.values.is_add row 0), [5, 8, (air.cols.values.add_operation.value_2 row 0), 0, 0, 0]),
+          ((air.cols.values.is_add row 0), [5, 8, (air.cols.values.add_operation.value_3 row 0), 0, 0, 0]),
+          (-(air.cols.values.is_add row 0),
+            [4, 0,
               (air.cols.values.add_operation.value_0 row 0),
               (air.cols.values.add_operation.value_1 row 0),
               (air.cols.values.add_operation.value_2 row 0),
