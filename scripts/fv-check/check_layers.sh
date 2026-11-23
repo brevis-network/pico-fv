@@ -9,7 +9,7 @@ cd "$(dirname "$0")/../.."
 status=0
 
 # Chip name of a module: its last component without a trailing helper suffix.
-chip() { local n=${1##*.}; n=${n%Interpretations}; n=${n%Core}; echo "$n"; }
+chip() { local n=${1##*.}; n=${n%Interpretations}; n=${n%Core}; n=${n%DataFlow}; echo "$n"; }
 shared() { [[ $1 =~ ^PicoFV\.(Fundamentals|RV64IM\.(RVSail|Transpiler))\. ]]; }
 gadget() { [[ ${1##*.} =~ Gadget|^SubAirs$|^Attributes$ ]]; }
 

@@ -1,5 +1,6 @@
 MemoryReadWriteChip.Interactions.bus_row_equiv
 MemoryReadWriteChip.Spec.aligned_address
+MemoryReadWriteChip.Spec.data_flow
 MemoryReadWriteChip.Spec.ext_asrt
 MemoryReadWriteChip.Spec.spec_LB
 MemoryReadWriteChip.Spec.spec_LBU
