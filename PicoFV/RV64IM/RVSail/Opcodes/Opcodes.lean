@@ -50,14 +50,10 @@ import PicoFV.RV64IM.RVSail.Opcodes.sub
 import PicoFV.RV64IM.RVSail.Opcodes.subw
 import PicoFV.RV64IM.RVSail.Opcodes.xor
 import PicoFV.RV64IM.RVSail.Opcodes.xori
-import PicoFV.RV64IM.RVSail.Opcodes.lb
-import PicoFV.RV64IM.RVSail.Opcodes.lbu
-import PicoFV.RV64IM.RVSail.Opcodes.lh
-import PicoFV.RV64IM.RVSail.Opcodes.lhu
-import PicoFV.RV64IM.RVSail.Opcodes.lw
-import PicoFV.RV64IM.RVSail.Opcodes.lwu
-import PicoFV.RV64IM.RVSail.Opcodes.ld
-import PicoFV.RV64IM.RVSail.Opcodes.sb
-import PicoFV.RV64IM.RVSail.Opcodes.sh
-import PicoFV.RV64IM.RVSail.Opcodes.sw
-import PicoFV.RV64IM.RVSail.Opcodes.sd
+
+/-!
+# The Sail lemmas of the RV64IM opcodes other than the loads and stores
+
+The lemmas of the load opcodes (`lb` … `ld`) and the store opcodes (`sb` … `sd`) are imported by
+`Equivalence/Loads.lean` and `Equivalence/Stores.lean`, the only files that use them.
+-/
