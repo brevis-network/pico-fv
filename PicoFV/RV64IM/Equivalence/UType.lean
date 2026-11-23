@@ -258,7 +258,7 @@ namespace Equivalence
         with both immediate flags set, its `op_a` column names `rd`, and its operands have the
         instruction's shape: for `LUI` the `op_b` value is zero and the `op_c` value the
         immediate `signExtend 64 (imm ++ 0#12)`, for `AUIPC` the `op_b` value is that immediate
-        and the `op_c` value the row's pc (constraints 1 to 6, through `imm_b_eq_1_constraints`
+        and the `op_c` value the row's pc (constraints 0 to 7, through `imm_b_eq_1_constraints`
         and `imm_c_eq_1_constraints`). -/
     private lemma utype_decoded
       [Field ExtF]

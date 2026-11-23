@@ -869,7 +869,7 @@ namespace Equivalence
         decoding is the row's Program message. -/
     theorem btype_decode_satisfiable
       [Field ExtF]
-      (air : Valid_CpuChip FKB ExtF) (row : ℕ) {bo : bop}
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ) (bo : bop)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_wf : bus_row_wf_asm (bus_row air row))
       (h_opcode : air.cols.instruction.opcode row 0 = Transpiler.opcode_of_bop bo)

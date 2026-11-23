@@ -37,9 +37,9 @@ definition:
 - the eight theorems that already named it (the six branches, `JAL` and `JALR`)
   keep that part of their recorded text, because `signatures.txt` records the
   name and not the definition, but their meaning changed. They changed for the
-  other reasons in this section: the six branches only in the contract names and
-  in reading `rs1` from `op_a`, which makes them the one class whose statements
-  lose and gain no hypothesis at all;
+  other reasons in this section: at the restoration the six branches changed only
+  in the contract names and in reading `rs1` from `op_a`; they have since moved to
+  decoded form and dropped three bus assumptions, as the jumps have (below);
 - the other 54 gain it as a new hypothesis, so their recorded statements
   changed.
 
@@ -64,6 +64,13 @@ fixes: `JAL` and `JALR` no longer take `is_jal` / `is_jalr`, nor either
 immediate flag, because opcodes 24 and 25 are the two jumps alone. The six
 branches, the four stores and the seven loads never took theirs, for the same
 reason, so their statements lose nothing here.
+
+The decoded statements (the four stores, the seven loads, the six branches,
+`JAL`, `JALR`, `LUI` and `AUIPC`) and their unchecked `_row` column forms also
+drop three bus assumptions that no proof reads: `bus_row_axioms`,
+`bus_row_ext_asm` and `bus_row_wf_asrt` (they keep `bus_row_wf_asm`). `LUI` and
+`AUIPC`, in both forms, also drop `RISC_V_assumptions`, which neither proof
+reads. Dropping a hypothesis makes the theorem stronger.
 
 `LUI` and `AUIPC` are the one case where the v3.1.1 decoder gives two
 instructions the same opcode and flags (opcode 0 with `imm_b = 1` and

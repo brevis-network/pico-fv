@@ -16,11 +16,9 @@ namespace Equivalence
     -- ========================================================================
     -- JUMPS — the two jump opcodes: JAL = 24, JALR = 25.
     -- Neither opcode is shared (`ProgramBusEntry.decoded_from`), so the
-    -- decoder fixes both immediate flags and the row's jump selector, and
-    -- neither statement takes them: the 2.x statements took `imm_b`, `imm_c`
-    -- and `is_jal` / `is_jalr`, and dropping a hypothesis makes the theorem
-    -- stronger. JAL carries its 21-bit offset in `op_b` (`imm_b = 1`), JALR
-    -- its 12-bit offset in `op_c` (`imm_c = 1`).
+    -- decoder fixes both immediate flags and the row's jump selector, and no
+    -- statement takes them. JAL carries its 21-bit offset in `op_b`
+    -- (`imm_b = 1`), JALR its 12-bit offset in `op_c` (`imm_c = 1`).
     --
     -- Both rows write the return address `pc + 4` into `op_a` unless the
     -- destination is `x0` (`jump_return_address`), and both set the next pc:
@@ -29,6 +27,10 @@ namespace Equivalence
     -- that the target is 4-aligned, which `next_pc_mod_four_eq_zero` carries;
     -- for JALR it is that bit 1 of the unmasked sum `rs1 + offset` is zero,
     -- which is the second half of `jalr_target`.
+    --
+    -- The column-form theorems (`equivalence_JAL_row`, `equivalence_JALR_row`)
+    -- read the registers and the offset off the row; the checked theorems, in
+    -- decoded form, follow them.
     -- ========================================================================
 
     /-- A JAL row's flags and selectors, as opcode 24 fixes them (`selector_exclusivity`):
@@ -76,7 +78,7 @@ namespace Equivalence
       exact ⟨ h_b, h_c, h_sel.2.2.2.2.2.2.2.2.2.2, h_sel.2.2.2.2.2.2.2.2.2.1, h_sel.2.1 ⟩
 
     /-- JAL's offset: the Program message says the row's `op_b` columns encode a 21-bit
-        immediate `imm'`, and `op_b` is then its 64-bit sign extension (constraints 1 to 3,
+        immediate `imm'`, and `op_b` is then its 64-bit sign extension (constraints 0 to 3,
         through `imm_b_eq_1_constraints`). -/
     private lemma jal_offset
       [Field ExtF]
@@ -118,7 +120,7 @@ namespace Equivalence
       exact Transpiler.V3.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
 
     /-- JALR's offset: the Program message says the row's `op_c` columns encode a 12-bit
-        immediate `imm'`, and `op_c` is then its 64-bit sign extension (constraints 4 to 6,
+        immediate `imm'`, and `op_c` is then its 64-bit sign extension (constraints 4 to 7,
         through `imm_c_eq_1_constraints`). -/
     private lemma jalr_offset
       [Field ExtF]
@@ -399,7 +401,7 @@ namespace Equivalence
 
     /-- What a `JAL`'s decoding says about the row: it is real, its opcode is 24, its `op_a`
         column names `rd`, and the low 21 bits of its `op_b` value are the offset (constraints
-        1 to 3, through `imm_b_eq_1_constraints`). -/
+        0 to 3, through `imm_b_eq_1_constraints`). -/
     private lemma jal_decoded
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)

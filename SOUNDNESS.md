@@ -14,10 +14,11 @@ repository; CI fails when one is out of date. The rest of the text is reviewed b
 ## What is proved
 
 The theorems checked by `scripts/fv-check/check.sh` are listed in `scripts/fv-check/theorems.d/`,
-with their statements in `signatures.txt`. They are of four kinds, and seven lemmas beside them
-that discharge instruction theorems' hypotheses (`Equivalence.utype_row_cases`, under the first,
-and the six decoding lemmas listed with the stores, the loads, the branches, the jumps and the
-U-type theorems, A3).
+with their statements in `signatures.txt`. They are of four kinds. Beside them, under the
+first, are six decoding lemmas that discharge the decoded instruction theorems' `h_decode`
+(listed with the stores, the loads, the branches, the jumps and the U-type theorems, A3), and
+`Equivalence.utype_row_cases`, which discharges the shape hypotheses of the unchecked column
+forms of `LUI` and `AUIPC`; no checked theorem takes those hypotheses.
 
 - **Opcode equivalence** (`Equivalence.equivalence_*`, one per RV64IM opcode except `ECALL`). For
   a CPU chip row that satisfies its extracted constraints, if the bus messages the row exchanges
@@ -61,7 +62,9 @@ U-type theorems, A3).
   `Equivalence.jalr_decode_satisfiable` and `Equivalence.utype_decode_satisfiable`, which are not
   instruction theorems either: the store, load, branch, jump and U-type theorems take an
   instruction whose decoding is the row's Program message, and the six show, from the row's
-  Program promise (in `bus_row_wf_asm`), that every real row of those opcodes has one (see A3).
+  Program promise (in `bus_row_wf_asm`), that every real row of those opcodes has one; for
+  opcode 0, every real row with `imm_b = 1`, since an `ADD` or `ADDI` row (`imm_b = 0`) has no
+  U-type decoding (see A3).
 
   Every v3.1.1 instruction theorem also assumes the chunk's final pc is a well-formed guest
   address (`Equivalence.pico_CpuChip_control_flow_assumptions`; see A3). Pico enforces that in
@@ -327,7 +330,8 @@ every row as `h_all_wf`). `Equivalence.utype_decode_satisfiable` derives it from
 opcode 0, `imm_b = 1` and the promise, for a `LUI` or an `AUIPC`, as the row does not say which
 (below). Each decoded theorem is proved from a column-form theorem of the same name with `_row`
 appended (`equivalence_SD_row`), which reads its registers and immediate off the row and is not
-checked.
+checked. `equivalence_LUI_row` and `equivalence_AUIPC_row` read `rd` off the row but take the
+immediate as a parameter, pinned by their shape hypotheses `h_op_b` and `h_op_c` (below).
 
 The four store theorems take no opcode: the decoding fixes it (their `_row` forms take it alone,
 as the store theorems did at `353238a`). They gain the whole-trace assumption, which their 2.x
