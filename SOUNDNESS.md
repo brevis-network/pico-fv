@@ -461,17 +461,17 @@ assumes through its `bus_row_wf_asm` hypothesis. It lost its three alignment cla
 composition section below), so that hypothesis now assumes less, and each theorem says more.
 
 The whole-trace assumption, `pico_CpuChip_control_flow_assumptions`, bounds the chunk's final pc
-(public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The v3.1.1
-chip does not check this itself; Pico's recursion circuit makes it hold for every chunk of an
-accepted recursive proof ("The whole-trace assumption" below). That circuit was read again at
-v3.1.6, which rewrote it: the three checks the argument uses (the pc carried from chunk to chunk, a
-chunk with no CPU keeping its pc, the last chunk ending at pc zero) are still there. The file is
-unchanged at v3.2.0 (`git diff v3.1.6 v3.2.0` over it is empty). So at v3.1.1 the instruction
-theorems cover a chunk inside an accepted recursive proof, not a chunk proof checked on its own. The
-eight branch and jump theorems already name the assumption, whose definition grew, so it is not what
-changes their recorded statements: all eight are recorded at v3.1.1 now, and changed for the other
-reasons above. What they assume did change, behind the unchanged name. The other 54 gain it as a new
-hypothesis, as those recorded at v3.1.1 have.
+(public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The chip does
+not check this itself; Pico's recursion circuit makes it hold for every chunk of an accepted
+recursive proof ("The whole-trace assumption" below). That circuit was read again at v3.1.6, which
+rewrote it: the three checks the argument uses (the pc carried from chunk to chunk, a chunk with no
+CPU keeping its pc, the last chunk ending at pc zero) are still there. The file is unchanged at
+v3.2.0 (`git diff v3.1.6 v3.2.0` over it is empty). So the instruction theorems cover a chunk inside
+an accepted recursive proof, not a chunk proof checked on its own. The eight branch and jump
+theorems already name the assumption, whose definition grew, so it is not what changes their
+recorded statements: all eight are recorded at v3.1.1 now, and changed for the other reasons above.
+What they assume did change, behind the unchanged name. The other 54 gain it as a new hypothesis, as
+those recorded at v3.1.1 have.
 
 A change that weakens or strengthens a hypothesis changes `signatures.txt`, and `check.sh` fails
 until the change is reviewed and recorded. A change to the definition behind a hypothesis's name
