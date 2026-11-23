@@ -694,11 +694,11 @@ namespace MemoryReadWriteChip.Spec
   /-- On a real row the double word the row reads and writes back starts at `b + c` with its three
       low bits cleared, and the three offset bits are those low bits: the memory access's address
       `[addr_word_0 - offset, addr_word_1, 0]` (`riscv_memory/read_write/constraints.rs:292-301,
-      333-343` at v3.1.6) is the aligned form of the address the memory dispatch names, and each of
+      333-343` at v3.2.0) is the aligned form of the address the memory dispatch names, and each of
       its two pieces is below `2^16`. From `address`, the offset bits (constraints 17 to 19), the
       `BitRange(13)` check of the aligned low piece over 8
-      (`riscv_memory/read_write/constraints.rs:303-309` at v3.1.6) and the `U16Range` check of
-      `addr_word_1` (`riscv_memory/read_write/constraints.rs:259-266` at v3.1.6). -/
+      (`riscv_memory/read_write/constraints.rs:303-309` at v3.2.0) and the `U16Range` check of
+      `addr_word_1` (`riscv_memory/read_write/constraints.rs:259-266` at v3.2.0). -/
   lemma aligned_address
     [Field ExtF]
     (air : Valid_MemoryReadWriteChip FKB ExtF)
