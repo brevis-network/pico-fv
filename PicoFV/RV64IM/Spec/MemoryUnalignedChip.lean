@@ -32,7 +32,8 @@ dispatch, that `b` and `c` have 16-bit pieces, so does a store's `a`, and `a = 0
 `op_a_0 ≠ 0` (`MemoryBus.externals`); from the memory argument, that each dword read has 16-bit
 pieces; from the byte table, the range checks; from the Program table, that the code range has
 16-bit pieces. The per-opcode theorems also take the row's flag, and `aligned_address` takes
-`is_memory = 1`, which says the row is real.
+`is_memory = 1`, which says the row is real; `store_misses_code_range` takes the sum of the store
+flags = 1.
 
 A load reads the bytes from the address on: `seen_byte` and the pieces `seen_0` to `seen_3`,
 each the offset's selection from the sixteen bytes of the two dwords (constraints 32 to 36).
