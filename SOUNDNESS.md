@@ -15,9 +15,10 @@ repository; CI fails when one is out of date. The rest of the text is reviewed b
 
 The theorems checked by `scripts/fv-check/check.sh` are listed in `scripts/fv-check/theorems.d/`,
 with their statements in `signatures.txt`. They are of four kinds. Beside them, under the
-first, are twelve decoding lemmas that discharge the decoded instruction theorems' `h_decode`
+first, are eighteen decoding lemmas that discharge the decoded instruction theorems' `h_decode`
 (listed with the stores, the loads, the two register-register classes, the four
-register-immediate classes, the branches, the jumps and the U-type theorems, A3), and
+register-immediate classes, the multiply and divide classes, the branches, the jumps and the
+U-type theorems, A3), and
 `Equivalence.utype_row_cases`, which discharges the shape hypotheses of the unchecked column
 forms of `LUI` and `AUIPC`; no checked theorem takes those hypotheses.
 
@@ -58,17 +59,21 @@ forms of `LUI` and `AUIPC`; no checked theorem takes those hypotheses.
   shape has the operand shape of one of the two column-form theorems (see A3).
 
   The lists of `Stores.lean`, `Loads.lean`, `RType.lean`, `RTypeW.lean`, `IType.lean`,
-  `Addiw.lean`, `ShiftIOp.lean`, `ShiftIWOp.lean`, `BType.lean`, `Jumps.lean` and `UType.lean`
+  `Addiw.lean`, `ShiftIOp.lean`, `ShiftIWOp.lean`, `MulFamily.lean`, `DivFamily.lean`,
+  `BType.lean`, `Jumps.lean` and `UType.lean`
   also hold `Equivalence.store_decode_satisfiable`, `Equivalence.load_decode_satisfiable`,
   `Equivalence.rtype_decode_satisfiable`, `Equivalence.rtypew_decode_satisfiable`,
   `Equivalence.itype_decode_satisfiable`, `Equivalence.addiw_decode_satisfiable`,
   `Equivalence.shiftiop_decode_satisfiable`, `Equivalence.shiftiwop_decode_satisfiable`,
+  `Equivalence.mul_decode_satisfiable`, `Equivalence.mulw_decode_satisfiable`,
+  `Equivalence.div_decode_satisfiable`, `Equivalence.divw_decode_satisfiable`,
+  `Equivalence.rem_decode_satisfiable`, `Equivalence.remw_decode_satisfiable`,
   `Equivalence.btype_decode_satisfiable`, `Equivalence.jal_decode_satisfiable`,
   `Equivalence.jalr_decode_satisfiable` and `Equivalence.utype_decode_satisfiable`, which are not
-  instruction theorems either: the store, load, register-register, register-immediate, branch,
-  jump and U-type theorems take an instruction whose decoding is the row's Program message, and
-  the twelve show, from the row's Program promise (in `bus_row_wf_asm`), that every real row of a
-  store, load, branch or jump opcode, of a register-register opcode (with `imm_c = 0` where an
+  instruction theorems either: the store, load, register-register, register-immediate, multiply,
+  divide, branch, jump and U-type theorems take an instruction whose decoding is the row's Program
+  message, and the eighteen show, from the row's Program promise (in `bus_row_wf_asm`), that every
+  real row of a store, load, multiply, divide, remainder, branch or jump opcode, of a register-register opcode (with `imm_c = 0` where an
   immediate form shares the opcode), of a register-immediate opcode (with `imm_c = 1`, and
   `imm_b = 0` for `ADDI`), or of opcode 0 with `imm_b = 1` (U-type; an `ADD` or `ADDI` row has no
   U-type decoding), has one (see A3).
@@ -268,8 +273,8 @@ which:
 A theorem in decoded form (below) takes only the hypotheses its proof uses: of the bus
 assumptions only `bus_row_wf_asm`, and `RISC_V_assumptions` only where its proof reads it. The
 checked instruction theorems of `Stores.lean`, `Loads.lean`, `RType.lean`, `RTypeW.lean`,
-`IType.lean`, `Addiw.lean`, `ShiftIOp.lean`, `ShiftIWOp.lean`, `BType.lean`, `Jumps.lean` and
-`UType.lean` are in decoded form.
+`IType.lean`, `Addiw.lean`, `ShiftIOp.lean`, `ShiftIWOp.lean`, `MulFamily.lean`,
+`DivFamily.lean`, `BType.lean`, `Jumps.lean` and `UType.lean` are in decoded form.
 
 Since v3.1.6 a row's messages fall into six lists, not five: the code-range message
 (`V3.CodeRangeBusEntry`), which a store row and a precompile row send to the Program table, has
@@ -299,10 +304,10 @@ immediate form shares with a register-register one: 40 (`ADDIW` and `ADDW`), 42 
 `SLTU`). Neither those thirteen immediate-form theorems nor those thirteen register-register
 theorems assume an immediate flag: they take their instruction in decoded form (below), whose
 decoding fixes both flags; their column forms still assume `imm_c = 1` (and `ADDI`'s
-`imm_b = 0`) or `imm_c = 0`. The multiply, divide and remainder theorems take their opcode alone, as at `353238a`:
-the decoder fixes both immediate flags to 0 for opcodes 30 to 37 and 48 to 52. The divide and
-remainder theorems
-assume nothing about the divisor: the ALU chip's promise for their opcodes already gives Sail's
+`imm_b = 0`) or `imm_c = 0`. The multiply, divide and remainder theorems take no immediate flag,
+as at `353238a`: the decoder fixes both to 0 for opcodes 30 to 37 and 48 to 52. They take no opcode
+either: they take their instruction in decoded form (below); their column forms take the opcode
+alone. The divide and remainder theorems assume nothing about the divisor: the ALU chip's promise for their opcodes already gives Sail's
 result on division by zero and on signed overflow. `JAL` and `JALR` take no opcode: the decoding
 fixes it (below). Their `_row` forms take it alone: they assume neither immediate flag, nor the
 row's `is_jal` / `is_jalr` selector, all three of which their 2.x statements took, because opcodes
@@ -328,8 +333,9 @@ the sign into `op_c_sign`. So on a row the program decoded those bits are the pr
 amount or 12-bit immediate; the column forms do not state that link.
 
 The four store, the seven load and the thirteen register-immediate theorems state it, and so do the
-fifteen register-register theorems (`RType.lean`, `RTypeW.lean`), which have no immediate but whose
-registers the decoding fixes in the same way, the six branch theorems (`BType.lean`), `JAL` and
+fifteen register-register theorems (`RType.lean`, `RTypeW.lean`), the five multiply theorems
+(`MulFamily.lean`) and the eight divide and remainder theorems (`DivFamily.lean`), which have no
+immediate but whose registers the decoding fixes in the same way, the six branch theorems (`BType.lean`), `JAL` and
 `JALR` (`Jumps.lean`) and `LUI` and `AUIPC` (`UType.lean`). Each takes the instruction itself,
 written in the statement (`instruction.STORE (imm, rs2, rs1, 8)` for `SD`,
 `instruction.ITYPE (imm, rs1, rd, iop.ADDI)` for `ADDI`, `instruction.RTYPE (rs2, rs1, rd, rop.ADD)`
@@ -345,15 +351,19 @@ row's Program promise, the decoding hypothesis is no stronger than the hypothese
 `Equivalence.rtype_decode_satisfiable`, `Equivalence.rtypew_decode_satisfiable`,
 `Equivalence.itype_decode_satisfiable`, `Equivalence.addiw_decode_satisfiable`,
 `Equivalence.shiftiop_decode_satisfiable`, `Equivalence.shiftiwop_decode_satisfiable`,
+`Equivalence.mul_decode_satisfiable`, `Equivalence.mulw_decode_satisfiable`,
+`Equivalence.div_decode_satisfiable`, `Equivalence.divw_decode_satisfiable`,
+`Equivalence.rem_decode_satisfiable`, `Equivalence.remw_decode_satisfiable`,
 `Equivalence.btype_decode_satisfiable`, `Equivalence.jal_decode_satisfiable` and
 `Equivalence.jalr_decode_satisfiable` (checked, listed with their classes) derive it, for some
 instruction fields and a 4-aligned address below `Transpiler.V3.code_address_bound`, from
-`is_real = 1`, the opcode of each store or load width, register-register or register-immediate
-operation, branch or jump (with `imm_c = 0` for a register-register opcode an immediate form
+`is_real = 1`, the opcode of each store or load width, register-register, register-immediate,
+multiply or divide operation, branch or jump (with `imm_c = 0` for a register-register opcode an immediate form
 shares, as its column form takes it, and on the opcodes of `SUB` and `SUBW` the promise gives it;
 with `imm_c = 1` for a register-immediate opcode, and `imm_b = 0` for `ADDI`'s, as their column
 forms take them), and that promise (in `bus_row_wf_asm`, which the instruction theorems take for
-every row as `h_all_wf`). `Equivalence.utype_decode_satisfiable` derives it from `is_real = 1`,
+every row as `h_all_wf`). For opcode 30 (`MUL`) it holds at every signedness with
+`result_part := .Low`, which the decoder does not read. `Equivalence.utype_decode_satisfiable` derives it from `is_real = 1`,
 opcode 0, `imm_b = 1` and the promise, for a `LUI` or an `AUIPC`, as the row does not say which
 (below). Each decoded theorem is proved from a column-form theorem of the same name with `_row`
 appended (`equivalence_SD_row`), which reads `rs1`, `rs2` or `rd` (and the offset or immediate)
@@ -605,7 +615,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 109 |
+| kernel + compiler | 115 |
 | kernel + compiler + RISC-V spec axioms | 62 |
 | kernel only | 1 |
 <!-- end generated -->

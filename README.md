@@ -174,6 +174,12 @@ that every real row of the class, given its Program promise, has one:
 - `ADDIW`: `Equivalence.addiw_decode_satisfiable`, with `imm_c = 1`;
 - `SHIFTIOP`: `Equivalence.shiftiop_decode_satisfiable`, with `imm_c = 1`;
 - `SHIFTIWOP`: `Equivalence.shiftiwop_decode_satisfiable`, with `imm_c = 1`;
+- the multiplies: `Equivalence.mul_decode_satisfiable` (for opcode 30, `MUL`, at
+  every signedness with `result_part := .Low`) and
+  `Equivalence.mulw_decode_satisfiable`;
+- the divides and remainders: `Equivalence.div_decode_satisfiable`,
+  `Equivalence.divw_decode_satisfiable`, `Equivalence.rem_decode_satisfiable` and
+  `Equivalence.remw_decode_satisfiable`;
 - the branches: `Equivalence.btype_decode_satisfiable`;
 - `JAL` and `JALR`: `Equivalence.jal_decode_satisfiable` and
   `Equivalence.jalr_decode_satisfiable`;

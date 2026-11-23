@@ -62,10 +62,11 @@ theorems and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`).
 
 The statements of the classes in decoded form (listed below: the stores, the
 loads, `RTYPE`, `RTYPEW`, `ITYPE`, `ADDIW`, `SHIFTIOP`, `SHIFTIWOP`, the
-branches, the jumps and `UTYPE`) also drop, in both the checked and the column
+multiply and divide classes, the branches, the jumps and `UTYPE`) also drop, in both the checked and the column
 form, the three bus assumptions their proofs do not use: `bus_row_axioms`,
 `bus_row_ext_asm` and `bus_row_wf_asrt` (they keep `bus_row_wf_asm`). Of those
-classes, `RTYPE`, `RTYPEW`, `ITYPE`, `ADDIW`, `SHIFTIOP`, `SHIFTIWOP` and
+classes, `RTYPE`, `RTYPEW`, `ITYPE`, `ADDIW`, `SHIFTIOP`, `SHIFTIWOP`, the
+multiply and divide classes (`MUL`, `MULW`, `DIV`, `DIVW`, `REM`, `REMW`) and
 `UTYPE` (`LUI` and `AUIPC`) also drop `RISC_V_assumptions`, which their proofs
 do not use; the stores, the loads, the branches and the jumps keep it. Dropping
 a hypothesis makes the theorem stronger.
@@ -130,6 +131,11 @@ from those and the row's Program promise:
 - `ADDIW`: `Equivalence.addiw_decode_satisfiable`;
 - the three `SHIFTIOP` theorems: `Equivalence.shiftiop_decode_satisfiable`;
 - the three `SHIFTIWOP` theorems: `Equivalence.shiftiwop_decode_satisfiable`;
+- the five multiply theorems (no immediate):
+  `Equivalence.mul_decode_satisfiable` and `Equivalence.mulw_decode_satisfiable`;
+- the eight divide and remainder theorems (no immediate):
+  `Equivalence.div_decode_satisfiable`, `Equivalence.divw_decode_satisfiable`,
+  `Equivalence.rem_decode_satisfiable` and `Equivalence.remw_decode_satisfiable`;
 - the six branches: `Equivalence.btype_decode_satisfiable`;
 - `JAL` and `JALR`: `Equivalence.jal_decode_satisfiable` and
   `Equivalence.jalr_decode_satisfiable`;
