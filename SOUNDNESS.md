@@ -219,9 +219,10 @@ Opcode behaviour is the Lean translation of the official Sail RISC-V model
 `lake-manifest.json`). That translation sets some platform configuration by hand, and the
 sail-riscv commit it was generated from is not recorded (see "Pinned inputs"). It declares some
 functions as axioms (floating point, random bits, reservations, platform output). They are
-listed in `scripts/fv-check/spec-axioms.txt`. They
-appear among the equivalence theorems' axioms because the specification's step function mentions
-them, but the theorems hold for every interpretation of them.
+listed in `scripts/fv-check/spec-axioms.txt`. They appear among the equivalence theorems' axioms
+because the specification's step function mentions them, but the theorems hold for every
+interpretation of them. One of them, `sys_enable_experimental_extensions`, gates the unratified
+`Zibi` and `Zvabd` extensions the model includes, so the theorems hold with or without them.
 
 ### A3. Hypotheses of the theorems
 
