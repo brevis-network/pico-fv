@@ -123,7 +123,8 @@ Settled on 12 November 2026.
      as `ADDI x0, x0, 0` (`FENCE` in machine mode, the standing assumption).
 
    The promise is read against Pico again when the pin moves. It was read against v3.1.5 and
-   v3.1.6 and holds as written (`SOUNDNESS.md`, A6).
+   v3.1.6 and holds as written (`SOUNDNESS.md`, A6). The files it cites are unchanged at v3.2.0
+   (`git diff v3.1.6 v3.2.0` over them is empty).
 2. **The memory contract states what both memory chips prove** (question 5). As first drafted,
    against v3.1.1, it was settled unchanged: two trial proofs, LW and SD, passed against it.
    They used the address bound `< 2^32`, the alignment clause and, for LW, the sign-extension
@@ -190,7 +191,8 @@ slightly stronger, is the guest address bound Pico itself uses, and also covers 
 offsets, which need `p - 2^20`.
 
 Where Pico enforces it, outside the chips, in the recursion circuit
-(`vm/src/mle/compiler/recursion/lowering.rs`; lines at v3.1.1, then at v3.1.6): each chunk's
+(`vm/src/mle/compiler/recursion/lowering.rs`; lines at v3.1.1, then at v3.1.6, a file unchanged at
+v3.2.0): each chunk's
 final pc equals the next chunk's first pc (`assert_child_continuity`, 1081-1090; 1194-1199); a
 chunk that runs no CPU passes its pc through unchanged (1436-1440; 1559-1563); the root requires
 the last chunk's final pc to be zero (`assert_root_complete`, 1748-1754; 1776-1779). v3.1.6

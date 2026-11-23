@@ -21,7 +21,7 @@ namespace Equivalence
     -- (`ProgramBusEntry.decoded_from`) is a disjunction of the two.
     --
     -- What tells them apart is where the row carries the 32-bit immediate
-    -- `imm ++ 0#12` (Pico v3.1.6, `disassembler/rrs.rs:342-366`):
+    -- `imm ++ 0#12` (Pico v3.2.0, `disassembler/rrs.rs:342-366`):
     --
     --   * `LUI`   — `op_b` is zero and `op_c` is the immediate;
     --   * `AUIPC` — `op_b` is the immediate and `op_c` is the row's pc.

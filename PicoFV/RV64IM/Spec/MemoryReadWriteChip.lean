@@ -9,8 +9,8 @@ set_option maxHeartbeats 1_000_000_000
 # MemoryReadWriteChip — the Memory promise
 
 What the chip proves about each row (`MemoryReadWriteChip::eval`,
-`vm/src/chips/chips/riscv_memory/read_write/constraints.rs`, Pico v3.1.6
-`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`; constraints and messages in
+`vm/src/chips/chips/riscv_memory/read_write/constraints.rs`, Pico v3.2.0
+`fcfa504624657d0c417c43f1233d5d891f293ff9`; constraints and messages in
 `Constraints/MemoryReadWriteChip.lean`).
 
 - `spec_LB` … `spec_SD`, one per opcode: on a row whose flag for that instruction is 1, the
@@ -694,9 +694,11 @@ namespace MemoryReadWriteChip.Spec
   /-- On a real row the double word the row reads and writes back starts at `b + c` with its three
       low bits cleared, and the three offset bits are those low bits: the memory access's address
       `[addr_word_0 - offset, addr_word_1, 0]` (`riscv_memory/read_write/constraints.rs:292-301,
-      333-343` at v3.1.6) is the aligned form of the address the memory dispatch names. From
-      `address`, the offset bits (constraints 17 to 19) and the `BitRange(13)` check of the
-      aligned low piece over 8. -/
+      333-343` at v3.2.0) is the aligned form of the address the memory dispatch names, and each of
+      its two pieces is below `2^16`. From `address`, the offset bits (constraints 17 to 19), the
+      `BitRange(13)` check of the aligned low piece over 8
+      (`riscv_memory/read_write/constraints.rs:303-309` at v3.2.0) and the `U16Range` check of
+      `addr_word_1` (`riscv_memory/read_write/constraints.rs:259-266` at v3.2.0). -/
   lemma aligned_address
     [Field ExtF]
     (air : Valid_MemoryReadWriteChip FKB ExtF)
@@ -713,13 +715,14 @@ namespace MemoryReadWriteChip.Spec
         v.instruction.op_c_value_2 row 0, v.instruction.op_c_value_3 row 0]).toNat
     let offset := v.offset_bit_0 row 0 + 2 * v.offset_bit_1 row 0 + 4 * v.offset_bit_2 row 0
     offset.val = addr % 8 ∧
+    (v.addr_word_0 row 0 - offset).val < 65536 ∧ (v.addr_word_1 row 0).val < 65536 ∧
     (v.addr_word_0 row 0 - offset).val + 65536 * (v.addr_word_1 row 0).val = addr - addr % 8
   := by
-    obtain ⟨ h_addr, h_a0, -, - ⟩ := address air row h_ext_asm h_wf_asm h_constraints h_mem
+    obtain ⟨ h_addr, -, -, - ⟩ := address air row h_ext_asm h_wf_asm h_constraints h_mem
     simp only [is_memory] at h_mem
     simp [bus_row_all_wf_asm, bus_row_wf_asm, bus_row_code_range_wf_asm, bus_row,
       MemoryReadWriteChip.AbsBuses, h_mem, RV64IM_Interactions.ByteBus.Spec] at h_wf_asm
-    obtain ⟨ ⟨ -, h_br, - ⟩, - ⟩ := h_wf_asm
+    obtain ⟨ ⟨ h_aw1, h_br, - ⟩, - ⟩ := h_wf_asm
     obtain ⟨ -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, c17, c18, c19, - ⟩ :=
       constraints_of_allHold air row h_constraints
     simp only [constraint_17, constraint_18, constraint_19] at c17 c18 c19
@@ -1522,7 +1525,7 @@ namespace MemoryReadWriteChip.Spec
       the code range `[code_start, code_end)` the row looks up: they end at or below its start,
       or start at or above its end. The `code_range` gadget proves it
       (`CodeRangeGadget.Spec.gadget_spec`); the chip hands it `addr_word` and `store_width`
-      (`riscv_memory/read_write/constraints.rs:94-108` at v3.1.6) and supplies its premises: the
+      (`riscv_memory/read_write/constraints.rs:94-108` at v3.2.0) and supplies its premises: the
       address's two pieces are 16-bit and equal `b + c` (`address`), and the width is at most 8.
       As in the gadget, the range is the one in the row's columns: the Program table's promise
       (`CodeRangeBus.Spec`) does not yet say it is the program's code range. -/

@@ -60,7 +60,7 @@ discharges two instruction theorems' hypotheses (`Equivalence.utype_row_cases`, 
 - **Chip specifications** (`<Chip>.Spec.*`). For a row of a non-CPU chip that satisfies its
   extracted constraints, the bus messages it serves have the meaning the bus assumptions give them
   (for example, an ALU row really computes the operation it claims). Every chip that has a
-  specification has it built; the checked list holds the two memory chips' at v3.1.6
+  specification has it built; the checked list holds the two memory chips' at v3.2.0
   (`MemoryReadWriteChip.Spec.*`, `MemoryUnalignedChip.Spec.*`) and those of the ALU chips already
   at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight).
 
@@ -69,15 +69,15 @@ discharges two instruction theorems' hypotheses (`Equivalence.utype_row_cases`, 
   row writes back 16-bit pieces: the unaligned chip writes back a second one when the access
   runs into it), and that a store row misses the code range it looks up
   (`store_misses_code_range`, through the gadget below). `aligned_address` says the double word
-  the row reads and writes back is the one holding the access's first byte; the unaligned chip's
-  also gives its address piece by piece and, on a row whose access crosses, the next double
-  word's. The read/write chip's also say what a row does to memory (`dataFlow_of_allHold`): in a
-  state that holds the double word the row reads from the memory argument, a load's value, at
-  its width, is that double word's bytes at `b + c`, and the row writes the double word back with
-  a store's bytes patched in. That the double word read is the one memory holds is the memory
-  argument's promise, which stays on trust (A4). The unaligned chip has no such theorem yet: for
-  it, none says that a load's value is what memory holds, or that a store writes it; the promise
-  does not ask it (A4).
+  the row reads and writes back is the one holding the access's first byte, and both chips' give
+  its address piece by piece, each piece below `2^16`; the unaligned chip's also gives, on a row
+  whose access crosses, the next double word's. The read/write chip's also say what a row does to
+  memory (`dataFlow_of_allHold`): in a state that holds the double word the row reads from the
+  memory argument, a load's value, at its width, is that double word's bytes at `b + c`, and the
+  row writes the double word back with a store's bytes patched in. That the double word read is
+  the one memory holds is the memory argument's promise, which stays on trust (A4). The unaligned
+  chip has no such theorem yet: for it, none says that a load's value is what memory holds, or
+  that a store writes it; the promise does not ask it (A4).
 
   `DivRemChip`'s specifications are the one exception to "satisfies its extracted constraints":
   they are stated over the readable restatement `DivRemChip.ConstraintsAndBuses.AbsConstraints`
@@ -110,8 +110,9 @@ discharges two instruction theorems' hypotheses (`Equivalence.utype_row_cases`, 
   messages ask nothing of the sender, and the Ecall message has no contract. The memory chip's
   address addition `b + c` is exact only for 16-bit pieces, which it takes from the sender, so
   the meaning of the load and store theorems rests on this theorem.
-- **Gadget specifications** (`CodeRangeGadget.Spec.*`). The `code_range` gadget, which both
-  memory chips and every precompile chip embed at v3.1.6, is proven on its own:
+- **Gadget specifications** (`CodeRangeGadget.Spec.*`). The `code_range` gadget, which at v3.2.0
+  both memory chips and the precompile chips that write memory embed (`blake2b/control.rs` and
+  `keccak256/control.rs` among them, not `blake2b/round.rs`), is proven on its own:
   `gadget_spec` and `spec` say that on a store row (`is_store = 1`, `addr` two 16-bit pieces,
   `width` below 2^16) that satisfies the gadget's constraints, the write `[addr, addr + width)`
   misses the range `[code_start, code_end)` the row looks up from the Program table.
@@ -124,16 +125,26 @@ discharges two instruction theorems' hypotheses (`Equivalence.utype_row_cases`, 
 The proofs are about this Pico revision:
 
 <!-- generated: pin -->
-Pico v3.1.6, commit [`6aa644efe`](https://github.com/brevis-network/pico/commit/6aa644efeff9ddbec6beb538200f98f2a70f5d8e).
+Pico v3.2.0, commit [`fcfa50462`](https://github.com/brevis-network/pico/commit/fcfa504624657d0c417c43f1233d5d891f293ff9).
 <!-- end generated -->
 
 Re-extracting the CPU chip, the ten ALU chips and their gadgets at v3.1.6 gives the same
 constraints and bus messages as at v3.1.1: each extraction file differs only in its first line,
 which names the Pico commit. So what this document says about those chips' own constraints at
-v3.1.1 holds at v3.1.6. The claims in this document that name v3.1.6 were checked there; if the
-pin above names a later version, they have not been checked there yet. Pico's per-chip constraint digests (`vm/tests/riscv_constraint_dump.txt`)
+v3.1.1 holds at v3.1.6. Pico's per-chip constraint digests (`vm/tests/riscv_constraint_dump.txt`)
 cannot show this at v3.1.6, which changed every chip's digest when it rewrote how chunks are joined;
-the re-extraction does. A chip's constraints also cannot show which chips receive its messages. At
+the re-extraction does.
+
+v3.2.0 changed nothing an RV64IM chip constrains. Re-extracting every file at v3.2.0 gives the same
+constraints and bus messages as at v3.1.6, each file again differing only in its first line. The
+constraint digests differ only by two new precompile chips, `Blake2bControlChip` and
+`Blake2bRoundChip`, and the overall digest. Under `vm/src/chips/chips`, `vm/src/chips/gadgets` and
+`vm/src/machine/builder`, the one changed file is `riscv_memory/unaligned/traces.rs`, which now
+fills the trace in parallel and constrains nothing. The other claims in this document that name
+v3.2.0 were checked at v3.1.6, and the Pico files they cite are unchanged at v3.2.0; if the pin above
+names a later version, they have not been checked there yet.
+
+A chip's constraints also cannot show which chips receive its messages. At
 the pin the CPU chip's memory dispatch has a second receiver, `MemoryUnalignedChip`, which serves
 misaligned loads and stores, so the memory promise no longer says an address is aligned (see
 A4), and the Program table changed after v3.1.1 (see A6).
@@ -264,7 +275,7 @@ promise is discharged by both chips that take the dispatch.** `MemoryReadWriteCh
 at the pinned commit for every dispatch that chip receives (`spec_SB`, `spec_SH`, `spec_SW` and
 `spec_SD` for the stores, and `wf_asrt`); that chip takes only accesses aligned to their width.
 `MemoryUnalignedChip.Spec` proves it, under the same names, for every dispatch the unaligned chip
-receives, which may be any access, aligned or not (`riscv_memory/unaligned/mod.rs:3-6` at v3.1.6).
+receives, which may be any access, aligned or not (`riscv_memory/unaligned/mod.rs:3-6` at v3.2.0).
 The two sides of the link a store theorem assumes are not yet composed, as A4 describes for chip
 composition generally.
 
@@ -320,7 +331,8 @@ v3.1.1 chip does not check this itself; Pico's recursion circuit makes it hold f
 of an accepted recursive proof (`docs/cpu-chip-pico-v3-design.md`, "The whole-trace
 assumption"). That circuit was read again at v3.1.6, which rewrote it: the three checks the
 argument uses (the pc carried from chunk to chunk, a chunk with no CPU keeping its pc, the last
-chunk ending at pc zero) are still there. So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
+chunk ending at pc zero) are still there. The file is unchanged at v3.2.0 (`git diff v3.1.6 v3.2.0`
+over it is empty). So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
 proof, not a chunk proof checked on its own. The eight branch and jump theorems already name the
 assumption, whose definition grew, so it is not what changes their recorded statements: all eight
 are recorded at v3.1.1 now, and changed for the other reasons above. What they assume did change,
@@ -348,7 +360,7 @@ receiving chip's theorem. Both memory chips' specifications assume of the CPU wh
 contract states (`MemoryBus.externals` in `RVSail/BusesV3.lean`), the duty the CPU is proven to
 meet.
 
-At v3.1.6, the pin, the memory dispatch has two receivers. Since v3.1.2 Pico has
+At v3.2.0, the pin, the memory dispatch has two receivers. Since v3.1.2 Pico has
 `MemoryUnalignedChip` (`vm/src/chips/chips/riscv_memory/unaligned/`), which takes the same
 17-field message on the same bus as `MemoryReadWriteChip` and serves loads and stores whose
 address is not a multiple of their width. The CPU chip's constraints did not change, so either
@@ -356,7 +368,7 @@ chip may take any load or store. The promise the CPU chip assumes of the dispatc
 (`MemoryBus.Spec` in `RVSail/BusesV3.lean`) therefore states only what holds whichever chip takes
 the message: a load's value has 16-bit pieces, the address `b + c` is at least `2^16` and below
 `2^32`, and, unless the destination is `x0`, a load's value is the sign or zero extension its
-opcode names. The address bound and the extensions follow from each chip's constraints at v3.1.6
+opcode names. The address bound and the extensions follow from each chip's constraints at v3.2.0
 together with the CPU's duty that `b` and `c` have 16-bit pieces (`MemoryBus.externals`) and the
 byte table's promise for the range checks the row sends (`ByteBus.Spec`, assumed through
 `bus_row_all_wf_asm`). The 16-bit pieces need more: in `MemoryReadWriteChip` they are pieces of
@@ -394,7 +406,7 @@ send the row to `pc + offset` or `pc + 4` as Sail does.
 
 The code-range message rests on a chip that is not covered. A store row of either memory chip,
 and every precompile chip for what it writes, looks up the code's range `[code_start, code_end)`
-from the Program table (`gadgets/code_range.rs:1-11` at v3.1.6), and the
+from the Program table (`gadgets/code_range.rs:1-11` at v3.2.0), and the
 `CodeRangeGadget.Spec` theorems assume what the table answers: four pieces below 2^16
 (`V3.CodeRangeBus.Spec`). The Program chip has no proof here (A5), so that promise is trusted.
 It is also weaker than what Pico intends: it does not say the four pieces are this program's
@@ -414,7 +426,7 @@ theorem has to treat a multiplicity summed onto one row. The promise itself hold
 multiplicity, since every Program row carries the same preprocessed range.
 
 Messages a chip serves but the contract does not specify are still not covered in general; there
-are none among the RV64IM ALU chips at v3.1.6.
+are none among the RV64IM ALU chips at v3.2.0.
 
 ### A5. What is not covered
 
@@ -437,7 +449,7 @@ the Lean decoder with the Rust one; Pico's own decoder tests are restated as `ex
 of `TranspilerV3.lean`. The decoder starts from an already-decoded Sail instruction, not from the
 32-bit word: that a word decodes to the same instruction in Sail and in Pico is not modelled.
 
-The contract was read again against v3.1.5, and again against v3.1.6, the pinned commit. The decoder
+The contract was read again against v3.1.5, and again against v3.1.6. The decoder
 (`rrs.rs`), the opcodes and the instruction type did not change. The Program table builds each
 instruction's row as before, at the same addresses under the same asserts; since v3.1.2 the table
 adds the program's code range to every row in four new columns, `code_start` and `code_end`. The
@@ -450,7 +462,8 @@ Lean reader of the CPU row's messages (`deserialise_bus_row` in `RVSail/BusesV3.
 rejects more files than at v3.1.1 (32-bit ELFs, segments that are both writable and executable, an
 entry point outside the code) and builds the instructions in the same way. From v3.1.5 to v3.1.6
 none of the decoder, the Program chip's files or the ELF loader changed. So the Program contract
-holds at v3.1.6 as written.
+holds at v3.1.6 as written. The files cited here are unchanged at v3.2.0 (`git diff v3.1.6 v3.2.0`
+over them is empty).
 
 The fences have no row of their own. Pico runs every fence word (`fence`, `fence.tso` and
 `pause`) as the no-op `ADD x0, x0, 0`, the row of `ADDI x0, x0, 0`. Sail decodes them as three

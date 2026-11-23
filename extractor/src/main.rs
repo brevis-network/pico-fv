@@ -36,11 +36,11 @@ use render::{pair_interaction_meta, render_module, ExtractedAir};
 type F = KoalaBear;
 
 /// The Pico commit that `PICO_TAG` resolves to in `Cargo.lock`.
-const PICO_REV: &str = "6aa644efeff9ddbec6beb538200f98f2a70f5d8e";
+const PICO_REV: &str = "fcfa504624657d0c417c43f1233d5d891f293ff9";
 /// The Pico release tag `Cargo.toml` pins. `pico_pin_matches_cargo` checks it against
 /// `Cargo.toml`, and `PICO_REV` against the commit `Cargo.lock` resolves it to.
 /// `soundness_facts.py` prints both in the documents' pin blocks.
-const PICO_TAG: &str = "v3.1.6";
+const PICO_TAG: &str = "v3.2.0";
 
 /// Files in the extraction directory that this tool does not generate.
 const HAND_WRITTEN: &[&str] = &["Attributes.lean"];
