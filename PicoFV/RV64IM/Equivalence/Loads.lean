@@ -1573,10 +1573,10 @@ namespace Equivalence
     -- address whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1)
     -- is the row's Program message, and is proved from its column form.
     --
-    -- The proofs pass hypotheses as `@h`: on the store and load sections that
-    -- elaborated about 2.3 times faster than passing them bare. It does not
-    -- avoid every unfolding: checking `@h_bus_hypotheses` against its expected
-    -- type still unfolds `operation_list_effect`.
+    -- The proofs pass hypotheses as `@h`. On the store and load sections,
+    -- passing them as `@h` elaborated about 2.3 times faster than passing them
+    -- bare. It does not avoid every unfolding: checking `@h_bus_hypotheses`
+    -- against its expected type still unfolds `operation_list_effect`.
     -- ========================================================================
 
     /-- What a load's decoding says about the row: it is real, its opcode is the signedness's and

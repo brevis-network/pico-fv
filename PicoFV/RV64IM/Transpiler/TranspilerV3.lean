@@ -27,7 +27,7 @@ import PicoFV.RV64IM.Transpiler.Transpiler
     ```
 
     Differences from the 2.x decoder in `Transpiler.lean`, which stays unchanged because the
-    2.x bus contracts (still used by the memory chip) refer to it:
+    2.x bus contracts (still used by the ALU chips) refer to it:
 
     * the pc is a natural number with two 16-bit pieces, not three field limbs;
     * register `a` is one field (`instruction/columns.rs:19`);

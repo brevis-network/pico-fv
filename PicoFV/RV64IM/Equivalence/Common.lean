@@ -19,7 +19,7 @@ whole trace rather than about a row, `pico_CpuChip_control_flow_assumptions`, is
 The pc-alignment lemmas that the 2.x file also held are not here. A real row's next pc is
 4-aligned by `CpuChip.Interpretations.next_pc_mod_four_eq_zero`, which keeps the 2.x name but
 takes its arguments in the interpretations file's order and no longer takes the Program-bus
-axioms. The 2.x `pc_next_row_mod_four_eq_zero` has no v3.1.1 counterpart: `pc_facts` gives
+axioms. The 2.x `pc_next_row_mod_four_eq_zero` has no v3.2.0 counterpart: `pc_facts` gives
 any real row's pc alignment directly.
 
 An ALU-class instruction theorem with register operands closes in one call,
@@ -768,10 +768,10 @@ namespace Equivalence
         clause. Either way `decoded_field` reads a column off the message by field name.
 
         Each class file also proves a bridge lemma per decoder clause (`store_decode_satisfiable`,
-        `itype_decode_satisfiable` and the rest): from `is_real = 1`, the row's Program promise,
-        the opcode and, where classes share an opcode, the immediate flag that tells them apart
-        (`imm_b` or `imm_c`), `h_decode` holds for some instruction fields and an address that is
-        4-aligned and below `Transpiler.V3.code_address_bound`. Each starts from
+        `itype_decode_satisfiable` and the rest): from `is_real = 1`, the row's Program promise, the
+        opcode and, where classes share an opcode, the immediate flags that tell them apart
+        (`imm_c`; `imm_b` for `ADDI` and U-type), `h_decode` holds for some instruction fields and
+        an address that is 4-aligned and below `Transpiler.V3.code_address_bound`. Each starts from
         `program_bus_decoded`. -/
 
     open Transpiler Transpiler.V3

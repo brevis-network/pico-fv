@@ -8,7 +8,7 @@ set_option maxRecDepth 2_000_000
 set_option linter.constructorNameAsVariable false
 
 /-!
-# CpuChip interpretations (RV64, Pico v3.1.1)
+# CpuChip interpretations (RV64, Pico v3.2.0)
 
 Readable facts about one row of the v3.1.1 `CpuChip`, derived from the restated constraints of
 `Constraints/CpuChip.lean` and the bus contracts of `RVSail/BusesV3.lean`: first what every

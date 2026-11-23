@@ -14,17 +14,19 @@ repository; CI fails when one is out of date. The rest of the text is reviewed b
 ## What is proved
 
 The theorems checked by `scripts/fv-check/check.sh` are listed in `scripts/fv-check/theorems.d/`,
-with their statements in `signatures.txt`. They are of four kinds. Beside them, under the
-first, are eighteen decoding lemmas, which show that on a real row of the class's opcode some
-instruction meets the decoded instruction theorems' `h_decode` (for opcode 0 with `imm_b = 1`, a
-`LUI` or an `AUIPC`, without saying which), listed with the stores, the loads, the two
-register-register classes, the four register-immediate classes, the multiply and divide classes,
-the branches, the jumps and the U-type theorems (A3). So is `Equivalence.utype_row_cases`, which
-discharges the shape hypotheses of the unchecked column forms of `LUI` and `AUIPC`, hypotheses no
-checked theorem takes.
+with their statements in `signatures.txt`. They are of four kinds. Beside them, under the first, are
+eighteen decoding lemmas, which show that on a real row of the class's opcode, with the immediate
+flag that tells the class apart where an opcode is shared (`imm_c = 0` for `RTYPE` except `SUB` and
+for `RTYPEW` except `SUBW`; `imm_c = 1` for `ITYPE`, `ADDIW` and the shift-immediate classes, with
+`imm_b = 0` for `ADDI`; `imm_b = 1` for U-type), some instruction meets the decoded instruction
+theorems' `h_decode` (for U-type, a `LUI` or an `AUIPC`, without saying which), listed with the
+stores, the loads, the two register-register classes, the four register-immediate classes, the
+multiply and divide classes, the branches, the jumps and the U-type theorems (A3). So is
+`Equivalence.utype_row_cases`, which discharges the shape hypotheses of the unchecked column forms
+of `LUI` and `AUIPC`, hypotheses no checked theorem takes.
 
-- **Opcode equivalence** (`Equivalence.equivalence_<OP>`, the names listed in the
-  `theorems.d/equivalence-*.txt` files, one per RV64IM opcode except `ECALL`; the column forms
+- **Opcode equivalence** (`Equivalence.equivalence_<OP>`, the `equivalence_<OP>` names among those
+  listed in `theorems.d/equivalence-*.txt`, one per RV64IM opcode except `ECALL`; the column forms
   `equivalence_<OP>_row` are not checked). For a CPU chip row that satisfies its extracted
   constraints, if the bus messages the row exchanges satisfy the bus assumptions below, then one
   step of the Sail RISC-V specification on that instruction gives the same post-state as the
@@ -91,20 +93,22 @@ checked theorem takes.
   (`MemoryReadWriteChip.Spec.*`, `MemoryUnalignedChip.Spec.*`) and those of the ALU chips already
   at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight).
 
-  The ALU chips' specifications (Add, Addw, Bitwise, DivRem, Lt, Mul, ShiftRight, SLL, Sub and
-  Subw, with the gadgets they embed) are stated over the 2.x row: `RV64IM_Interactions.BusRow`,
-  its `deserialise_bus_row` and its checks `bus_row_ext_asm`, `bus_row_wf_asm`,
-  `bus_row_ext_asrt` and `bus_row_wf_asrt` (`RVSail/Buses.lean`). The CPU, memory and code-range
-  results use the 3.x ones (`RV64IM_Interactions.V3`, `RVSail/BusesV3.lean`). For the ALU chips
-  the two say the same. Their rows send only tag 4 (ALU, 13 fields) and tag 5 (byte, 5 fields)
-  messages: every entry of the interaction lists in `Extraction/AddChip.lean:31-39`,
-  `AddwChip.lean:31-37`, `BitwiseChip.lean:29-45`, `DivRemChip.lean:715-955`, `LtChip.lean:85-91`,
-  `MulChip.lean:121-191`, `ShiftRightChip.lean:149-173`, `SLLChip.lean:125-145`,
-  `SubChip.lean:31-39` and `SubwChip.lean:31-37` has one of those two tags. Both deserialisers
-  sort those two tags alike, into the same `ALUBusEntry` and `ByteBusEntry` lists
-  (`RVSail/Buses.lean:1394-1405`, `RVSail/BusesV3.lean:1066-1077`), so on these rows Program, State
-  and Memory stay empty, as does the 3.x row's `CodeRange`, and each check is the same condition on
-  the ALU and byte entries in either row.
+  The ALU chips' specifications (Add, Addw, Bitwise, DivRem, Lt, Mul, ShiftRight, SLL, Sub and Subw,
+  with the gadgets they embed) are stated over the 2.x row: `RV64IM_Interactions.BusRow`, its
+  `deserialise_bus_row` and its checks `bus_row_ext_asm`, `bus_row_wf_asm`, `bus_row_ext_asrt` and
+  `bus_row_wf_asrt` (`RVSail/Buses.lean`). The CPU, memory and code-range results use the 3.x ones
+  (`RV64IM_Interactions.V3`, `RVSail/BusesV3.lean`). For the ALU chips the two say the same. Their
+  rows exchange only tag 4 (ALU, 13 fields) and tag 5 (byte, 5 fields) messages: each chip receives
+  one ALU message, its own operation, and sends byte messages, and DivRem also sends two ALU
+  messages (`Extraction/DivRemChip.lean:871, 873`). Every entry of the interaction lists in
+  `Extraction/AddChip.lean:31-39`, `AddwChip.lean:31-37`, `BitwiseChip.lean:29-45`,
+  `DivRemChip.lean:715-955`, `LtChip.lean:85-91`, `MulChip.lean:121-191`,
+  `ShiftRightChip.lean:149-173`, `SLLChip.lean:125-145`, `SubChip.lean:31-39` and
+  `SubwChip.lean:31-37` has one of those two tags. Both deserialisers sort those two tags alike,
+  into the same `ALUBusEntry` and `ByteBusEntry` lists (`RVSail/Buses.lean:1394-1405`,
+  `RVSail/BusesV3.lean:1066-1077`), so on these rows Program, State and Memory stay empty, as does
+  the 3.x row's `CodeRange`, and each check is the same condition on the ALU and byte entries in
+  either row.
 
   The memory chips' say that a row receiving the memory dispatch meets the memory promise
   (`spec_LB` to `spec_SD`, one per opcode, and `wf_asrt`, which also gives each double word the
@@ -350,7 +354,7 @@ the sign into `op_c_sign`. So on a row the program decoded those bits are the pr
 amount or 12-bit immediate; the column forms do not state that link.
 
 The four store, the seven load and the thirteen register-immediate theorems state it. So do the
-theorems of the four register classes, the fifteen register-register theorems (`RType.lean`,
+theorems of the four register classes: the fifteen register-register theorems (`RType.lean`,
 `RTypeW.lean`), the five multiply theorems (`MulFamily.lean`) and the eight divide and remainder
 theorems (`DivFamily.lean`), which have no immediate but whose registers the decoding fixes in the
 same way. So do the six branch theorems (`BType.lean`), `JAL` and `JALR` (`Jumps.lean`), and `LUI`
@@ -384,11 +388,11 @@ instruction theorems take for every row as `h_all_wf`). For opcode 30 (`MUL`) it
 signedness with `result_part := .Low`, which the decoder does not read.
 `Equivalence.utype_decode_satisfiable` derives it from `is_real = 1`, opcode 0, `imm_b = 1` and the
 promise, for a `LUI` or an `AUIPC`: the opcode and the flags do not say which; the operand shapes
-do, and they overlap (below). Each decoded theorem is proved from a column-form theorem of the same
-name with `_row` appended (`equivalence_SD_row`), which reads `rs1`, `rs2` or `rd` (and the offset
-or immediate) off the row and is not checked. `equivalence_LUI_row` and `equivalence_AUIPC_row` read
-`rd` off the row but take the immediate as a parameter, pinned by their shape hypotheses `h_op_b`
-and `h_op_c` (below).
+tell them apart except where they overlap, and there both hold (below). Each decoded theorem is
+proved from a column-form theorem of the same name with `_row` appended (`equivalence_SD_row`),
+which reads `rs1`, `rs2` or `rd` (and the offset or immediate) off the row and is not checked.
+`equivalence_LUI_row` and `equivalence_AUIPC_row` read `rd` off the row but take the immediate as a
+parameter, pinned by their shape hypotheses `h_op_b` and `h_op_c` (below).
 
 The four store theorems take no opcode: the decoding fixes it (their `_row` forms take it alone,
 as the store theorems did at `353238a`). They gain the whole-trace assumption, which their 2.x
@@ -489,19 +493,19 @@ branch-target field equations as integer equations. The weakest bound those read
 slightly stronger, is the guest address bound Pico itself uses, and also covers JAL's 21-bit
 offsets, which need `p - 2^20`.
 
-Pico enforces it outside the chips, in the recursion circuit (`mle/compiler/recursion/lowering.rs`
-at v3.2.0): each chunk's final pc equals the next chunk's first pc (`assert_child_continuity`,
-`recursion/lowering.rs:1194-1199`); a chunk that runs no CPU passes its pc through unchanged
-(`recursion/lowering.rs:1559-1563`); the root requires the last chunk's final pc to be zero
-(`assert_root_complete`, `recursion/lowering.rs:1776-1779`). The circuit has other checks (a CPU
-chunk's first pc is not zero, `recursion/lowering.rs:1510-1516`; a chunk with no CPU is not chunk
-1, `recursion/lowering.rs:1522-1527`) that only narrow what is accepted. A chunk's first pc is its
-row 0's pc (`riscv_cpu/public_values/constraints.rs:26-33` at v3.2.0), row 0 is real
-(`riscv_cpu/constraints.rs:340-341` at v3.2.0) and its fetch matches the Program table, whose pcs
-are 4-aligned and below `0x7800_0000` (`riscv_program/traces.rs:86-113` at v3.2.0). So in an
-accepted proof the final pc is either zero or a Program-table pc, which satisfies the assumption.
-No check of its own on the public value was found outside the chips (no range or alignment check
-in the recursion circuit or the verifiers).
+Pico enforces it outside the chips, in the recursion circuit
+(`vm/src/mle/compiler/recursion/lowering.rs` at v3.2.0): each chunk's final pc equals the next
+chunk's first pc (`assert_child_continuity`, `recursion/lowering.rs:1194-1199`); a chunk that runs
+no CPU passes its pc through unchanged (`recursion/lowering.rs:1559-1563`); the root requires the
+last chunk's final pc to be zero (`assert_root_complete`, `recursion/lowering.rs:1776-1779`). The
+circuit has other checks (a CPU chunk's first pc is not zero, `recursion/lowering.rs:1510-1516`; a
+chunk with no CPU is not chunk 1, `recursion/lowering.rs:1522-1527`) that only narrow what is
+accepted. A chunk's first pc is its row 0's pc (`riscv_cpu/public_values/constraints.rs:26-33` at
+v3.2.0), row 0 is real (`riscv_cpu/constraints.rs:340-341` at v3.2.0) and its fetch matches the
+Program table, whose pcs are 4-aligned and below `0x7800_0000` (`riscv_program/traces.rs:86-113` at
+v3.2.0). So in an accepted proof the final pc is either zero or a Program-table pc, which satisfies
+the assumption. No check of its own on the public value was found outside the chips (no range or
+alignment check in the recursion circuit or the verifiers).
 
 ### A4. Composition of the chips (not proven)
 
@@ -693,12 +697,12 @@ Bitwise and DivRem chips. Modules the build does not import are not replayed.
 
 **The job has not run.** GitHub runs a scheduled workflow only from the repository's default branch,
 and the workflow is on `pico-v3`, not on `main`. Until it runs, this section describes what it would
-check, not a result. Run by hand on the fourteen instruction-theorem files the build imports
-(every file of `Equivalence/` but the umbrella `Equivalence/Equivalence`), `lake env leanchecker`
-replays them all: `Equivalence/Common`, `Equivalence/Addiw`, `Equivalence/RTypeW`,
-`Equivalence/ShiftIWOp`, `Equivalence/IType`, `Equivalence/ShiftIOp`, `Equivalence/RType`,
-`Equivalence/MulFamily`, `Equivalence/DivFamily`, `Equivalence/Jumps`, `Equivalence/BType`,
-`Equivalence/Stores`, `Equivalence/Loads` and `Equivalence/UType`.
+check, not a result. Run by hand on the fourteen `Equivalence/` modules the build imports (the
+thirteen class files and `Common`), `lake env leanchecker` replays them all: `Equivalence/Common`,
+`Equivalence/Addiw`, `Equivalence/RTypeW`, `Equivalence/ShiftIWOp`, `Equivalence/IType`,
+`Equivalence/ShiftIOp`, `Equivalence/RType`, `Equivalence/MulFamily`, `Equivalence/DivFamily`,
+`Equivalence/Jumps`, `Equivalence/BType`, `Equivalence/Stores`, `Equivalence/Loads` and
+`Equivalence/UType`.
 `Common`, `Jumps` and `BType` used to fail with "(kernel) deep recursion detected": one `simp`
 sorted all 17 messages of a CPU row at once, and the proof term it built was deeper than
 `leanchecker`'s kernel stack (`lake build` runs Lean with `--tstack=400000` in the lakefile). The

@@ -7,7 +7,7 @@ open Plonky3
 set_option maxHeartbeats 1_000_000_000
 
 /-!
-# CpuChip — abstract constraints & buses (RV64, Pico v3.1.1)
+# CpuChip — abstract constraints & buses (RV64, Pico v3.2.0)
 
 `CpuChip`'s Pico Rust source is `vm/src/chips/chips/riscv_cpu/` at
 commit `2acc7c1828fb4ec1bed5963511bb370870c5b608`, with `constraints.rs`

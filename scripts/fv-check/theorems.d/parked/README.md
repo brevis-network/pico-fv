@@ -141,7 +141,8 @@ from those and the row's Program promise:
   `Equivalence.jalr_decode_satisfiable`;
 - `LUI` and `AUIPC`: `Equivalence.utype_decode_satisfiable`, from opcode 0 with
   `imm_b = 1`, for one of the two: the opcode and the flags do not say which;
-  the operand shapes do, and they overlap (`SOUNDNESS.md`, A3).
+  the operand shapes tell them apart except where they overlap, and there both
+  hold (`SOUNDNESS.md`, A3).
 
 Two definitions every statement names were also rewritten at v3.1.1, and
 `signatures.txt` shows only their names: `Equivalence.CPU_bus_operations` (the
