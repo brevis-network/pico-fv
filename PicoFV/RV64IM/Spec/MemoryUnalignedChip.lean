@@ -847,10 +847,11 @@ namespace MemoryUnalignedChip.Spec
       v.offset_4 row 0 * 4 + v.offset_5 row 0 * 5 + v.offset_6 row 0 * 6 + v.offset_7 row 0 * 7
     let dword0 := v.addr_word_0 row 0 - offset
     offset.val = addr % 8 ∧
-    dword0.val < 65536 ∧
+    dword0.val < 65536 ∧ (v.addr_word_1 row 0).val < 65536 ∧
     dword0.val + 65536 * (v.addr_word_1 row 0).val = addr - addr % 8 ∧
     (v.cross row 0 = 1 →
       (dword0 + 8 - v.next_carry row 0 * 65536).val < 65536 ∧
+      (v.addr_word_1 row 0 + v.next_carry row 0).val < 65536 ∧
       (dword0 + 8 - v.next_carry row 0 * 65536).val +
         65536 * (v.addr_word_1 row 0 + v.next_carry row 0).val = addr - addr % 8 + 8)
   := by
@@ -886,7 +887,7 @@ namespace MemoryUnalignedChip.Spec
         rw [val_mul_of_lt (by rw [show (8 : FKB).val = 8 from rfl]; omega)]; rfl
       conv_lhs => rw [e2]
       rw [val_add_of_lt (by omega), h8]
-    refine ⟨ by omega, by omega, by omega, fun hc => ?_ ⟩
+    refine ⟨ by omega, by omega, h_a1, by omega, fun hc => ?_ ⟩
     have h_n1 := h_next1 hc
     rcases bool_cases c27 with hn | hn
     · have h_ne : a0 - off - 65528 ≠ 0 := by
@@ -897,7 +898,7 @@ namespace MemoryUnalignedChip.Spec
       have h8 : (a0 - off + 8).val = (a0 - off).val + 8 := by
         rw [val_add_of_lt (by rw [show (8 : FKB).val = 8 from rfl]; omega)]; rfl
       rw [hn, zero_mul, sub_zero, add_zero, h8]
-      exact ⟨ by omega, by omega ⟩
+      exact ⟨ by omega, by omega, by omega ⟩
     · have h_eq : a0 - off = 65528 := by
         rcases mul_eq_zero.mp d28 with h | h
         · rw [hn] at h; exact absurd h (by decide)
@@ -909,7 +910,7 @@ namespace MemoryUnalignedChip.Spec
       rw [h_eq] at h_t
       simp only [Fin.val_zero]
       have : (65528 : FKB).val = 65528 := rfl
-      exact ⟨ by omega, by omega ⟩
+      exact ⟨ by omega, by omega, by omega ⟩
 
   /-! ### What a load reads -/
 
