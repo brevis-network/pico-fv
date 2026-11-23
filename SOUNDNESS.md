@@ -308,8 +308,9 @@ zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign fl
 the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
 amount or 12-bit immediate; those theorems do not state that link.
 
-The four store, the seven load, the five multiply and the eight divide and remainder theorems
-state it. Each takes the instruction itself, written
+The four store and the seven load theorems state the link between the row and the program's
+instruction, offset included, and so do the five multiply and the eight divide and remainder
+theorems, which have no immediate. Each takes the instruction itself, written
 in the statement (`instruction.STORE (imm, rs2, rs1, 8)` for `SD`), with the hypothesis
 `h_decode` that the decoder (`Transpiler.V3.transpile_op`, at multiplicity 1 and some address
 `addr`) turns it into the row's Program message, and concludes that Sail's step on that
