@@ -1,9 +1,9 @@
 # Formal verification of the Brevis Pico RISC-V zkVM
 
 This repository contains a Lean 4 (v4.28.0-rc1) formalisation of the Brevis Pico
-RISC-V zkVM and end-to-end equivalence proofs between every Pico chip's
-constraint system and the corresponding [Official Lean RISC-V
-specification](https://github.com/NethermindEth/sail-riscv-lean/tree/v4.28.0-rc1).
+RISC-V zkVM and equivalence proofs between the constraint systems of Pico's RV64IM
+CPU, ALU and memory chips (and their gadgets) and the corresponding [official Lean
+RISC-V specification](https://github.com/NethermindEth/sail-riscv-lean/tree/bb1e7d45c6a158a5598705eea12cebfee4349b03).
 
 The development covers the **RV64IM** variant of Pico. Its 62 opcodes were
 equivalence-proven against Pico 2.x. On the `pico-v3` branch those proofs are
@@ -142,7 +142,7 @@ The proofs are built from these pinned inputs:
 Build from the committed `lake-manifest.json`. `lakefile.toml` names two dependencies by branch
 (`sail-riscv-lean`'s `v4.28.0-rc1`, `LeanZKCircuit-Plonky3`'s `Dom/v4.28.0-rc1`), so
 `lake update` can move their pins. CI (`.github/workflows/ci.yml`) runs on every pull request
-and every push to `main` and `pico-v3`: its `extractor` job regenerates every file in
+and every push to `main` and `pico-v3`: its `extractor` job regenerates every generated file in
 `PicoFV/RV64IM/Extraction/` from the pinned Pico and fails if one differs from the committed
 file, and its `build` job rebuilds the proofs and runs `scripts/fv-check/check.sh`.
 

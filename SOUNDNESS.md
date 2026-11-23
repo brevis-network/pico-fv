@@ -178,7 +178,7 @@ The other inputs are pinned as well:
   `extractor/Cargo.toml` and `extractor/Cargo.lock`.
 
 CI (`.github/workflows/ci.yml`) runs on every pull request and every push to `main` and
-`pico-v3`: its `extractor` job regenerates every extraction file from the pinned Pico and fails if
+`pico-v3`: its `extractor` job regenerates every generated file from the pinned Pico and fails if
 one differs from the committed file, and its `build` job rebuilds the proofs and runs `check.sh`.
 
 ## Summary of the risks
@@ -186,7 +186,7 @@ one differs from the committed file, and its `build` job rebuilds the proofs and
 | ID | Risk | Mitigation in place |
 |----|------|---------------------|
 | A1 | The extracted constraints differ from Pico's | Extracted by running each chip through Pico's own symbolic builder; `extractor --check` in CI |
-| A2 | The RISC-V specification is not what RISC-V means | The official Sail model, translated to Lean, pinned |
+| A2 | The RISC-V specification is not what RISC-V means | The official Sail model, translated to Lean, pinned (source commit not recorded; platform configuration set by hand; see Pinned inputs) |
 | A3 | A theorem holds only under a hypothesis | Hypotheses are part of each statement, snapshotted in `signatures.txt` |
 | A4 | The chips' bus messages do not compose as assumed | None yet: not proven (see A4) |
 | A5 | A part of Pico is not covered | Listed in A5 |
@@ -202,9 +202,9 @@ one differs from the committed file, and its `build` job rebuilds the proofs and
 
 `extractor/` evaluates each RV64IM chip's `eval` with Pico's `get_symbolic_builder`, the same path
 Pico's keygen takes, and prints the constraints and bus interactions as Lean. The output records
-the Pico commit it came from. `extractor --check` regenerates every file and compares it with the
-committed one, so a file that has not been regenerated from the pinned commit fails CI, except
-for the files listed in `extractor/pending.txt` (see "What is proved").
+the Pico commit it came from. `extractor --check` regenerates every generated file and compares it
+with the committed one, so a file that has not been regenerated from the pinned commit fails CI,
+except for the files listed in `extractor/pending.txt` (see "What is proved").
 
 Gadgets are extracted through small wrapper airs that call the gadget's `eval` on a column
 layout of the same width; a test checks that each wrapper uses every column it declares.
