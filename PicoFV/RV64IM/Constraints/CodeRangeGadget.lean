@@ -9,8 +9,8 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # CodeRangeGadget — constraints and bus messages
 
-`CodeRangeCols::eval` (`vm/src/chips/gadgets/code_range.rs`, Pico v3.1.6
-`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`) emits 4 constraints and 3 bus messages, extracted in
+`CodeRangeCols::eval` (`vm/src/chips/gadgets/code_range.rs`, Pico v3.2.0
+`fcfa504624657d0c417c43f1233d5d891f293ff9`) emits 4 constraints and 3 bus messages, extracted in
 `PicoFV.RV64IM.Extraction.CodeRangeGadget`. This file restates them on the named columns of
 `Valid_CodeRangeGadgetAir`, with an `_equiv` lemma per constraint.
 

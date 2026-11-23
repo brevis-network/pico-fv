@@ -13,8 +13,8 @@ set_option linter.unusedVariables false
 /-!
 # Shared sub-air definitions (64-bit memory)
 
-The column layouts from `vm/src/chips/chips/riscv_memory/read_write/columns.rs` at Pico v3.1.6
-(`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`) that more than one chip uses. The memory-access
+The column layouts from `vm/src/chips/chips/riscv_memory/read_write/columns.rs` at Pico v3.2.0
+(`fcfa504624657d0c417c43f1233d5d891f293ff9`) that more than one chip uses. The memory-access
 layouts are shared by the CPU chip (its three register accesses), `MemoryReadWriteChip` (its data
 access, `riscv_memory/read_write/columns.rs:74`) and `MemoryUnalignedChip` (its two dword
 accesses, `riscv_memory/unaligned/columns.rs:41-45`); `MemoryInstructionCols` by the two memory

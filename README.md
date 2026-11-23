@@ -38,17 +38,18 @@ The 62 opcodes:
 The extraction tool in `extractor/` is pinned to this Pico revision:
 
 <!-- generated: pin -->
-Pico v3.1.6, commit [`6aa644efe`](https://github.com/brevis-network/pico/commit/6aa644efeff9ddbec6beb538200f98f2a70f5d8e).
+Pico v3.2.0, commit [`fcfa50462`](https://github.com/brevis-network/pico/commit/fcfa504624657d0c417c43f1233d5d891f293ff9).
 <!-- end generated -->
 
 Each proof is about the Pico revision named in the first line of the `PicoFV/RV64IM/Extraction/`
 file it uses; every file is extracted from the pinned commit (`extractor/pending.txt`, the list of
 files that predate it, is empty). Re-extracting the CPU chip, the ten ALU chips and their gadgets at
 v3.1.6 gives the same constraints and bus messages as at v3.1.1, so what this README says about
-those chips at v3.1.1 holds at v3.1.6. This was checked at v3.1.6; if the pin above names a later
-version, it has not been checked there yet. The read/write memory chip changed after v3.1.1, and
-since v3.1.2 Pico has a second memory chip for misaligned loads and stores; both are proven at
-v3.1.6 (see [SOUNDNESS.md](SOUNDNESS.md), A4).
+those chips at v3.1.1 holds at v3.1.6. Re-extracting every file at v3.2.0 gives the same
+constraints and bus messages as at v3.1.6: v3.2.0 changed nothing an RV64IM chip constrains. This
+was checked at v3.2.0; if the pin above names a later version, it has not been checked there yet.
+The read/write memory chip changed after v3.1.1, and since v3.1.2 Pico has a second memory chip for
+misaligned loads and stores; both are proven at v3.2.0 (see [SOUNDNESS.md](SOUNDNESS.md), A4).
 [SOUNDNESS.md](SOUNDNESS.md) says what the proofs establish and what they trust.
 
 For each opcode, the equivalence theorem states: under the chip's row
@@ -123,7 +124,7 @@ fetching mathlib's binary cache.
 ## Checking the theorems
 
 After `lake build`, `scripts/fv-check/check.sh` checks the top-level theorems
-listed in `scripts/fv-check/theorems.d/`: the two memory chips' specifications at v3.1.6,
+listed in `scripts/fv-check/theorems.d/`: the two memory chips' specifications at v3.2.0,
 and the specifications of the ALU chips already at v3.1.1
 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight), and the
 equivalence theorems the branch proves at v3.1.1 (listed above), with

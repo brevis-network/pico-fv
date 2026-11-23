@@ -9,7 +9,8 @@ import PicoFV.RV64IM.Transpiler.Transpiler
     line numbers below point. It was read again at v3.1.5 and v3.1.6 and models both unchanged: the
     instruction rows are the same, three lines further down `riscv_program/traces.rs`, and
     `looked_program` is at `riscv_program/constraints.rs:71-101`, after the new code-range
-    message (`SOUNDNESS.md`, A6).
+    message (`SOUNDNESS.md`, A6). The files cited here are unchanged at v3.2.0
+    (`git diff v3.1.6 v3.2.0` over them is empty).
 
     Layout, as sent by `riscv_cpu/constraints.rs:452-481` (`looking_program`) and received by
     `riscv_program/constraints.rs:53-83` (`looked_program`):
