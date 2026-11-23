@@ -21,6 +21,9 @@ What the chip proves about each row (`MemoryReadWriteChip::eval`,
 - `wf_asrt`: every message the row receives at `-1` meets its promise: the memory dispatch the
   Memory promise, and the double word written back 16-bit pieces (`StateBusEntry`).
 - `ext_asrt`: the row asserts nothing to the tables it looks up.
+- `aligned_address`: the address of the double word the row reads and writes back,
+  `[addr_word_0 - offset, addr_word_1, 0]`, is `b + c` with its three low bits cleared, its first
+  two pieces below `2^16`, and the offset bits are those low bits.
 - `store_misses_code_range`: on a store row the bytes written miss the code range the row looks
   up, through the `code_range` gadget (`CodeRangeGadget.Spec.gadget_spec`).
 
@@ -29,7 +32,9 @@ Each theorem assumes the row's constraints (`allHold`) and what its messages are
 dispatch, that `b` and `c` have 16-bit pieces, so does a store's `a`, and `a = 0` when
 `op_a_0 ≠ 0` (`MemoryBus.externals`); from the memory argument, that the double word read has
 16-bit pieces; from the byte table, the range checks; from the Program table, that the code
-range has 16-bit pieces. The per-opcode theorems also take the row's flag.
+range has 16-bit pieces. The per-opcode theorems also take the row's flag, and `aligned_address`
+takes `is_memory = 1`, which says the row is real; `store_misses_code_range` takes the sum of
+the store flags = 1.
 
 Nothing here says which memory a load reads or a store writes: the Memory promise does not ask
 it. `Spec/MemoryReadWriteChipDataFlow.lean` proves that apart, for every row
@@ -563,7 +568,7 @@ namespace MemoryReadWriteChip.Spec
       `a = 0` when `op_a_0 ≠ 0`. From the memory argument (`StateBusEntry`): the double word
       read has 16-bit pieces. From the byte table (`ByteBus.Spec`), for the checks the row's
       flags send: the sign-bit operand and the two byte splits are in range. The byte table's
-      checks of the address are used by `address`. -/
+      checks of the address are used by `address` and `aligned_address`. -/
   lemma bus_facts
     [Field ExtF]
     (air : Valid_MemoryReadWriteChip FKB ExtF)
@@ -694,9 +699,9 @@ namespace MemoryReadWriteChip.Spec
   /-- On a real row the double word the row reads and writes back starts at `b + c` with its three
       low bits cleared, and the three offset bits are those low bits: the memory access's address
       `[addr_word_0 - offset, addr_word_1, 0]` (`riscv_memory/read_write/constraints.rs:292-301,
-      333-343` at v3.2.0) is the aligned form of the address the memory dispatch names, and each of
-      its two pieces is below `2^16`. From `address`, the offset bits (constraints 17 to 19), the
-      `BitRange(13)` check of the aligned low piece over 8
+      333-343` at v3.2.0) is the aligned form of the address the memory dispatch names, and its
+      first two pieces (the third is 0) are below `2^16`. From `address`, the offset bits
+      (constraints 17 to 19), the `BitRange(13)` check of the aligned low piece over 8
       (`riscv_memory/read_write/constraints.rs:303-309` at v3.2.0) and the `U16Range` check of
       `addr_word_1` (`riscv_memory/read_write/constraints.rs:259-266` at v3.2.0). -/
   lemma aligned_address

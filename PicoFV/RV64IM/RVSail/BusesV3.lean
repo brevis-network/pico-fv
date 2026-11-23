@@ -44,8 +44,8 @@ set_option maxHeartbeats 1_000_000_000
     Pico line numbers in this file are at v3.1.1 (`2acc7c1828fb`), except in `MemoryBus.Spec`,
     the memory chips' citations in `MemoryBusEntry` and the code-range section, which are at
     v3.2.0 (`fcfa50462465`).
-    From v3.1.1 to v3.1.6 the CPU chip's constraint files are unchanged; its trace generation
-    (`riscv_cpu/event.rs`, `traces.rs`) changed, as did the Program chip's and
+    From v3.1.1 to v3.1.6, and to v3.2.0, the CPU chip's constraint files are unchanged; its
+    trace generation (`riscv_cpu/event.rs`, `traces.rs`) changed, as did the Program chip's and
     `MemoryReadWriteChip`'s columns, constraints and trace generation. Since v3.1.2 the memory
     dispatch has a second receiver, `MemoryUnalignedChip`, so `MemoryBus.Spec` states only what
     both receivers prove. -/
