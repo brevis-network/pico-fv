@@ -110,8 +110,9 @@ discharges two instruction theorems' hypotheses (`Equivalence.utype_row_cases`, 
   messages ask nothing of the sender, and the Ecall message has no contract. The memory chip's
   address addition `b + c` is exact only for 16-bit pieces, which it takes from the sender, so
   the meaning of the load and store theorems rests on this theorem.
-- **Gadget specifications** (`CodeRangeGadget.Spec.*`). The `code_range` gadget, which both
-  memory chips and every precompile chip embed at v3.2.0, is proven on its own:
+- **Gadget specifications** (`CodeRangeGadget.Spec.*`). The `code_range` gadget, which at v3.2.0
+  both memory chips and the precompile chips that write memory embed (`blake2b/control.rs` and
+  `keccak256/control.rs` among them, not `blake2b/round.rs`), is proven on its own:
   `gadget_spec` and `spec` say that on a store row (`is_store = 1`, `addr` two 16-bit pieces,
   `width` below 2^16) that satisfies the gadget's constraints, the write `[addr, addr + width)`
   misses the range `[code_start, code_end)` the row looks up from the Program table.
@@ -139,8 +140,8 @@ constraints and bus messages as at v3.1.6, each file again differing only in its
 constraint digests differ only by two new precompile chips, `Blake2bControlChip` and
 `Blake2bRoundChip`, and the overall digest. Under `vm/src/chips/chips`, `vm/src/chips/gadgets` and
 `vm/src/machine/builder`, the one changed file is `riscv_memory/unaligned/traces.rs`, which now
-fills the trace in parallel and constrains nothing. The claims in this document that name v3.2.0
-were checked at v3.1.6, and the Pico files they cite are unchanged at v3.2.0; if the pin above
+fills the trace in parallel and constrains nothing. The other claims in this document that name
+v3.2.0 were checked at v3.1.6, and the Pico files they cite are unchanged at v3.2.0; if the pin above
 names a later version, they have not been checked there yet.
 
 A chip's constraints also cannot show which chips receive its messages. At
@@ -448,7 +449,7 @@ the Lean decoder with the Rust one; Pico's own decoder tests are restated as `ex
 of `TranspilerV3.lean`. The decoder starts from an already-decoded Sail instruction, not from the
 32-bit word: that a word decodes to the same instruction in Sail and in Pico is not modelled.
 
-The contract was read again against v3.1.5, and again against v3.1.6, the pinned commit. The decoder
+The contract was read again against v3.1.5, and again against v3.1.6. The decoder
 (`rrs.rs`), the opcodes and the instruction type did not change. The Program table builds each
 instruction's row as before, at the same addresses under the same asserts; since v3.1.2 the table
 adds the program's code range to every row in four new columns, `code_start` and `code_end`. The
