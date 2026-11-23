@@ -1,7 +1,6 @@
 import PicoFV.RV64IM.RVSail.BusesV3
 import PicoFV.RV64IM.Extraction.MemoryUnalignedChip
 import PicoFV.RV64IM.Airs.MemoryUnalignedChip
-import PicoFV.RV64IM.Constraints.CodeRangeGadget
 
 open Plonky3
 
@@ -901,10 +900,13 @@ namespace MemoryUnalignedChip
   open RV64IM_Interactions.V3
 
   /-- The high byte `(x - lo) / 256` of a 16-bit piece `x` whose low byte is `lo`
-      (`gadgets/u16_to_u8.rs:71-72`). `2122383361` is `256`'s inverse. -/
+      (`gadgets/u16_to_u8.rs:71-72`), meant at `FKB`, where `2122383361` is `256`'s inverse.
+      Stated over any field so that at `FKB` it uses the field arithmetic of the restated
+      constraints, not `Fin`'s. -/
   abbrev high_byte [Field F] (x lo : F) : F := (x - lo) * 2122383361
 
-  /-- The 16-bit piece whose low byte is `x` and high byte `y`. -/
+  /-- The 16-bit piece whose low byte is `x` and high byte `y`, meant at `FKB` as
+      `high_byte`. -/
   abbrev limb [Field F] (x y : F) : F := x + y * 256
 
   /-- The number of bytes a store writes: 1, 2, 4 or 8 on a store row, 0 on any other row.
@@ -959,7 +961,6 @@ namespace MemoryUnalignedChip
       (v.first.access.diff_16bit_limb row 0 + v.first.access.diff_hi9 row 0 * 65536) - 1
     let prev_clk' := v.clk row 0 + 1 -
       (v.second.access.diff_16bit_limb row 0 + v.second.access.diff_hi9 row 0 * 65536) - 1
-    let high := fun (x lo : FKB) => (x - lo) * 2122383361
     {
       Program := [],
       ALU := [],
@@ -972,29 +973,29 @@ namespace MemoryUnalignedChip
         (cross, #v[8, v.second.access.diff_16bit_limb row 0, 0, 0, 0]),
         (cross, #v[9, v.second.access.diff_hi9 row 0, 0, 9, 0]),
         (is_memory, #v[7, 0, 0, v.first_bytes.low_bytes_0 row 0,
-          high (v.first.prev_value_0 row 0) (v.first_bytes.low_bytes_0 row 0)]),
+          high_byte (v.first.prev_value_0 row 0) (v.first_bytes.low_bytes_0 row 0)]),
         (is_memory, #v[7, 0, 0, v.first_bytes.low_bytes_1 row 0,
-          high (v.first.prev_value_1 row 0) (v.first_bytes.low_bytes_1 row 0)]),
+          high_byte (v.first.prev_value_1 row 0) (v.first_bytes.low_bytes_1 row 0)]),
         (is_memory, #v[7, 0, 0, v.first_bytes.low_bytes_2 row 0,
-          high (v.first.prev_value_2 row 0) (v.first_bytes.low_bytes_2 row 0)]),
+          high_byte (v.first.prev_value_2 row 0) (v.first_bytes.low_bytes_2 row 0)]),
         (is_memory, #v[7, 0, 0, v.first_bytes.low_bytes_3 row 0,
-          high (v.first.prev_value_3 row 0) (v.first_bytes.low_bytes_3 row 0)]),
+          high_byte (v.first.prev_value_3 row 0) (v.first_bytes.low_bytes_3 row 0)]),
         (cross, #v[7, 0, 0, v.second_bytes.low_bytes_0 row 0,
-          high (v.second.prev_value_0 row 0) (v.second_bytes.low_bytes_0 row 0)]),
+          high_byte (v.second.prev_value_0 row 0) (v.second_bytes.low_bytes_0 row 0)]),
         (cross, #v[7, 0, 0, v.second_bytes.low_bytes_1 row 0,
-          high (v.second.prev_value_1 row 0) (v.second_bytes.low_bytes_1 row 0)]),
+          high_byte (v.second.prev_value_1 row 0) (v.second_bytes.low_bytes_1 row 0)]),
         (cross, #v[7, 0, 0, v.second_bytes.low_bytes_2 row 0,
-          high (v.second.prev_value_2 row 0) (v.second_bytes.low_bytes_2 row 0)]),
+          high_byte (v.second.prev_value_2 row 0) (v.second_bytes.low_bytes_2 row 0)]),
         (cross, #v[7, 0, 0, v.second_bytes.low_bytes_3 row 0,
-          high (v.second.prev_value_3 row 0) (v.second_bytes.low_bytes_3 row 0)]),
+          high_byte (v.second.prev_value_3 row 0) (v.second_bytes.low_bytes_3 row 0)]),
         (is_store, #v[7, 0, 0, v.value_bytes.low_bytes_0 row 0,
-          high (v.instruction.op_a_value_0 row 0) (v.value_bytes.low_bytes_0 row 0)]),
+          high_byte (v.instruction.op_a_value_0 row 0) (v.value_bytes.low_bytes_0 row 0)]),
         (is_store, #v[7, 0, 0, v.value_bytes.low_bytes_1 row 0,
-          high (v.instruction.op_a_value_1 row 0) (v.value_bytes.low_bytes_1 row 0)]),
+          high_byte (v.instruction.op_a_value_1 row 0) (v.value_bytes.low_bytes_1 row 0)]),
         (is_store, #v[7, 0, 0, v.value_bytes.low_bytes_2 row 0,
-          high (v.instruction.op_a_value_2 row 0) (v.value_bytes.low_bytes_2 row 0)]),
+          high_byte (v.instruction.op_a_value_2 row 0) (v.value_bytes.low_bytes_2 row 0)]),
         (is_store, #v[7, 0, 0, v.value_bytes.low_bytes_3 row 0,
-          high (v.instruction.op_a_value_3 row 0) (v.value_bytes.low_bytes_3 row 0)]),
+          high_byte (v.instruction.op_a_value_3 row 0) (v.value_bytes.low_bytes_3 row 0)]),
         (is_lb + is_lh + is_lw, #v[8, 2 * v.sign_src row 0 - v.msb row 0 * 65536, 0, 0, 0]),
         (is_store, #v[8, v.code_range.distance_0 row 0, 0, 0, 0]),
         (is_store, #v[8, v.code_range.distance_1 row 0, 0, 0, 0])
@@ -1050,6 +1051,7 @@ namespace MemoryUnalignedChip.Interactions
       constraint_and_interaction_simplification,
       bus_row,
       MemoryUnalignedChip.AbsBuses,
+      MemoryUnalignedChip.high_byte,
       pico_encapsulation,
     ]
 

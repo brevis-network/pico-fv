@@ -130,8 +130,8 @@ pin above names a later version, they have not been checked there yet. Pico's pe
 cannot show this at v3.1.6, which changed every chip's digest when it rewrote how chunks are joined;
 the re-extraction does. A chip's constraints also cannot show which chips receive its messages. At
 the pin the CPU chip's memory dispatch has a second receiver, `MemoryUnalignedChip`, which serves
-misaligned loads and stores, so the memory promise no longer says an address is aligned (see A4
-and A5), and the Program table changed after v3.1.1 (see A6).
+misaligned loads and stores, so the memory promise no longer says an address is aligned (see
+A4), and the Program table changed after v3.1.1 (see A6).
 
 <!-- generated: pending -->
 Every extraction file is generated from the pinned Pico commit.
@@ -314,9 +314,9 @@ proves the v3.1.1 CPU chip sends, at whatever multiplicity it sends it (each mes
 carries a duty is sent 0 or 1 times, `CpuChip.Spec.multiplicity_eq_zero_or_one`). The theorem
 assumes only the Program table's and the register file's promises, not those of the ALU and
 memory chips it sends to, so the CPU's side of each of those links does not rest on the
-receiving chip's theorem. The read/write memory chip's specification assumes of the CPU what
-the 3.x contract states (`MemoryBus.externals` in `RVSail/BusesV3.lean`), the duty the CPU is
-proven to meet.
+receiving chip's theorem. Both memory chips' specifications assume of the CPU what the 3.x
+contract states (`MemoryBus.externals` in `RVSail/BusesV3.lean`), the duty the CPU is proven to
+meet.
 
 At v3.1.6, the pin, the memory dispatch has two receivers. Since v3.1.2 Pico has
 `MemoryUnalignedChip` (`vm/src/chips/chips/riscv_memory/unaligned/`), which takes the same
@@ -327,10 +327,12 @@ chip may take any load or store. The promise the CPU chip assumes of the dispatc
 the message: a load's value has 16-bit pieces, the address `b + c` is at least `2^16` and below
 `2^32`, and, unless the destination is `x0`, a load's value is the sign or zero extension its
 opcode names. The address bound and the extensions follow from each chip's constraints at v3.1.6
-together with the CPU's duty that `b` and `c` have 16-bit pieces (`MemoryBus.externals`).
-The 16-bit pieces need more: in `MemoryReadWriteChip` they are pieces of the previous memory
-value, which the memory argument's promise bounds, and for a load into `x0` neither chip
-constrains the value, so there the clause holds because the CPU sends zero
+together with the CPU's duty that `b` and `c` have 16-bit pieces (`MemoryBus.externals`) and the
+byte table's promise for the range checks the row sends (`ByteBus.Spec`, assumed through
+`bus_row_all_wf_asm`). The 16-bit pieces need more: in `MemoryReadWriteChip` they are pieces of
+the previous memory value, which the memory argument's promise bounds; in `MemoryUnalignedChip`
+each is two bytes of its byte splits, which the byte table's promise bounds; and for a load into
+`x0` neither chip constrains the value, so there the clause holds because the CPU sends zero
 (`MemoryBus.externals`). Its doc comment cites the constraint of each chip behind each clause.
 It no longer says that a halfword, word or doubleword address is a multiple of the width, as it did
 when drafted against v3.1.1, where `MemoryReadWriteChip` was the only receiver. It says nothing
@@ -379,9 +381,9 @@ are none among the RV64IM ALU chips at v3.1.6.
 ### A5. What is not covered
 
 `ECALL` and syscalls, the precompile chips, the program, global memory and memory
-initialisation chips, the recursion layers, and Pico's proof system itself. The `CodeRangeGadget.Spec` theorems assume the Program chip's
-code-range promise (`V3.CodeRangeBus.Spec`), which rests on the Program chip and so is trusted
-(see A4). The precompile chips also send the code-range message; no theorem here covers their
+initialisation chips, the recursion layers, and Pico's proof system itself. The
+`CodeRangeGadget.Spec` theorems assume the Program chip's code-range promise
+(`V3.CodeRangeBus.Spec`), which rests on the Program chip and so is trusted (see A4). The precompile chips also send the code-range message; no theorem here covers their
 side of it.
 
 ### A6. The instruction decoder

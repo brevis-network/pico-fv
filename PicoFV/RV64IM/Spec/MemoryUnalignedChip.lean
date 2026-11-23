@@ -21,6 +21,8 @@ What the chip proves about each row (`MemoryUnalignedChip::eval`,
 - `wf_asrt`: every message the row receives at `-1` meets its promise: the memory dispatch the
   Memory promise, and each dword written back 16-bit pieces (`StateBusEntry`).
 - `ext_asrt`: the row asserts nothing to the tables it looks up.
+- `aligned_address`: the dword the row reads first is the one holding the access's first byte,
+  and on a row that crosses the second is the next one.
 - `store_misses_code_range`: on a store row the bytes written miss the code range the row looks
   up, through the `code_range` gadget (`CodeRangeGadget.Spec.gadget_spec`).
 
@@ -693,6 +695,14 @@ namespace MemoryUnalignedChip.Spec
       obtain ⟨ -, o1, o2, o3, o4, o5, o6, o7 ⟩ := h <;>
       simp only [o1, o2, o3, o4, o5, o6, o7] <;> decide
 
+  lemma val_add_of_lt {x y : FKB} (h : x.val + y.val < 2130706433) :
+      (x + y).val = x.val + y.val := by
+    rw [Fin.val_add, Nat.mod_eq_of_lt h]
+
+  lemma val_mul_of_lt {x y : FKB} (h : x.val * y.val < 2130706433) :
+      (x * y).val = x.val * y.val := by
+    rw [Fin.val_mul, Nat.mod_eq_of_lt h]
+
   /-- On a real row the address `b + c` is `addr_word_0 + 2^16 addr_word_1`, both pieces are
       16-bit, and the second is not 0. From the carry chain (constraints 12 to 15), the guard on
       `addr_word_1` (16), the `U16Range` check of `addr_word_1`, the `BitRange(13)` check of
@@ -808,15 +818,95 @@ namespace MemoryUnalignedChip.Spec
     rw [h_addr]
     omega
 
+  /-- On a real row the dword the row reads and writes back first is the one holding the
+      access's first byte, and on a row that crosses the second is the next one: the offset
+      `Σ k · offset_k` is the address's low three bits, the first State message's address
+      `[dword0, addr_word_1, 0]` with `dword0 = addr_word_0 - offset` is `b + c` with those bits
+      cleared, and the second's `[next0, next1, 0]` is 8 more
+      (`riscv_memory/unaligned/constraints.rs:95-116, 130-153` at v3.1.6). From `address`, the
+      one-hot offset (constraints 17 to 25), the `BitRange(13)` check of `dword0 / 8`, the
+      pinning of `next_carry` (constraints 27 to 29) and the `U16Range` check of `next1`. -/
+  lemma aligned_address
+    [Field ExtF]
+    (air : Valid_MemoryUnalignedChip FKB ExtF)
+    (row : ℕ)
+    (h_ext_asm : bus_row_all_ext_asm (bus_row air row))
+    (h_wf_asm : bus_row_all_wf_asm (bus_row air row))
+    (h_constraints : MemoryUnalignedChip.Extraction.allHold air row)
+    (h_mem : is_memory air row = 1)
+  :
+    let v := air.cols
+    let addr := (U64w.toBV #v[v.instruction.op_b_value_0 row 0, v.instruction.op_b_value_1 row 0,
+        v.instruction.op_b_value_2 row 0, v.instruction.op_b_value_3 row 0] +
+      U64w.toBV #v[v.instruction.op_c_value_0 row 0, v.instruction.op_c_value_1 row 0,
+        v.instruction.op_c_value_2 row 0, v.instruction.op_c_value_3 row 0]).toNat
+    let offset := v.offset_1 row 0 + v.offset_2 row 0 * 2 + v.offset_3 row 0 * 3 +
+      v.offset_4 row 0 * 4 + v.offset_5 row 0 * 5 + v.offset_6 row 0 * 6 + v.offset_7 row 0 * 7
+    let dword0 := v.addr_word_0 row 0 - offset
+    offset.val = addr % 8 ∧
+    dword0.val + 65536 * (v.addr_word_1 row 0).val = addr - addr % 8 ∧
+    (v.cross row 0 = 1 →
+      (dword0 + 8 - v.next_carry row 0 * 65536).val +
+        65536 * (v.addr_word_1 row 0 + v.next_carry row 0).val = addr - addr % 8 + 8)
+  := by
+    obtain ⟨ h_addr, -, h_a1, - ⟩ := address air row h_ext_asm h_wf_asm h_constraints h_mem
+    have h_off := offset_value_le air row h_constraints h_mem
+    simp only [is_memory] at h_mem
+    simp [bus_row_all_wf_asm, bus_row_wf_asm, bus_row_code_range_wf_asm, bus_row,
+      MemoryUnalignedChip.AbsBuses, h_mem, RV64IM_Interactions.ByteBus.Spec] at h_wf_asm
+    obtain ⟨ ⟨ -, h_br, h_next1, - ⟩, - ⟩ := h_wf_asm
+    obtain ⟨ -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
+      c27, c28, c29, - ⟩ := constraints_of_allHold air row h_constraints
+    simp only [constraint_27, constraint_28, constraint_29] at c27 c28 c29
+    rw [h_mem] at c29
+    dsimp only at h_addr h_off ⊢
+    rw [h_addr]
+    set a0 := air.cols.addr_word_0 row 0
+    set a1 := air.cols.addr_word_1 row 0
+    set nc := air.cols.next_carry row 0
+    set off := air.cols.offset_1 row 0 + air.cols.offset_2 row 0 * 2 +
+      air.cols.offset_3 row 0 * 3 + air.cols.offset_4 row 0 * 4 + air.cols.offset_5 row 0 * 5 +
+      air.cols.offset_6 row 0 * 6 + air.cols.offset_7 row 0 * 7 with h_off_def
+    have d28 : nc * (a0 - off - 65528) = 0 := by rw [h_off_def]; linear_combination c28
+    have d29 : (a0 - off - 65528) * air.cols.next_carry_inv row 0 = 1 - nc := by
+      rw [h_off_def]; linear_combination c29
+    set t := (a0 - off) * 1864368129 with ht
+    have e : a0 - off = 8 * t := by
+      rw [ht, mul_comm 8, mul_assoc, show (1864368129 : FKB) * 8 = 1 from rfl, mul_one]
+    have h_t : (a0 - off).val = 8 * t.val := by
+      rw [e, val_mul_of_lt (by rw [show (8 : FKB).val = 8 from rfl]; omega)]; rfl
+    have h_a0_val : a0.val = off.val + 8 * t.val := by
+      have e2 : a0 = off + 8 * t := by rw [← e]; ring
+      have h8 : (8 * t).val = 8 * t.val := by
+        rw [val_mul_of_lt (by rw [show (8 : FKB).val = 8 from rfl]; omega)]; rfl
+      conv_lhs => rw [e2]
+      rw [val_add_of_lt (by omega), h8]
+    refine ⟨ by omega, by omega, fun hc => ?_ ⟩
+    have h_n1 := h_next1 hc
+    rcases bool_cases c27 with hn | hn
+    · have h_ne : a0 - off - 65528 ≠ 0 := by
+        intro h; rw [h, zero_mul, hn, sub_zero] at d29; exact absurd d29 (by decide)
+      have h_ne' : (a0 - off).val ≠ 65528 := by
+        intro h; apply h_ne
+        rw [sub_eq_zero]; exact Fin.ext (by rw [h]; rfl)
+      have h8 : (a0 - off + 8).val = (a0 - off).val + 8 := by
+        rw [val_add_of_lt (by rw [show (8 : FKB).val = 8 from rfl]; omega)]; rfl
+      rw [hn, zero_mul, sub_zero, add_zero, h8]
+      omega
+    · have h_eq : a0 - off = 65528 := by
+        rcases mul_eq_zero.mp d28 with h | h
+        · rw [hn] at h; exact absurd h (by decide)
+        · exact sub_eq_zero.mp h
+      rw [hn] at h_n1 ⊢
+      have h_a1' : (a1 + 1).val = a1.val + 1 := by
+        rw [val_add_of_lt (by rw [show (1 : FKB).val = 1 from rfl]; omega)]; rfl
+      rw [h_eq, h_a1', show (65528 + 8 - 1 * 65536 : FKB) = 0 from rfl]
+      rw [h_eq] at h_t
+      simp only [Fin.val_zero]
+      have : (65528 : FKB).val = 65528 := rfl
+      omega
+
   /-! ### What a load reads -/
-
-  lemma val_add_of_lt {x y : FKB} (h : x.val + y.val < 2130706433) :
-      (x + y).val = x.val + y.val := by
-    rw [Fin.val_add, Nat.mod_eq_of_lt h]
-
-  lemma val_mul_of_lt {x y : FKB} (h : x.val * y.val < 2130706433) :
-      (x * y).val = x.val * y.val := by
-    rw [Fin.val_mul, Nat.mod_eq_of_lt h]
 
   /-- Two bytes make a 16-bit piece. -/
   lemma limb_lt {x y : FKB} (hx : x.val < 256) (hy : y.val < 256) :
