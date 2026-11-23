@@ -3,3 +3,5 @@ Equivalence.equivalence_MULH
 Equivalence.equivalence_MULHSU
 Equivalence.equivalence_MULHU
 Equivalence.equivalence_MULW
+Equivalence.mul_decode_satisfiable
+Equivalence.mulw_decode_satisfiable

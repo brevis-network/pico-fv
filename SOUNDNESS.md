@@ -14,9 +14,10 @@ repository; CI fails when one is out of date. The rest of the text is reviewed b
 ## What is proved
 
 The theorems checked by `scripts/fv-check/check.sh` are listed in `scripts/fv-check/theorems.d/`,
-with their statements in `signatures.txt`. They are of four kinds, and three lemmas beside them
+with their statements in `signatures.txt`. They are of four kinds, and nine lemmas beside them
 that discharge instruction theorems' hypotheses (`Equivalence.utype_row_cases`, under the first,
-and the two decoding lemmas listed with the stores and the loads, A3).
+and the eight decoding lemmas listed with the stores, the loads, the multiplies and the divides,
+A3).
 
 - **Opcode equivalence** (`Equivalence.equivalence_*`, one per RV64IM opcode except `ECALL`). For
   a CPU chip row that satisfies its extracted constraints, if the bus messages the row exchanges
@@ -54,11 +55,14 @@ and the two decoding lemmas listed with the stores and the loads, A3).
   theorem: `LUI` and `AUIPC` share a row shape at v3.1.1, and it shows that every row of that
   shape is one the two theorems cover (see A3).
 
-  The lists of `Stores.lean` and `Loads.lean` also hold `Equivalence.store_decode_satisfiable` and
-  `Equivalence.load_decode_satisfiable`, which are not instruction theorems either: the store and
-  load theorems take an instruction whose decoding is the row's Program message, and the two show,
-  from the row's Program promise (in `bus_row_wf_asm`), that every real row of a store or load
-  opcode has one (see A3).
+  The lists of `Stores.lean`, `Loads.lean`, `MulFamily.lean` and `DivFamily.lean` also hold
+  decoding lemmas, one per decoder clause, which are not instruction theorems either:
+  `Equivalence.store_decode_satisfiable`, `load_decode_satisfiable`, `mul_decode_satisfiable`,
+  `mulw_decode_satisfiable`, `div_decode_satisfiable`, `divw_decode_satisfiable`,
+  `rem_decode_satisfiable` and `remw_decode_satisfiable`. The theorems of those classes take an
+  instruction whose decoding is the row's Program message, and these lemmas show, from the row's
+  Program promise (in `bus_row_wf_asm`), that every real row of one of their opcodes has one (see
+  A3).
 
   Every v3.1.1 instruction theorem also assumes the chunk's final pc is a well-formed guest
   address (`Equivalence.pico_CpuChip_control_flow_assumptions`; see A3). Pico enforces that in
@@ -277,10 +281,11 @@ does not fix `imm_c` for an opcode that an immediate form shares with a register
 (`SLLI`, `SRLI`, `SRAI` and `SLL`, `SRL`, `SRA`), and 0, 2, 3, 4, 8 and 9 (the six `ITYPE` theorems
 and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`). So those thirteen immediate-form theorems still
 assume `imm_c = 1`, and those thirteen register-register theorems still assume `imm_c = 0`. The
-multiply, divide and remainder theorems take their opcode alone, as at `353238a`: the decoder fixes
-both immediate flags to 0 for opcodes 30 to 37 and 48 to 52. The divide and remainder theorems
+multiply, divide and remainder theorems take no immediate flag, as at `353238a`: the decoder fixes
+both to 0 for opcodes 30 to 37 and 48 to 52. They no longer take their opcode either: they take the
+decoded instruction (below). The divide and remainder theorems
 assume nothing about the divisor: the ALU chip's promise for their opcodes already gives Sail's
-result on division by zero and on signed overflow. `JAL` and `JALR` take their opcode alone too:
+result on division by zero and on signed overflow. `JAL` and `JALR` take their opcode alone:
 they assume neither immediate flag, nor the row's `is_jal` / `is_jalr` selector, all three of which
 their 2.x statements took, because opcodes 24 and 25 are the two jumps alone and the decoder fixes
 every one of them. The six branch theorems take their opcode alone too, as they already did at
@@ -303,21 +308,25 @@ zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign fl
 the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
 amount or 12-bit immediate; those theorems do not state that link.
 
-The four store and the seven load theorems state it. Each takes the instruction itself, written
+The four store, the seven load, the five multiply and the eight divide and remainder theorems
+state it. Each takes the instruction itself, written
 in the statement (`instruction.STORE (imm, rs2, rs1, 8)` for `SD`), with the hypothesis
 `h_decode` that the decoder (`Transpiler.V3.transpile_op`, at multiplicity 1 and some address
 `addr`) turns it into the row's Program message, and concludes that Sail's step on that
 instruction equals the row's effect. The decoding fixes `is_real = 1`, the opcode, the immediate
-flags, the register columns and the offset, so these theorems take none of them as hypotheses. It
-fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. Given the row's Program
-promise, the decoding hypothesis is no stronger than the two it replaces:
-`Equivalence.store_decode_satisfiable` and `Equivalence.load_decode_satisfiable` (checked, listed
-with the stores and the loads) derive it, for some instruction fields and a 4-aligned address below
-`Transpiler.V3.code_address_bound`, from `is_real = 1`, the opcode of each store or load width, and
-that promise (in `bus_row_wf_asm`, which the instruction theorems take for every row as
-`h_all_wf`). Each decoded theorem is proved from
+flags, the register columns and, for a store or a load, the offset, so these theorems take none of
+them as hypotheses. It fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces.
+Given the row's Program promise, the decoding hypothesis is no stronger than the two it replaces:
+one decoding lemma per decoder clause (checked, listed with its class:
+`Equivalence.store_decode_satisfiable`, `load_decode_satisfiable`, `mul_decode_satisfiable`,
+`mulw_decode_satisfiable`, `div_decode_satisfiable`, `divw_decode_satisfiable`,
+`rem_decode_satisfiable`, `remw_decode_satisfiable`) derives it, for some instruction fields and a
+4-aligned address below `Transpiler.V3.code_address_bound`, from `is_real = 1`, the row's opcode,
+and that promise (in `bus_row_wf_asm`, which the instruction theorems take for every row as
+`h_all_wf`). For opcode 30 (`MUL`) it holds at every signedness, which the decoder does not read.
+Each decoded theorem is proved from
 a column-form theorem of the same name with `_row` appended (`equivalence_SD_row`), which reads
-`rs1`, `rs2` or `rd` and the offset off the row and is not checked.
+`rs1`, `rs2` or `rd` and, for a store or a load, the offset off the row and is not checked.
 
 The other checked theorems with an immediate still read it from the row's operand values: the six
 branches and `JALR` take the low 13 or 12 bits of the `op_c` value, `JAL` the low 21 bits of the
@@ -562,7 +571,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 99 |
+| kernel + compiler | 105 |
 | kernel + compiler + RISC-V spec axioms | 62 |
 | kernel only | 1 |
 <!-- end generated -->
