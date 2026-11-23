@@ -139,6 +139,7 @@ import PicoFV.RV64IM.Spec.DivRemChip
 import PicoFV.RV64IM.Spec.MemoryReadWriteChip
 import PicoFV.RV64IM.Spec.MemoryReadWriteChipDataFlow
 import PicoFV.RV64IM.Spec.MemoryUnalignedChip
+import PicoFV.RV64IM.Spec.MemoryUnalignedChipDataFlow
 import PicoFV.RV64IM.Spec.CpuChip
 
 -- Equivalence (Sail ↔ Pico)
