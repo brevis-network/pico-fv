@@ -78,13 +78,13 @@ and the two decoding lemmas listed with the stores and the loads, A3).
   (`store_misses_code_range`, through the gadget below). `aligned_address` says the double word
   the row reads and writes back is the one holding the access's first byte, and both chips' give
   its address piece by piece, each piece below `2^16`; the unaligned chip's also gives, on a row
-  whose access crosses, the next double word's. The read/write chip's also say what a row does to
-  memory (`dataFlow_of_allHold`): in a state that holds the double word the row reads from the
-  memory argument, a load's value, at its width, is that double word's bytes at `b + c`, and the
-  row writes the double word back with a store's bytes patched in. That the double word read is
-  the one memory holds is the memory argument's promise, which stays on trust (A4). The unaligned
-  chip has no such theorem yet: for it, none says that a load's value is what memory holds, or
-  that a store writes it; the promise does not ask it (A4).
+  whose access crosses, the next double word's. Both chips' also say what a row does to memory
+  (`dataFlow_of_allHold`): in a state that holds the double words the row reads from the memory
+  argument, a load's value, at its width, is those double words' bytes from `b + c` on, and the
+  row writes them back with a store's bytes in their place. The read/write chip reads one double
+  word; the unaligned chip reads a second, the next one, on a row whose access crosses into it.
+  That the double words read are the ones memory holds is the memory argument's promise, which
+  stays on trust (A4).
 
   `DivRemChip`'s specifications are the one exception to "satisfies its extracted constraints":
   they are stated over the readable restatement `DivRemChip.ConstraintsAndBuses.AbsConstraints`
@@ -409,17 +409,19 @@ misses the program's code is not the memory promise's business: the store row pr
 through the `code_range` gadget, against the code-range contract below. Both chips prove the
 promise for every dispatch they receive (`spec_LB` to `spec_SD` and `wf_asrt`, in
 `MemoryReadWriteChip.Spec` and in `MemoryUnalignedChip.Spec`). Which memory a load reads and a
-store writes the promise does not ask; the read/write chip proves it apart, for every row
-(`MemoryReadWriteChip.Spec.dataFlow_of_allHold`): in a Sail state that holds the double word the
-row reads from the memory argument, the dispatch's read holds, and the row's write back leaves
-the state the dispatch's operation leaves. A load's value, at its width, is therefore the bytes
-at `b + c` of the double word read; the sign or zero fill above that width is the promise's
-(`spec_LB` to `spec_LWU`). A store writes that double word back with its bytes patched in. What
-stays on trust is the memory argument: that the double word a row reads is the last one written
-at that address. That rests on the memory bus balancing, as above; on the timestamp ordering,
-since no checked theorem states `clk > prev_clk` and `DataFlow` does not read the clocks; and
-on the memory initialisation and finalisation chips (A5). The unaligned chip has no such theorem
-yet. The load and store theorems hold for a misaligned address too (A3).
+store writes the promise does not ask; both chips prove it apart, for every row
+(`MemoryReadWriteChip.Spec.dataFlow_of_allHold`, `MemoryUnalignedChip.Spec.dataFlow_of_allHold`):
+in a Sail state that holds the double words the row reads from the memory argument, the
+dispatch's read holds, and the row's write backs leave the state the dispatch's operation leaves.
+The read/write chip reads one double word; the unaligned chip reads the one holding the access's
+first byte and, on a row whose access crosses, the next one. A load's value, at its width, is
+therefore the bytes from `b + c` on of the double words read; the sign or zero fill above that
+width is the promise's (`spec_LB` to `spec_LWU`). A store writes those double words back with its
+bytes in their place. What stays on trust is the memory argument: that each double word a row
+reads is the last one written at that address. That rests on the memory bus balancing, as above;
+on the timestamp ordering, since no checked theorem states `clk > prev_clk` and neither chip's
+`DataFlow` reads the clocks; and on the memory initialisation and finalisation chips (A5). The
+load and store theorems hold for a misaligned address too (A3).
 
 The contract now covers the merged branch-comparison rows. `ALUBus.validOpcode` contains the two
 opcodes 264 / 265 (`SLT` / `SLTU` + `LT_CMP_OPCODE_TAG`) that Pico's CPU sends for every branch,
@@ -510,7 +512,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 98 |
+| kernel + compiler | 97 |
 | kernel + compiler + RISC-V spec axioms | 62 |
 | kernel only | 1 |
 <!-- end generated -->
