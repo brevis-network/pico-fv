@@ -628,9 +628,9 @@ namespace CpuChip.Interpretations
 
   /-- A real row's next pc is 4-aligned: the alignment part of `next_pc_facts`, as the low
       piece and as the whole value. This is the 2.x `Equivalence.next_pc_mod_four_eq_zero`,
-      which `equivalence_JAL` and the parked branches call. Against 2.x it takes the arguments in
-      this file's order (`air row h_row h_is_real h_wf h_constraints pico_assumptions`), drops
-      the Program-bus axioms, and adds the whole-value conjunct. -/
+      which `equivalence_JAL_row` and `branch_equivalence` call. Against 2.x it takes the
+      arguments in this file's order (`air row h_row h_is_real h_wf h_constraints
+      pico_assumptions`), drops the Program-bus axioms, and adds the whole-value conjunct. -/
   lemma next_pc_mod_four_eq_zero
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)

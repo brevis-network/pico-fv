@@ -7,7 +7,7 @@ set_option maxRecDepth 1_000_000
 set_option linter.constructorNameAsVariable false
 
 /-!
-# Shared definitions of the RV64IM instruction theorems (Pico v3.1.1)
+# Shared definitions of the RV64IM instruction theorems (Pico v3.2.0)
 
 The operand values a row reads and writes, the operations its messages stand for, the
 control-flow facts every ALU-class row shares, and the helpers of the decoded form (section
@@ -641,9 +641,10 @@ namespace Equivalence
         `imm_b = 0`, `imm_c = 1`) or `ADDIW` (40 with `imm_c = 1`), the `op_c` value is the
         sign extension of its own low 12 bits: the decoder writes the instruction's 12-bit
         immediate there, sign-extended (`Transpiler.V3.imm_operand`, constraints 4 to 7). The
-        `ITYPE` and `ADDIW` theorems read `imm` from the instruction's `op_c_0`; they rewrite
-        the low 12 bits on the right with `op_c_value_setWidth_eq_op_c_0` and use the result to
-        recover the 64-bit value Sail adds or compares. -/
+        column forms of the `ITYPE` and `ADDIW` theorems (`equivalence_ADDI_row` and the rest)
+        read `imm` from the row's `op_c_0`; they rewrite the low 12 bits on the right with
+        `op_c_value_setWidth_eq_op_c_0` and use the result to recover the 64-bit value Sail adds
+        or compares. -/
     lemma op_c_value_eq_signExtend_imm12
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ) {op : FKB}
@@ -687,10 +688,10 @@ namespace Equivalence
 
     /-- On a row whose `op_c` is an immediate (`imm_c = 1`), the low `n ≤ 16` bits of the `op_c`
         value the row sends to the ALU chip are those of the instruction's encoded `op_c_0`
-        (constraint 4, through `imm_c_eq_1_constraints`). The register-immediate theorems read
-        their immediate from `op_c_0`, as they read `rd` and `rs1` from the instruction, and use
-        this lemma to reach the value the ALU chip works on: the shifts at `n` = 6 or 5, the
-        `ITYPE` and `ADDIW` theorems at `n` = 12. -/
+        (constraint 4, through `imm_c_eq_1_constraints`). The column forms of the
+        register-immediate theorems (`_row`) read their immediate from `op_c_0`, as they read `rd`
+        and `rs1` from `op_a` and `op_b_0`, and use this lemma to reach the value the ALU chip
+        works on: the shifts at `n` = 6 or 5, the `ITYPE` and `ADDIW` theorems at `n` = 12. -/
     lemma op_c_value_setWidth_eq_op_c_0
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ) {n : ℕ} (hn : n ≤ 16)
@@ -759,13 +760,19 @@ namespace Equivalence
         A checked instruction theorem in decoded form takes the instruction, written in its
         statement, and the hypothesis `h_decode` that the decoder turns it into the row's Program
         message: `Transpiler.V3.transpile_op instr 1 addr = some (program_bus_entry air row, props)`.
-        The decoder's lemma for the instruction's class (`transpile_op_store_row`,
-        `transpile_op_load_row`) writes that message out; `decoded_field` reads the row's columns
-        off it by field name. Each class file proves a bridge lemma per decoder clause
-        (`store_decode_satisfiable` in `Stores.lean`, `load_decode_satisfiable` in `Loads.lean`):
-        from `is_real = 1`, the row's Program promise and the opcode, `h_decode` holds for some
-        instruction fields and an address that is 4-aligned and below
-        `Transpiler.V3.code_address_bound`. Each starts from `program_bus_decoded`. -/
+        Each class file reads the row's columns off `h_decode` in a private lemma (`store_decoded`,
+        `itype_decoded` and the rest), by one of two routes: a decoder lemma for the class writes
+        the message out (`transpile_op_store_row`, `transpile_op_load_row`), or
+        `Transpiler.V3.transpile_op` is unfolded at the clause: in the lemma, or, in
+        `MulFamily.lean` and `DivFamily.lean`, by `rfl` in each theorem, which hands the lemma the
+        clause. Either way `decoded_field` reads a column off the message by field name.
+
+        Each class file also proves a bridge lemma per decoder clause (`store_decode_satisfiable`,
+        `itype_decode_satisfiable` and the rest): from `is_real = 1`, the row's Program promise,
+        the opcode and, where classes share an opcode, the immediate flag that tells them apart
+        (`imm_b` or `imm_c`), `h_decode` holds for some instruction fields and an address that is
+        4-aligned and below `Transpiler.V3.code_address_bound`. Each starts from
+        `program_bus_decoded`. -/
 
     open Transpiler Transpiler.V3
 

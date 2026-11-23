@@ -46,7 +46,7 @@ namespace Equivalence
         `ALUBus.Spec` apart and names its result equation `h_spec_eq`.
 
         `eq_operation_list_effect_state_of_reg_imm` reads the pc and `rs1`, and leaves
-        the opcode's arm of `ALUBus.Spec`. `imm` is the low 12 bits of the instruction's
+        the opcode's arm of `ALUBus.Spec`. `imm` is the low 12 bits of the row's
         `op_c_0`. `op_c_value_eq_signExtend_imm12` gives the 64-bit value Sail adds, combines or
         compares as the sign extension of the low 12 bits of the `op_c` value the row sends;
         `op_c_value_setWidth_eq_op_c_0` rewrites those bits in it (`h_imm`) into `imm`'s.
@@ -254,8 +254,12 @@ namespace Equivalence
     -- The checked ITYPE theorems, in decoded form: each takes the instruction
     -- and an address whose decoding (`Transpiler.V3.transpile_op`, at
     -- multiplicity 1) is the row's Program message, and is proved from its
-    -- column form. The proofs pass hypotheses as `@h`, which Lean elaborates
-    -- without unfolding their types.
+    -- column form.
+    --
+    -- The proofs pass hypotheses as `@h`: on the store and load sections that
+    -- elaborated about 2.3 times faster than passing them bare. It does not
+    -- avoid every unfolding: checking `@h_bus_hypotheses` against its expected
+    -- type still unfolds `operation_list_effect`.
     -- ========================================================================
 
     /-- What an I-type instruction's decoding says about the row: it is real, its opcode is the

@@ -250,8 +250,10 @@ namespace Equivalence
     -- multiplicity 1) is the row's Program message, and is proved from its
     -- column form. The decoding fixes the operand shape, so neither takes it.
     --
-    -- The proofs pass hypotheses as `@h`, which Lean elaborates without
-    -- unfolding their types.
+    -- The proofs pass hypotheses as `@h`: on the store and load sections that
+    -- elaborated about 2.3 times faster than passing them bare. It does not
+    -- avoid every unfolding: checking `@h_bus_hypotheses` against its expected
+    -- type still unfolds `operation_list_effect`.
     -- ========================================================================
 
     /-- What a `LUI`'s or an `AUIPC`'s decoding says about the row: it is real, its opcode is 0
@@ -391,8 +393,10 @@ namespace Equivalence
         row of opcode 0 with `imm_b = 1`: there the Program table's promise (in
         `bus_row_wf_asm`) gives a `LUI` or an `AUIPC` and a 4-aligned address below
         `Transpiler.V3.code_address_bound` whose decoding is the row's Program message. The flag
-        is what tells the two from `ADD` and `ADDI`, which share opcode 0 with `imm_b = 0`;
-        which of the two it is the row does not say (`ProgramBusEntry.decoded_from`). -/
+        is what tells the two from `ADD` and `ADDI`, which share opcode 0 with `imm_b = 0`.
+        Which of the two it is the opcode and the flags do not say
+        (`ProgramBusEntry.decoded_from`); the operand shapes do, and they overlap
+        (`utype_row_cases`). -/
     theorem utype_decode_satisfiable
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)

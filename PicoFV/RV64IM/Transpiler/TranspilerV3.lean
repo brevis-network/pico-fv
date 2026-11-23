@@ -48,11 +48,12 @@ import PicoFV.RV64IM.Transpiler.Transpiler
     The fences have no case of their own. Pico decodes every fence word (`fence`, `fence.tso`
     and `pause`) as the no-op `ADD x0, x0, 0` with `imm_c` set (`rrs.rs:95-100, 509-517`),
     which is exactly the row this decoder gives `ADDI x0, x0, 0`. The Program promise in
-    `BusesV3.lean` therefore holds for a fence's row as written, and an instruction theorem,
-    which rebuilds the instruction from the row's columns, reads that row as
-    `ADDI x0, x0, 0`. Sail decodes the three words as `FENCE`, `FENCE_TSO` and `PAUSE`;
-    `RVSail/Opcodes/fence.lean` proves that each executes exactly as `ADDI x0, x0, 0`
-    (`FENCE` in machine mode, the standing assumption A1.1 of `RISC_V_assumptions`).
+    `BusesV3.lean` therefore holds for a fence's row as written, and the decoded
+    `equivalence_ADDI` covers that row with `ADDI x0, x0, 0` as its instruction. Sail decodes
+    the three words as `FENCE`, `FENCE_TSO` and `PAUSE`; `RVSail/Opcodes/fence.lean` proves
+    that each executes exactly as `ADDI x0, x0, 0` (`FENCE` in machine mode, the standing
+    assumption A1.1 of `RISC_V_assumptions`), so a fence's row is covered by `equivalence_ADDI`
+    together with that machine-mode assumption (`SOUNDNESS.md`, A6).
 
     The lemmas below relate the decoder's pc pieces and operands to natural numbers and
     64-bit values; the lemmas that go from a Program-bus message back to its instruction are

@@ -78,8 +78,12 @@ namespace Equivalence
     -- The checked ADDIW theorem, in decoded form, takes the instruction
     -- and an address whose decoding (`Transpiler.V3.transpile_op`, at
     -- multiplicity 1) is the row's Program message, and is proved from its
-    -- column form. Its proof passes hypotheses as `@h`, which Lean elaborates
-    -- without unfolding their types.
+    -- column form.
+    --
+    -- Its proof passes hypotheses as `@h`: on the store and load sections that
+    -- elaborated about 2.3 times faster than passing them bare. It does not
+    -- avoid every unfolding: checking `@h_bus_hypotheses` against its expected
+    -- type still unfolds `operation_list_effect`.
     -- ========================================================================
 
     /-- What an `ADDIW`'s decoding says about the row: it is real, its opcode is 40, `imm_c = 1`,
