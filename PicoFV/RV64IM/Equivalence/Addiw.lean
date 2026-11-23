@@ -75,10 +75,10 @@ namespace Equivalence
             BitVec.setWidth_add]
 
     -- ========================================================================
-    -- The checked ADDIW theorems, in decoded form: each takes the instruction
+    -- The checked ADDIW theorem, in decoded form, takes the instruction
     -- and an address whose decoding (`Transpiler.V3.transpile_op`, at
     -- multiplicity 1) is the row's Program message, and is proved from its
-    -- column form. The proofs pass hypotheses as `@h`, which Lean elaborates
+    -- column form. Its proof passes hypotheses as `@h`, which Lean elaborates
     -- without unfolding their types.
     -- ========================================================================
 

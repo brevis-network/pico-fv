@@ -275,7 +275,7 @@ namespace Equivalence
         Program message. -/
     theorem shiftiop_decode_satisfiable
       [Field ExtF]
-      (air : Valid_CpuChip FKB ExtF) (row : ℕ) {op : sop}
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ) (op : sop)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_wf : bus_row_wf_asm (bus_row air row))
       (h_opcode : air.cols.instruction.opcode row 0 = Transpiler.opcode_of_sop op)
