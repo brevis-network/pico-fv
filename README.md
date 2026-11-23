@@ -46,9 +46,9 @@ file it uses; every file is extracted from the pinned commit (`extractor/pending
 files that predate it, is empty). Re-extracting the CPU chip, the ten ALU chips and their gadgets at
 v3.1.6 gives the same constraints and bus messages as at v3.1.1, so what this README says about
 those chips at v3.1.1 holds at v3.1.6. This was checked at v3.1.6; if the pin above names a later
-version, it has not been checked there yet. The read/write memory chip changed after v3.1.1 and is
-proven at v3.1.6, and since v3.1.2 Pico has a second memory chip for misaligned loads and stores
-(see [SOUNDNESS.md](SOUNDNESS.md), A4).
+version, it has not been checked there yet. The read/write memory chip changed after v3.1.1, and
+since v3.1.2 Pico has a second memory chip for misaligned loads and stores; both are proven at
+v3.1.6 (see [SOUNDNESS.md](SOUNDNESS.md), A4).
 [SOUNDNESS.md](SOUNDNESS.md) says what the proofs establish and what they trust.
 
 For each opcode, the equivalence theorem states: under the chip's row
@@ -94,9 +94,8 @@ scripts/fv-check/        — theorem, layer, tactic and SOUNDNESS checks
 Within `RV64IM/Spec/` (and `Constraints/`), each chip used by Pico
 has its own file: ALU chips (`AddChip`, `SubChip`, `BitwiseChip`, `LtChip`,
 `SLLChip`, `ShiftRightChip`, `MulChip`, `DivRemChip`), the CPU chip
-(`CpuChip`), the memory chips (`MemoryReadWriteChip`, and
-`MemoryUnalignedChip`, which has a `Constraints/` file and no `Spec/`
-file yet), and any chip-local gadgets (`AddGadget`, `SubGadget`, `MulGadget`,
+(`CpuChip`), the memory chips (`MemoryReadWriteChip`,
+`MemoryUnalignedChip`), and any chip-local gadgets (`AddGadget`, `SubGadget`, `MulGadget`,
 `IsZeroGadget`, `LtSignedGadget`, …).
 
 Within `RV64IM/RVSail/Opcodes/`, every opcode has its own file
@@ -124,7 +123,7 @@ fetching mathlib's binary cache.
 ## Checking the theorems
 
 After `lake build`, `scripts/fv-check/check.sh` checks the top-level theorems
-listed in `scripts/fv-check/theorems.d/`: the read/write memory chip's specification at v3.1.6,
+listed in `scripts/fv-check/theorems.d/`: the two memory chips' specifications at v3.1.6,
 and the specifications of the ALU chips already at v3.1.1
 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight), and the
 equivalence theorems the branch proves at v3.1.1 (listed above), with
