@@ -36,9 +36,9 @@ gains three conjuncts in its definition:
 - the eight theorems that already named it (the six branches, `JAL` and `JALR`)
   keep that part of their recorded text, because `signatures.txt` records the
   name and not the definition, but their meaning changed. They changed for the
-  other reasons in this section: the six branches only in the contract names and
-  in reading `rs1` from `op_a`, which makes them the one class whose statements
-  lose and gain no hypothesis at all;
+  other reasons in this section: at the restoration the six branches changed only
+  in the contract names and in reading `rs1` from `op_a`; they have since moved to
+  decoded form and dropped three bus assumptions, as the jumps have (below);
 - the other 54 gain it as a new hypothesis, so their recorded statements
   changed.
 
@@ -60,12 +60,15 @@ opcode 40 (`ADDIW`, `ADDW`), 42 to 44
 `SRAI` and `SLL`, `SRL`, `SRA`), and 0, 2 to 4, 8 and 9 (the six `ITYPE`
 theorems and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`).
 
-The statements of the classes in decoded form (listed below) also drop, in both
-the checked and the column form, the three bus assumptions their proofs do not
-use: `bus_row_axioms`, `bus_row_ext_asm` and `bus_row_wf_asrt`. Of those
-classes, `RTYPE`, `RTYPEW`, `ITYPE`, `ADDIW`, `SHIFTIOP` and `SHIFTIWOP` also
-drop `RISC_V_assumptions`, which their proofs do not use; the stores and the
-loads keep it.
+The statements of the classes in decoded form (listed below: the stores, the
+loads, `RTYPE`, `RTYPEW`, `ITYPE`, `ADDIW`, `SHIFTIOP`, `SHIFTIWOP`, the
+branches, the jumps and `UTYPE`) also drop, in both the checked and the column
+form, the three bus assumptions their proofs do not use: `bus_row_axioms`,
+`bus_row_ext_asm` and `bus_row_wf_asrt` (they keep `bus_row_wf_asm`). Of those
+classes, `RTYPE`, `RTYPEW`, `ITYPE`, `ADDIW`, `SHIFTIOP`, `SHIFTIWOP` and
+`UTYPE` (`LUI` and `AUIPC`) also drop `RISC_V_assumptions`, which their proofs
+do not use; the stores, the loads, the branches and the jumps keep it. Dropping
+a hypothesis makes the theorem stronger.
 
 Some restored statements also drop the row's class selector, which the opcode
 fixes: `JAL` and `JALR` no longer take `is_jal` / `is_jalr`, nor either
@@ -82,7 +85,10 @@ value. `LUI` takes `op_b` zero and `op_c` the immediate `signExtend 64 (imm ++
 0#12)`; `AUIPC` takes `op_b` the immediate and `op_c` the row's pc, and is
 keyed on opcode 0 instead of 27, without `is_auipc = 1`. The new
 `Equivalence.utype_row_cases`, in the same list, proves that every real row of
-opcode 0 with both flags has one of the two shapes.
+opcode 0 with both flags has one of the two shapes. The checked `LUI` and
+`AUIPC` have since moved to decoded form (below), where the decoding gives the
+shape; the shape hypotheses stay on their column forms, `equivalence_LUI_row`
+and `equivalence_AUIPC_row`.
 
 A restored memory theorem also names what the Memory message promises it
 (`MemoryBus.Spec` in `RVSail/BusesV3.lean`) only through the bus assumptions,
@@ -110,8 +116,9 @@ those bits are the program's immediate, but the column form does not tie
 register columns to it in the same way: each theorem takes the instruction and
 the hypothesis `h_decode` that the decoder (`Transpiler.V3.transpile_op`, at
 multiplicity 1) turns it into the row's Program message, in place of
-`is_real = 1`, the opcode and the immediate flags it took, and the class's lemma
-derives that hypothesis from those and the row's Program promise:
+`is_real = 1`, the opcode and the immediate flags it took (for `LUI` and
+`AUIPC`, also the operand shape), and the class's lemma derives that hypothesis
+from those and the row's Program promise:
 
 - the four stores: `Equivalence.store_decode_satisfiable`;
 - the seven loads: `Equivalence.load_decode_satisfiable`;
@@ -122,13 +129,12 @@ derives that hypothesis from those and the row's Program promise:
 - the six `ITYPE` theorems: `Equivalence.itype_decode_satisfiable`;
 - `ADDIW`: `Equivalence.addiw_decode_satisfiable`;
 - the three `SHIFTIOP` theorems: `Equivalence.shiftiop_decode_satisfiable`;
-- the three `SHIFTIWOP` theorems: `Equivalence.shiftiwop_decode_satisfiable`.
-
-The other
-theorems with an immediate read it from the row's operand values: the branches
-and `JALR` from `op_c_value`, `JAL` from `op_b_value`, and `LUI` and `AUIPC` take
-it as a parameter pinned by a hypothesis on `op_c_value` (`LUI`) or `op_b_value`
-(`AUIPC`).
+- the three `SHIFTIWOP` theorems: `Equivalence.shiftiwop_decode_satisfiable`;
+- the six branches: `Equivalence.btype_decode_satisfiable`;
+- `JAL` and `JALR`: `Equivalence.jal_decode_satisfiable` and
+  `Equivalence.jalr_decode_satisfiable`;
+- `LUI` and `AUIPC`: `Equivalence.utype_decode_satisfiable`, from opcode 0 with
+  `imm_b = 1`, for one of the two (the row does not say which).
 
 Two definitions every statement names were also rewritten at v3.1.1, and
 `signatures.txt` shows only their names: `Equivalence.CPU_bus_operations` (the

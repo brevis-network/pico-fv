@@ -17,9 +17,7 @@ namespace Equivalence
     -- BTYPE — the six branch opcodes: BEQ = 18, BNE = 19, BLT = 20,
     -- BGE = 21, BLTU = 22, BGEU = 23. None is shared
     -- (`ProgramBusEntry.decoded_from`), so the decoder fixes both immediate
-    -- flags and the row's class selector, and no statement takes them; the 2.x
-    -- statements did not take them either, so for these six the recorded text
-    -- changes only in the contract names and in reading `rs1` from `op_a`.
+    -- flags and the row's class selector, and no statement takes them.
     --
     -- A branch row reads `rs1` into `op_a` and `rs2` into `op_b` and writes
     -- both back unchanged (`op_a_kept`, constraint 13), so it writes no
@@ -45,9 +43,11 @@ namespace Equivalence
     --   * `next_pc = pc + 4` on a real row that is not a taken branch, a jump
     --     or a halt: `constraints.rs:318-326`.
     --
-    -- The six theorems differ only in the comparison. Each derives the row's
-    -- taken bit from the comparison bits and hands it, with its Sail lemmas,
-    -- to `branch_equivalence`, which does the rest.
+    -- The six column-form theorems (`equivalence_BEQ_row` to
+    -- `equivalence_BGEU_row`) differ only in the comparison. Each derives the
+    -- row's taken bit from the comparison bits and hands it, with its Sail
+    -- lemmas, to `branch_equivalence`, which does the rest. The checked
+    -- theorems, in decoded form, follow them.
     -- ========================================================================
 
     /-- A branch row's flags and selectors, as its opcode fixes them
@@ -281,17 +281,15 @@ namespace Equivalence
         rw [BitVec.toNat_umod]
         simp [U64w.toBV_toNat, h_align.2]
 
-    /-- Equivalence for BEQ (opcode 18, `bop.BEQ`). -/
-    theorem equivalence_BEQ
+    /-- `equivalence_BEQ` in column form: for a row of opcode 18, Sail's step on the `BEQ`
+        whose registers and offset are read off the row's columns equals the row's effect. -/
+    theorem equivalence_BEQ_row
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (_h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (_h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (_h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = 18)
@@ -360,17 +358,15 @@ namespace Equivalence
         OpcodeSpec.RV64.execute_BEQ_equiv h_taken
         h_bus_hypotheses risc_v_assumptions
 
-    /-- Equivalence for BNE (opcode 19, `bop.BNE`). -/
-    theorem equivalence_BNE
+    /-- `equivalence_BNE` in column form: for a row of opcode 19, Sail's step on the `BNE`
+        whose registers and offset are read off the row's columns equals the row's effect. -/
+    theorem equivalence_BNE_row
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (_h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (_h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (_h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = 19)
@@ -438,17 +434,15 @@ namespace Equivalence
         OpcodeSpec.RV64.execute_BNE_equiv (by rw [ite_not]; exact h_taken)
         h_bus_hypotheses risc_v_assumptions
 
-    /-- Equivalence for BLT (opcode 20, `bop.BLT`). -/
-    theorem equivalence_BLT
+    /-- `equivalence_BLT` in column form: for a row of opcode 20, Sail's step on the `BLT`
+        whose registers and offset are read off the row's columns equals the row's effect. -/
+    theorem equivalence_BLT_row
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (_h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (_h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (_h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = 20)
@@ -494,17 +488,15 @@ namespace Equivalence
         OpcodeSpec.RV64.execute_BLT_equiv (by simpa using h_taken)
         h_bus_hypotheses risc_v_assumptions
 
-    /-- Equivalence for BGE (opcode 21, `bop.BGE`). -/
-    theorem equivalence_BGE
+    /-- `equivalence_BGE` in column form: for a row of opcode 21, Sail's step on the `BGE`
+        whose registers and offset are read off the row's columns equals the row's effect. -/
+    theorem equivalence_BGE_row
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (_h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (_h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (_h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = 21)
@@ -556,17 +548,15 @@ namespace Equivalence
         OpcodeSpec.RV64.execute_BGE_equiv (by simpa using h_taken)
         h_bus_hypotheses risc_v_assumptions
 
-    /-- Equivalence for BLTU (opcode 22, `bop.BLTU`). -/
-    theorem equivalence_BLTU
+    /-- `equivalence_BLTU` in column form: for a row of opcode 22, Sail's step on the `BLTU`
+        whose registers and offset are read off the row's columns equals the row's effect. -/
+    theorem equivalence_BLTU_row
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (_h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (_h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (_h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = 22)
@@ -612,17 +602,15 @@ namespace Equivalence
         OpcodeSpec.RV64.execute_BLTU_equiv (by simpa using h_taken)
         h_bus_hypotheses risc_v_assumptions
 
-    /-- Equivalence for BGEU (opcode 23, `bop.BGEU`). -/
-    theorem equivalence_BGEU
+    /-- `equivalence_BGEU` in column form: for a row of opcode 23, Sail's step on the `BGEU`
+        whose registers and offset are read off the row's columns equals the row's effect. -/
+    theorem equivalence_BGEU_row
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (_h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (_h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (_h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = 23)
@@ -670,6 +658,233 @@ namespace Equivalence
         (fun _ _ _ _ _ _ => by simp [OpcodeSpec.RV64.spec_BGEU])
         OpcodeSpec.RV64.execute_BGEU_equiv (by simpa using h_taken)
         h_bus_hypotheses risc_v_assumptions
+
+    -- ========================================================================
+    -- The checked branch theorems, in decoded form: each takes the branch and
+    -- an address whose decoding (`Transpiler.V3.transpile_op`, at
+    -- multiplicity 1) is the row's Program message, and is proved from its
+    -- column form.
+    --
+    -- The proofs pass hypotheses as `@h`, which Lean elaborates without
+    -- unfolding their types.
+    -- ========================================================================
+
+    /-- What a branch's decoding says about the row: it is real, its opcode is the branch's
+        (`Transpiler.opcode_of_bop`), its `op_a` and `op_b` columns name `rs1` and `rs2`, and
+        the low 13 bits of its `op_c` value are the offset. -/
+    private lemma btype_decoded
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+      (h_constraints : CpuChip.Extraction.allHold air row)
+      {imm : BitVec 13} {rs2 rs1 : regidx} {bo : bop} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, bo)) 1 addr =
+        some (program_bus_entry air row, props))
+    :
+      air.cols.is_real row 0 = 1 ∧
+      air.cols.instruction.opcode row 0 = Transpiler.opcode_of_bop bo ∧
+      regidx.Regidx (air.cols.instruction.op_a row 0).val = rs1 ∧
+      regidx.Regidx (air.cols.instruction.op_b_0 row 0).val = rs2 ∧
+      (U64w.toBV (op_c_value air row)).setWidth 13 = imm
+    := by
+      simp only [Transpiler.V3.transpile_op, Option.some.injEq, Prod.mk.injEq] at h_decode
+      have h_data := h_decode.1.symm
+      have h_op_a : air.cols.instruction.op_a row 0 = Transpiler.reg_to_KB rs1 :=
+        decoded_field h_data ProgramBusEntry.op_a
+      have h_op_b : air.cols.instruction.op_b_0 row 0 = Transpiler.reg_to_KB rs2 :=
+        decoded_field h_data ProgramBusEntry.b_0
+      have h_op_c := op_c_value_eq_signExtend_of_imm_operand air row imm (by norm_num)
+        (by norm_num) (decoded_field h_data ProgramBusEntry.imm_c) h_constraints
+        (decoded_field h_data ProgramBusEntry.c_0) (decoded_field h_data ProgramBusEntry.c_1)
+        (decoded_field h_data ProgramBusEntry.c_sign)
+      exact ⟨ decoded_field h_data ProgramBusEntry.multiplicity,
+        decoded_field h_data ProgramBusEntry.opcode,
+        by rw [h_op_a]; exact regidx_reg_to_KB rs1, by rw [h_op_b]; exact regidx_reg_to_KB rs2,
+        by rw [h_op_c]; exact setWidth_signExtend_self imm (by norm_num) ⟩
+
+    /-- Equivalence for BEQ (opcode 18, `bop.BEQ`): for every `BEQ` instruction and address
+        `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        Program message, Sail's step on that instruction equals the row's effect. The decoding
+        fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
+    theorem equivalence_BEQ
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      {imm : BitVec 13} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, .BEQ)) 1 addr =
+        some (program_bus_entry air row, props))
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      execute_instruction (instruction.BTYPE (imm, rs2, rs1, bop.BEQ)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
+        btype_decoded air row (h_all_constraints row h_row) h_decode
+      exact equivalence_BEQ_row air row @h_row @h_is_real @h_all_wf
+        @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
+
+    /-- Equivalence for BNE (opcode 19, `bop.BNE`): for every `BNE` instruction and address
+        `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        Program message, Sail's step on that instruction equals the row's effect. The decoding
+        fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
+    theorem equivalence_BNE
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      {imm : BitVec 13} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, .BNE)) 1 addr =
+        some (program_bus_entry air row, props))
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      execute_instruction (instruction.BTYPE (imm, rs2, rs1, bop.BNE)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
+        btype_decoded air row (h_all_constraints row h_row) h_decode
+      exact equivalence_BNE_row air row @h_row @h_is_real @h_all_wf
+        @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
+
+    /-- Equivalence for BLT (opcode 20, `bop.BLT`): for every `BLT` instruction and address
+        `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        Program message, Sail's step on that instruction equals the row's effect. The decoding
+        fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
+    theorem equivalence_BLT
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      {imm : BitVec 13} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, .BLT)) 1 addr =
+        some (program_bus_entry air row, props))
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      execute_instruction (instruction.BTYPE (imm, rs2, rs1, bop.BLT)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
+        btype_decoded air row (h_all_constraints row h_row) h_decode
+      exact equivalence_BLT_row air row @h_row @h_is_real @h_all_wf
+        @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
+
+    /-- Equivalence for BGE (opcode 21, `bop.BGE`): for every `BGE` instruction and address
+        `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        Program message, Sail's step on that instruction equals the row's effect. The decoding
+        fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
+    theorem equivalence_BGE
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      {imm : BitVec 13} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, .BGE)) 1 addr =
+        some (program_bus_entry air row, props))
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      execute_instruction (instruction.BTYPE (imm, rs2, rs1, bop.BGE)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
+        btype_decoded air row (h_all_constraints row h_row) h_decode
+      exact equivalence_BGE_row air row @h_row @h_is_real @h_all_wf
+        @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
+
+    /-- Equivalence for BLTU (opcode 22, `bop.BLTU`): for every `BLTU` instruction and address
+        `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        Program message, Sail's step on that instruction equals the row's effect. The decoding
+        fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
+    theorem equivalence_BLTU
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      {imm : BitVec 13} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, .BLTU)) 1 addr =
+        some (program_bus_entry air row, props))
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      execute_instruction (instruction.BTYPE (imm, rs2, rs1, bop.BLTU)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
+        btype_decoded air row (h_all_constraints row h_row) h_decode
+      exact equivalence_BLTU_row air row @h_row @h_is_real @h_all_wf
+        @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
+
+    /-- Equivalence for BGEU (opcode 23, `bop.BGEU`): for every `BGEU` instruction and address
+        `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        Program message, Sail's step on that instruction equals the row's effect. The decoding
+        fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
+    theorem equivalence_BGEU
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      {imm : BitVec 13} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, .BGEU)) 1 addr =
+        some (program_bus_entry air row, props))
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      execute_instruction (instruction.BTYPE (imm, rs2, rs1, bop.BGEU)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
+        btype_decoded air row (h_all_constraints row h_row) h_decode
+      exact equivalence_BGEU_row air row @h_row @h_is_real @h_all_wf
+        @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
+
+    /-- The branch theorems' decoding hypothesis holds on every real row of a branch opcode:
+        there the Program table's promise (in `bus_row_wf_asm`) gives a branch of the opcode's
+        comparison and a 4-aligned address below `Transpiler.V3.code_address_bound` whose
+        decoding is the row's Program message. -/
+    theorem btype_decode_satisfiable
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ) (bo : bop)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_wf : bus_row_wf_asm (bus_row air row))
+      (h_opcode : air.cols.instruction.opcode row 0 = Transpiler.opcode_of_bop bo)
+    :
+      ∃ (imm : BitVec 13) (rs2 rs1 : regidx) (addr : ℕ) (props : Prop),
+        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
+        Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, bo)) 1 addr =
+          some (program_bus_entry air row, props)
+    := by
+      obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=
+        program_bus_decoded air row @h_is_real @h_wf
+      rw [h_opcode] at h_from
+      cases bo <;>
+      · obtain ⟨ imm, rs2, rs1, rfl ⟩ := h_from
+        exact ⟨ imm, rs2, rs1, addr, props, h_al, h_lt, h_dec ⟩
 
   end BTYPE
 
