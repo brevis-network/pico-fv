@@ -122,6 +122,8 @@ discharges two instruction theorems' hypotheses (`Equivalence.utype_row_cases`, 
   (see A4). `wf_asrt` and `ext_asrt` say the gadget's messages owe nothing to the tables that
   answer them.
 
+### Pinned inputs
+
 The proofs are about this Pico revision:
 
 <!-- generated: pin -->
@@ -152,6 +154,32 @@ A4), and the Program table changed after v3.1.1 (see A6).
 <!-- generated: pending -->
 Every extraction file is generated from the pinned Pico commit.
 <!-- end generated -->
+
+The other inputs are pinned as well:
+
+- Lean toolchain: `leanprover/lean4:v4.28.0-rc1` (`lean-toolchain`).
+- RISC-V specification: `sail-riscv-lean`
+  [`bb1e7d45`](https://github.com/NethermindEth/sail-riscv-lean/tree/bb1e7d45c6a158a5598705eea12cebfee4349b03),
+  built on the Sail library `lean-sail`
+  [`535c13d3`](https://github.com/NethermindEth/lean-sail/tree/535c13d3026c404e283c2e1b7f46c85237382223)
+  (`lake-manifest.json`). Its `LeanRV64D` files were regenerated from `riscv/sail-riscv` in its
+  commit `a318417f` (2026-02-11, "move to v4.28.0-rc1"); the next commit, `bb1e7d45`, sets the
+  platform configuration by hand: the `Zicfilp` and `Zca` extensions off, no PMP entries, no CLINT.
+- The `riscv/sail-riscv` commit those files were generated from is not recorded: `a318417f` names
+  none, nor the Sail compiler commit that translated it. Their content points to
+  [`5f5f02d3`](https://github.com/riscv/sail-riscv/commit/5f5f02d37f5156d8e8625622409fbb8caef2cf8f):
+  they contain `canonical_NaN_BF16`, which that commit added on 2026-02-10, and it stayed the head
+  of `master` until 2026-02-12, after `a318417f` was made. That has not been confirmed by
+  regenerating the files, so the commit is unknown here.
+- The RISC-V unprivileged ISA version: neither repository names a dated release of the
+  unprivileged ISA manual. sail-riscv's `README.md` at `5f5f02d3` gives the versions of the parts
+  these proofs use: the RV64I base ISA, v2.1, and the M extension, v2.0.
+- The extractor: Rust `nightly-2026-09-27` (`extractor/rust-toolchain.toml`); Pico and Plonky3 in
+  `extractor/Cargo.toml` and `extractor/Cargo.lock`.
+
+CI (`.github/workflows/ci.yml`) runs on every pull request and every push to `main` and
+`pico-v3`: its `extractor` job regenerates every extraction file from the pinned Pico and fails if
+one differs from the committed file, and its `build` job rebuilds the proofs and runs `check.sh`.
 
 ## Summary of the risks
 
@@ -188,8 +216,10 @@ symbolic builder records what the prover enforces.
 
 Opcode behaviour is the Lean translation of the official Sail RISC-V model
 ([`sail-riscv-lean`](https://github.com/NethermindEth/sail-riscv-lean), pinned in
-`lake-manifest.json`). It declares some functions as axioms (floating point, random bits,
-reservations, platform output). They are listed in `scripts/fv-check/spec-axioms.txt`. They
+`lake-manifest.json`). That translation sets some platform configuration by hand, and the
+sail-riscv commit it was generated from is not recorded (see "Pinned inputs"). It declares some
+functions as axioms (floating point, random bits, reservations, platform output). They are
+listed in `scripts/fv-check/spec-axioms.txt`. They
 appear among the equivalence theorems' axioms because the specification's step function mentions
 them, but the theorems hold for every interpretation of them.
 
@@ -435,6 +465,16 @@ initialisation chips, the recursion layers, and Pico's proof system itself. The
 `CodeRangeGadget.Spec` theorems assume the Program chip's code-range promise
 (`V3.CodeRangeBus.Spec`), which rests on the Program chip and so is trusted (see A4).
 The precompile chips also send the code-range message; no theorem here covers their side of it.
+
+Deferred by decision of 2026-11-23:
+
+- composing the chips into the execution of a whole chunk: that every bus balances across the
+  chips, so that the assumptions each chip makes are met by the promises the others prove (A4);
+- the precompile chips, including `Blake2bControlChip` and `Blake2bRoundChip`, which v3.2.0 adds;
+- the recursion layers;
+- completeness, the converse direction: the theorems say that, under their hypotheses, rows
+  which satisfy the constraints behave as the Sail specification says, not that every Sail
+  execution has such rows.
 
 ### A6. The instruction decoder
 

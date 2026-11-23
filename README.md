@@ -33,7 +33,13 @@ The 62 opcodes:
   - 4 word-variant immediate opcodes: `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`;
   - 5 word-variant MUL/DIV opcodes: `MULW`, `DIVW`, `DIVUW`, `REMW`, `REMUW`.
 
-`ECALL` is intentionally out of scope.
+`ECALL` is intentionally out of scope. So are the following, by decision of 2026-11-23:
+composing the chips into the execution of a whole chunk (that every bus balances across the
+chips, so that each chip's assumptions are met by the others' proven promises), the precompile
+chips (including the two Blake2b chips v3.2.0 adds), the recursion layers, and completeness. The
+theorems go in one direction only: under their hypotheses, rows that satisfy the constraints
+behave as the Sail specification says; they do not say that every correct execution has such
+rows. [SOUNDNESS.md](SOUNDNESS.md) lists what is not covered (A4, A5).
 
 The extraction tool in `extractor/` is pinned to this Pico revision:
 
@@ -113,13 +119,32 @@ chip's files are independent of the other chips', so chips can be moved or exten
 Assuming Lean's `lake` package manager is installed:
 
 ```
-lake update
 lake exe cache get!
 lake build
 ```
 
-The first two commands are optional but speed up the initial build by
-fetching mathlib's binary cache.
+The first command is optional but speeds up the initial build by fetching
+mathlib's binary cache.
+
+## Reproducing
+
+The proofs are built from these pinned inputs:
+
+| Input | Pin | Read from |
+|---|---|---|
+| Pico | v3.2.0, commit `fcfa504624657d0c417c43f1233d5d891f293ff9` | `extractor/Cargo.toml`, `extractor/Cargo.lock` |
+| Lean toolchain | `leanprover/lean4:v4.28.0-rc1` | `lean-toolchain` |
+| RISC-V specification (Lean) | `sail-riscv-lean` `bb1e7d45c6a158a5598705eea12cebfee4349b03`, on `lean-sail` `535c13d3026c404e283c2e1b7f46c85237382223` | `lake-manifest.json` |
+| `riscv/sail-riscv` commit it was generated from | not recorded; its content points to `5f5f02d3`, unconfirmed | [SOUNDNESS.md](SOUNDNESS.md#pinned-inputs) |
+| RISC-V unprivileged ISA version | no dated release named; RV64I v2.1, M v2.0 (sail-riscv's `README.md` at `5f5f02d3`) | [SOUNDNESS.md](SOUNDNESS.md#pinned-inputs) |
+| Extractor's Rust toolchain | `nightly-2026-09-27` | `extractor/rust-toolchain.toml` |
+
+Build from the committed `lake-manifest.json`. `lakefile.toml` names two dependencies by branch
+(`sail-riscv-lean`'s `v4.28.0-rc1`, `LeanZKCircuit-Plonky3`'s `Dom/v4.28.0-rc1`), so
+`lake update` can move their pins. CI (`.github/workflows/ci.yml`) runs on every pull request
+and every push to `main` and `pico-v3`: its `extractor` job regenerates every file in
+`PicoFV/RV64IM/Extraction/` from the pinned Pico and fails if one differs from the committed
+file, and its `build` job rebuilds the proofs and runs `scripts/fv-check/check.sh`.
 
 ## Checking the theorems
 
