@@ -9,8 +9,8 @@ set_option maxHeartbeats 1_000_000_000
 # MemoryReadWriteChip — the Memory promise
 
 What the chip proves about each row (`MemoryReadWriteChip::eval`,
-`vm/src/chips/chips/riscv_memory/read_write/constraints.rs`, Pico v3.1.6
-`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`; constraints and messages in
+`vm/src/chips/chips/riscv_memory/read_write/constraints.rs`, Pico v3.2.0
+`fcfa504624657d0c417c43f1233d5d891f293ff9`; constraints and messages in
 `Constraints/MemoryReadWriteChip.lean`).
 
 - `spec_LB` … `spec_SD`, one per opcode: on a row whose flag for that instruction is 1, the
@@ -694,11 +694,11 @@ namespace MemoryReadWriteChip.Spec
   /-- On a real row the double word the row reads and writes back starts at `b + c` with its three
       low bits cleared, and the three offset bits are those low bits: the memory access's address
       `[addr_word_0 - offset, addr_word_1, 0]` (`riscv_memory/read_write/constraints.rs:292-301,
-      333-343` at v3.1.6) is the aligned form of the address the memory dispatch names, and each of
+      333-343` at v3.2.0) is the aligned form of the address the memory dispatch names, and each of
       its two pieces is below `2^16`. From `address`, the offset bits (constraints 17 to 19), the
       `BitRange(13)` check of the aligned low piece over 8
-      (`riscv_memory/read_write/constraints.rs:303-309` at v3.1.6) and the `U16Range` check of
-      `addr_word_1` (`riscv_memory/read_write/constraints.rs:259-266` at v3.1.6). -/
+      (`riscv_memory/read_write/constraints.rs:303-309` at v3.2.0) and the `U16Range` check of
+      `addr_word_1` (`riscv_memory/read_write/constraints.rs:259-266` at v3.2.0). -/
   lemma aligned_address
     [Field ExtF]
     (air : Valid_MemoryReadWriteChip FKB ExtF)
@@ -1525,7 +1525,7 @@ namespace MemoryReadWriteChip.Spec
       the code range `[code_start, code_end)` the row looks up: they end at or below its start,
       or start at or above its end. The `code_range` gadget proves it
       (`CodeRangeGadget.Spec.gadget_spec`); the chip hands it `addr_word` and `store_width`
-      (`riscv_memory/read_write/constraints.rs:94-108` at v3.1.6) and supplies its premises: the
+      (`riscv_memory/read_write/constraints.rs:94-108` at v3.2.0) and supplies its premises: the
       address's two pieces are 16-bit and equal `b + c` (`address`), and the width is at most 8.
       As in the gadget, the range is the one in the row's columns: the Program table's promise
       (`CodeRangeBus.Spec`) does not yet say it is the program's code range. -/

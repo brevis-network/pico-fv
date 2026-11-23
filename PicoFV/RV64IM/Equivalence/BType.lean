@@ -34,7 +34,7 @@ namespace Equivalence
     -- that the target is 4-aligned on the taken branch alone, which
     -- `next_pc_mod_four_eq_zero` carries.
     --
-    -- Pico source at the pinned v3.1.6, under `vm/src/chips/chips/riscv_cpu/`:
+    -- Pico source at the pinned v3.2.0, under `vm/src/chips/chips/riscv_cpu/`:
     --   * `op_a` keeps its previous value on a branch or store row:
     --     `register/constraints.rs:117-123`;
     --   * every branch row has `imm_c = 1`, and the taken target

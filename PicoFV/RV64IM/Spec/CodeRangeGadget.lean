@@ -7,7 +7,7 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # CodeRangeGadget — a store misses the code range it looks up
 
-`CodeRangeCols::eval` (`vm/src/chips/gadgets/code_range.rs`, Pico v3.1.6) proves that a write of
+`CodeRangeCols::eval` (`vm/src/chips/gadgets/code_range.rs`, Pico v3.2.0) proves that a write of
 `width` bytes at `addr` lands on no byte of the range `[code_start, code_end)` it looks up from
 the Program table: either it ends at or below the range's start, or it starts at or above its
 end.

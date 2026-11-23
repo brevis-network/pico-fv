@@ -365,12 +365,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7575182f7272186991736b70173b0ea045398f984bf5ebbb3804736ce1330c9d"
 
 [[package]]
-name = "bytemuck"
-version = "1.25.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95832e849adfb21180ccb6826a99da14e5d266ae5c2e668e1602cf234f153797"
-
-[[package]]
 name = "byteorder"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -886,16 +880,7 @@ version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a9b99b9cbbe49445b21764dc0625032a89b145a2642e67603e1c936f5458d05"
 dependencies = [
- "derive_more-impl 1.0.0",
-]
-
-[[package]]
-name = "derive_more"
-version = "2.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d751e9e49156b02b44f9c1815bcb94b984cdcc4396ecc32521c739452808b134"
-dependencies = [
- "derive_more-impl 2.1.1",
+ "derive_more-impl",
 ]
 
 [[package]]
@@ -906,18 +891,6 @@ checksum = "cb7330aeadfbe296029522e6c40f315320aba36fc43a5b3632f3795348f3bd22"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "derive_more-impl"
-version = "2.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "799a97264921d8623a957f6c3b9011f3b5492f557bbb7a5a19b7fa6d06ba8dcb"
-dependencies = [
- "proc-macro2",
- "quote",
- "rustc_version",
  "syn 2.0.119",
 ]
 
@@ -1247,12 +1220,6 @@ checksum = "271e0d19bcb473b6675739a2b536076b24a082316cb5199ad918edce10c599e8"
 dependencies = [
  "arrayvec",
 ]
-
-[[package]]
-name = "hex-literal"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e712f64ec3850b98572bffac52e2c6f282b29fe6c5fa6d42334b30be438d95c1"
 
 [[package]]
 name = "hkdf"
@@ -1810,16 +1777,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "p3-keccak"
-version = "0.5.4"
-source = "git+https://github.com/brevis-network/Plonky3.git?rev=da6ca12c#da6ca12c71912ec213d3c5af68b14509d2099bc3"
-dependencies = [
- "p3-symmetric",
- "p3-util",
- "tiny-keccak",
-]
-
-[[package]]
 name = "p3-keccak-air"
 version = "0.5.4"
 source = "git+https://github.com/brevis-network/Plonky3.git?rev=da6ca12c#da6ca12c71912ec213d3c5af68b14509d2099bc3"
@@ -2058,10 +2015,9 @@ dependencies = [
 
 [[package]]
 name = "pico-derive"
-version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?tag=v3.1.6#6aa644efeff9ddbec6beb538200f98f2a70f5d8e"
+version = "3.2.0"
+source = "git+https://github.com/brevis-network/pico.git?tag=v3.2.0#fcfa504624657d0c417c43f1233d5d891f293ff9"
 dependencies = [
- "proc-macro2",
  "quote",
  "syn 1.0.109",
 ]
@@ -2079,8 +2035,8 @@ dependencies = [
 
 [[package]]
 name = "pico-mle-core"
-version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?tag=v3.1.6#6aa644efeff9ddbec6beb538200f98f2a70f5d8e"
+version = "3.2.0"
+source = "git+https://github.com/brevis-network/pico.git?tag=v3.2.0#fcfa504624657d0c417c43f1233d5d891f293ff9"
 dependencies = [
  "cfg-if",
  "derivative",
@@ -2112,8 +2068,8 @@ dependencies = [
 
 [[package]]
 name = "pico-mle-cpu"
-version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?tag=v3.1.6#6aa644efeff9ddbec6beb538200f98f2a70f5d8e"
+version = "3.2.0"
+source = "git+https://github.com/brevis-network/pico.git?tag=v3.2.0#fcfa504624657d0c417c43f1233d5d891f293ff9"
 dependencies = [
  "cfg-if",
  "derive-new",
@@ -2130,8 +2086,8 @@ dependencies = [
 
 [[package]]
 name = "pico-verifier"
-version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?tag=v3.1.6#6aa644efeff9ddbec6beb538200f98f2a70f5d8e"
+version = "3.2.0"
+source = "git+https://github.com/brevis-network/pico.git?tag=v3.2.0#fcfa504624657d0c417c43f1233d5d891f293ff9"
 dependencies = [
  "bincode",
  "p3-field",
@@ -2147,15 +2103,13 @@ dependencies = [
 
 [[package]]
 name = "pico-vm"
-version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico.git?tag=v3.1.6#6aa644efeff9ddbec6beb538200f98f2a70f5d8e"
+version = "3.2.0"
+source = "git+https://github.com/brevis-network/pico.git?tag=v3.2.0#fcfa504624657d0c417c43f1233d5d891f293ff9"
 dependencies = [
  "anyhow",
  "arrayref",
  "backtrace",
  "bincode",
- "bitvec",
- "bytemuck",
  "cfg-if",
  "clap",
  "core_affinity",
@@ -2165,16 +2119,11 @@ dependencies = [
  "curve25519-dalek",
  "dashmap",
  "dashu",
- "derivative",
- "derive-new",
- "derive_more 2.1.1",
  "elf",
  "elliptic-curve",
  "eyre",
- "getset",
  "hashbrown 0.14.5",
  "hex",
- "hex-literal",
  "hybrid-array",
  "itertools 0.13.0",
  "k256",
@@ -2189,7 +2138,6 @@ dependencies = [
  "p3-air",
  "p3-bn254",
  "p3-field",
- "p3-keccak",
  "p3-keccak-air",
  "p3-koala-bear",
  "p3-matrix",
@@ -2198,7 +2146,6 @@ dependencies = [
  "p3-symmetric",
  "p3-util",
  "parking_lot",
- "paste",
  "pico-derive",
  "pico-mle-core",
  "pico-mle-cpu",
@@ -2208,7 +2155,6 @@ dependencies = [
  "rayon",
  "rayon-scan",
  "rrs-lib",
- "rustc-hash",
  "secp256k1",
  "serde",
  "serde_json",
@@ -2552,7 +2498,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "346a3b32eba2640d17a9cb5927056b08f3de90f65b72fe09402c2ad07d684d0b"
 dependencies = [
  "cfg-if",
- "derive_more 1.0.0",
+ "derive_more",
  "parity-scale-codec",
  "scale-info-derive",
 ]

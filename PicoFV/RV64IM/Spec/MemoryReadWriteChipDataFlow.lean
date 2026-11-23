@@ -8,13 +8,13 @@ set_option maxHeartbeats 1_000_000_000
 # MemoryReadWriteChip — what a row does to memory
 
 The data flow of a row of `MemoryReadWriteChip` (`MemoryReadWriteChip::eval`,
-`vm/src/chips/chips/riscv_memory/read_write/constraints.rs`, Pico v3.1.6
-`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`; messages in `Constraints/MemoryReadWriteChip.lean`).
+`vm/src/chips/chips/riscv_memory/read_write/constraints.rs`, Pico v3.2.0
+`fcfa504624657d0c417c43f1233d5d891f293ff9`; messages in `Constraints/MemoryReadWriteChip.lean`).
 
 A real row sends the memory argument the read of the double word at the aligned address
 (`looking`, multiplicity 1) and receives its write back (`looked`, multiplicity -1)
-(`machine/builder/riscv_memory.rs:194-208` at v3.1.6), and receives the memory dispatch from the
-CPU chip (`riscv_memory/read_write/constraints.rs:63-84` at v3.1.6). `V3.bus_operations` reads
+(`machine/builder/riscv_memory.rs:194-208` at v3.2.0), and receives the memory dispatch from the
+CPU chip (`riscv_memory/read_write/constraints.rs:63-84` at v3.2.0). `V3.bus_operations` reads
 the pair as a double-word `ReadMem` and `WriteMem` at the aligned address, and the dispatch as an
 access of its opcode's width at `b + c`: a `WriteMem` of `a` for a store, a `ReadMem` of `a` for
 a load, or a `ReadMemAny` for a load into `x0`.
@@ -22,9 +22,9 @@ a load, or a `ReadMemAny` for a load into `x0`.
 - `dataFlow_of_allHold`: on every row, in any Sail state that holds the double word the row
   reads, the dispatch's read holds too, so a load's value, taken at the load's width, is the
   bytes of that double word at `b + c` (`riscv_memory/read_write/constraints.rs:423-442` at
-  v3.1.6); and the two operation lists leave the same state, so a store writes the double word
+  v3.2.0); and the two operation lists leave the same state, so a store writes the double word
   back with the stored bytes patched in and a load writes it back unchanged
-  (`riscv_memory/read_write/constraints.rs:565-595` at v3.1.6). The sign or zero fill above a
+  (`riscv_memory/read_write/constraints.rs:565-595` at v3.2.0). The sign or zero fill above a
   load's width is not read here: it is the Memory promise's (`spec_LB` to `spec_LWU`).
 
 `dataFlow_of_allHold` assumes what the Memory promise's theorems assume

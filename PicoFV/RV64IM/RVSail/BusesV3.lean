@@ -11,7 +11,7 @@ set_option maxHeartbeats 1_000_000_000
     The Pico v3.1.1 `CpuChip` sends 17 messages per row (`riscv_cpu/constraints.rs`, extracted
     in `Extraction/CpuChip.lean`). This file states what the CPU chip may assume about the
     messages other tables answer, and what it must guarantee about the ones it sends, for the
-    message formats that changed from 2.x. It also holds the v3.1.6 code-range contract between
+    message formats that changed from 2.x. It also holds the v3.2.0 code-range contract between
     the rows that write guest memory (store rows of the two memory chips, and precompile rows)
     and the Program table, which the CPU chip never sends. It sits beside `Buses.lean`, whose
     2.x contracts stay unchanged because the memory chip's proofs still use them.
@@ -30,7 +30,7 @@ set_option maxHeartbeats 1_000_000_000
     precompile row for what it writes, does, through the `code_range` gadget
     (`gadgets/code_range.rs:1-11`, `Spec/CodeRangeGadget.lean`), and the Program table answers it. It
     shares the Program tag with the instruction fetch and is told apart by its length, 4 against
-    26 (`riscv_program/constraints.rs:55-57` at v3.1.6).
+    26 (`riscv_program/constraints.rs:55-57` at v3.2.0).
 
     The register-access message keeps its 2.x shape `[chunk, clk, addr(3), value(4)]`
     (`machine/builder/riscv_memory.rs:174-208`), so its 2.x contract is reused: a value read
@@ -43,7 +43,7 @@ set_option maxHeartbeats 1_000_000_000
 
     Pico line numbers in this file are at v3.1.1 (`2acc7c1828fb`), except in `MemoryBus.Spec`,
     the memory chips' citations in `MemoryBusEntry` and the code-range section, which are at
-    v3.1.6 (`6aa644efeff9`).
+    v3.2.0 (`fcfa50462465`).
     From v3.1.1 to v3.1.6 the CPU chip's constraint files are unchanged; its trace generation
     (`riscv_cpu/event.rs`, `traces.rs`) changed, as did the Program chip's and
     `MemoryReadWriteChip`'s columns, constraints and trace generation. Since v3.1.2 the memory
@@ -672,7 +672,7 @@ namespace RV64IM_Interactions.V3
         Layout of the `CpuChip` send (`riscv_cpu/constraints.rs:117-133`):
         `[opcode, a(4), b(4), c(4), op_a_0, is_memory, chunk, clk]`. The access width is
         no longer a selector: each memory chip derives it from the opcode, through the one-hot
-        flags of `eval_instruction_flags` (v3.1.6: `riscv_memory/read_write/constraints.rs:165-210`,
+        flags of `eval_instruction_flags` (v3.2.0: `riscv_memory/read_write/constraints.rs:165-210`,
         called by the unaligned chip at `riscv_memory/unaligned/constraints.rs:44-45`). `a` is
         the value of register `a` after the row: the loaded value for a load, the stored value
         for a store. -/
@@ -734,7 +734,7 @@ namespace RV64IM_Interactions.V3
 
         Two chips receive the memory dispatch at the pin, `MemoryReadWriteChip` and, since
         v3.1.2, `MemoryUnalignedChip`; either may take any load or store, so this states only
-        what both prove. Lines below are in `vm/src/chips/chips/riscv_memory/` at v3.1.6:
+        what both prove. Lines below are in `vm/src/chips/chips/riscv_memory/` at v3.2.0:
         `rw` is `read_write/constraints.rs`, `un` is `unaligned/constraints.rs`. Both receive
         the same 17-field message (`rw:49-84`, `un:44-63`).
 
