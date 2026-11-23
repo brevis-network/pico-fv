@@ -1,52 +1,29 @@
 # Parked theorem lists
 
 <!-- generated: parked -->
-The 1 list here names 2 of the 62 instruction theorems of
-`PicoFV/RV64IM/Equivalence/`.
+No list is parked here: all 62 instruction theorems of
+`PicoFV/RV64IM/Equivalence/` are checked from `theorems.d/`.
 <!-- end generated -->
 
-They sit out of `theorems.d/` — and so out of `check.sh` — while the CPU chip
-moves to Pico v3.1.1.
+The lists sat here, out of `theorems.d/` and so out of `check.sh`, while the CPU
+chip moved to Pico v3.1.1: the chip's column layout changed shape (58 columns
+instead of 132), so the 2.x `Equivalence/` files no longer compiled. Each
+instruction class was rewritten against the v3.1.1 layout and its list moved
+back up a directory; `PicoFV64.lean` imports `Equivalence.Equivalence`, which
+pulls in all 13 class files. The tag `pico-v3-before-cpu` holds the 2.x
+versions. This file stays as the record of how the restored statements differ
+from those last checked, at commit `353238a`:
 
-The chip's column layout changed shape (58 columns instead of 132), so the 2.x
-`Constraints/CpuChipInterpretations.lean` and the `Equivalence/` files that rest
-on it no longer compile. The interpretations file and `Equivalence/Common.lean`
-are now rewritten at v3.1.1, holding the lemmas every instruction class shares,
-and the lists of the classes rewritten so far have moved back up a directory
-with their files (`SOUNDNESS.md` lists them). `PicoFV64.lean` still does not
-import `Equivalence.Equivalence`, which pulls in all 13 class files; it returns
-with the last of them. The tag `pico-v3-before-cpu` holds the 2.x versions.
+```bash
+git show 353238a:scripts/fv-check/signatures.txt
+git show 353238a:scripts/fv-check/axioms.txt
+```
 
-## Restoring an instruction class
+## How the restored statements differ
 
-The files are rewritten against the v3.1.1 layout one instruction class at a
-time. For each class:
-
-1. Rewrite its `Equivalence/` file, and the rewritten interpretations file and
-   `Equivalence/Common.lean` it needs.
-2. Make `PicoFV64.lean` import the rewritten modules again. `check.sh` reads
-   the theorems through `Report.lean`, which imports only `PicoFV64`, so a
-   theorem whose module is not imported there is reported missing.
-3. Move the class's list back up a directory and run `check.sh --update` to
-   record its theorems.
-4. Compare the new lines of `signatures.txt` and `axioms.txt` with the ones
-   last checked, at commit `353238a`:
-
-   ```bash
-   git show 353238a:scripts/fv-check/signatures.txt
-   git show 353238a:scripts/fv-check/axioms.txt
-   ```
-
-5. Run `python3 scripts/fv-check/soundness_facts.py`: it recounts the checked
-   and parked theorems in `SOUNDNESS.md`, `README.md` and this file from the
-   lists. The prose that names restored classes one by one (the hypotheses they
-   drop, below, and `SOUNDNESS.md` A3) is still updated by hand.
-
-## How the restored statements may differ
-
-They are expected to differ from those at `353238a` in three ways, plus the
-dropped hypotheses and, for the register-immediate theorems, the immediate,
-both described at the end of this section. The bus assumptions name the v3.1.1
+They differ from those at `353238a` in three ways, plus the dropped
+hypotheses, the immediate of the register-immediate theorems and the operand
+shapes of `LUI` and `AUIPC`, described after them. The bus assumptions name the v3.1.1
 contracts (`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`) instead of the
 2.x ones. The register held in `op_a` (the destination, `rs1` for a branch,
 or `rs2` for a store) is read from `instruction.op_a` instead of
@@ -82,8 +59,19 @@ theorems and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`).
 A restored statement may also drop the row's class selector when the opcode
 fixes that: `JAL` and `JALR` no longer take `is_jal` / `is_jalr`, nor either
 immediate flag, because opcodes 24 and 25 are the two jumps alone. The six
-branches and the four stores never took theirs, for the same reason, so their
-statements lose nothing here.
+branches, the four stores and the seven loads never took theirs, for the same
+reason, so their statements lose nothing here.
+
+`LUI` and `AUIPC` are the one case where the v3.1.1 decoder gives two
+instructions the same opcode and flags (opcode 0 with `imm_b = 1` and
+`imm_c = 1`; there is no opcode 27 and no `is_auipc` column), so their
+statements gain hypotheses instead: each takes its instruction's operand shape,
+with the 20-bit immediate as a parameter instead of cut out of an operand
+value. `LUI` takes `op_b` zero and `op_c` the immediate `signExtend 64 (imm ++
+0#12)`; `AUIPC` takes `op_b` the immediate and `op_c` the row's pc, and is
+keyed on opcode 0 instead of 27, without `is_auipc = 1`. The new
+`Equivalence.utype_row_cases`, in the same list, proves that every real row of
+opcode 0 with both flags has one of the two shapes.
 
 A restored memory theorem also names what the Memory message promises it
 (`MemoryBus.Spec` in `RVSail/BusesV3.lean`) only through the bus assumptions,
