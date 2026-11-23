@@ -47,8 +47,8 @@ decoder already fixes for its opcode (`imm_b_of_opcode`, `imm_c_of_opcode` in
 `RVSail/BusesV3.lean`): `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`,
 `ANDI`, `SLTI`, `SLTIU`, `SLLI`, `SRLI` and `SRAI` no longer take `imm_b = 0`,
 and `SUBW` and `SUB` no longer take `imm_c = 0`. Dropping a hypothesis makes the
-theorem stronger. `ADDI` keeps `imm_b = 0`: the decoder does not fix it for
-opcode 0, which `LUI` and `AUIPC` share. `ADD` does not take `imm_b = 0`,
+theorem stronger. `ADDI` kept `imm_b = 0` (its column form still does): the
+decoder does not fix it for opcode 0, which `LUI` and `AUIPC` share. `ADD` does not take `imm_b = 0`,
 although the decoder does not fix it for opcode 0: on a row with `imm_c = 0` the
 flag is 0 whatever the opcode (`imm_b_eq_zero_of_imm_c_eq_zero`). Where an
 immediate form and a register-register opcode share an opcode, the decoder does
@@ -59,6 +59,13 @@ opcode 40 (`ADDIW`, `ADDW`), 42 to 44
 (`SLLIW`, `SRLIW`, `SRAIW` and `SLLW`, `SRLW`, `SRAW`), 5 to 7 (`SLLI`, `SRLI`,
 `SRAI` and `SLL`, `SRL`, `SRA`), and 0, 2 to 4, 8 and 9 (the six `ITYPE`
 theorems and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`).
+
+The statements of the classes in decoded form (listed below) also drop, in both
+the checked and the column form, the three bus assumptions their proofs do not
+use: `bus_row_axioms`, `bus_row_ext_asm` and `bus_row_wf_asrt`. Of those
+classes, `RTYPE`, `RTYPEW`, `ITYPE`, `ADDIW`, `SHIFTIOP` and `SHIFTIWOP` also
+drop `RISC_V_assumptions`, which their proofs do not use; the stores and the
+loads keep it.
 
 Some restored statements also drop the row's class selector, which the opcode
 fixes: `JAL` and `JALR` no longer take `is_jal` / `is_jalr`, nor either
@@ -85,20 +92,20 @@ chip takes: `SOUNDNESS.md` A3 says so for the stores and the loads, and a pull
 request that changes what a memory theorem assumes should keep those two
 paragraphs true.
 
-The register-immediate theorems read their immediate from the instruction's
-encoded `instruction.op_c_0` instead of the `op_c` value the row sends to the
-ALU chip (`op_c_value`), as they read `rd` and `rs1`: the shifts `SLLIW`,
-`SRLIW`, `SRAIW`, `SLLI`, `SRLI` and `SRAI`, and `ADDI`, `XORI`, `ORI`, `ANDI`,
-`SLTI`, `SLTIU` and `ADDIW`. The statement at `353238a` read it from the value
-the ALU chip works on, so it held whatever tied that value to the instruction.
-The new one names the low 6 bits (5 for the 32-bit shifts) of the
-instruction's encoded `op_c_0`, that is `op_c_0` modulo 64 (or 32), or its low
+The column forms of the register-immediate theorems (`equivalence_<OP>_row`)
+read their immediate from the row's encoded `instruction.op_c_0` instead of the
+`op_c` value the row sends to the ALU chip (`op_c_value`), as they read `rd` and
+`rs1`: the shifts `SLLIW`, `SRLIW`, `SRAIW`, `SLLI`, `SRLI` and `SRAI`, and
+`ADDI`, `XORI`, `ORI`, `ANDI`, `SLTI`, `SLTIU` and `ADDIW`. The statement at
+`353238a` read it from the value the ALU chip works on, so it held whatever tied
+that value to the instruction. The column form names the low 6 bits (5 for the
+32-bit shifts) of the row's encoded `op_c_0`, that is `op_c_0` modulo 64 (or 32), or its low
 12 bits for the other seven, and the proof needs the constraint that ties the
 two (`op_c_value_setWidth_eq_op_c_0`). The decoder sign-extends the program's
 12-bit immediates and zero-extends its shift amounts
 (`Transpiler.V3.imm_operand` with its sign flag `true` or `false`), and writes
 the low 16 bits of the result into `op_c_0`, so on a row the program decoded
-those bits are the program's immediate, but the statement does not tie
+those bits are the program's immediate, but the column form does not tie
 `op_c_0` to the decoder. The classes in decoded form do, and tie their
 register columns to it in the same way: each theorem takes the instruction and
 the hypothesis `h_decode` that the decoder (`Transpiler.V3.transpile_op`, at
@@ -111,7 +118,11 @@ derives that hypothesis from those and the row's Program promise:
 - the ten `RTYPE` theorems (no immediate):
   `Equivalence.rtype_decode_satisfiable`;
 - the five `RTYPEW` theorems (no immediate):
-  `Equivalence.rtypew_decode_satisfiable`.
+  `Equivalence.rtypew_decode_satisfiable`;
+- the six `ITYPE` theorems: `Equivalence.itype_decode_satisfiable`;
+- `ADDIW`: `Equivalence.addiw_decode_satisfiable`;
+- the three `SHIFTIOP` theorems: `Equivalence.shiftiop_decode_satisfiable`;
+- the three `SHIFTIWOP` theorems: `Equivalence.shiftiwop_decode_satisfiable`.
 
 The other
 theorems with an immediate read it from the row's operand values: the branches
