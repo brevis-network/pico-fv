@@ -1,2 +1,0 @@
-Equivalence.load_decode_satisfiable
-Equivalence.store_decode_satisfiable

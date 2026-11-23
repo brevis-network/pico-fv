@@ -28,7 +28,9 @@ v3.1.1 contracts (`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`) instead of 
 2.x ones. The register held in `op_a` (the destination, `rs1` for a branch,
 or `rs2` for a store) is read from `instruction.op_a` instead of
 `instruction.op_a_0`: v3.1.1 keeps the 5-bit index in one column, so every
-theorem whose `rd`, branch `rs1` or store `rs2` reads it shows this rename. And the whole-trace assumption `pico_CpuChip_control_flow_assumptions`
+theorem whose `rd`, branch `rs1` or store `rs2` reads it shows this rename; the
+stores and the loads have since gone further and name no column (decoded form,
+below). And the whole-trace assumption `pico_CpuChip_control_flow_assumptions`
 gains three conjuncts in its definition:
 
 - the eight theorems that already named it (the six branches, `JAL` and `JALR`)
@@ -95,10 +97,15 @@ two (`op_c_value_setWidth_eq_op_c_0`). The decoder sign-extends the program's
 (`Transpiler.V3.imm_operand` with its sign flag `true` or `false`), and writes
 the low 16 bits of the result into `op_c_0`, so on a row the program decoded
 those bits are the program's immediate, but the statement does not tie
-`op_c_0` to the decoder. The other theorems with an immediate read it from the
-row's operand values: the branches, `JALR`, the four stores and the seven loads
-from `op_c_value`, `JAL` from `op_b_value`, and `LUI` and `AUIPC` take it as a
-parameter pinned by a hypothesis on `op_c_value` (`LUI`) or `op_b_value`
+`op_c_0` to the decoder. The four stores and the seven loads do, in decoded
+form: each takes the instruction and the hypothesis `h_decode` that the decoder
+(`Transpiler.V3.transpile_op`, at multiplicity 1) turns it into the row's
+Program message, in place of `is_real = 1` and the opcode, and
+`Equivalence.store_decode_satisfiable` and `Equivalence.load_decode_satisfiable`
+derive that hypothesis from those two and the row's Program promise. The other
+theorems with an immediate read it from the row's operand values: the branches
+and `JALR` from `op_c_value`, `JAL` from `op_b_value`, and `LUI` and `AUIPC` take
+it as a parameter pinned by a hypothesis on `op_c_value` (`LUI`) or `op_b_value`
 (`AUIPC`).
 
 Two definitions every statement names were also rewritten at v3.1.1, and

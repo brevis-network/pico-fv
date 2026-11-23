@@ -129,7 +129,10 @@ and the specifications of the ALU chips already at v3.1.1
 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight), and the
 equivalence theorems the branch proves at v3.1.1 (listed above), with
 `Equivalence.utype_row_cases`, which shows that the `LUI` and `AUIPC` theorems
-together cover the row shape the two instructions share. It fails if a theorem is missing,
+together cover the row shape the two instructions share. The store and load
+theorems take the instruction whose decoding is the row's Program message;
+`Equivalence.store_decode_satisfiable` and `Equivalence.load_decode_satisfiable`,
+checked with them, show that every real store or load row has one. It fails if a theorem is missing,
 depends on an axiom (a statement Lean accepts without proof) outside two lists,
 or its axioms or statement differ from the snapshots in `axioms.txt` and
 `signatures.txt`:

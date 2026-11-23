@@ -42,7 +42,7 @@ namespace Equivalence
     -- (`is_sequential_active_constraints`; Pico v3.2.0,
     -- `riscv_cpu/constraints.rs:318-326`).
     --
-    -- Each theorem splits on whether the destination is `x0`. There the row
+    -- Each `_row` theorem splits on whether the destination is `x0`. There the row
     -- writes zero to `x0` (Pico v3.2.0, `riscv_cpu/register/constraints.rs:73-76`)
     -- and sends `ReadMemAny`, and Sail's write to `x0` changes nothing;
     -- elsewhere both read the same bytes and write the same extension.
@@ -176,10 +176,7 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (_h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (_h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (_h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = 12)
@@ -385,10 +382,7 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (_h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (_h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (_h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = 10)
@@ -582,10 +576,7 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (_h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (_h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (_h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = 11)
@@ -784,10 +775,7 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (_h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (_h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (_h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = 13)
@@ -981,10 +969,7 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (_h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (_h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (_h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = 14)
@@ -1183,10 +1168,7 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (_h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (_h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (_h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = 45)
@@ -1392,10 +1374,7 @@ namespace Equivalence
       (row : ℕ)
       (h_row : row ≤ air.last_row)
       (h_is_real : air.cols.is_real row 0 = 1)
-      (_h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (_h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (_h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       (h_opcode : air.cols.instruction.opcode row 0 = 46)
@@ -1596,7 +1575,7 @@ namespace Equivalence
     --
     -- The proofs pass hypotheses as `@h`, which Lean elaborates without
     -- unfolding their types; passed bare, the bus assumptions get unfolded,
-    -- which made the store section's elaboration three times slower.
+    -- which made this section's elaboration four times slower.
     -- ========================================================================
 
     /-- What a load's decoding says about the row: it is real, its opcode is the signedness's and
@@ -1648,10 +1627,7 @@ namespace Equivalence
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
-      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
@@ -1667,9 +1643,8 @@ namespace Equivalence
       obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
         load_decoded air row (h_all_constraints row h_row) h_decode
       have h_opcode : air.cols.instruction.opcode row 0 = 10 := by simpa using h_opc
-      exact equivalence_LB_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
-        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
-        @risc_v_assumptions
+      exact equivalence_LB_row air row @h_row @h_is_real @h_all_wf
+        @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for LH (opcode 11, `instruction.LOAD` of width 2, sign-extended): for every
         `LH` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
@@ -1681,10 +1656,7 @@ namespace Equivalence
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
-      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
@@ -1700,9 +1672,8 @@ namespace Equivalence
       obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
         load_decoded air row (h_all_constraints row h_row) h_decode
       have h_opcode : air.cols.instruction.opcode row 0 = 11 := by simpa using h_opc
-      exact equivalence_LH_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
-        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
-        @risc_v_assumptions
+      exact equivalence_LH_row air row @h_row @h_is_real @h_all_wf
+        @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for LW (opcode 12, `instruction.LOAD` of width 4, sign-extended): for every
         `LW` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
@@ -1714,10 +1685,7 @@ namespace Equivalence
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
-      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
@@ -1733,9 +1701,8 @@ namespace Equivalence
       obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
         load_decoded air row (h_all_constraints row h_row) h_decode
       have h_opcode : air.cols.instruction.opcode row 0 = 12 := by simpa using h_opc
-      exact equivalence_LW_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
-        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
-        @risc_v_assumptions
+      exact equivalence_LW_row air row @h_row @h_is_real @h_all_wf
+        @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for LBU (opcode 13, `instruction.LOAD` of width 1, zero-extended): for every
         `LBU` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
@@ -1747,10 +1714,7 @@ namespace Equivalence
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
-      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
@@ -1766,9 +1730,8 @@ namespace Equivalence
       obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
         load_decoded air row (h_all_constraints row h_row) h_decode
       have h_opcode : air.cols.instruction.opcode row 0 = 13 := by simpa using h_opc
-      exact equivalence_LBU_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
-        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
-        @risc_v_assumptions
+      exact equivalence_LBU_row air row @h_row @h_is_real @h_all_wf
+        @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for LHU (opcode 14, `instruction.LOAD` of width 2, zero-extended): for every
         `LHU` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
@@ -1780,10 +1743,7 @@ namespace Equivalence
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
-      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
@@ -1799,9 +1759,8 @@ namespace Equivalence
       obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
         load_decoded air row (h_all_constraints row h_row) h_decode
       have h_opcode : air.cols.instruction.opcode row 0 = 14 := by simpa using h_opc
-      exact equivalence_LHU_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
-        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
-        @risc_v_assumptions
+      exact equivalence_LHU_row air row @h_row @h_is_real @h_all_wf
+        @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for LWU (opcode 45, `instruction.LOAD` of width 4, zero-extended): for every
         `LWU` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
@@ -1813,10 +1772,7 @@ namespace Equivalence
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
-      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
@@ -1832,9 +1788,8 @@ namespace Equivalence
       obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
         load_decoded air row (h_all_constraints row h_row) h_decode
       have h_opcode : air.cols.instruction.opcode row 0 = 45 := by simpa using h_opc
-      exact equivalence_LWU_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
-        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
-        @risc_v_assumptions
+      exact equivalence_LWU_row air row @h_row @h_is_real @h_all_wf
+        @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for LD (opcode 46, `instruction.LOAD` of width 8, no extension): for every
         `LD` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
@@ -1846,10 +1801,7 @@ namespace Equivalence
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
       (h_row : row ≤ air.last_row)
-      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
-      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
       (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
-      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
@@ -1865,9 +1817,36 @@ namespace Equivalence
       obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
         load_decoded air row (h_all_constraints row h_row) h_decode
       have h_opcode : air.cols.instruction.opcode row 0 = 46 := by simpa using h_opc
-      exact equivalence_LD_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
-        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
-        @risc_v_assumptions
+      exact equivalence_LD_row air row @h_row @h_is_real @h_all_wf
+        @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
+
+    /-- The load theorems' decoding hypothesis holds on every real row of a load opcode: there
+        the Program table's promise (in `bus_row_wf_asm`) gives a load of the opcode's signedness
+        and width and a 4-aligned address below `Transpiler.V3.code_address_bound` whose decoding
+        is the row's Program message. -/
+    theorem load_decode_satisfiable
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ) {u : Bool} {wd : word_width} {opc : FKB}
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_wf : bus_row_wf_asm (bus_row air row))
+      (h_opcode : air.cols.instruction.opcode row 0 = opc)
+      (h_wd : (u = false ∧ wd = 1 ∧ opc = 10) ∨ (u = true ∧ wd = 1 ∧ opc = 13) ∨
+              (u = false ∧ wd = 2 ∧ opc = 11) ∨ (u = true ∧ wd = 2 ∧ opc = 14) ∨
+              (u = false ∧ wd = 4 ∧ opc = 12) ∨ (u = true ∧ wd = 4 ∧ opc = 45) ∨
+              (u = false ∧ wd = 8 ∧ opc = 46))
+    :
+      ∃ (imm : BitVec 12) (rs1 rd : regidx) (addr : ℕ) (props : Prop),
+        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
+        Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, u, wd)) 1 addr =
+          some (program_bus_entry air row, props)
+    := by
+      obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=
+        program_bus_decoded air row @h_is_real @h_wf
+      rw [h_opcode] at h_from
+      rcases h_wd with ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ |
+        ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ <;>
+      · obtain ⟨ imm, rs1, rd, rfl ⟩ := h_from
+        exact ⟨ imm, rs1, rd, addr, props, h_al, h_lt, h_dec ⟩
 
   end LOADS
 

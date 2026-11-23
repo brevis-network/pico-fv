@@ -16,7 +16,7 @@ repository; CI fails when one is out of date. The rest of the text is reviewed b
 The theorems checked by `scripts/fv-check/check.sh` are listed in `scripts/fv-check/theorems.d/`,
 with their statements in `signatures.txt`. They are of four kinds, and three lemmas beside them
 that discharge instruction theorems' hypotheses (`Equivalence.utype_row_cases`, under the first,
-and the two decoding lemmas of `theorems.d/decoding.txt`, A3).
+and the two decoding lemmas listed with the stores and the loads, A3).
 
 - **Opcode equivalence** (`Equivalence.equivalence_*`, one per RV64IM opcode except `ECALL`). For
   a CPU chip row that satisfies its extracted constraints, if the bus messages the row exchanges
@@ -54,10 +54,11 @@ and the two decoding lemmas of `theorems.d/decoding.txt`, A3).
   theorem: `LUI` and `AUIPC` share a row shape at v3.1.1, and it shows that every row of that
   shape is one the two theorems cover (see A3).
 
-  `theorems.d/decoding.txt` holds `Equivalence.store_decode_satisfiable` and
+  The lists of `Stores.lean` and `Loads.lean` also hold `Equivalence.store_decode_satisfiable` and
   `Equivalence.load_decode_satisfiable`, which are not instruction theorems either: the store and
-  load theorems take an instruction whose decoding is the row's Program message, and the two show
-  that every real row of a store or load opcode has one (see A3).
+  load theorems take an instruction whose decoding is the row's Program message, and the two show,
+  from the row's Program promise (in `bus_row_wf_asm`), that every real row of a store or load
+  opcode has one (see A3).
 
   Every v3.1.1 instruction theorem also assumes the chunk's final pc is a well-formed guest
   address (`Equivalence.pico_CpuChip_control_flow_assumptions`; see A3). Pico enforces that in
@@ -268,11 +269,13 @@ in the statement (`instruction.STORE (imm, rs2, rs1, 8)` for `SD`), with the hyp
 `addr`) turns it into the row's Program message, and concludes that Sail's step on that
 instruction equals the row's effect. The decoding fixes `is_real = 1`, the opcode, the immediate
 flags, the register columns and the offset, so these theorems take none of them as hypotheses. It
-fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. The decoding hypothesis
-is not stronger than the two it replaces: `Equivalence.store_decode_satisfiable` and
-`Equivalence.load_decode_satisfiable` (checked, in `theorems.d/decoding.txt`) derive it, for some
-instruction fields and address, from `is_real = 1`, the row's Program promise (in
-`bus_row_wf_asm`) and the opcode of each store or load width. Each decoded theorem is proved from
+fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. Given the row's Program
+promise, the decoding hypothesis is no stronger than the two it replaces:
+`Equivalence.store_decode_satisfiable` and `Equivalence.load_decode_satisfiable` (checked, listed
+with the stores and the loads) derive it, for some instruction fields and a 4-aligned address below
+`Transpiler.V3.code_address_bound`, from `is_real = 1`, the opcode of each store or load width, and
+that promise (in `bus_row_wf_asm`, which the instruction theorems take for every row as
+`h_all_wf`). Each decoded theorem is proved from
 a column-form theorem of the same name with `_row` appended (`equivalence_SD_row`), which reads
 `rs1`, `rs2` or `rd` and the offset off the row and is not checked.
 

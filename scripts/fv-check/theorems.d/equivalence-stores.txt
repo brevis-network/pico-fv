@@ -2,3 +2,4 @@ Equivalence.equivalence_SB
 Equivalence.equivalence_SD
 Equivalence.equivalence_SH
 Equivalence.equivalence_SW
+Equivalence.store_decode_satisfiable
