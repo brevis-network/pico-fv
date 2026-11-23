@@ -100,6 +100,8 @@ Equivalence.mul_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trust
 Equivalence.mulw_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 Equivalence.rem_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 Equivalence.remw_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+Equivalence.rtype_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+Equivalence.rtypew_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 Equivalence.store_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 Equivalence.utype_row_cases Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 LtChip.Spec.ext_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
