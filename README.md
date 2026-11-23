@@ -156,11 +156,12 @@ listed in `scripts/fv-check/theorems.d/`: the two memory chips' specifications a
 and the specifications of the ALU chips already at v3.1.1
 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight), and the
 equivalence theorems the branch proves at v3.1.1 (listed above), with
-`Equivalence.utype_row_cases`, which shows that the `LUI` and `AUIPC` theorems
-together cover the row shape the two instructions share. The theorems of the
-classes below take the instruction whose decoding is the row's Program message,
-and a lemma checked with each class shows that every real row of the class,
-given its Program promise, has one:
+`Equivalence.utype_row_cases`, which shows that the unchecked column forms of the
+`LUI` and `AUIPC` theorems (`equivalence_LUI_row`, `equivalence_AUIPC_row`) together
+cover the row shape the two instructions share; no checked theorem takes their
+shape hypotheses. The theorems of the classes below take the instruction whose
+decoding is the row's Program message, and a lemma checked with each class shows
+that every real row of the class, given its Program promise, has one:
 
 - the stores: `Equivalence.store_decode_satisfiable`;
 - the loads: `Equivalence.load_decode_satisfiable`;
@@ -178,7 +179,12 @@ given its Program promise, has one:
   `Equivalence.mulw_decode_satisfiable`;
 - the divides and remainders: `Equivalence.div_decode_satisfiable`,
   `Equivalence.divw_decode_satisfiable`, `Equivalence.rem_decode_satisfiable` and
-  `Equivalence.remw_decode_satisfiable`.
+  `Equivalence.remw_decode_satisfiable`;
+- the branches: `Equivalence.btype_decode_satisfiable`;
+- `JAL` and `JALR`: `Equivalence.jal_decode_satisfiable` and
+  `Equivalence.jalr_decode_satisfiable`;
+- `LUI` and `AUIPC`: `Equivalence.utype_decode_satisfiable`, with `imm_b = 1` (an
+  `ADD` or `ADDI` row has no U-type decoding).
 
 `check.sh` fails if a theorem is missing, depends on an axiom (a statement Lean
 accepts without proof) outside two lists, or its axioms or statement differ from

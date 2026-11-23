@@ -1,3 +1,4 @@
 Equivalence.equivalence_AUIPC
 Equivalence.equivalence_LUI
+Equivalence.utype_decode_satisfiable
 Equivalence.utype_row_cases
