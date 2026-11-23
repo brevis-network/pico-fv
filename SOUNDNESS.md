@@ -460,23 +460,48 @@ messages (now with the v3.1.1 deserialiser). A third was rewritten against v3.1.
 assumes through its `bus_row_wf_asm` hypothesis. It lost its three alignment clauses (see the
 composition section below), so that hypothesis now assumes less, and each theorem says more.
 
-The whole-trace assumption, `pico_CpuChip_control_flow_assumptions`, bounds the chunk's final
-pc (public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The
-v3.1.1 chip does not check this itself; Pico's recursion circuit makes it hold for every chunk
-of an accepted recursive proof (`docs/cpu-chip-pico-v3-design.md`, "The whole-trace
-assumption"). That circuit was read again at v3.1.6, which rewrote it: the three checks the
-argument uses (the pc carried from chunk to chunk, a chunk with no CPU keeping its pc, the last
-chunk ending at pc zero) are still there. The file is unchanged at v3.2.0 (`git diff v3.1.6 v3.2.0`
-over it is empty). So at v3.1.1 the instruction theorems cover a chunk inside an accepted recursive
-proof, not a chunk proof checked on its own. The eight branch and jump theorems already name the
-assumption, whose definition grew, so it is not what changes their recorded statements: all eight
-are recorded at v3.1.1 now, and changed for the other reasons above. What they assume did change,
-behind the unchanged name. The other 54 gain it as a new hypothesis, as those recorded at v3.1.1
-have.
+The whole-trace assumption, `pico_CpuChip_control_flow_assumptions`, bounds the chunk's final pc
+(public values 43 and 44): two 16-bit pieces, a multiple of 4 and below `0x7800_0000`. The v3.1.1
+chip does not check this itself; Pico's recursion circuit makes it hold for every chunk of an
+accepted recursive proof ("The whole-trace assumption" below). That circuit was read again at
+v3.1.6, which rewrote it: the three checks the argument uses (the pc carried from chunk to chunk, a
+chunk with no CPU keeping its pc, the last chunk ending at pc zero) are still there. The file is
+unchanged at v3.2.0 (`git diff v3.1.6 v3.2.0` over it is empty). So at v3.1.1 the instruction
+theorems cover a chunk inside an accepted recursive proof, not a chunk proof checked on its own. The
+eight branch and jump theorems already name the assumption, whose definition grew, so it is not what
+changes their recorded statements: all eight are recorded at v3.1.1 now, and changed for the other
+reasons above. What they assume did change, behind the unchanged name. The other 54 gain it as a new
+hypothesis, as those recorded at v3.1.1 have.
 
 A change that weakens or strengthens a hypothesis changes `signatures.txt`, and `check.sh` fails
 until the change is reviewed and recorded. A change to the definition behind a hypothesis's name
 does not, so it has to be listed in the pull request that makes it.
+
+#### The whole-trace assumption
+
+Public values 43 and 44 are the two pieces of the chunk's final pc; the chip pins 45 to zero
+itself. On the last real row the chip sets its `next_pc` to them (extracted constraints 41-43,
+`riscv_cpu/public_values/constraints.rs:35-50` at v3.2.0), and nothing in the chip range-checks
+them. The proofs need each part: the 16-bit pieces and the alignment for the JALR addition, its
+cleared low bit and BEQ's aligned target, and a bound on the value to read the `pc + 4` and
+branch-target field equations as integer equations. The weakest bound those readings need is
+`p - 4096` (`p` the KoalaBear prime, `4096` the largest backward branch); `0x7800_0000` is
+slightly stronger, is the guest address bound Pico itself uses, and also covers JAL's 21-bit
+offsets, which need `p - 2^20`.
+
+Pico enforces it outside the chips, in the recursion circuit (`mle/compiler/recursion/lowering.rs`
+at v3.2.0): each chunk's final pc equals the next chunk's first pc (`assert_child_continuity`,
+`recursion/lowering.rs:1194-1199`); a chunk that runs no CPU passes its pc through unchanged
+(`recursion/lowering.rs:1559-1563`); the root requires the last chunk's final pc to be zero
+(`assert_root_complete`, `recursion/lowering.rs:1776-1779`). The circuit has other checks (a CPU
+chunk's first pc is not zero, `recursion/lowering.rs:1510-1516`; a chunk with no CPU is not chunk
+1, `recursion/lowering.rs:1522-1527`) that only narrow what is accepted. A chunk's first pc is its
+row 0's pc (`riscv_cpu/public_values/constraints.rs:26-33` at v3.2.0), row 0 is real
+(`riscv_cpu/constraints.rs:340-341` at v3.2.0) and its fetch matches the Program table, whose pcs
+are 4-aligned and below `0x7800_0000` (`riscv_program/traces.rs:86-113` at v3.2.0). So in an
+accepted proof the final pc is either zero or a Program-table pc, which satisfies the assumption.
+No check of its own on the public value was found outside the chips (no range or alignment check
+in the recursion circuit or the verifiers).
 
 ### A4. Composition of the chips (not proven)
 

@@ -151,5 +151,6 @@ memory width and direction taken from the opcode) and
 v3.1.1 deserialiser). Their meaning changed for every restored theorem at once.
 
 Any other difference in a statement, and any new name in `axioms.txt`, is a
-change in what the theorem assumes and must be listed in the pull request. See
-`docs/cpu-chip-pico-v3-design.md`, "The whole-trace assumption".
+change in what the theorem assumes and must be listed in the pull request. On
+the whole-trace assumption, see `SOUNDNESS.md`, A3, "The whole-trace
+assumption".
