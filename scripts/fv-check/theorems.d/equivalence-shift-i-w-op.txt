@@ -1,3 +1,4 @@
 Equivalence.equivalence_SLLIW
 Equivalence.equivalence_SRAIW
 Equivalence.equivalence_SRLIW
+Equivalence.shiftiwop_decode_satisfiable

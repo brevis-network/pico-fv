@@ -14,9 +14,10 @@ repository; CI fails when one is out of date. The rest of the text is reviewed b
 ## What is proved
 
 The theorems checked by `scripts/fv-check/check.sh` are listed in `scripts/fv-check/theorems.d/`,
-with their statements in `signatures.txt`. They are of four kinds, and three lemmas beside them
+with their statements in `signatures.txt`. They are of four kinds, and seven lemmas beside them
 that discharge instruction theorems' hypotheses (`Equivalence.utype_row_cases`, under the first,
-and the two decoding lemmas listed with the stores and the loads, A3).
+and the six decoding lemmas listed with the stores, the loads, the I-type, `ADDIW` and the two
+shift-by-immediate classes, A3).
 
 - **Opcode equivalence** (`Equivalence.equivalence_*`, one per RV64IM opcode except `ECALL`). For
   a CPU chip row that satisfies its extracted constraints, if the bus messages the row exchanges
@@ -54,11 +55,15 @@ and the two decoding lemmas listed with the stores and the loads, A3).
   theorem: `LUI` and `AUIPC` share a row shape at v3.1.1, and it shows that every row of that
   shape is one the two theorems cover (see A3).
 
-  The lists of `Stores.lean` and `Loads.lean` also hold `Equivalence.store_decode_satisfiable` and
-  `Equivalence.load_decode_satisfiable`, which are not instruction theorems either: the store and
-  load theorems take an instruction whose decoding is the row's Program message, and the two show,
-  from the row's Program promise (in `bus_row_wf_asm`), that every real row of a store or load
-  opcode has one (see A3).
+  The lists of `Stores.lean`, `Loads.lean`, `IType.lean`, `Addiw.lean`, `ShiftIOp.lean` and
+  `ShiftIWOp.lean` also hold `Equivalence.store_decode_satisfiable`,
+  `Equivalence.load_decode_satisfiable`, `Equivalence.itype_decode_satisfiable`,
+  `Equivalence.addiw_decode_satisfiable`, `Equivalence.shiftiop_decode_satisfiable` and
+  `Equivalence.shiftiwop_decode_satisfiable`, which are not instruction theorems either: the
+  theorems of those classes take an instruction whose decoding is the row's Program message, and
+  the six show, from the row's Program promise (in `bus_row_wf_asm`), that every real row of one
+  of the class's opcodes has one, given `imm_c = 1` for a register-immediate class and
+  `imm_b = 0` for `ADDI` (see A3).
 
   Every v3.1.1 instruction theorem also assumes the chunk's final pc is a well-formed guest
   address (`Equivalence.pico_CpuChip_control_flow_assumptions`; see A3). Pico enforces that in
@@ -248,7 +253,8 @@ Each equivalence theorem assumes:
 - the bus assumptions (`bus_row_axioms`, `bus_row_ext_asm`, `bus_row_wf_asm`, `bus_row_wf_asrt`):
   what the other chips deliver for the messages this row sends, and the well-formedness of what
   it receives;
-- the hypotheses of the operations the row emits, and `RISC_V_assumptions` on the machine state;
+- the hypotheses of the operations the row emits, and `RISC_V_assumptions` on the machine state
+  (except the thirteen register-immediate theorems, whose proofs do not use it);
 - at v3.1.1, the whole-trace assumption described below.
 
 Since v3.1.6 a row's messages fall into six lists, not five: the code-range message
@@ -266,17 +272,16 @@ use the five-list checks, leave out no message their rows send.
 
 The instruction theorems checked at the moment (listed under "What is proved") are recorded at
 v3.1.1, against the v3.1.1 CPU constraints and the v3.1.1 contracts (`RV64IM_Interactions.V3` in
-`RVSail/BusesV3.lean`). `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`, `ANDI`, `SLTI`, `SLTIU`,
-`SLLI`, `SRLI` and `SRAI` no longer assume `imm_b = 0`, which the v3.1.1 decoder fixes for their
-opcodes, and `SUBW` and `SUB` no longer assume `imm_c = 0`, which it fixes for opcodes 41 and 1.
-`ADDI` still assumes `imm_b = 0`: its opcode 0 with `imm_c = 1` is also `LUI` or `AUIPC`, which set
-`imm_b = 1`. `ADD` does not assume it, although the decoder does not fix it for opcode 0: on a row
-with `imm_c = 0` the flag is 0 whatever the opcode (`imm_b_eq_zero_of_imm_c_eq_zero`). The decoder
-does not fix `imm_c` for an opcode that an immediate form shares with a register-register one: 40
-(`ADDIW` and `ADDW`), 42 to 44 (`SLLIW`, `SRLIW`, `SRAIW` and `SLLW`, `SRLW`, `SRAW`), 5 to 7
-(`SLLI`, `SRLI`, `SRAI` and `SLL`, `SRL`, `SRA`), and 0, 2, 3, 4, 8 and 9 (the six `ITYPE` theorems
-and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`). So those thirteen immediate-form theorems still
-assume `imm_c = 1`, and those thirteen register-register theorems still assume `imm_c = 0`. The
+`RVSail/BusesV3.lean`). `SUBW` and `SUB` no longer assume `imm_c = 0`, which the v3.1.1 decoder
+fixes for opcodes 41 and 1. `ADD` does not assume `imm_b = 0`, although the decoder does not fix it
+for opcode 0, which `LUI` and `AUIPC` share with `imm_b = 1`: on a row with `imm_c = 0` the flag is
+0 whatever the opcode (`imm_b_eq_zero_of_imm_c_eq_zero`). The decoder does not fix `imm_c` for an
+opcode that an immediate form shares with a register-register one: 40 (`ADDIW` and `ADDW`), 42 to
+44 (`SLLIW`, `SRLIW`, `SRAIW` and `SLLW`, `SRLW`, `SRAW`), 5 to 7 (`SLLI`, `SRLI`, `SRAI` and `SLL`,
+`SRL`, `SRA`), and 0, 2, 3, 4, 8 and 9 (the six `ITYPE` theorems and `ADD`, `XOR`, `OR`, `AND`,
+`SLT`, `SLTU`). So those thirteen register-register theorems still assume `imm_c = 0`. The thirteen
+immediate-form theorems assume neither flag: they are in decoded form (below), and the decoding
+fixes `imm_c = 1` and `imm_b = 0`, which also tells `ADDI` from `LUI` and `AUIPC`. The
 multiply, divide and remainder theorems take their opcode alone, as at `353238a`: the decoder fixes
 both immediate flags to 0 for opcodes 30 to 37 and 48 to 52. The divide and remainder theorems
 assume nothing about the divisor: the ALU chip's promise for their opcodes already gives Sail's
@@ -290,9 +295,9 @@ other four, unsigned — so the two comparison bits are what `ALUBus.Spec` promi
 opcodes, which `LtChip.Spec.spec_CMP_SLT` and `spec_CMP_SLTU` discharge on the serving chip's
 side, and the branch theorems assume nothing about the operands themselves.
 
-The thirteen register-immediate theorems (the six shifts, `ADDI`, `XORI`, `ORI`, `ANDI`,
-`SLTI`, `SLTIU` and `ADDIW`) read their immediate from the instruction's encoded `op_c_0`, as
-they read `rd` and `rs1`, instead of from the `op_c` value the row sends to the ALU chip. The
+The column forms of the thirteen register-immediate theorems (the six shifts, `ADDI`, `XORI`,
+`ORI`, `ANDI`, `SLTI`, `SLTIU` and `ADDIW`) read their immediate from the row's encoded `op_c_0`,
+as they read `rd` and `rs1`, instead of from the `op_c` value the row sends to the ALU chip. The
 proofs link the two through the CPU constraint that, on a row whose third operand is an
 immediate, copies `op_c_0` into the first 16-bit piece of the `op_c` value
 (`op_c_value_setWidth_eq_op_c_0`, through `imm_c_eq_1_constraints`). A shift's amount is
@@ -301,23 +306,27 @@ seven take `op_c_0`'s low 12 bits. The decoder sign-extends the seven 12-bit imm
 zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign flag `true` or
 `false`), and writes the low 16 bits of the result into `op_c_0`, the next 16 into `op_c_1` and
 the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
-amount or 12-bit immediate; those theorems do not state that link.
+amount or 12-bit immediate.
 
-The four store and the seven load theorems state it. Each takes the instruction itself, written
-in the statement (`instruction.STORE (imm, rs2, rs1, 8)` for `SD`), with the hypothesis
+The four store, the seven load and the thirteen register-immediate theorems state that link. Each
+takes the instruction itself, written in the statement (`instruction.STORE (imm, rs2, rs1, 8)` for
+`SD`, `instruction.ITYPE (imm, rs1, rd, iop.ADDI)` for `ADDI`), with the hypothesis
 `h_decode` that the decoder (`Transpiler.V3.transpile_op`, at multiplicity 1 and some address
 `addr`) turns it into the row's Program message, and concludes that Sail's step on that
 instruction equals the row's effect. The decoding fixes `is_real = 1`, the opcode, the immediate
-flags, the register columns and the offset, so these theorems take none of them as hypotheses. It
-fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. Given the row's Program
-promise, the decoding hypothesis is no stronger than the two it replaces:
-`Equivalence.store_decode_satisfiable` and `Equivalence.load_decode_satisfiable` (checked, listed
-with the stores and the loads) derive it, for some instruction fields and a 4-aligned address below
-`Transpiler.V3.code_address_bound`, from `is_real = 1`, the opcode of each store or load width, and
-that promise (in `bus_row_wf_asm`, which the instruction theorems take for every row as
-`h_all_wf`). Each decoded theorem is proved from
-a column-form theorem of the same name with `_row` appended (`equivalence_SD_row`), which reads
-`rs1`, `rs2` or `rd` and the offset off the row and is not checked.
+flags, the register columns and the offset or immediate, so these theorems take none of them as
+hypotheses. It fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. Given the
+row's Program promise, the decoding hypothesis is no stronger than the hypotheses it replaces:
+`Equivalence.store_decode_satisfiable`, `Equivalence.load_decode_satisfiable`,
+`Equivalence.itype_decode_satisfiable`, `Equivalence.addiw_decode_satisfiable`,
+`Equivalence.shiftiop_decode_satisfiable` and `Equivalence.shiftiwop_decode_satisfiable` (checked,
+each listed with its class) derive it, for some instruction fields and a 4-aligned address below
+`Transpiler.V3.code_address_bound`, from `is_real = 1`, the opcode of each store or load width or
+of each operation, `imm_c = 1` for a register-immediate class, `imm_b = 0` for `ADDI`, and that
+promise (in `bus_row_wf_asm`, which the instruction theorems take for every row as `h_all_wf`).
+Each decoded theorem is proved from a column-form theorem of the same name with `_row` appended
+(`equivalence_SD_row`), which reads `rs1`, `rs2` or `rd` and the offset or immediate off the row
+and is not checked.
 
 The other checked theorems with an immediate still read it from the row's operand values: the six
 branches and `JALR` take the low 13 or 12 bits of the `op_c` value, `JAL` the low 21 bits of the
@@ -562,7 +571,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 99 |
+| kernel + compiler | 103 |
 | kernel + compiler + RISC-V spec axioms | 62 |
 | kernel only | 1 |
 <!-- end generated -->

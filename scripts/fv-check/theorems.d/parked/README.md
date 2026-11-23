@@ -47,13 +47,15 @@ decoder already fixes for its opcode (`imm_b_of_opcode`, `imm_c_of_opcode` in
 `RVSail/BusesV3.lean`): `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`,
 `ANDI`, `SLTI`, `SLTIU`, `SLLI`, `SRLI` and `SRAI` no longer take `imm_b = 0`,
 and `SUBW` and `SUB` no longer take `imm_c = 0`. Dropping a hypothesis makes the
-theorem stronger. `ADDI` keeps `imm_b = 0`: the decoder does not fix it for
-opcode 0, which `LUI` and `AUIPC` share. `ADD` does not take `imm_b = 0`,
+theorem stronger. `ADDI` kept `imm_b = 0`: the decoder does not fix it for
+opcode 0, which `LUI` and `AUIPC` share. (These thirteen register-immediate
+theorems have since moved to decoded form, below, and take no flag at all; their
+column forms keep the flags described here.) `ADD` does not take `imm_b = 0`,
 although the decoder does not fix it for opcode 0: on a row with `imm_c = 0` the
 flag is 0 whatever the opcode (`imm_b_eq_zero_of_imm_c_eq_zero`). Where an
 immediate form and a register-register opcode share an opcode, the decoder does
-not fix `imm_c`, so the immediate form keeps `imm_c = 1` and the
-register-register one keeps `imm_c = 0`: opcode 40 (`ADDIW`, `ADDW`), 42 to 44
+not fix `imm_c`, so the immediate form kept `imm_c = 1` (its column form still
+does) and the register-register one keeps `imm_c = 0`: opcode 40 (`ADDIW`, `ADDW`), 42 to 44
 (`SLLIW`, `SRLIW`, `SRAIW` and `SLLW`, `SRLW`, `SRAW`), 5 to 7 (`SLLI`, `SRLI`,
 `SRAI` and `SLL`, `SRL`, `SRA`), and 0, 2 to 4, 8 and 9 (the six `ITYPE`
 theorems and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`).
@@ -83,26 +85,30 @@ chip takes: `SOUNDNESS.md` A3 says so for the stores and the loads, and a pull
 request that changes what a memory theorem assumes should keep those two
 paragraphs true.
 
-The register-immediate theorems read their immediate from the instruction's
-encoded `instruction.op_c_0` instead of the `op_c` value the row sends to the
-ALU chip (`op_c_value`), as they read `rd` and `rs1`: the shifts `SLLIW`,
-`SRLIW`, `SRAIW`, `SLLI`, `SRLI` and `SRAI`, and `ADDI`, `XORI`, `ORI`, `ANDI`,
-`SLTI`, `SLTIU` and `ADDIW`. The statement at `353238a` read it from the value
-the ALU chip works on, so it held whatever tied that value to the instruction.
-The new one names the low 6 bits (5 for the 32-bit shifts) of the
-instruction's encoded `op_c_0`, that is `op_c_0` modulo 64 (or 32), or its low
-12 bits for the other seven, and the proof needs the constraint that ties the
-two (`op_c_value_setWidth_eq_op_c_0`). The decoder sign-extends the program's
+The column forms of the register-immediate theorems (`equivalence_<OP>_row`)
+read their immediate from the row's encoded `instruction.op_c_0` instead of the
+`op_c` value the row sends to the ALU chip (`op_c_value`), as they read `rd` and
+`rs1`: the shifts `SLLIW`, `SRLIW`, `SRAIW`, `SLLI`, `SRLI` and `SRAI`, and
+`ADDI`, `XORI`, `ORI`, `ANDI`, `SLTI`, `SLTIU` and `ADDIW`. The statement at
+`353238a` read it from the value the ALU chip works on, so it held whatever tied
+that value to the instruction. The column form names the low 6 bits (5 for the
+32-bit shifts) of `op_c_0`, that is `op_c_0` modulo 64 (or 32), or its low 12
+bits for the other seven, and the proof needs the constraint that ties the two
+(`op_c_value_setWidth_eq_op_c_0`). The decoder sign-extends the program's
 12-bit immediates and zero-extends its shift amounts
 (`Transpiler.V3.imm_operand` with its sign flag `true` or `false`), and writes
 the low 16 bits of the result into `op_c_0`, so on a row the program decoded
-those bits are the program's immediate, but the statement does not tie
-`op_c_0` to the decoder. The four stores and the seven loads do, in decoded
-form: each takes the instruction and the hypothesis `h_decode` that the decoder
+those bits are the program's immediate. The checked theorems tie `op_c_0` to the
+decoder, in decoded form, as the four stores and the seven loads do: each takes
+the instruction and the hypothesis `h_decode` that the decoder
 (`Transpiler.V3.transpile_op`, at multiplicity 1) turns it into the row's
-Program message, in place of `is_real = 1` and the opcode, and
-`Equivalence.store_decode_satisfiable` and `Equivalence.load_decode_satisfiable`
-derive that hypothesis from those two and the row's Program promise. The other
+Program message, in place of `is_real = 1`, the opcode and, for the
+register-immediate theorems, the immediate flags, and `Equivalence.store_decode_satisfiable`, `Equivalence.load_decode_satisfiable`,
+`Equivalence.itype_decode_satisfiable`, `Equivalence.addiw_decode_satisfiable`,
+`Equivalence.shiftiop_decode_satisfiable` and
+`Equivalence.shiftiwop_decode_satisfiable` derive that hypothesis from those
+and the row's Program promise. The thirteen register-immediate theorems also no
+longer take `RISC_V_assumptions`, which their proofs do not use. The other
 theorems with an immediate read it from the row's operand values: the branches
 and `JALR` from `op_c_value`, `JAL` from `op_b_value`, and `LUI` and `AUIPC` take
 it as a parameter pinned by a hypothesis on `op_c_value` (`LUI`) or `op_b_value`
