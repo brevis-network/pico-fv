@@ -71,8 +71,11 @@ with their statements in `signatures.txt`. They are of four kinds.
   (`spec_LB` to `spec_SD`, one per opcode, and `wf_asrt`, which also gives each double word the
   row writes back 16-bit pieces: the unaligned chip writes back a second one when the access
   runs into it), and that a store row misses the code range it looks up
-  (`store_misses_code_range`, through the gadget below). None says which memory a load reads or
-  a store writes: the promise does not ask it (A4).
+  (`store_misses_code_range`, through the gadget below). `aligned_address` says the double word
+  the row reads and writes back is the one holding the access's first byte; the unaligned chip's
+  also gives its address piece by piece and, on a row whose access crosses, the next double
+  word's. None says that a load's value is what memory holds there, or that a store writes it:
+  the promise does not ask it (A4).
 
   `DivRemChip`'s specifications are the one exception to "satisfies its extracted constraints":
   they are stated over the readable restatement `DivRemChip.ConstraintsAndBuses.AbsConstraints`
@@ -383,8 +386,8 @@ are none among the RV64IM ALU chips at v3.1.6.
 `ECALL` and syscalls, the precompile chips, the program, global memory and memory
 initialisation chips, the recursion layers, and Pico's proof system itself. The
 `CodeRangeGadget.Spec` theorems assume the Program chip's code-range promise
-(`V3.CodeRangeBus.Spec`), which rests on the Program chip and so is trusted (see A4). The precompile chips also send the code-range message; no theorem here covers their
-side of it.
+(`V3.CodeRangeBus.Spec`), which rests on the Program chip and so is trusted (see A4).
+The precompile chips also send the code-range message; no theorem here covers their side of it.
 
 ### A6. The instruction decoder
 

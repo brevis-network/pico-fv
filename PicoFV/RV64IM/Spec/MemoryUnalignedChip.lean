@@ -31,7 +31,8 @@ Each theorem assumes the row's constraints (`allHold`) and what its messages are
 dispatch, that `b` and `c` have 16-bit pieces, so does a store's `a`, and `a = 0` when
 `op_a_0 ≠ 0` (`MemoryBus.externals`); from the memory argument, that each dword read has 16-bit
 pieces; from the byte table, the range checks; from the Program table, that the code range has
-16-bit pieces. The per-opcode theorems also take the row's flag.
+16-bit pieces. The per-opcode theorems also take the row's flag, and `aligned_address` takes
+`is_memory = 1`, which says the row is real.
 
 A load reads the bytes from the address on: `seen_byte` and the pieces `seen_0` to `seen_3`,
 each the offset's selection from the sixteen bytes of the two dwords (constraints 32 to 36).
@@ -822,7 +823,9 @@ namespace MemoryUnalignedChip.Spec
       access's first byte, and on a row that crosses the second is the next one: the offset
       `Σ k · offset_k` is the address's low three bits, the first State message's address
       `[dword0, addr_word_1, 0]` with `dword0 = addr_word_0 - offset` is `b + c` with those bits
-      cleared, and the second's `[next0, next1, 0]` is 8 more
+      cleared, and the second's `[next0, next1, 0]` is 8 more. The low pieces `dword0` and
+      `next0` are 16-bit, so each address is given piece by piece, as the memory argument
+      matches it
       (`riscv_memory/unaligned/constraints.rs:95-116, 130-153` at v3.1.6). From `address`, the
       one-hot offset (constraints 17 to 25), the `BitRange(13)` check of `dword0 / 8`, the
       pinning of `next_carry` (constraints 27 to 29) and the `U16Range` check of `next1`. -/
@@ -844,12 +847,14 @@ namespace MemoryUnalignedChip.Spec
       v.offset_4 row 0 * 4 + v.offset_5 row 0 * 5 + v.offset_6 row 0 * 6 + v.offset_7 row 0 * 7
     let dword0 := v.addr_word_0 row 0 - offset
     offset.val = addr % 8 ∧
+    dword0.val < 65536 ∧
     dword0.val + 65536 * (v.addr_word_1 row 0).val = addr - addr % 8 ∧
     (v.cross row 0 = 1 →
+      (dword0 + 8 - v.next_carry row 0 * 65536).val < 65536 ∧
       (dword0 + 8 - v.next_carry row 0 * 65536).val +
         65536 * (v.addr_word_1 row 0 + v.next_carry row 0).val = addr - addr % 8 + 8)
   := by
-    obtain ⟨ h_addr, -, h_a1, - ⟩ := address air row h_ext_asm h_wf_asm h_constraints h_mem
+    obtain ⟨ h_addr, h_a0, h_a1, - ⟩ := address air row h_ext_asm h_wf_asm h_constraints h_mem
     have h_off := offset_value_le air row h_constraints h_mem
     simp only [is_memory] at h_mem
     simp [bus_row_all_wf_asm, bus_row_wf_asm, bus_row_code_range_wf_asm, bus_row,
@@ -881,7 +886,7 @@ namespace MemoryUnalignedChip.Spec
         rw [val_mul_of_lt (by rw [show (8 : FKB).val = 8 from rfl]; omega)]; rfl
       conv_lhs => rw [e2]
       rw [val_add_of_lt (by omega), h8]
-    refine ⟨ by omega, by omega, fun hc => ?_ ⟩
+    refine ⟨ by omega, by omega, by omega, fun hc => ?_ ⟩
     have h_n1 := h_next1 hc
     rcases bool_cases c27 with hn | hn
     · have h_ne : a0 - off - 65528 ≠ 0 := by
@@ -892,7 +897,7 @@ namespace MemoryUnalignedChip.Spec
       have h8 : (a0 - off + 8).val = (a0 - off).val + 8 := by
         rw [val_add_of_lt (by rw [show (8 : FKB).val = 8 from rfl]; omega)]; rfl
       rw [hn, zero_mul, sub_zero, add_zero, h8]
-      omega
+      exact ⟨ by omega, by omega ⟩
     · have h_eq : a0 - off = 65528 := by
         rcases mul_eq_zero.mp d28 with h | h
         · rw [hn] at h; exact absurd h (by decide)
@@ -904,7 +909,7 @@ namespace MemoryUnalignedChip.Spec
       rw [h_eq] at h_t
       simp only [Fin.val_zero]
       have : (65528 : FKB).val = 65528 := rfl
-      omega
+      exact ⟨ by omega, by omega ⟩
 
   /-! ### What a load reads -/
 
