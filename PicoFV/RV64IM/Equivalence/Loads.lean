@@ -1,4 +1,11 @@
 import PicoFV.RV64IM.Equivalence.Common
+import PicoFV.RV64IM.RVSail.Opcodes.lb
+import PicoFV.RV64IM.RVSail.Opcodes.lbu
+import PicoFV.RV64IM.RVSail.Opcodes.lh
+import PicoFV.RV64IM.RVSail.Opcodes.lhu
+import PicoFV.RV64IM.RVSail.Opcodes.lw
+import PicoFV.RV64IM.RVSail.Opcodes.lwu
+import PicoFV.RV64IM.RVSail.Opcodes.ld
 
 set_option maxHeartbeats 6_000_000
 
