@@ -1,3 +1,4 @@
+Equivalence.btype_decode_satisfiable
 Equivalence.equivalence_BEQ
 Equivalence.equivalence_BGE
 Equivalence.equivalence_BGEU

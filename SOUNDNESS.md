@@ -14,9 +14,10 @@ repository; CI fails when one is out of date. The rest of the text is reviewed b
 ## What is proved
 
 The theorems checked by `scripts/fv-check/check.sh` are listed in `scripts/fv-check/theorems.d/`,
-with their statements in `signatures.txt`. They are of four kinds, and three lemmas beside them
+with their statements in `signatures.txt`. They are of four kinds, and seven lemmas beside them
 that discharge instruction theorems' hypotheses (`Equivalence.utype_row_cases`, under the first,
-and the two decoding lemmas listed with the stores and the loads, A3).
+and the six decoding lemmas listed with the stores, the loads, the branches, the jumps and the
+U-type theorems, A3).
 
 - **Opcode equivalence** (`Equivalence.equivalence_*`, one per RV64IM opcode except `ECALL`). For
   a CPU chip row that satisfies its extracted constraints, if the bus messages the row exchanges
@@ -52,13 +53,15 @@ and the two decoding lemmas listed with the stores and the loads, A3).
 
   `UType.lean`'s list also holds `Equivalence.utype_row_cases`, which is not an instruction
   theorem: `LUI` and `AUIPC` share a row shape at v3.1.1, and it shows that every row of that
-  shape is one the two theorems cover (see A3).
+  shape has the operand shape of one of the two column-form theorems (see A3).
 
-  The lists of `Stores.lean` and `Loads.lean` also hold `Equivalence.store_decode_satisfiable` and
-  `Equivalence.load_decode_satisfiable`, which are not instruction theorems either: the store and
-  load theorems take an instruction whose decoding is the row's Program message, and the two show,
-  from the row's Program promise (in `bus_row_wf_asm`), that every real row of a store or load
-  opcode has one (see A3).
+  The lists of `Stores.lean`, `Loads.lean`, `BType.lean`, `Jumps.lean` and `UType.lean` also hold
+  `Equivalence.store_decode_satisfiable`, `Equivalence.load_decode_satisfiable`,
+  `Equivalence.btype_decode_satisfiable`, `Equivalence.jal_decode_satisfiable`,
+  `Equivalence.jalr_decode_satisfiable` and `Equivalence.utype_decode_satisfiable`, which are not
+  instruction theorems either: the store, load, branch, jump and U-type theorems take an
+  instruction whose decoding is the row's Program message, and the six show, from the row's
+  Program promise (in `bus_row_wf_asm`), that every real row of those opcodes has one (see A3).
 
   Every v3.1.1 instruction theorem also assumes the chunk's final pc is a well-formed guest
   address (`Equivalence.pico_CpuChip_control_flow_assumptions`; see A3). Pico enforces that in
@@ -280,11 +283,12 @@ assume `imm_c = 1`, and those thirteen register-register theorems still assume `
 multiply, divide and remainder theorems take their opcode alone, as at `353238a`: the decoder fixes
 both immediate flags to 0 for opcodes 30 to 37 and 48 to 52. The divide and remainder theorems
 assume nothing about the divisor: the ALU chip's promise for their opcodes already gives Sail's
-result on division by zero and on signed overflow. `JAL` and `JALR` take their opcode alone too:
-they assume neither immediate flag, nor the row's `is_jal` / `is_jalr` selector, all three of which
-their 2.x statements took, because opcodes 24 and 25 are the two jumps alone and the decoder fixes
-every one of them. The six branch theorems take their opcode alone too, as they already did at
-`353238a`: opcodes 18 to 23 are the six branches alone. Their comparison is not made in the CPU
+result on division by zero and on signed overflow. `JAL` and `JALR` take no opcode: the decoding
+fixes it (below). Their `_row` forms take it alone: they assume neither immediate flag, nor the
+row's `is_jal` / `is_jalr` selector, all three of which their 2.x statements took, because opcodes
+24 and 25 are the two jumps alone and the decoder fixes every one of them. The six branch theorems
+take no opcode either; their `_row` forms take it alone, as the branch theorems did at `353238a`:
+opcodes 18 to 23 are the six branches alone. Their comparison is not made in the CPU
 chip. The row sends it on the ALU bus — opcode 264 for `BLT` and `BGE`, signed, and 265 for the
 other four, unsigned — so the two comparison bits are what `ALUBus.Spec` promises for those
 opcodes, which `LtChip.Spec.spec_CMP_SLT` and `spec_CMP_SLTU` discharge on the serving chip's
@@ -303,26 +307,27 @@ zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign fl
 the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
 amount or 12-bit immediate; those theorems do not state that link.
 
-The four store and the seven load theorems state it. Each takes the instruction itself, written
-in the statement (`instruction.STORE (imm, rs2, rs1, 8)` for `SD`), with the hypothesis
+The four store, the seven load, the six branch, the two jump and the two U-type theorems state
+it. Each takes the instruction itself, written in the statement
+(`instruction.STORE (imm, rs2, rs1, 8)` for `SD`, `instruction.BTYPE (imm, rs2, rs1, bop.BEQ)` for
+`BEQ`, `instruction.JAL (imm, rd)`, `instruction.UTYPE (imm, rd, uop.LUI)`), with the hypothesis
 `h_decode` that the decoder (`Transpiler.V3.transpile_op`, at multiplicity 1 and some address
 `addr`) turns it into the row's Program message, and concludes that Sail's step on that
 instruction equals the row's effect. The decoding fixes `is_real = 1`, the opcode, the immediate
-flags, the register columns and the offset, so these theorems take none of them as hypotheses. It
-fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. Given the row's Program
-promise, the decoding hypothesis is no stronger than the two it replaces:
-`Equivalence.store_decode_satisfiable` and `Equivalence.load_decode_satisfiable` (checked, listed
-with the stores and the loads) derive it, for some instruction fields and a 4-aligned address below
-`Transpiler.V3.code_address_bound`, from `is_real = 1`, the opcode of each store or load width, and
-that promise (in `bus_row_wf_asm`, which the instruction theorems take for every row as
-`h_all_wf`). Each decoded theorem is proved from
-a column-form theorem of the same name with `_row` appended (`equivalence_SD_row`), which reads
-`rs1`, `rs2` or `rd` and the offset off the row and is not checked.
-
-The other checked theorems with an immediate still read it from the row's operand values: the six
-branches and `JALR` take the low 13 or 12 bits of the `op_c` value, `JAL` the low 21 bits of the
-`op_b` value, and `LUI` and `AUIPC` take their 20-bit immediate as a parameter pinned by a
-hypothesis on the `op_c` value (`LUI`) or the `op_b` value (`AUIPC`).
+flags, the register columns and the immediate (for `LUI` and `AUIPC`, the operand shape), so these
+theorems take none of them as hypotheses. It fixes `addr` only modulo `2 ^ 32`, through the row's
+two 16-bit pc pieces. Given the row's Program promise, the decoding hypothesis is no stronger than
+the ones it replaces: `Equivalence.store_decode_satisfiable`,
+`Equivalence.load_decode_satisfiable`, `Equivalence.btype_decode_satisfiable`,
+`Equivalence.jal_decode_satisfiable` and `Equivalence.jalr_decode_satisfiable` (checked, listed
+with their classes) derive it, for some instruction fields and a 4-aligned address below
+`Transpiler.V3.code_address_bound`, from `is_real = 1`, the opcode (of each store or load width,
+of each branch), and that promise (in `bus_row_wf_asm`, which the instruction theorems take for
+every row as `h_all_wf`). `Equivalence.utype_decode_satisfiable` derives it from `is_real = 1`,
+opcode 0, `imm_b = 1` and the promise, for a `LUI` or an `AUIPC`, as the row does not say which
+(below). Each decoded theorem is proved from a column-form theorem of the same name with `_row`
+appended (`equivalence_SD_row`), which reads its registers and immediate off the row and is not
+checked.
 
 The four store theorems take no opcode: the decoding fixes it (their `_row` forms take it alone,
 as the store theorems did at `353238a`). They gain the whole-trace assumption, which their 2.x
@@ -361,17 +366,21 @@ the load into aligned pieces and reads the same bytes, which the Sail lemmas of 
 
 The two U-type theorems share a row shape: the v3.1.1 decoder gives `LUI` and `AUIPC` alike opcode 0
 with both immediate flags (`ProgramBusEntry.decoded_from`), and the chip has no `AUIPC` opcode and
-no `is_auipc` selector. So besides the opcode and both flags, each theorem takes its instruction's
-operand shape as hypotheses, with the 20-bit immediate `imm` as a parameter: for `LUI`, the `op_b`
-value is zero and the `op_c` value is `signExtend 64 (imm ++ 0#12)`; for `AUIPC`, the `op_b` value
-is that immediate and the `op_c` value is the row's pc. At `353238a` `LUI` was opcode 0 with both
-flags and read its immediate out of the `op_c` value, and `AUIPC` was opcode 27 with
-`is_auipc = 1`; neither took the whole-trace assumption, which both now do. The shapes are not left
-for anything else to discharge: `Equivalence.utype_row_cases`, checked with them, proves that every
-real row of opcode 0 with both flags has one of the two, so the pair covers the opcode. It takes two
-of the instruction theorems' own hypotheses: every row's extracted CPU constraints, and every row's
-`bus_row_wf_asm`, the whole bus assumption with the ALU and Memory promises in it, although its
-proof reads only the row's Program message (the Program table's promise). The shapes overlap
+no `is_auipc` selector. The decoded theorems take the instruction, and its decoding puts the row in
+the instruction's operand shape: for `LUI`, the `op_b` value is zero and the `op_c` value is
+`signExtend 64 (imm ++ 0#12)`; for `AUIPC`, the `op_b` value is that immediate and the `op_c` value
+is the row's pc. Their column forms, `equivalence_LUI_row` and `equivalence_AUIPC_row`, take
+opcode 0, both flags and that shape as hypotheses, with the 20-bit immediate `imm` as a parameter.
+Neither form takes `RISC_V_assumptions`, which neither proof reads. At `353238a` `LUI` was opcode 0
+with both flags and read its immediate out of the `op_c` value, and `AUIPC` was opcode 27 with
+`is_auipc = 1`; neither took the whole-trace assumption, which both now do.
+`Equivalence.utype_decode_satisfiable` shows every real row of opcode 0 with `imm_b = 1` decodes
+from a `LUI` or an `AUIPC`, so the two decoded theorems cover the opcode. For the column forms,
+`Equivalence.utype_row_cases`, checked, proves that every real row of opcode 0 with both flags has
+one of the two shapes. It takes two of the instruction theorems' own hypotheses: every row's
+extracted CPU constraints, and every row's `bus_row_wf_asm`, the whole bus assumption with the ALU
+and Memory promises in it, although its proof reads only the row's Program message (the Program
+table's promise). The shapes overlap
 exactly when the `op_b` value is zero and the `op_c` value is the row's pc: the row is `AUIPC 0`
 and also the `LUI` of the pc's upper bits, which needs the pc to be a multiple of `2 ^ 12` but is
 not implied by it (`LUI 5` at pc `0x1000` has the `op_c` value `0x5000`). There both theorems hold,
@@ -562,7 +571,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 99 |
+| kernel + compiler | 103 |
 | kernel + compiler + RISC-V spec axioms | 62 |
 | kernel only | 1 |
 <!-- end generated -->

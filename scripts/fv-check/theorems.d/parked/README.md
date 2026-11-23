@@ -29,9 +29,10 @@ v3.1.1 contracts (`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`) instead of 
 or `rs2` for a store) is read from `instruction.op_a` instead of
 `instruction.op_a_0`: v3.1.1 keeps the 5-bit index in one column, so every
 theorem whose `rd`, branch `rs1` or store `rs2` reads it shows this rename; the
-stores and the loads have since gone further and name no column (decoded form,
-below). And the whole-trace assumption `pico_CpuChip_control_flow_assumptions`
-gains three conjuncts in its definition:
+stores, the loads, the branches, the jumps and the U-type theorems have since
+gone further and name no column (decoded form, below). And the whole-trace
+assumption `pico_CpuChip_control_flow_assumptions` gains three conjuncts in its
+definition:
 
 - the eight theorems that already named it (the six branches, `JAL` and `JALR`)
   keep that part of their recorded text, because `signatures.txt` records the
@@ -73,7 +74,10 @@ value. `LUI` takes `op_b` zero and `op_c` the immediate `signExtend 64 (imm ++
 0#12)`; `AUIPC` takes `op_b` the immediate and `op_c` the row's pc, and is
 keyed on opcode 0 instead of 27, without `is_auipc = 1`. The new
 `Equivalence.utype_row_cases`, in the same list, proves that every real row of
-opcode 0 with both flags has one of the two shapes.
+opcode 0 with both flags has one of the two shapes. The checked `LUI` and
+`AUIPC` have since moved to decoded form (below), where the decoding gives the
+shape; the shape hypotheses stay on their column forms, `equivalence_LUI_row`
+and `equivalence_AUIPC_row`.
 
 A restored memory theorem also names what the Memory message promises it
 (`MemoryBus.Spec` in `RVSail/BusesV3.lean`) only through the bus assumptions,
@@ -97,16 +101,17 @@ two (`op_c_value_setWidth_eq_op_c_0`). The decoder sign-extends the program's
 (`Transpiler.V3.imm_operand` with its sign flag `true` or `false`), and writes
 the low 16 bits of the result into `op_c_0`, so on a row the program decoded
 those bits are the program's immediate, but the statement does not tie
-`op_c_0` to the decoder. The four stores and the seven loads do, in decoded
-form: each takes the instruction and the hypothesis `h_decode` that the decoder
+`op_c_0` to the decoder. The four stores, the seven loads, the six branches,
+`JAL`, `JALR`, `LUI` and `AUIPC` do, in decoded form: each takes the
+instruction and the hypothesis `h_decode` that the decoder
 (`Transpiler.V3.transpile_op`, at multiplicity 1) turns it into the row's
-Program message, in place of `is_real = 1` and the opcode, and
-`Equivalence.store_decode_satisfiable` and `Equivalence.load_decode_satisfiable`
-derive that hypothesis from those two and the row's Program promise. The other
-theorems with an immediate read it from the row's operand values: the branches
-and `JALR` from `op_c_value`, `JAL` from `op_b_value`, and `LUI` and `AUIPC` take
-it as a parameter pinned by a hypothesis on `op_c_value` (`LUI`) or `op_b_value`
-(`AUIPC`).
+Program message, in place of `is_real = 1` and the opcode (for `LUI` and
+`AUIPC`, also both flags and the operand shape), and
+`Equivalence.store_decode_satisfiable`, `Equivalence.load_decode_satisfiable`,
+`Equivalence.btype_decode_satisfiable`, `Equivalence.jal_decode_satisfiable`,
+`Equivalence.jalr_decode_satisfiable` and `Equivalence.utype_decode_satisfiable`
+derive that hypothesis from `is_real = 1`, the opcode (for opcode 0, with
+`imm_b = 1`) and the row's Program promise.
 
 Two definitions every statement names were also rewritten at v3.1.1, and
 `signatures.txt` shows only their names: `Equivalence.CPU_bus_operations` (the
