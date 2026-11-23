@@ -131,9 +131,9 @@ def restored_summary():
     done, rest = checked(), parked()
     names = sorted(n for v in done.values() for n in v)
     if not rest:
-        return fill(f'The branch proves all {all_checked(done)} of them against the v3.1.1 chip: '
+        return fill(f'The repository proves all {all_checked(done)} of them against the v3.2.0 chip: '
                     f'{opcodes(names)} (see [SOUNDNESS.md](SOUNDNESS.md)).')
-    text = (f'For now the branch proves {len(names)} of them against the v3.1.1 chip: {opcodes(names)}. '
+    text = (f'For now the repository proves {len(names)} of them against the v3.2.0 chip: {opcodes(names)}. '
             f'The other {count(rest)} are out of the build and `check.sh` does not check them (see '
             '[SOUNDNESS.md](SOUNDNESS.md)).')
     return fill(text)

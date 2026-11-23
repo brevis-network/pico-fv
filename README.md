@@ -7,12 +7,12 @@ CPU, ALU and memory chips (and their gadgets) and the Lean translation
 of the official Sail RISC-V model.
 
 The development covers the **RV64IM** variant of Pico. Its 62 opcodes were
-equivalence-proven against Pico 2.x. On the `pico-v3` branch those proofs are
-rewritten, one instruction class at a time, against the CPU chip at Pico
-v3.1.1.
+equivalence-proven against Pico 2.x. Those proofs have been rewritten, one
+instruction class at a time, for Pico 3.x, and are stated against the CPU chip at
+Pico v3.2.0, the version `extractor/` pins.
 
 <!-- generated: restored -->
-The branch proves all 62 of them against the v3.1.1 chip: `ADD`, `ADDI`,
+The repository proves all 62 of them against the v3.2.0 chip: `ADD`, `ADDI`,
 `ADDIW`, `ADDW`, `AND`, `ANDI`, `AUIPC`, `BEQ`, `BGE`, `BGEU`, `BLT`, `BLTU`,
 `BNE`, `DIV`, `DIVU`, `DIVUW`, `DIVW`, `JAL`, `JALR`, `LB`, `LBU`, `LD`, `LH`,
 `LHU`, `LUI`, `LW`, `LWU`, `MUL`, `MULH`, `MULHSU`, `MULHU`, `MULW`, `OR`,
@@ -145,7 +145,7 @@ The proofs are built from these pinned inputs:
 Build from the committed `lake-manifest.json`. `lakefile.toml` names two dependencies by branch
 (`sail-riscv-lean`'s `v4.28.0-rc1`, `LeanZKCircuit-Plonky3`'s `Dom/v4.28.0-rc1`), so
 `lake update` can move their pins. CI (`.github/workflows/ci.yml`) runs on every pull request
-and every push to `main` and `pico-v3`: its `extractor` job regenerates every generated file in
+and every push to `main`: its `extractor` job regenerates every generated file in
 `PicoFV/RV64IM/Extraction/` from the pinned Pico and fails if one differs from the committed
 file, and its `build` job rebuilds the proofs and runs `scripts/fv-check/check.sh`.
 

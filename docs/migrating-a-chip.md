@@ -2,7 +2,7 @@
 
 This is the procedure for moving one chip's proofs onto the Pico commit `extractor/` is pinned
 to, worked through on `LtChip`, for the chips listed in `extractor/pending.txt`. Pull requests
-target `pico-v3`. Moving a chip touches only that chip's files and its entries in the shared
+target `main`. Moving a chip touches only that chip's files and its entries in the shared
 registers (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
 
 The files in `pending.txt` were extracted from a Pico development branch of the 2.x series
@@ -79,8 +79,8 @@ on: each `spec` / `spec_*` and the chip's `ext_asrt` and `wf_asrt`. Then, after 
 scripts/fv-check/check.sh            # the new theorems show up as additions only
 ```
 
-If the chip's theorems are new to the list, compare their statements with the ones on `pico-v3`:
-build `pico-v3` with the same `theorems.d/<chip>.txt` and run `check.sh` there, then diff the two
+If the chip's theorems are new to the list, compare their statements with the ones on `main`:
+build `main` with the same `theorems.d/<chip>.txt` and run `check.sh` there, then diff the two
 outputs. This costs a second full build. For `LtChip` the four theorems' statements and axioms were identical
 before and after. Record them with `check.sh --update`.
 
