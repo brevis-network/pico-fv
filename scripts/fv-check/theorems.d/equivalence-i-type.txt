@@ -4,3 +4,4 @@ Equivalence.equivalence_ORI
 Equivalence.equivalence_SLTI
 Equivalence.equivalence_SLTIU
 Equivalence.equivalence_XORI
+Equivalence.itype_decode_satisfiable

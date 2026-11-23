@@ -165,13 +165,20 @@ that every real row of the class, given its Program promise, has one:
 
 - the stores: `Equivalence.store_decode_satisfiable`;
 - the loads: `Equivalence.load_decode_satisfiable`;
-- `RTYPE`: `Equivalence.rtype_decode_satisfiable`;
-- `RTYPEW`: `Equivalence.rtypew_decode_satisfiable`;
+- `RTYPE`: `Equivalence.rtype_decode_satisfiable`, with `imm_c = 0` where an
+  immediate form shares the opcode;
+- `RTYPEW`: `Equivalence.rtypew_decode_satisfiable`, with `imm_c = 0` where an
+  immediate form shares the opcode;
+- `ITYPE`: `Equivalence.itype_decode_satisfiable`, with `imm_c = 1`, and
+  `imm_b = 0` for `ADDI`;
+- `ADDIW`: `Equivalence.addiw_decode_satisfiable`, with `imm_c = 1`;
+- `SHIFTIOP`: `Equivalence.shiftiop_decode_satisfiable`, with `imm_c = 1`;
+- `SHIFTIWOP`: `Equivalence.shiftiwop_decode_satisfiable`, with `imm_c = 1`;
 - the branches: `Equivalence.btype_decode_satisfiable`;
 - `JAL` and `JALR`: `Equivalence.jal_decode_satisfiable` and
   `Equivalence.jalr_decode_satisfiable`;
-- `LUI` and `AUIPC`: `Equivalence.utype_decode_satisfiable`, on a row of opcode 0
-  with `imm_b = 1` (an `ADD` or `ADDI` row has no U-type decoding).
+- `LUI` and `AUIPC`: `Equivalence.utype_decode_satisfiable`, with `imm_b = 1` (an
+  `ADD` or `ADDI` row has no U-type decoding).
 
 `check.sh` fails if a theorem is missing, depends on an axiom (a statement Lean
 accepts without proof) outside two lists, or its axioms or statement differ from
