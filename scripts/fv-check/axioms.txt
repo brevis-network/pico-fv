@@ -97,6 +97,8 @@ Equivalence.equivalence_XORI Classical.choice,Lean.ofReduceBool,Lean.trustCompil
 Equivalence.jal_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 Equivalence.jalr_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 Equivalence.load_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+Equivalence.rtype_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+Equivalence.rtypew_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 Equivalence.store_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 Equivalence.utype_decode_satisfiable Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 Equivalence.utype_row_cases Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext

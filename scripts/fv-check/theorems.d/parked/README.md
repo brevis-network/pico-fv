@@ -29,10 +29,9 @@ v3.1.1 contracts (`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`) instead of 
 or `rs2` for a store) is read from `instruction.op_a` instead of
 `instruction.op_a_0`: v3.1.1 keeps the 5-bit index in one column, so every
 theorem whose `rd`, branch `rs1` or store `rs2` reads it shows this rename; the
-stores, the loads, the branches, the jumps and the U-type theorems have since
-gone further and name no column (decoded form, below). And the whole-trace
-assumption `pico_CpuChip_control_flow_assumptions` gains three conjuncts in its
-definition:
+classes in decoded form (listed below) have since gone further and name no
+column. And the whole-trace assumption `pico_CpuChip_control_flow_assumptions`
+gains three conjuncts in its definition:
 
 - the eight theorems that already named it (the six branches, `JAL` and `JALR`)
   keep that part of their recorded text, because `signatures.txt` records the
@@ -54,7 +53,9 @@ although the decoder does not fix it for opcode 0: on a row with `imm_c = 0` the
 flag is 0 whatever the opcode (`imm_b_eq_zero_of_imm_c_eq_zero`). Where an
 immediate form and a register-register opcode share an opcode, the decoder does
 not fix `imm_c`, so the immediate form keeps `imm_c = 1` and the
-register-register one keeps `imm_c = 0`: opcode 40 (`ADDIW`, `ADDW`), 42 to 44
+register-register one keeps `imm_c = 0` (for a class in decoded form, listed
+below, only its unchecked column form `equivalence_<OP>_row` keeps it):
+opcode 40 (`ADDIW`, `ADDW`), 42 to 44
 (`SLLIW`, `SRLIW`, `SRAIW` and `SLLW`, `SRLW`, `SRAW`), 5 to 7 (`SLLI`, `SRLI`,
 `SRAI` and `SLL`, `SRL`, `SRA`), and 0, 2 to 4, 8 and 9 (the six `ITYPE`
 theorems and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`).
@@ -65,12 +66,11 @@ immediate flag, because opcodes 24 and 25 are the two jumps alone. The six
 branches, the four stores and the seven loads never took theirs, for the same
 reason, so their statements lose nothing here.
 
-The decoded statements (the four stores, the seven loads, the six branches,
-`JAL`, `JALR`, `LUI` and `AUIPC`) and their unchecked `_row` column forms also
-drop three bus assumptions that no proof reads: `bus_row_axioms`,
-`bus_row_ext_asm` and `bus_row_wf_asrt` (they keep `bus_row_wf_asm`). `LUI` and
-`AUIPC`, in both forms, also drop `RISC_V_assumptions`, which neither proof
-reads. Dropping a hypothesis makes the theorem stronger.
+The statements in decoded form (listed below) and their unchecked `_row` column
+forms also drop three bus assumptions that no proof reads: `bus_row_axioms`,
+`bus_row_ext_asm` and `bus_row_wf_asrt` (they keep `bus_row_wf_asm`), and
+`RISC_V_assumptions` where the proof does not read it, as for `LUI` and `AUIPC`
+in both forms. Dropping a hypothesis makes the theorem stronger.
 
 `LUI` and `AUIPC` are the one case where the v3.1.1 decoder gives two
 instructions the same opcode and flags (opcode 0 with `imm_b = 1` and
@@ -108,17 +108,25 @@ two (`op_c_value_setWidth_eq_op_c_0`). The decoder sign-extends the program's
 (`Transpiler.V3.imm_operand` with its sign flag `true` or `false`), and writes
 the low 16 bits of the result into `op_c_0`, so on a row the program decoded
 those bits are the program's immediate, but the statement does not tie
-`op_c_0` to the decoder. The four stores, the seven loads, the six branches,
-`JAL`, `JALR`, `LUI` and `AUIPC` do, in decoded form: each takes the
-instruction and the hypothesis `h_decode` that the decoder
-(`Transpiler.V3.transpile_op`, at multiplicity 1) turns it into the row's
-Program message, in place of `is_real = 1` and the opcode (for `LUI` and
-`AUIPC`, also both flags and the operand shape), and
-`Equivalence.store_decode_satisfiable`, `Equivalence.load_decode_satisfiable`,
-`Equivalence.btype_decode_satisfiable`, `Equivalence.jal_decode_satisfiable`,
-`Equivalence.jalr_decode_satisfiable` and `Equivalence.utype_decode_satisfiable`
-derive that hypothesis from `is_real = 1`, the opcode (for opcode 0, with
-`imm_b = 1`) and the row's Program promise.
+`op_c_0` to the decoder. The classes in decoded form do, and tie their
+register columns to it in the same way: each theorem takes the instruction and
+the hypothesis `h_decode` that the decoder (`Transpiler.V3.transpile_op`, at
+multiplicity 1) turns it into the row's Program message, in place of
+`is_real = 1`, the opcode and the immediate flags it took (for `LUI` and
+`AUIPC`, also the operand shape), and the class's lemma derives that hypothesis
+from those and the row's Program promise:
+
+- the four stores: `Equivalence.store_decode_satisfiable`;
+- the seven loads: `Equivalence.load_decode_satisfiable`;
+- the ten `RTYPE` theorems (no immediate):
+  `Equivalence.rtype_decode_satisfiable`;
+- the five `RTYPEW` theorems (no immediate):
+  `Equivalence.rtypew_decode_satisfiable`;
+- the six branches: `Equivalence.btype_decode_satisfiable`;
+- `JAL` and `JALR`: `Equivalence.jal_decode_satisfiable` and
+  `Equivalence.jalr_decode_satisfiable`;
+- `LUI` and `AUIPC`: `Equivalence.utype_decode_satisfiable`, from opcode 0 with
+  `imm_b = 1`, for one of the two (the row does not say which).
 
 Two definitions every statement names were also rewritten at v3.1.1, and
 `signatures.txt` shows only their names: `Equivalence.CPU_bus_operations` (the
