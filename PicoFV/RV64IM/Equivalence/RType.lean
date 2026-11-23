@@ -593,18 +593,18 @@ namespace Equivalence
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
     /-- The `RTYPE` theorems' decoding hypothesis holds on every real row of an `RTYPE` opcode
-        with `imm_c = 0`: there the Program table's promise (in `bus_row_wf_asm`) gives an
-        `RTYPE` instruction of the opcode's operation and a 4-aligned address below
+        whose column form's hypotheses hold: the opcode of `op`, and `imm_c = 0` unless `op` is
+        `SUB` (an immediate form shares every other opcode). There the Program table's promise
+        (in `bus_row_wf_asm`) gives an `RTYPE` instruction of `op` and a 4-aligned address below
         `Transpiler.V3.code_address_bound` whose decoding is the row's Program message. On a row
-        of opcode 1 (`SUB`) the promise also gives `imm_c = 0`
-        (`imm_c_eq_zero_of_opcode`). -/
+        of opcode 1 (`SUB`) the promise itself gives `imm_c = 0` (`imm_c_eq_zero_of_opcode`). -/
     theorem rtype_decode_satisfiable
       [Field ExtF]
-      (air : Valid_CpuChip FKB ExtF) (row : ℕ) {op : rop}
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ) (op : rop)
       (h_is_real : air.cols.is_real row 0 = 1)
       (h_wf : bus_row_wf_asm (bus_row air row))
       (h_opcode : air.cols.instruction.opcode row 0 = Transpiler.opcode_of_rop op)
-      (h_imm_c : air.cols.opcode_selector.imm_c row 0 = 0)
+      (h_imm_c : op ≠ .SUB → air.cols.opcode_selector.imm_c row 0 = 0)
     :
       ∃ (rs2 rs1 rd : regidx) (addr : ℕ) (props : Prop),
         addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
@@ -614,6 +614,11 @@ namespace Equivalence
       obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=
         program_bus_decoded air row @h_is_real @h_wf
       rw [h_opcode] at h_from
+      have h_imm_c : air.cols.opcode_selector.imm_c row 0 = 0 := by
+        by_cases h_sub : op = .SUB
+        · subst h_sub
+          exact imm_c_eq_zero_of_opcode air row h_is_real h_wf (by rw [h_opcode]; rfl)
+        · exact h_imm_c h_sub
       have h_c : (ProgramBusEntry.deserialise (program_bus_entry air row)).imm_c = 0 := by
         rw [deserialise_program_bus_entry]; exact h_imm_c
       have h_op : ∃ rs2 rs1 rd, instr = .RTYPE (rs2, rs1, rd, op) := by

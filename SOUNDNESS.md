@@ -61,7 +61,7 @@ classes, A3).
   instruction theorems either: the store, load and register-register theorems take an instruction
   whose decoding is the row's Program message, and the four show, from the row's Program promise
   (in `bus_row_wf_asm`), that every real row of a store or load opcode, or of a register-register
-  opcode with `imm_c = 0`, has one (see A3).
+  opcode (with `imm_c = 0` where an immediate form shares the opcode), has one (see A3).
 
   Every v3.1.1 instruction theorem also assumes the chunk's final pc is a well-formed guest
   address (`Equivalence.pico_CpuChip_control_flow_assumptions`; see A3). Pico enforces that in
@@ -245,7 +245,8 @@ interpretation of them. One of them, `sys_enable_experimental_extensions`, gates
 
 ### A3. Hypotheses of the theorems
 
-Each equivalence theorem assumes:
+Each equivalence theorem assumes hypotheses from the following list; `signatures.txt` records
+which:
 
 - the CPU chip's extracted constraints hold on every row;
 - the bus assumptions (`bus_row_axioms`, `bus_row_ext_asm`, `bus_row_wf_asm`, `bus_row_wf_asrt`):
@@ -253,6 +254,10 @@ Each equivalence theorem assumes:
   it receives;
 - the hypotheses of the operations the row emits, and `RISC_V_assumptions` on the machine state;
 - at v3.1.1, the whole-trace assumption described below.
+
+A theorem in decoded form (below) takes only the hypotheses its proof uses: of the bus
+assumptions only `bus_row_wf_asm`, and `RISC_V_assumptions` only where its proof reads it. The
+theorems in decoded form are those of `Stores.lean`, `Loads.lean`, `RType.lean` and `RTypeW.lean`.
 
 Since v3.1.6 a row's messages fall into six lists, not five: the code-range message
 (`V3.CodeRangeBusEntry`), which a store row and a precompile row send to the Program table, has
@@ -323,13 +328,12 @@ the hypotheses it replaces: `Equivalence.store_decode_satisfiable`,
 `Equivalence.rtypew_decode_satisfiable` (checked, listed with their classes) derive it, for some
 instruction fields and a 4-aligned address below `Transpiler.V3.code_address_bound`, from
 `is_real = 1`, the opcode of each store or load width or register-register operation (with
-`imm_c = 0` for the last, which the promise also gives on the opcodes of `SUB` and `SUBW`), and
-that promise (in `bus_row_wf_asm`, which the instruction theorems take for every row as
+`imm_c = 0` for a register-register opcode an immediate form shares, as its column form takes it;
+on the opcodes of `SUB` and `SUBW` the promise gives it), and that promise (in `bus_row_wf_asm`,
+which the instruction theorems take for every row as
 `h_all_wf`). Each decoded theorem is proved from
 a column-form theorem of the same name with `_row` appended (`equivalence_SD_row`), which reads
-`rs1`, `rs2` or `rd` (and a store's or load's offset) off the row and is not checked. Neither
-form of a register-register theorem takes `RISC_V_assumptions`, `bus_row_axioms`,
-`bus_row_ext_asm` or `bus_row_wf_asrt` any more: their proofs never used them.
+`rs1`, `rs2` or `rd` (and a store's or load's offset) off the row and is not checked.
 
 The other checked theorems with an immediate still read it from the row's operand values: the six
 branches and `JALR` take the low 13 or 12 bits of the `op_c` value, `JAL` the low 21 bits of the
@@ -559,8 +563,10 @@ The fences have no row of their own. Pico runs every fence word (`fence`, `fence
 `pause`) as the no-op `ADD x0, x0, 0`, the row of `ADDI x0, x0, 0`. Sail decodes them as three
 other instructions, `FENCE`, `FENCE_TSO` and `PAUSE`, and `PicoFV/RV64IM/RVSail/Opcodes/fence.lean`
 proves that each executes exactly as `ADDI x0, x0, 0`: `PAUSE` and `FENCE_TSO` in every state,
-`FENCE` in machine mode (assumption A1.1 of `RISC_V_assumptions`, which every instruction
-theorem already makes).
+`FENCE` in machine mode (`execute_instruction_fence_eq_nop` takes `cur_privilege = Machine`,
+assumption A1.1 of `RISC_V_assumptions`). A fence's row is `ADDI x0, x0, 0`'s, so covering a
+`FENCE` row takes `equivalence_ADDI` and, beside it, that machine-mode assumption, whether or not
+`equivalence_ADDI` itself takes `RISC_V_assumptions`.
 
 ## C. Is each proof sound?
 
