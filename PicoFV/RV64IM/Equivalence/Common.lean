@@ -750,4 +750,139 @@ namespace Equivalence
 
   end Auxiliaries
 
+  section Decoded
+
+    /-! ### The decoded form
+
+        A checked instruction theorem in decoded form takes the instruction, written in its
+        statement, and the hypothesis `h_decode` that the decoder turns it into the row's Program
+        message: `Transpiler.V3.transpile_op instr 1 addr = some (program_bus_entry air row, props)`.
+        The decoder's lemma for the instruction's class (`transpile_op_store_row`,
+        `transpile_op_load_row`) writes that message out; `decoded_field` reads the row's columns
+        off it by field name. A bridge lemma per decoder clause (`store_decode_satisfiable`,
+        `load_decode_satisfiable`) derives `h_decode`, for some instruction fields and address, from
+        `is_real = 1`, the row's Program promise and the opcode, starting from
+        `program_bus_decoded`. -/
+
+    open Transpiler Transpiler.V3
+
+    /-- A field of the row's Program message, read by name: when the message is `data`, the field
+        `f` of the message is `f` of `data`. The message's fields are the row's columns
+        (`deserialise_program_bus_entry`), so with `data` written out,
+        `decoded_field h ProgramBusEntry.op_a` proves `air.cols.instruction.op_a row 0 = …` by
+        unfolding alone. -/
+    lemma decoded_field {α : Type} [Field ExtF] {air : Valid_CpuChip FKB ExtF} {row : ℕ}
+      {data : FKB × Vector FKB 26} (h : program_bus_entry air row = data)
+      (f : ProgramBusEntry FKB → α)
+    :
+      f (ProgramBusEntry.deserialise (program_bus_entry air row)) =
+        f (ProgramBusEntry.deserialise data)
+    := by rw [h]
+
+    /-- The register index the decoder writes into a column (`reg_to_KB r`) reads back, as the
+        column-form theorems read a register off a column, as `r`. -/
+    lemma regidx_reg_to_KB (r : regidx) : regidx.Regidx (reg_to_KB r).val = r := by
+      obtain ⟨ r ⟩ := r
+      simp [reg_to_KB, regidx_to_fin]
+
+    /-- On a row whose `op_c` is an immediate (`imm_c = 1`) and whose `op_c` columns hold the
+        decoder's encoding of a signed immediate `imm` of at most 32 bits
+        (`Transpiler.V3.imm_operand imm true`), the `op_c` value is `imm` sign-extended to 64 bits
+        (constraints 4 to 7, through `imm_c_eq_1_constraints`). -/
+    lemma op_c_value_eq_signExtend_of_imm_operand
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ) {w : ℕ} (imm : BitVec w)
+      (hw0 : 0 < w) (hw : w ≤ 32)
+      (h_imm_c : air.cols.opcode_selector.imm_c row 0 = 1)
+      (h_constraints : CpuChip.Extraction.allHold air row)
+      (h_c0 : air.cols.instruction.op_c_0 row 0 = (imm_operand imm true)[0])
+      (h_c1 : air.cols.instruction.op_c_1 row 0 = (imm_operand imm true)[1])
+      (h_cs : air.cols.instruction.op_c_sign row 0 = (imm_operand imm true)[2])
+    :
+      U64w.toBV (op_c_value air row) = BitVec.signExtend 64 imm
+    := by
+      obtain ⟨ e0, e1, e2, e3 ⟩ := imm_c_eq_1_constraints air row h_imm_c h_constraints
+      simp only [op_c_value, e0, e1, e2, e3, h_c0, h_c1, h_cs]
+      exact imm_operand_toBV_sgn imm hw0 hw
+
+    /-- On a real row, the Program table's promise gives an instruction and an address whose
+        decoding, at multiplicity 1, is the row's Program message, and the instruction is the one
+        the row's opcode names (`ProgramBusEntry.decoded_from`). The promise decodes at the
+        message's own multiplicity, which `is_real = 1` makes 1. -/
+    lemma program_bus_decoded
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_wf : bus_row_wf_asm (bus_row air row))
+    :
+      ∃ (instr : instruction) (addr : ℕ) (props : Prop),
+        transpile_op instr 1 addr = some (program_bus_entry air row, props) ∧
+        (ProgramBusEntry.deserialise (program_bus_entry air row)).decoded_from instr addr
+          (air.cols.instruction.opcode row 0).val
+    := by
+      -- `@h_wf`: passed bare, Lean unfolds the bus assumption while elaborating it.
+      obtain ⟨ instr, addr, data, props, -, -, h_trans, h_deser, - ⟩ :=
+        program_bus_operand_properties air row @h_is_real @h_wf
+      have h_from := ProgramBusEntry.operand_properties_inversion h_trans h_deser
+      have h_data : program_bus_entry air row = data :=
+        (ProgramBusEntryInstance.inv_ser_deser (program_bus_entry air row)).symm.trans
+          ((congrArg ProgramBusEntryInstance.serialise h_deser).trans
+            (ProgramBusEntryInstance.inv_ser_deser data))
+      have h_mult :
+          (ProgramBusEntry.deserialise (program_bus_entry air row)).multiplicity = 1 := by
+        rw [deserialise_program_bus_entry]; exact h_is_real
+      rw [h_mult, ← h_data] at h_trans
+      exact ⟨ instr, addr, props, h_trans.symm, h_from ⟩
+
+    /-- The store theorems' decoding hypothesis holds on every real row of a store opcode: there
+        the Program table's promise gives a store of the opcode's width, and an address, whose
+        decoding is the row's Program message. -/
+    theorem store_decode_satisfiable
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ) {wd : word_width} {opc : FKB}
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_wf : bus_row_wf_asm (bus_row air row))
+      (h_opcode : air.cols.instruction.opcode row 0 = opc)
+      (h_wd : (wd = 1 ∧ opc = 15) ∨ (wd = 2 ∧ opc = 16) ∨ (wd = 4 ∧ opc = 17) ∨
+              (wd = 8 ∧ opc = 47))
+    :
+      ∃ (imm : BitVec 12) (rs2 rs1 : regidx) (addr : ℕ) (props : Prop),
+        transpile_op (.STORE (imm, rs2, rs1, wd)) 1 addr =
+          some (program_bus_entry air row, props)
+    := by
+      obtain ⟨ instr, addr, props, h_dec, h_from ⟩ :=
+        program_bus_decoded air row @h_is_real @h_wf
+      rw [h_opcode] at h_from
+      rcases h_wd with ⟨ rfl, rfl ⟩ | ⟨ rfl, rfl ⟩ | ⟨ rfl, rfl ⟩ | ⟨ rfl, rfl ⟩ <;>
+      · obtain ⟨ imm, rs2, rs1, rfl ⟩ := h_from
+        exact ⟨ imm, rs2, rs1, addr, props, h_dec ⟩
+
+    /-- The load theorems' decoding hypothesis holds on every real row of a load opcode: there
+        the Program table's promise gives a load of the opcode's signedness and width, and an
+        address, whose decoding is the row's Program message. -/
+    theorem load_decode_satisfiable
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ) {u : Bool} {wd : word_width} {opc : FKB}
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_wf : bus_row_wf_asm (bus_row air row))
+      (h_opcode : air.cols.instruction.opcode row 0 = opc)
+      (h_wd : (u = false ∧ wd = 1 ∧ opc = 10) ∨ (u = true ∧ wd = 1 ∧ opc = 13) ∨
+              (u = false ∧ wd = 2 ∧ opc = 11) ∨ (u = true ∧ wd = 2 ∧ opc = 14) ∨
+              (u = false ∧ wd = 4 ∧ opc = 12) ∨ (u = true ∧ wd = 4 ∧ opc = 45) ∨
+              (u = false ∧ wd = 8 ∧ opc = 46))
+    :
+      ∃ (imm : BitVec 12) (rs1 rd : regidx) (addr : ℕ) (props : Prop),
+        transpile_op (.LOAD (imm, rs1, rd, u, wd)) 1 addr =
+          some (program_bus_entry air row, props)
+    := by
+      obtain ⟨ instr, addr, props, h_dec, h_from ⟩ :=
+        program_bus_decoded air row @h_is_real @h_wf
+      rw [h_opcode] at h_from
+      rcases h_wd with ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ |
+        ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ | ⟨ rfl, rfl, rfl ⟩ <;>
+      · obtain ⟨ imm, rs1, rd, rfl ⟩ := h_from
+        exact ⟨ imm, rs1, rd, addr, props, h_dec ⟩
+
+  end Decoded
+
 end Equivalence

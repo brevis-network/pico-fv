@@ -167,8 +167,10 @@ namespace Equivalence
                    h_imm_c_eqs.2.2.2, eq_c0, eq_c1, eq_cs]
         exact Transpiler.V3.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
 
-    /-- Equivalence for LW (opcode 12, `instruction.LOAD` of width 4, sign-extended). -/
-    theorem equivalence_LW
+    /-- `equivalence_LW` in column form: for a row of opcode 12, Sail's step on the `LOAD` of
+        width 4 (sign-extended) whose registers and offset are read off the row's columns equals
+        the row's effect. -/
+    theorem equivalence_LW_row
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
@@ -374,8 +376,10 @@ namespace Equivalence
           · rw [h_addr_bridge]; simpa [BitVec.toNat_add, v32] using h_mem.2.2.1
           · rw [h_addr_bridge]; simpa [BitVec.toNat_add, v32] using h_mem.2.2.2
 
-    /-- Equivalence for LB (opcode 10, `instruction.LOAD` of width 1, sign-extended). -/
-    theorem equivalence_LB
+    /-- `equivalence_LB` in column form: for a row of opcode 10, Sail's step on the `LOAD` of
+        width 1 (sign-extended) whose registers and offset are read off the row's columns equals
+        the row's effect. -/
+    theorem equivalence_LB_row
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
@@ -504,10 +508,10 @@ namespace Equivalence
         rw [operation_list_effect_hypotheses_writeReg_same (by simpa using h_read_b)] at h_rest
         simp at h_rest
         obtain ⟨ h_read_a, h_mem ⟩ := h_rest
-        -- The 32 bits the row loaded, in the form the memory message carries them.
+        -- The 8 bits the row loaded, in the form the memory message carries them.
         let v8 := BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0)
-        -- The memory chip's promise for a `LW` row: the word it writes back is the sign
-        -- extension of those 32 bits, which is what the specification writes.
+        -- The memory chip's promise for a `LB` row: the word it writes back is the sign
+        -- extension of those 8 bits, which is what the specification writes.
         have h_a_ext : U64w.toBV (op_a_value air row) = BitVec.signExtend 64 v8 := by
           have h : U64w.toBV (op_a_value air row) =
               BitVec.signExtend 64 (BitVec.truncate 8 (U64w.toBV (op_a_value air row))) :=
@@ -569,8 +573,10 @@ namespace Equivalence
           · simpa [op_b_value, rs1, BitVec.ofNatLT_eq_ofNat] using h_read_b
           · rw [h_addr_bridge]; simpa [BitVec.toNat_add, v8] using h_mem
 
-    /-- Equivalence for LH (opcode 11, `instruction.LOAD` of width 2, sign-extended). -/
-    theorem equivalence_LH
+    /-- `equivalence_LH` in column form: for a row of opcode 11, Sail's step on the `LOAD` of
+        width 2 (sign-extended) whose registers and offset are read off the row's columns equals
+        the row's effect. -/
+    theorem equivalence_LH_row
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
@@ -700,10 +706,10 @@ namespace Equivalence
         rw [operation_list_effect_hypotheses_writeReg_same (by simpa using h_read_b)] at h_rest
         simp at h_rest
         obtain ⟨ h_read_a, h_mem ⟩ := h_rest
-        -- The 32 bits the row loaded, in the form the memory message carries them.
+        -- The 16 bits the row loaded, in the form the memory message carries them.
         let v16 := BitVec.ofNat 16 ↑(air.cols.op_a_access.access.value_0 row 0)
-        -- The memory chip's promise for a `LW` row: the word it writes back is the sign
-        -- extension of those 32 bits, which is what the specification writes.
+        -- The memory chip's promise for a `LH` row: the word it writes back is the sign
+        -- extension of those 16 bits, which is what the specification writes.
         have h_a_ext : U64w.toBV (op_a_value air row) = BitVec.signExtend 64 v16 := by
           have h : U64w.toBV (op_a_value air row) =
               BitVec.signExtend 64 (BitVec.truncate 16 (U64w.toBV (op_a_value air row))) :=
@@ -769,8 +775,10 @@ namespace Equivalence
           · rw [h_addr_bridge]; simpa [BitVec.toNat_add, v16] using h_mem.1
           · rw [h_addr_bridge]; simpa [BitVec.toNat_add, v16] using h_mem.2
 
-    /-- Equivalence for LBU (opcode 13, `instruction.LOAD` of width 1, zero-extended). -/
-    theorem equivalence_LBU
+    /-- `equivalence_LBU` in column form: for a row of opcode 13, Sail's step on the `LOAD` of
+        width 1 (zero-extended) whose registers and offset are read off the row's columns equals
+        the row's effect. -/
+    theorem equivalence_LBU_row
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
@@ -899,10 +907,10 @@ namespace Equivalence
         rw [operation_list_effect_hypotheses_writeReg_same (by simpa using h_read_b)] at h_rest
         simp at h_rest
         obtain ⟨ h_read_a, h_mem ⟩ := h_rest
-        -- The 32 bits the row loaded, in the form the memory message carries them.
+        -- The 8 bits the row loaded, in the form the memory message carries them.
         let v8 := BitVec.ofNat 8 ↑(air.cols.op_a_access.access.value_0 row 0)
-        -- The memory chip's promise for a `LW` row: the word it writes back is the sign
-        -- extension of those 32 bits, which is what the specification writes.
+        -- The memory chip's promise for a `LBU` row: the word it writes back is the zero
+        -- extension of those 8 bits, which is what the specification writes.
         have h_a_ext : U64w.toBV (op_a_value air row) = BitVec.zeroExtend 64 v8 := by
           have h : U64w.toBV (op_a_value air row) =
               BitVec.zeroExtend 64 (BitVec.truncate 8 (U64w.toBV (op_a_value air row))) :=
@@ -964,8 +972,10 @@ namespace Equivalence
           · simpa [op_b_value, rs1, BitVec.ofNatLT_eq_ofNat] using h_read_b
           · rw [h_addr_bridge]; simpa [BitVec.toNat_add, v8] using h_mem
 
-    /-- Equivalence for LHU (opcode 14, `instruction.LOAD` of width 2, zero-extended). -/
-    theorem equivalence_LHU
+    /-- `equivalence_LHU` in column form: for a row of opcode 14, Sail's step on the `LOAD` of
+        width 2 (zero-extended) whose registers and offset are read off the row's columns equals
+        the row's effect. -/
+    theorem equivalence_LHU_row
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
@@ -1095,10 +1105,10 @@ namespace Equivalence
         rw [operation_list_effect_hypotheses_writeReg_same (by simpa using h_read_b)] at h_rest
         simp at h_rest
         obtain ⟨ h_read_a, h_mem ⟩ := h_rest
-        -- The 32 bits the row loaded, in the form the memory message carries them.
+        -- The 16 bits the row loaded, in the form the memory message carries them.
         let v16 := BitVec.ofNat 16 ↑(air.cols.op_a_access.access.value_0 row 0)
-        -- The memory chip's promise for a `LW` row: the word it writes back is the sign
-        -- extension of those 32 bits, which is what the specification writes.
+        -- The memory chip's promise for a `LHU` row: the word it writes back is the zero
+        -- extension of those 16 bits, which is what the specification writes.
         have h_a_ext : U64w.toBV (op_a_value air row) = BitVec.zeroExtend 64 v16 := by
           have h : U64w.toBV (op_a_value air row) =
               BitVec.zeroExtend 64 (BitVec.truncate 16 (U64w.toBV (op_a_value air row))) :=
@@ -1164,8 +1174,10 @@ namespace Equivalence
           · rw [h_addr_bridge]; simpa [BitVec.toNat_add, v16] using h_mem.1
           · rw [h_addr_bridge]; simpa [BitVec.toNat_add, v16] using h_mem.2
 
-    /-- Equivalence for LWU (opcode 45, `instruction.LOAD` of width 4, zero-extended). -/
-    theorem equivalence_LWU
+    /-- `equivalence_LWU` in column form: for a row of opcode 45, Sail's step on the `LOAD` of
+        width 4 (zero-extended) whose registers and offset are read off the row's columns equals
+        the row's effect. -/
+    theorem equivalence_LWU_row
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
@@ -1300,7 +1312,7 @@ namespace Equivalence
         -- The 32 bits the row loaded, in the form the memory message carries them.
         let v32 := (BitVec.ofNat 16 ↑(air.cols.op_a_access.access.value_1 row 0)) ++
                    (BitVec.ofNat 16 ↑(air.cols.op_a_access.access.value_0 row 0))
-        -- The memory chip's promise for a `LW` row: the word it writes back is the sign
+        -- The memory chip's promise for a `LWU` row: the word it writes back is the zero
         -- extension of those 32 bits, which is what the specification writes.
         have h_a_ext : U64w.toBV (op_a_value air row) = BitVec.zeroExtend 64 v32 := by
           have h : U64w.toBV (op_a_value air row) =
@@ -1371,8 +1383,10 @@ namespace Equivalence
           · rw [h_addr_bridge]; simpa [BitVec.toNat_add, v32] using h_mem.2.2.1
           · rw [h_addr_bridge]; simpa [BitVec.toNat_add, v32] using h_mem.2.2.2
 
-    /-- Equivalence for LD (opcode 46, `instruction.LOAD` of width 8, no extension). -/
-    theorem equivalence_LD
+    /-- `equivalence_LD` in column form: for a row of opcode 46, Sail's step on the `LOAD` of
+        width 8 (no extension) whose registers and offset are read off the row's columns equals
+        the row's effect. -/
+    theorem equivalence_LD_row
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF)
       (row : ℕ)
@@ -1508,15 +1522,12 @@ namespace Equivalence
         rw [operation_list_effect_hypotheses_writeReg_same (by simpa using h_read_b)] at h_rest
         simp at h_rest
         obtain ⟨ h_read_a, h_mem ⟩ := h_rest
-        -- The 32 bits the row loaded, in the form the memory message carries them.
+        -- The 64 bits the row loaded, in the form the memory message carries them.
         let v64 := U64w.toBV
                      #v[ (air.cols.op_a_access.access.value_0 row 0 : FKB),
                          (air.cols.op_a_access.access.value_1 row 0 : FKB),
                          (air.cols.op_a_access.access.value_2 row 0 : FKB),
                          (air.cols.op_a_access.access.value_3 row 0 : FKB) ]
-        -- The memory chip's promise for a `LW` row: the word it writes back is the sign
-        -- extension of those 32 bits, which is what the specification writes.
-        have h_a_ext : U64w.toBV (op_a_value air row) = v64 := rfl
         have h_append_eq := eq_append_bytes_64 v64
         have h_rd_not_zero : ¬ (rd == regidx.Regidx 0#5) = true := by
           simp only [rd]
@@ -1553,8 +1564,6 @@ namespace Equivalence
           conv => rhs; rw [operation_list_effect_state_filter]; unfold state_filter; simp
           rw [operation_list_effect_state_writeReg_same
                 (by simpa [op_b_value, BitVec.ofNatLT_eq_ofNat] using h_read_b)]
-          -- The goal carries the written value unfolded, so restate the chip's promise
-          -- in that form before using it.
           simp [h_next_pc, op_b_value]
           simp [operation_list_effect, operation_effect, regidx_to_fin,
                 write_xreg, Sail.writeReg, PreSail.writeReg, rd, h_k]
@@ -1579,6 +1588,286 @@ namespace Equivalence
           · rw [h_addr_bridge]; simpa [BitVec.toNat_add, v64] using h_mem.2.2.2.2.2.1
           · rw [h_addr_bridge]; simpa [BitVec.toNat_add, v64] using h_mem.2.2.2.2.2.2.1
           · rw [h_addr_bridge]; simpa [BitVec.toNat_add, v64] using h_mem.2.2.2.2.2.2.2
+
+    -- ========================================================================
+    -- The checked load theorems, in decoded form: each takes the load and an
+    -- address whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1)
+    -- is the row's Program message, and is proved from its column form.
+    --
+    -- The proofs pass hypotheses as `@h`, which Lean elaborates without
+    -- unfolding their types; passed bare, the bus assumptions get unfolded,
+    -- which made the store section's elaboration three times slower.
+    -- ========================================================================
+
+    /-- What a load's decoding says about the row: it is real, its opcode is the signedness's and
+        width's, its `op_a` and `op_b` columns name `rd` and `rs1`, and the low 12 bits of its
+        `op_c` value are the offset. -/
+    private lemma load_decoded
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+      (h_constraints : CpuChip.Extraction.allHold air row)
+      {imm : BitVec 12} {rs1 rd : regidx} {u : Bool} {wd : word_width} {addr : ℕ}
+      {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, u, wd)) 1 addr =
+        some (program_bus_entry air row, props))
+    :
+      air.cols.is_real row 0 = 1 ∧
+      ((u = false ∧ wd = 1 ∧ air.cols.instruction.opcode row 0 = 10) ∨
+       (u = true ∧ wd = 1 ∧ air.cols.instruction.opcode row 0 = 13) ∨
+       (u = false ∧ wd = 2 ∧ air.cols.instruction.opcode row 0 = 11) ∨
+       (u = true ∧ wd = 2 ∧ air.cols.instruction.opcode row 0 = 14) ∨
+       (u = false ∧ wd = 4 ∧ air.cols.instruction.opcode row 0 = 12) ∨
+       (u = true ∧ wd = 4 ∧ air.cols.instruction.opcode row 0 = 45) ∨
+       (u = false ∧ wd = 8 ∧ air.cols.instruction.opcode row 0 = 46)) ∧
+      regidx.Regidx (air.cols.instruction.op_a row 0).val = rd ∧
+      regidx.Regidx (air.cols.instruction.op_b_0 row 0).val = rs1 ∧
+      (U64w.toBV (op_c_value air row)).setWidth 12 = imm
+    := by
+      obtain ⟨ opc, h_opc, h_data ⟩ := transpile_op_load_row h_decode
+      have h_opcode : air.cols.instruction.opcode row 0 = opc :=
+        decoded_field h_data ProgramBusEntry.opcode
+      have h_op_a : air.cols.instruction.op_a row 0 = Transpiler.reg_to_KB rd :=
+        decoded_field h_data ProgramBusEntry.op_a
+      have h_op_b : air.cols.instruction.op_b_0 row 0 = Transpiler.reg_to_KB rs1 :=
+        decoded_field h_data ProgramBusEntry.b_0
+      have h_op_c := op_c_value_eq_signExtend_of_imm_operand air row imm (by norm_num)
+        (by norm_num) (decoded_field h_data ProgramBusEntry.imm_c) h_constraints
+        (decoded_field h_data ProgramBusEntry.c_0) (decoded_field h_data ProgramBusEntry.c_1)
+        (decoded_field h_data ProgramBusEntry.c_sign)
+      refine ⟨ decoded_field h_data ProgramBusEntry.multiplicity, by rw [h_opcode]; exact h_opc,
+        by rw [h_op_a]; exact regidx_reg_to_KB rd, by rw [h_op_b]; exact regidx_reg_to_KB rs1,
+        by rw [h_op_c]; exact setWidth_signExtend_self imm (by norm_num) ⟩
+
+    /-- Equivalence for LB (opcode 10, `instruction.LOAD` of width 1, sign-extended): for every
+        `LB` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
+        row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
+        pc pieces. -/
+    theorem equivalence_LB
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, false, 1)) 1 addr =
+        some (program_bus_entry air row, props))
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      execute_instruction (instruction.LOAD (imm, rs1, rd, false, 1)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
+        load_decoded air row (h_all_constraints row h_row) h_decode
+      have h_opcode : air.cols.instruction.opcode row 0 = 10 := by simpa using h_opc
+      exact equivalence_LB_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
+        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
+        @risc_v_assumptions
+
+    /-- Equivalence for LH (opcode 11, `instruction.LOAD` of width 2, sign-extended): for every
+        `LH` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
+        row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
+        pc pieces. -/
+    theorem equivalence_LH
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, false, 2)) 1 addr =
+        some (program_bus_entry air row, props))
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      execute_instruction (instruction.LOAD (imm, rs1, rd, false, 2)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
+        load_decoded air row (h_all_constraints row h_row) h_decode
+      have h_opcode : air.cols.instruction.opcode row 0 = 11 := by simpa using h_opc
+      exact equivalence_LH_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
+        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
+        @risc_v_assumptions
+
+    /-- Equivalence for LW (opcode 12, `instruction.LOAD` of width 4, sign-extended): for every
+        `LW` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
+        row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
+        pc pieces. -/
+    theorem equivalence_LW
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, false, 4)) 1 addr =
+        some (program_bus_entry air row, props))
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      execute_instruction (instruction.LOAD (imm, rs1, rd, false, 4)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
+        load_decoded air row (h_all_constraints row h_row) h_decode
+      have h_opcode : air.cols.instruction.opcode row 0 = 12 := by simpa using h_opc
+      exact equivalence_LW_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
+        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
+        @risc_v_assumptions
+
+    /-- Equivalence for LBU (opcode 13, `instruction.LOAD` of width 1, zero-extended): for every
+        `LBU` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
+        row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
+        pc pieces. -/
+    theorem equivalence_LBU
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, true, 1)) 1 addr =
+        some (program_bus_entry air row, props))
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      execute_instruction (instruction.LOAD (imm, rs1, rd, true, 1)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
+        load_decoded air row (h_all_constraints row h_row) h_decode
+      have h_opcode : air.cols.instruction.opcode row 0 = 13 := by simpa using h_opc
+      exact equivalence_LBU_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
+        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
+        @risc_v_assumptions
+
+    /-- Equivalence for LHU (opcode 14, `instruction.LOAD` of width 2, zero-extended): for every
+        `LHU` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
+        row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
+        pc pieces. -/
+    theorem equivalence_LHU
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, true, 2)) 1 addr =
+        some (program_bus_entry air row, props))
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      execute_instruction (instruction.LOAD (imm, rs1, rd, true, 2)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
+        load_decoded air row (h_all_constraints row h_row) h_decode
+      have h_opcode : air.cols.instruction.opcode row 0 = 14 := by simpa using h_opc
+      exact equivalence_LHU_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
+        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
+        @risc_v_assumptions
+
+    /-- Equivalence for LWU (opcode 45, `instruction.LOAD` of width 4, zero-extended): for every
+        `LWU` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
+        row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
+        pc pieces. -/
+    theorem equivalence_LWU
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, true, 4)) 1 addr =
+        some (program_bus_entry air row, props))
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      execute_instruction (instruction.LOAD (imm, rs1, rd, true, 4)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
+        load_decoded air row (h_all_constraints row h_row) h_decode
+      have h_opcode : air.cols.instruction.opcode row 0 = 45 := by simpa using h_opc
+      exact equivalence_LWU_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
+        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
+        @risc_v_assumptions
+
+    /-- Equivalence for LD (opcode 46, `instruction.LOAD` of width 8, no extension): for every
+        `LD` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
+        row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
+        pc pieces. -/
+    theorem equivalence_LD
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF)
+      (row : ℕ)
+      (h_row : row ≤ air.last_row)
+      (h_all_axioms : ∀ row ≤ air.last_row, bus_row_axioms (bus_row air row))
+      (h_all_ext : ∀ row ≤ air.last_row, bus_row_ext_asm (bus_row air row))
+      (h_all_wf : ∀ row ≤ air.last_row, bus_row_wf_asm (bus_row air row))
+      (h_all_wf_asrt : ∀ row ≤ air.last_row, bus_row_wf_asrt (bus_row air row))
+      (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
+      (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
+      {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
+      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, false, 8)) 1 addr =
+        some (program_bus_entry air row, props))
+      (h_bus_hypotheses :
+        (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
+      (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    :
+      execute_instruction (instruction.LOAD (imm, rs1, rd, false, 8)) state =
+        (operation_list_effect (CPU_bus_operations air row) state).state
+    := by
+      obtain ⟨ h_is_real, h_opc, rfl, rfl, rfl ⟩ :=
+        load_decoded air row (h_all_constraints row h_row) h_decode
+      have h_opcode : air.cols.instruction.opcode row 0 = 46 := by simpa using h_opc
+      exact equivalence_LD_row air row @h_row @h_is_real @h_all_axioms @h_all_ext @h_all_wf
+        @h_all_wf_asrt @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
+        @risc_v_assumptions
 
   end LOADS
 
