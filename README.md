@@ -7,18 +7,18 @@ specification](https://github.com/NethermindEth/sail-riscv-lean/tree/v4.28.0-rc1
 
 The development covers the **RV64IM** variant of Pico. Its 62 opcodes were
 equivalence-proven against Pico 2.x. On the `pico-v3` branch those proofs are
-being rewritten one instruction class at a time while the CPU chip moves to
-Pico v3.1.1.
+rewritten, one instruction class at a time, against the CPU chip at Pico
+v3.1.1.
 
 <!-- generated: restored -->
-For now the branch proves 60 of them against the v3.1.1 chip: `ADD`, `ADDI`,
-`ADDIW`, `ADDW`, `AND`, `ANDI`, `BEQ`, `BGE`, `BGEU`, `BLT`, `BLTU`, `BNE`,
-`DIV`, `DIVU`, `DIVUW`, `DIVW`, `JAL`, `JALR`, `LB`, `LBU`, `LD`, `LH`, `LHU`,
-`LW`, `LWU`, `MUL`, `MULH`, `MULHSU`, `MULHU`, `MULW`, `OR`, `ORI`, `REM`,
-`REMU`, `REMUW`, `REMW`, `SB`, `SD`, `SH`, `SLL`, `SLLI`, `SLLIW`, `SLLW`,
-`SLT`, `SLTI`, `SLTIU`, `SLTU`, `SRA`, `SRAI`, `SRAIW`, `SRAW`, `SRL`, `SRLI`,
-`SRLIW`, `SRLW`, `SUB`, `SUBW`, `SW`, `XOR` and `XORI`. The other 2 are out of
-the build and `check.sh` does not check them (see [SOUNDNESS.md](SOUNDNESS.md)).
+The branch proves all 62 of them against the v3.1.1 chip: `ADD`, `ADDI`,
+`ADDIW`, `ADDW`, `AND`, `ANDI`, `AUIPC`, `BEQ`, `BGE`, `BGEU`, `BLT`, `BLTU`,
+`BNE`, `DIV`, `DIVU`, `DIVUW`, `DIVW`, `JAL`, `JALR`, `LB`, `LBU`, `LD`, `LH`,
+`LHU`, `LUI`, `LW`, `LWU`, `MUL`, `MULH`, `MULHSU`, `MULHU`, `MULW`, `OR`,
+`ORI`, `REM`, `REMU`, `REMUW`, `REMW`, `SB`, `SD`, `SH`, `SLL`, `SLLI`, `SLLIW`,
+`SLLW`, `SLT`, `SLTI`, `SLTIU`, `SLTU`, `SRA`, `SRAI`, `SRAIW`, `SRAW`, `SRL`,
+`SRLI`, `SRLIW`, `SRLW`, `SUB`, `SUBW`, `SW`, `XOR` and `XORI` (see
+[SOUNDNESS.md](SOUNDNESS.md)).
 <!-- end generated -->
 
 The 62 opcodes:
@@ -46,9 +46,9 @@ file it uses; every file is extracted from the pinned commit (`extractor/pending
 files that predate it, is empty). Re-extracting the CPU chip, the ten ALU chips and their gadgets at
 v3.1.6 gives the same constraints and bus messages as at v3.1.1, so what this README says about
 those chips at v3.1.1 holds at v3.1.6. This was checked at v3.1.6; if the pin above names a later
-version, it has not been checked there yet. The read/write memory chip changed after v3.1.1 and is
-proven at v3.1.6, and since v3.1.2 Pico has a second memory chip for misaligned loads and stores
-(see [SOUNDNESS.md](SOUNDNESS.md), A4).
+version, it has not been checked there yet. The read/write memory chip changed after v3.1.1, and
+since v3.1.2 Pico has a second memory chip for misaligned loads and stores; both are proven at
+v3.1.6 (see [SOUNDNESS.md](SOUNDNESS.md), A4).
 [SOUNDNESS.md](SOUNDNESS.md) says what the proofs establish and what they trust.
 
 For each opcode, the equivalence theorem states: under the chip's row
@@ -94,9 +94,8 @@ scripts/fv-check/        — theorem, layer, tactic and SOUNDNESS checks
 Within `RV64IM/Spec/` (and `Constraints/`), each chip used by Pico
 has its own file: ALU chips (`AddChip`, `SubChip`, `BitwiseChip`, `LtChip`,
 `SLLChip`, `ShiftRightChip`, `MulChip`, `DivRemChip`), the CPU chip
-(`CpuChip`), the memory chips (`MemoryReadWriteChip`, and
-`MemoryUnalignedChip`, which has a `Constraints/` file and no `Spec/`
-file yet), and any chip-local gadgets (`AddGadget`, `SubGadget`, `MulGadget`,
+(`CpuChip`), the memory chips (`MemoryReadWriteChip`,
+`MemoryUnalignedChip`), and any chip-local gadgets (`AddGadget`, `SubGadget`, `MulGadget`,
 `IsZeroGadget`, `LtSignedGadget`, …).
 
 Within `RV64IM/RVSail/Opcodes/`, every opcode has its own file
@@ -124,12 +123,12 @@ fetching mathlib's binary cache.
 ## Checking the theorems
 
 After `lake build`, `scripts/fv-check/check.sh` checks the top-level theorems
-listed in `scripts/fv-check/theorems.d/`: the read/write memory chip's specification at v3.1.6,
+listed in `scripts/fv-check/theorems.d/`: the two memory chips' specifications at v3.1.6,
 and the specifications of the ALU chips already at v3.1.1
 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight), and the
-equivalence theorems the branch proves at v3.1.1 (listed above). The lists of
-the other opcode equivalence theorems are parked in `theorems.d/parked/` while
-the CPU chip moves (see the README there). It fails if a theorem is missing,
+equivalence theorems the branch proves at v3.1.1 (listed above), with
+`Equivalence.utype_row_cases`, which shows that the `LUI` and `AUIPC` theorems
+together cover the row shape the two instructions share. It fails if a theorem is missing,
 depends on an axiom (a statement Lean accepts without proof) outside two lists,
 or its axioms or statement differ from the snapshots in `axioms.txt` and
 `signatures.txt`:
