@@ -33,7 +33,8 @@ dispatch, that `b` and `c` have 16-bit pieces, so does a store's `a`, and `a = 0
 `op_a_0 ≠ 0` (`MemoryBus.externals`); from the memory argument, that the double word read has
 16-bit pieces; from the byte table, the range checks; from the Program table, that the code
 range has 16-bit pieces. The per-opcode theorems also take the row's flag, and `aligned_address`
-takes `is_memory = 1`, which says the row is real.
+takes `is_memory = 1`, which says the row is real; `store_misses_code_range` takes the sum of
+the store flags = 1.
 
 Nothing here says which memory a load reads or a store writes: the Memory promise does not ask
 it. `Spec/MemoryReadWriteChipDataFlow.lean` proves that apart, for every row

@@ -70,8 +70,9 @@ discharges two instruction theorems' hypotheses (`Equivalence.utype_row_cases`, 
   runs into it), and that a store row misses the code range it looks up
   (`store_misses_code_range`, through the gadget below). `aligned_address` says the double word
   the row reads and writes back is the one holding the access's first byte, and both chips' give
-  its address piece by piece, each piece below `2^16`; the unaligned chip's also gives, on a row
-  whose access crosses, the next double word's. Both chips' also say what a row does to memory
+  its address piece by piece, its first two pieces (the third is 0) below `2^16`; the unaligned
+  chip's also gives, on a row whose access crosses, the next double word's. Both chips' also say
+  what a row does to memory
   (`dataFlow_of_allHold`): in a state that holds the double words the row reads from the memory
   argument, a load's value, at its width, is those double words' bytes from `b + c` on, and the
   row writes them back with a store's bytes in their place. The read/write chip reads one double
@@ -122,7 +123,7 @@ discharges two instruction theorems' hypotheses (`Equivalence.utype_row_cases`, 
   (see A4). `wf_asrt` and `ext_asrt` say the gadget's messages owe nothing to the tables that
   answer them.
 
-### Pinned inputs
+## Pinned inputs
 
 The proofs are about this Pico revision:
 
@@ -162,9 +163,10 @@ The other inputs are pinned as well:
   [`bb1e7d45`](https://github.com/NethermindEth/sail-riscv-lean/tree/bb1e7d45c6a158a5598705eea12cebfee4349b03),
   built on the Sail library `lean-sail`
   [`535c13d3`](https://github.com/NethermindEth/lean-sail/tree/535c13d3026c404e283c2e1b7f46c85237382223)
-  (`lake-manifest.json`). Its `LeanRV64D` files were regenerated from `riscv/sail-riscv` in its
-  commit `a318417f` (2026-02-11, "move to v4.28.0-rc1"); the next commit, `bb1e7d45`, sets the
-  platform configuration by hand: the `Zicfilp` and `Zca` extensions off, no PMP entries, no CLINT.
+  (`lake-manifest.json`). Its `LeanRV64D` files were regenerated from `riscv/sail-riscv` in
+  sail-riscv-lean's commit `a318417f` (2026-02-11, "move to v4.28.0-rc1"); the next commit,
+  `bb1e7d45`, sets the platform configuration by hand: the `Zicfilp` and `Zca` extensions off, no
+  PMP entries, no CLINT.
 - The `riscv/sail-riscv` commit those files were generated from is not recorded: `a318417f` names
   none, nor the Sail compiler commit that translated it. Their content points to
   [`5f5f02d3`](https://github.com/riscv/sail-riscv/commit/5f5f02d37f5156d8e8625622409fbb8caef2cf8f):
@@ -174,6 +176,11 @@ The other inputs are pinned as well:
 - The RISC-V unprivileged ISA version: neither repository names a dated release of the
   unprivileged ISA manual. sail-riscv's `README.md` at `5f5f02d3` gives the versions of the parts
   these proofs use: the RV64I base ISA, v2.1, and the M extension, v2.0.
+- Circuit framework: `LeanZKCircuit-Plonky3`
+  [`d1f15357`](https://github.com/NethermindEth/LeanZKCircuit-Plonky3/tree/d1f15357a7a999618b80dd110aba955c1f111cf6)
+  (branch `Dom/v4.28.0-rc1`), and Mathlib
+  [`5352afcc`](https://github.com/leanprover-community/mathlib4/tree/5352afccd6866369be9de43f5b7ec47203555f44)
+  (tag `v4.28.0-rc1`), both in `lake-manifest.json`.
 - The extractor: Rust `nightly-2026-09-27` (`extractor/rust-toolchain.toml`); Pico and Plonky3 in
   `extractor/Cargo.toml` and `extractor/Cargo.lock`.
 
@@ -204,13 +211,15 @@ one differs from the committed file, and its `build` job rebuilds the proofs and
 Pico's keygen takes, and prints the constraints and bus interactions as Lean. The output records
 the Pico commit it came from. `extractor --check` regenerates every generated file and compares it
 with the committed one, so a file that has not been regenerated from the pinned commit fails CI,
-except for the files listed in `extractor/pending.txt` (see "What is proved").
+except for the files listed in `extractor/pending.txt` (see "Pinned inputs").
 
 Gadgets are extracted through small wrapper airs that call the gadget's `eval` on a column
 layout of the same width; a test checks that each wrapper uses every column it declares.
 
-What remains trusted: the extractor's printer (`extractor/src/render.rs`), and that Pico's
-symbolic builder records what the prover enforces.
+What remains trusted: the extractor's printer (`extractor/src/render.rs`); that Pico's
+symbolic builder records what the prover enforces; and the circuit framework's semantics
+(`LeanZKCircuit_Plonky3.Plonky3.Circuit`, `LeanZKCircuit_Plonky3.Interactions`), which say what
+`allHold` and the bus lists mean.
 
 ### A2. The RISC-V specification
 

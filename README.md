@@ -2,8 +2,9 @@
 
 This repository contains a Lean 4 (v4.28.0-rc1) formalisation of the Brevis Pico
 RISC-V zkVM and equivalence proofs between the constraint systems of Pico's RV64IM
-CPU, ALU and memory chips (and their gadgets) and the corresponding [official Lean
-RISC-V specification](https://github.com/NethermindEth/sail-riscv-lean/tree/bb1e7d45c6a158a5598705eea12cebfee4349b03).
+CPU, ALU and memory chips (and their gadgets) and the Lean translation
+([`sail-riscv-lean`](https://github.com/NethermindEth/sail-riscv-lean/tree/bb1e7d45c6a158a5598705eea12cebfee4349b03))
+of the official Sail RISC-V model.
 
 The development covers the **RV64IM** variant of Pico. Its 62 opcodes were
 equivalence-proven against Pico 2.x. On the `pico-v3` branch those proofs are
@@ -137,6 +138,8 @@ The proofs are built from these pinned inputs:
 | RISC-V specification (Lean) | `sail-riscv-lean` `bb1e7d45c6a158a5598705eea12cebfee4349b03`, on `lean-sail` `535c13d3026c404e283c2e1b7f46c85237382223` | `lake-manifest.json` |
 | `riscv/sail-riscv` commit it was generated from | not recorded; its content points to `5f5f02d3`, unconfirmed | [SOUNDNESS.md](SOUNDNESS.md#pinned-inputs) |
 | RISC-V unprivileged ISA version | no dated release named; RV64I v2.1, M v2.0 (sail-riscv's `README.md` at `5f5f02d3`) | [SOUNDNESS.md](SOUNDNESS.md#pinned-inputs) |
+| Circuit framework | `LeanZKCircuit-Plonky3` `d1f15357a7a999618b80dd110aba955c1f111cf6` (branch `Dom/v4.28.0-rc1`) | `lake-manifest.json` |
+| Mathlib | `5352afccd6866369be9de43f5b7ec47203555f44` (tag `v4.28.0-rc1`) | `lake-manifest.json` |
 | Extractor's Rust toolchain | `nightly-2026-09-27` | `extractor/rust-toolchain.toml` |
 
 Build from the committed `lake-manifest.json`. `lakefile.toml` names two dependencies by branch
