@@ -14,7 +14,8 @@ repository; CI fails when one is out of date. The rest of the text is reviewed b
 ## What is proved
 
 The theorems checked by `scripts/fv-check/check.sh` are listed in `scripts/fv-check/theorems.d/`,
-with their statements in `signatures.txt`. They are of four kinds.
+with their statements in `signatures.txt`. They are of four kinds, and one lemma beside them that
+discharges two instruction theorems' hypotheses (`Equivalence.utype_row_cases`, under the first).
 
 - **Opcode equivalence** (`Equivalence.equivalence_*`, one per RV64IM opcode except `ECALL`). For
   a CPU chip row that satisfies its extracted constraints, if the bus messages the row exchanges
@@ -238,8 +239,9 @@ zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign fl
 the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
 amount or 12-bit immediate; the theorems do not state that link. The other checked theorems with
 an immediate still read it from the row's operand values: the six branches, `JALR`, the four
-stores and the seven loads take the low 13 or 12 bits of the `op_c` value, and `JAL` the low 21
-bits of the `op_b` value.
+stores and the seven loads take the low 13 or 12 bits of the `op_c` value, `JAL` the low 21 bits
+of the `op_b` value, and `LUI` and `AUIPC` take their 20-bit immediate as a parameter pinned by a
+hypothesis on the `op_c` value (`LUI`) or the `op_b` value (`AUIPC`).
 
 The four store theorems take their opcode alone too, as they did at `353238a`, and gain the
 whole-trace assumption, which their 2.x statements did not take. Like every restored theorem they
@@ -282,13 +284,19 @@ value is zero and the `op_c` value is `signExtend 64 (imm ++ 0#12)`; for `AUIPC`
 is that immediate and the `op_c` value is the row's pc. At `353238a` `LUI` was opcode 0 with both
 flags and read its immediate out of the `op_c` value, and `AUIPC` was opcode 27 with
 `is_auipc = 1`; neither took the whole-trace assumption, which both now do. The shapes are not left
-for anything else to discharge: `Equivalence.utype_row_cases`, checked with them, proves from the
-Program table's promise and the CPU constraints that every real row of opcode 0 with both flags has
-one of the two, so the pair covers the opcode. The shapes overlap where the pc is a multiple of
-`2 ^ 12`; there both theorems hold, because `LUI` and `AUIPC` then write the same value. `op_b = 0`
-alone would not identify a `LUI` row: an `AUIPC` row whose immediate is 0 has it, and writes the pc.
-Both theorems rest on the ALU chip's promise for opcode 0 (`op_a = op_b + op_c`), as `ADD` and
-`ADDI` do; the row reads no register.
+for anything else to discharge: `Equivalence.utype_row_cases`, checked with them, proves that every
+real row of opcode 0 with both flags has one of the two, so the pair covers the opcode. It takes two
+of the instruction theorems' own hypotheses: every row's extracted CPU constraints, and every row's
+`bus_row_wf_asm`, the whole bus assumption with the ALU and Memory promises in it, although its
+proof reads only the row's Program message (the Program table's promise). The shapes overlap
+exactly when the `op_b` value is zero and the `op_c` value is the row's pc: the row is `AUIPC 0`
+and also the `LUI` of the pc's upper bits, which needs the pc to be a multiple of `2 ^ 12` but is
+not implied by it (`LUI 5` at pc `0x1000` has the `op_c` value `0x5000`). There both theorems hold,
+because both instructions write the pc. `op_b = 0` alone would not identify a `LUI` row: an `AUIPC`
+row whose immediate is 0 has it, and writes the pc. Both theorems rest on the ALU chip's promise for
+opcode 0 (`op_a = op_b + op_c`), as `ADD` and `ADDI` do. The row reads no source register: its
+operations are `JAL`'s, the pc read, the read of `rd`'s old value and the write of `rd`, and the
+next pc.
 
 The 2.x statements were last recorded at `353238a`, against the 2.x constraints and the contracts
 of `RVSail/Buses.lean`. Two definitions every instruction

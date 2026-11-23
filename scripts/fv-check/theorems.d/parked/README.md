@@ -23,24 +23,24 @@ git show 353238a:scripts/fv-check/axioms.txt
 
 They differ from those at `353238a` in three ways, plus the dropped
 hypotheses, the immediate of the register-immediate theorems and the operand
-shapes of `LUI` and `AUIPC`, described after them. The bus assumptions name the v3.1.1
-contracts (`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`) instead of the
+shapes of `LUI` and `AUIPC`, described after them. The bus assumptions name the
+v3.1.1 contracts (`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`) instead of the
 2.x ones. The register held in `op_a` (the destination, `rs1` for a branch,
 or `rs2` for a store) is read from `instruction.op_a` instead of
 `instruction.op_a_0`: v3.1.1 keeps the 5-bit index in one column, so every
 theorem whose `rd`, branch `rs1` or store `rs2` reads it shows this rename. And the whole-trace assumption `pico_CpuChip_control_flow_assumptions`
 gains three conjuncts in its definition:
 
-- the eight theorems that already name it (the six branches, `JAL` and `JALR`,
-  all now restored) keep that part of their recorded text, because
-  `signatures.txt` records the name and not the definition, but their meaning
-  changes. They changed for the other reasons in this section: the six branches
-  only in the contract names and in reading `rs1` from `op_a`, which makes them
-  the one class whose statements lose and gain no hypothesis at all;
-- the other 54 gain it as a new hypothesis, so their recorded statements change,
-  as those already restored have.
+- the eight theorems that already named it (the six branches, `JAL` and `JALR`)
+  keep that part of their recorded text, because `signatures.txt` records the
+  name and not the definition, but their meaning changed. They changed for the
+  other reasons in this section: the six branches only in the contract names and
+  in reading `rs1` from `op_a`, which makes them the one class whose statements
+  lose and gain no hypothesis at all;
+- the other 54 gain it as a new hypothesis, so their recorded statements
+  changed.
 
-A restored statement may also drop an immediate-flag hypothesis that the v3.1.1
+Some restored statements also drop an immediate-flag hypothesis that the v3.1.1
 decoder already fixes for its opcode (`imm_b_of_opcode`, `imm_c_of_opcode` in
 `RVSail/BusesV3.lean`): `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`,
 `ANDI`, `SLTI`, `SLTIU`, `SLLI`, `SRLI` and `SRAI` no longer take `imm_b = 0`,
@@ -56,8 +56,8 @@ register-register one keeps `imm_c = 0`: opcode 40 (`ADDIW`, `ADDW`), 42 to 44
 `SRAI` and `SLL`, `SRL`, `SRA`), and 0, 2 to 4, 8 and 9 (the six `ITYPE`
 theorems and `ADD`, `XOR`, `OR`, `AND`, `SLT`, `SLTU`).
 
-A restored statement may also drop the row's class selector when the opcode
-fixes that: `JAL` and `JALR` no longer take `is_jal` / `is_jalr`, nor either
+Some restored statements also drop the row's class selector, which the opcode
+fixes: `JAL` and `JALR` no longer take `is_jal` / `is_jalr`, nor either
 immediate flag, because opcodes 24 and 25 are the two jumps alone. The six
 branches, the four stores and the seven loads never took theirs, for the same
 reason, so their statements lose nothing here.
@@ -95,10 +95,11 @@ two (`op_c_value_setWidth_eq_op_c_0`). The decoder sign-extends the program's
 (`Transpiler.V3.imm_operand` with its sign flag `true` or `false`), and writes
 the low 16 bits of the result into `op_c_0`, so on a row the program decoded
 those bits are the program's immediate, but the statement does not tie
-`op_c_0` to the decoder. A class whose immediate the proof does not otherwise
-reach should be restored the same way. The branches, `JAL`, `JALR`, the four
-stores and the seven loads, already restored, read theirs from the row's
-operand values (`op_c_value`, or `op_b_value` for `JAL`).
+`op_c_0` to the decoder. The other theorems with an immediate read it from the
+row's operand values: the branches, `JALR`, the four stores and the seven loads
+from `op_c_value`, `JAL` from `op_b_value`, and `LUI` and `AUIPC` take it as a
+parameter pinned by a hypothesis on `op_c_value` (`LUI`) or `op_b_value`
+(`AUIPC`).
 
 Two definitions every statement names were also rewritten at v3.1.1, and
 `signatures.txt` shows only their names: `Equivalence.CPU_bus_operations` (the
