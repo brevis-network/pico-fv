@@ -388,7 +388,7 @@ namespace MemoryReadWriteChip.Spec
             v.memory_access.access.value_2 row 0, v.memory_access.access.value_3 row 0]) ]
   := by
     obtain ⟨ -, -, -, h_pos ⟩ := address air row h_ext_asm h_wf_asm h_constraints h_mem
-    obtain ⟨ -, h_al ⟩ := aligned_address air row h_ext_asm h_wf_asm h_constraints h_mem
+    obtain ⟨ -, -, -, h_al ⟩ := aligned_address air row h_ext_asm h_wf_asm h_constraints h_mem
     simp only [is_memory] at h_mem
     dsimp only [dispatch_addr] at h_al ⊢
     rw [← h_al]

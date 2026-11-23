@@ -69,15 +69,15 @@ discharges two instruction theorems' hypotheses (`Equivalence.utype_row_cases`, 
   row writes back 16-bit pieces: the unaligned chip writes back a second one when the access
   runs into it), and that a store row misses the code range it looks up
   (`store_misses_code_range`, through the gadget below). `aligned_address` says the double word
-  the row reads and writes back is the one holding the access's first byte; the unaligned chip's
-  also gives its address piece by piece and, on a row whose access crosses, the next double
-  word's. The read/write chip's also say what a row does to memory (`dataFlow_of_allHold`): in a
-  state that holds the double word the row reads from the memory argument, a load's value, at
-  its width, is that double word's bytes at `b + c`, and the row writes the double word back with
-  a store's bytes patched in. That the double word read is the one memory holds is the memory
-  argument's promise, which stays on trust (A4). The unaligned chip has no such theorem yet: for
-  it, none says that a load's value is what memory holds, or that a store writes it; the promise
-  does not ask it (A4).
+  the row reads and writes back is the one holding the access's first byte, and both chips' give
+  its address piece by piece, each piece below `2^16`; the unaligned chip's also gives, on a row
+  whose access crosses, the next double word's. The read/write chip's also say what a row does to
+  memory (`dataFlow_of_allHold`): in a state that holds the double word the row reads from the
+  memory argument, a load's value, at its width, is that double word's bytes at `b + c`, and the
+  row writes the double word back with a store's bytes patched in. That the double word read is
+  the one memory holds is the memory argument's promise, which stays on trust (A4). The unaligned
+  chip has no such theorem yet: for it, none says that a load's value is what memory holds, or
+  that a store writes it; the promise does not ask it (A4).
 
   `DivRemChip`'s specifications are the one exception to "satisfies its extracted constraints":
   they are stated over the readable restatement `DivRemChip.ConstraintsAndBuses.AbsConstraints`
