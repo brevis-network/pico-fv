@@ -5,3 +5,4 @@ Equivalence.equivalence_LH
 Equivalence.equivalence_LHU
 Equivalence.equivalence_LW
 Equivalence.equivalence_LWU
+Equivalence.load_decode_satisfiable

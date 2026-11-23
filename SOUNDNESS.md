@@ -14,8 +14,9 @@ repository; CI fails when one is out of date. The rest of the text is reviewed b
 ## What is proved
 
 The theorems checked by `scripts/fv-check/check.sh` are listed in `scripts/fv-check/theorems.d/`,
-with their statements in `signatures.txt`. They are of four kinds, and one lemma beside them that
-discharges two instruction theorems' hypotheses (`Equivalence.utype_row_cases`, under the first).
+with their statements in `signatures.txt`. They are of four kinds, and three lemmas beside them
+that discharge instruction theorems' hypotheses (`Equivalence.utype_row_cases`, under the first,
+and the two decoding lemmas listed with the stores and the loads, A3).
 
 - **Opcode equivalence** (`Equivalence.equivalence_*`, one per RV64IM opcode except `ECALL`). For
   a CPU chip row that satisfies its extracted constraints, if the bus messages the row exchanges
@@ -52,6 +53,12 @@ discharges two instruction theorems' hypotheses (`Equivalence.utype_row_cases`, 
   `UType.lean`'s list also holds `Equivalence.utype_row_cases`, which is not an instruction
   theorem: `LUI` and `AUIPC` share a row shape at v3.1.1, and it shows that every row of that
   shape is one the two theorems cover (see A3).
+
+  The lists of `Stores.lean` and `Loads.lean` also hold `Equivalence.store_decode_satisfiable` and
+  `Equivalence.load_decode_satisfiable`, which are not instruction theorems either: the store and
+  load theorems take an instruction whose decoding is the row's Program message, and the two show,
+  from the row's Program promise (in `bus_row_wf_asm`), that every real row of a store or load
+  opcode has one (see A3).
 
   Every v3.1.1 instruction theorem also assumes the chunk's final pc is a well-formed guest
   address (`Equivalence.pico_CpuChip_control_flow_assumptions`; see A3). Pico enforces that in
@@ -294,14 +301,32 @@ seven take `op_c_0`'s low 12 bits. The decoder sign-extends the seven 12-bit imm
 zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign flag `true` or
 `false`), and writes the low 16 bits of the result into `op_c_0`, the next 16 into `op_c_1` and
 the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
-amount or 12-bit immediate; the theorems do not state that link. The other checked theorems with
-an immediate still read it from the row's operand values: the six branches, `JALR`, the four
-stores and the seven loads take the low 13 or 12 bits of the `op_c` value, `JAL` the low 21 bits
-of the `op_b` value, and `LUI` and `AUIPC` take their 20-bit immediate as a parameter pinned by a
+amount or 12-bit immediate; those theorems do not state that link.
+
+The four store and the seven load theorems state it. Each takes the instruction itself, written
+in the statement (`instruction.STORE (imm, rs2, rs1, 8)` for `SD`), with the hypothesis
+`h_decode` that the decoder (`Transpiler.V3.transpile_op`, at multiplicity 1 and some address
+`addr`) turns it into the row's Program message, and concludes that Sail's step on that
+instruction equals the row's effect. The decoding fixes `is_real = 1`, the opcode, the immediate
+flags, the register columns and the offset, so these theorems take none of them as hypotheses. It
+fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. Given the row's Program
+promise, the decoding hypothesis is no stronger than the two it replaces:
+`Equivalence.store_decode_satisfiable` and `Equivalence.load_decode_satisfiable` (checked, listed
+with the stores and the loads) derive it, for some instruction fields and a 4-aligned address below
+`Transpiler.V3.code_address_bound`, from `is_real = 1`, the opcode of each store or load width, and
+that promise (in `bus_row_wf_asm`, which the instruction theorems take for every row as
+`h_all_wf`). Each decoded theorem is proved from
+a column-form theorem of the same name with `_row` appended (`equivalence_SD_row`), which reads
+`rs1`, `rs2` or `rd` and the offset off the row and is not checked.
+
+The other checked theorems with an immediate still read it from the row's operand values: the six
+branches and `JALR` take the low 13 or 12 bits of the `op_c` value, `JAL` the low 21 bits of the
+`op_b` value, and `LUI` and `AUIPC` take their 20-bit immediate as a parameter pinned by a
 hypothesis on the `op_c` value (`LUI`) or the `op_b` value (`AUIPC`).
 
-The four store theorems take their opcode alone too, as they did at `353238a`, and gain the
-whole-trace assumption, which their 2.x statements did not take. Like every restored theorem they
+The four store theorems take no opcode: the decoding fixes it (their `_row` forms take it alone,
+as the store theorems did at `353238a`). They gain the whole-trace assumption, which their 2.x
+statements did not take. Like every restored theorem they
 rest on the Program table's promise (A4, A5). Of the Memory message's promise (`MemoryBus.Spec` in
 `RVSail/BusesV3.lean`) a store uses one clause: the address `op_b + op_c` is below `2 ^ 32`, so the
 whole access lies in the memory region `RISC_V_assumptions` gives Sail (at least `2 ^ 48` bytes);
@@ -319,8 +344,9 @@ receives, which may be any access, aligned or not (`riscv_memory/unaligned/mod.r
 The two sides of the link a store theorem assumes are not yet composed, as A4 describes for chip
 composition generally.
 
-The seven load theorems take their opcode alone too, as they did at `353238a`, and gain the
-whole-trace assumption, which their 2.x statements did not take. They rest on the same promise, and
+The seven load theorems take no opcode either: the decoding fixes it (their `_row` forms take it
+alone, as the load theorems did at `353238a`). They gain the whole-trace assumption, which their
+2.x statements did not take. They rest on the same promise, and
 on one more part of it. Besides the address
 bound, `MemoryBus.Spec` says what extension the loaded word carries when the destination is not
 `x0`: sign for `LB`, `LH` and `LW`, zero for `LBU`, `LHU` and `LWU`, none for `LD`. That is the
@@ -536,7 +562,7 @@ C2) or the specification axioms of A2.
 <!-- generated: axioms -->
 | Axioms the theorem depends on | Theorems |
 |---|---:|
-| kernel + compiler | 97 |
+| kernel + compiler | 99 |
 | kernel + compiler + RISC-V spec axioms | 62 |
 | kernel only | 1 |
 <!-- end generated -->
