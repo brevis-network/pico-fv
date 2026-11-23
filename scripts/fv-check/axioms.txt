@@ -102,6 +102,7 @@ LtChip.Spec.spec_SLTU Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot
 LtChip.Spec.wf_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 MemoryReadWriteChip.Interactions.bus_row_equiv Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 MemoryReadWriteChip.Spec.aligned_address Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
+MemoryReadWriteChip.Spec.dataFlow_of_allHold Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 MemoryReadWriteChip.Spec.ext_asrt Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 MemoryReadWriteChip.Spec.spec_LB Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
 MemoryReadWriteChip.Spec.spec_LBU Classical.choice,Lean.ofReduceBool,Lean.trustCompiler,Quot.sound,propext
