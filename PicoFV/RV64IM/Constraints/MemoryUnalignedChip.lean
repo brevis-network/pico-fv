@@ -1,18 +1,21 @@
+import PicoFV.RV64IM.RVSail.BusesV3
 import PicoFV.RV64IM.Extraction.MemoryUnalignedChip
 import PicoFV.RV64IM.Airs.MemoryUnalignedChip
+import PicoFV.RV64IM.Constraints.CodeRangeGadget
 
 open Plonky3
 
 set_option maxHeartbeats 1_000_000_000
 
 /-!
-# MemoryUnalignedChip — constraints
+# MemoryUnalignedChip — constraints and bus messages
 
 `MemoryUnalignedChip::eval` (`vm/src/chips/chips/riscv_memory/unaligned/constraints.rs`, Pico
 v3.1.6 `6aa644efeff9ddbec6beb538200f98f2a70f5d8e`) emits 59 constraints and 28 bus messages,
-extracted in `PicoFV.RV64IM.Extraction.MemoryUnalignedChip`. This file restates the constraints
-on the named columns of `Valid_MemoryUnalignedChip` (`Airs/MemoryUnalignedChip.lean`). Pico paths
-below are under `vm/src/chips/chips/`, `vm/src/chips/` or `vm/src/`, at v3.1.6.
+extracted in `PicoFV.RV64IM.Extraction.MemoryUnalignedChip`. This file restates them on the named
+columns of `Valid_MemoryUnalignedChip` (`Airs/MemoryUnalignedChip.lean`), with an `_equiv` lemma
+per constraint, and sorts the messages by contract (`AbsBuses`). Pico paths below are under
+`vm/src/chips/chips/`, `vm/src/chips/` or `vm/src/`, at v3.1.6.
 
 The chip takes the loads and stores whose address is not a multiple of their width, and is
 correct for an aligned one too (`riscv_memory/unaligned/mod.rs:1-6`). A row reads the dword
@@ -20,10 +23,11 @@ holding the access's first byte at `clk + Memory`, and the next dword at `clk + 
 access runs past it (`riscv_memory/unaligned/mod.rs:8-12`).
 
 Each restatement's `_equiv` lemma proves it equal to its extracted constraint, and
-`allHold_iff_allHold_simplified` proves that `row_constraint_list` holds all 59: no restatement
-differs from the extraction, and none is missing. The column names come from the layout in
-`Airs/MemoryUnalignedChip.lean`; that they are Pico's names is checked by reading the layout
-against `columns.rs`, not by these lemmas.
+`allHold_iff_allHold_simplified` proves that `row_constraint_list` holds all 59 and `raw_bus_row`
+all 28 messages: no restatement differs from the extraction, and none is missing.
+`bus_row_equiv` proves that sorting `raw_bus_row` by contract gives `AbsBuses`. The column names
+come from the layout in `Airs/MemoryUnalignedChip.lean`; that they are Pico's names is checked by
+reading the layout against `columns.rs`, not by these lemmas.
 
 `constraints.rs` reads in these sections, which is the order the extraction follows:
 `39-64` the instruction and its flags, `65-94` the address `op_b + op_c` through boolean
@@ -35,9 +39,6 @@ byte splits, `211-272` what a load reads and its sign, `273-309` what a store wr
 Each constraint's docstring gives its Pico line. In those of constraints 32 to 54, `w` is the
 sixteen bytes of the two dwords before the access and `r` the eight of `op_a`, as in
 `constraints.rs`.
-
-The bus messages are not restated: `allHold_simplified` keeps the extracted
-`constrain_interactions`.
 -/
 
 namespace MemoryUnalignedChip.ConstraintsAndBuses
@@ -797,19 +798,93 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
 
     end row_constraints
 
-    /-- The extracted `allHold` with each constraint replaced by its restatement; the bus
-        messages stay as extracted. -/
+    section row_buses
+
+      /-- The row's 28 messages, `(multiplicity, [tag, ...fields])`, as extracted. Tags are
+          Pico's `LookupType`: 1 Memory, 2 Program, 5 Byte. -/
+      @[constraint_and_interaction_simplification]
+      def raw_bus_row (air : Valid_MemoryUnalignedChip FKB ExtF) (row : ℕ) :
+          List (FKB × List FKB) :=
+        let v := air.cols
+        -- 0: the memory dispatch, received from the CPU chip (`riscv_memory/unaligned/constraints.rs:44-63`)
+        [ ((0 - ((((((((v.instruction.is_lb row 0) + (v.instruction.is_lbu row 0)) + (v.instruction.is_lh row 0)) + (v.instruction.is_lhu row 0)) + (v.instruction.is_lw row 0)) + (v.instruction.is_lwu row 0)) + (v.instruction.is_ld row 0)) + ((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0)))), [1, (((((((((((0 + ((0 + (v.instruction.is_lb row 0)) * 10)) + ((0 + (v.instruction.is_lbu row 0)) * 13)) + ((0 + (v.instruction.is_lh row 0)) * 11)) + ((0 + (v.instruction.is_lhu row 0)) * 14)) + ((0 + (v.instruction.is_lw row 0)) * 12)) + ((0 + (v.instruction.is_lwu row 0)) * 45)) + ((0 + (v.instruction.is_ld row 0)) * 46)) + ((0 + (v.instruction.is_sb row 0)) * 15)) + ((0 + (v.instruction.is_sh row 0)) * 16)) + ((0 + (v.instruction.is_sw row 0)) * 17)) + ((0 + (v.instruction.is_sd row 0)) * 47)), (v.instruction.op_a_value_0 row 0), (v.instruction.op_a_value_1 row 0), (v.instruction.op_a_value_2 row 0), (v.instruction.op_a_value_3 row 0), (v.instruction.op_b_value_0 row 0), (v.instruction.op_b_value_1 row 0), (v.instruction.op_b_value_2 row 0), (v.instruction.op_b_value_3 row 0), (v.instruction.op_c_value_0 row 0), (v.instruction.op_c_value_1 row 0), (v.instruction.op_c_value_2 row 0), (v.instruction.op_c_value_3 row 0), (v.instruction.op_a_0 row 0), ((((((((v.instruction.is_lb row 0) + (v.instruction.is_lbu row 0)) + (v.instruction.is_lh row 0)) + (v.instruction.is_lhu row 0)) + (v.instruction.is_lw row 0)) + (v.instruction.is_lwu row 0)) + (v.instruction.is_ld row 0)) + ((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0))), (v.chunk row 0), (v.clk row 0)]),
+        -- 1: `U16Range` of `addr_word_1` (`riscv_memory/unaligned/constraints.rs:82-89`)
+          (((((((((v.instruction.is_lb row 0) + (v.instruction.is_lbu row 0)) + (v.instruction.is_lh row 0)) + (v.instruction.is_lhu row 0)) + (v.instruction.is_lw row 0)) + (v.instruction.is_lwu row 0)) + (v.instruction.is_ld row 0)) + ((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0))), [5, 8, (v.addr_word_1 row 0), 0, 0, 0]),
+        -- 2: `BitRange(13)` of `dword0 / 8`, the dword's low piece over 8 (`riscv_memory/unaligned/constraints.rs:109-116`); `1864368129` is `8`'s inverse
+          (((((((((v.instruction.is_lb row 0) + (v.instruction.is_lbu row 0)) + (v.instruction.is_lh row 0)) + (v.instruction.is_lhu row 0)) + (v.instruction.is_lw row 0)) + (v.instruction.is_lwu row 0)) + (v.instruction.is_ld row 0)) + ((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0))), [5, 9, (((0 + (v.addr_word_0 row 0)) - ((((((((0 + ((v.offset_0 row 0) * 0)) + ((v.offset_1 row 0) * 1)) + ((v.offset_2 row 0) * 2)) + ((v.offset_3 row 0) * 3)) + ((v.offset_4 row 0) * 4)) + ((v.offset_5 row 0) * 5)) + ((v.offset_6 row 0) * 6)) + ((v.offset_7 row 0) * 7))) * 1864368129), 0, 13, 0]),
+        -- 3: `U16Range` of the next dword's second piece `addr_word_1 + next_carry`, on a row that crosses (`riscv_memory/unaligned/constraints.rs:145-153`)
+          ((v.cross row 0), [5, 8, ((0 + (v.addr_word_1 row 0)) + (v.next_carry row 0)), 0, 0, 0]),
+        -- 4: `U16Range` of the first access's `diff_16bit_limb` (`machine/builder/range_check.rs:88-95`)
+          (((((((((v.instruction.is_lb row 0) + (v.instruction.is_lbu row 0)) + (v.instruction.is_lh row 0)) + (v.instruction.is_lhu row 0)) + (v.instruction.is_lw row 0)) + (v.instruction.is_lwu row 0)) + (v.instruction.is_ld row 0)) + ((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0))), [5, 8, (v.first.access.diff_16bit_limb row 0), 0, 0, 0]),
+        -- 5: `BitRange(9)` of the first access's `diff_hi9` (`machine/builder/range_check.rs:96-102`)
+          (((((((((v.instruction.is_lb row 0) + (v.instruction.is_lbu row 0)) + (v.instruction.is_lh row 0)) + (v.instruction.is_lhu row 0)) + (v.instruction.is_lw row 0)) + (v.instruction.is_lwu row 0)) + (v.instruction.is_ld row 0)) + ((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0))), [5, 9, (v.first.access.diff_hi9 row 0), 0, 9, 0]),
+        -- 6: the read of the first dword at `prev_clk` (`machine/builder/riscv_memory.rs:195-200`)
+          (((((((((v.instruction.is_lb row 0) + (v.instruction.is_lbu row 0)) + (v.instruction.is_lh row 0)) + (v.instruction.is_lhu row 0)) + (v.instruction.is_lw row 0)) + (v.instruction.is_lwu row 0)) + (v.instruction.is_ld row 0)) + ((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0))), [1, (v.chunk row 0), ((((v.clk row 0) + 0) - ((v.first.access.diff_16bit_limb row 0) + ((v.first.access.diff_hi9 row 0) * 65536))) - 1), ((0 + (v.addr_word_0 row 0)) - ((((((((0 + ((v.offset_0 row 0) * 0)) + ((v.offset_1 row 0) * 1)) + ((v.offset_2 row 0) * 2)) + ((v.offset_3 row 0) * 3)) + ((v.offset_4 row 0) * 4)) + ((v.offset_5 row 0) * 5)) + ((v.offset_6 row 0) * 6)) + ((v.offset_7 row 0) * 7))), (0 + (v.addr_word_1 row 0)), 0, (v.first.prev_value_0 row 0), (v.first.prev_value_1 row 0), (v.first.prev_value_2 row 0), (v.first.prev_value_3 row 0)]),
+        -- 7: the write of the first dword at `clk + 0` (`machine/builder/riscv_memory.rs:203-208`)
+          ((0 - ((((((((v.instruction.is_lb row 0) + (v.instruction.is_lbu row 0)) + (v.instruction.is_lh row 0)) + (v.instruction.is_lhu row 0)) + (v.instruction.is_lw row 0)) + (v.instruction.is_lwu row 0)) + (v.instruction.is_ld row 0)) + ((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0)))), [1, (v.chunk row 0), ((v.clk row 0) + 0), ((0 + (v.addr_word_0 row 0)) - ((((((((0 + ((v.offset_0 row 0) * 0)) + ((v.offset_1 row 0) * 1)) + ((v.offset_2 row 0) * 2)) + ((v.offset_3 row 0) * 3)) + ((v.offset_4 row 0) * 4)) + ((v.offset_5 row 0) * 5)) + ((v.offset_6 row 0) * 6)) + ((v.offset_7 row 0) * 7))), (0 + (v.addr_word_1 row 0)), 0, (v.first.access.value_0 row 0), (v.first.access.value_1 row 0), (v.first.access.value_2 row 0), (v.first.access.value_3 row 0)]),
+        -- 8: `U16Range` of the second access's `diff_16bit_limb`, on a row that crosses (`machine/builder/range_check.rs:88-95`)
+          ((v.cross row 0), [5, 8, (v.second.access.diff_16bit_limb row 0), 0, 0, 0]),
+        -- 9: `BitRange(9)` of the second access's `diff_hi9`, on a row that crosses (`machine/builder/range_check.rs:96-102`)
+          ((v.cross row 0), [5, 9, (v.second.access.diff_hi9 row 0), 0, 9, 0]),
+        -- 10: the read of the next dword at its `prev_clk`, on a row that crosses (`machine/builder/riscv_memory.rs:195-200`)
+          ((v.cross row 0), [1, (v.chunk row 0), ((((v.clk row 0) + 1) - ((v.second.access.diff_16bit_limb row 0) + ((v.second.access.diff_hi9 row 0) * 65536))) - 1), ((((0 + (v.addr_word_0 row 0)) - ((((((((0 + ((v.offset_0 row 0) * 0)) + ((v.offset_1 row 0) * 1)) + ((v.offset_2 row 0) * 2)) + ((v.offset_3 row 0) * 3)) + ((v.offset_4 row 0) * 4)) + ((v.offset_5 row 0) * 5)) + ((v.offset_6 row 0) * 6)) + ((v.offset_7 row 0) * 7))) + 8) - ((0 + (v.next_carry row 0)) * 65536)), ((0 + (v.addr_word_1 row 0)) + (v.next_carry row 0)), 0, (v.second.prev_value_0 row 0), (v.second.prev_value_1 row 0), (v.second.prev_value_2 row 0), (v.second.prev_value_3 row 0)]),
+        -- 11: the write of the next dword at `clk + 1`, on a row that crosses (`machine/builder/riscv_memory.rs:203-208`)
+          ((0 - (v.cross row 0)), [1, (v.chunk row 0), ((v.clk row 0) + 1), ((((0 + (v.addr_word_0 row 0)) - ((((((((0 + ((v.offset_0 row 0) * 0)) + ((v.offset_1 row 0) * 1)) + ((v.offset_2 row 0) * 2)) + ((v.offset_3 row 0) * 3)) + ((v.offset_4 row 0) * 4)) + ((v.offset_5 row 0) * 5)) + ((v.offset_6 row 0) * 6)) + ((v.offset_7 row 0) * 7))) + 8) - ((0 + (v.next_carry row 0)) * 65536)), ((0 + (v.addr_word_1 row 0)) + (v.next_carry row 0)), 0, (v.second.access.value_0 row 0), (v.second.access.value_1 row 0), (v.second.access.value_2 row 0), (v.second.access.value_3 row 0)]),
+        -- 12: `U8Range` of the first dword's limb 0, its low and high byte (`machine/builder/range_check.rs:15-30`, called at `riscv_memory/unaligned/constraints.rs:188-193`); `2122383361` is `256`'s inverse
+          (((((((((v.instruction.is_lb row 0) + (v.instruction.is_lbu row 0)) + (v.instruction.is_lh row 0)) + (v.instruction.is_lhu row 0)) + (v.instruction.is_lw row 0)) + (v.instruction.is_lwu row 0)) + (v.instruction.is_ld row 0)) + ((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0))), [5, 7, 0, 0, (v.first_bytes.low_bytes_0 row 0), (((v.first.prev_value_0 row 0) - (v.first_bytes.low_bytes_0 row 0)) * 2122383361)]),
+        -- 13: `U8Range` of the first dword's limb 1
+          (((((((((v.instruction.is_lb row 0) + (v.instruction.is_lbu row 0)) + (v.instruction.is_lh row 0)) + (v.instruction.is_lhu row 0)) + (v.instruction.is_lw row 0)) + (v.instruction.is_lwu row 0)) + (v.instruction.is_ld row 0)) + ((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0))), [5, 7, 0, 0, (v.first_bytes.low_bytes_1 row 0), (((v.first.prev_value_1 row 0) - (v.first_bytes.low_bytes_1 row 0)) * 2122383361)]),
+        -- 14: `U8Range` of the first dword's limb 2
+          (((((((((v.instruction.is_lb row 0) + (v.instruction.is_lbu row 0)) + (v.instruction.is_lh row 0)) + (v.instruction.is_lhu row 0)) + (v.instruction.is_lw row 0)) + (v.instruction.is_lwu row 0)) + (v.instruction.is_ld row 0)) + ((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0))), [5, 7, 0, 0, (v.first_bytes.low_bytes_2 row 0), (((v.first.prev_value_2 row 0) - (v.first_bytes.low_bytes_2 row 0)) * 2122383361)]),
+        -- 15: `U8Range` of the first dword's limb 3
+          (((((((((v.instruction.is_lb row 0) + (v.instruction.is_lbu row 0)) + (v.instruction.is_lh row 0)) + (v.instruction.is_lhu row 0)) + (v.instruction.is_lw row 0)) + (v.instruction.is_lwu row 0)) + (v.instruction.is_ld row 0)) + ((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0))), [5, 7, 0, 0, (v.first_bytes.low_bytes_3 row 0), (((v.first.prev_value_3 row 0) - (v.first_bytes.low_bytes_3 row 0)) * 2122383361)]),
+        -- 16: `U8Range` of the second dword's limb 0, on a row that crosses (`riscv_memory/unaligned/constraints.rs:194-199`)
+          ((v.cross row 0), [5, 7, 0, 0, (v.second_bytes.low_bytes_0 row 0), (((v.second.prev_value_0 row 0) - (v.second_bytes.low_bytes_0 row 0)) * 2122383361)]),
+        -- 17: `U8Range` of the second dword's limb 1
+          ((v.cross row 0), [5, 7, 0, 0, (v.second_bytes.low_bytes_1 row 0), (((v.second.prev_value_1 row 0) - (v.second_bytes.low_bytes_1 row 0)) * 2122383361)]),
+        -- 18: `U8Range` of the second dword's limb 2
+          ((v.cross row 0), [5, 7, 0, 0, (v.second_bytes.low_bytes_2 row 0), (((v.second.prev_value_2 row 0) - (v.second_bytes.low_bytes_2 row 0)) * 2122383361)]),
+        -- 19: `U8Range` of the second dword's limb 3
+          ((v.cross row 0), [5, 7, 0, 0, (v.second_bytes.low_bytes_3 row 0), (((v.second.prev_value_3 row 0) - (v.second_bytes.low_bytes_3 row 0)) * 2122383361)]),
+        -- 20: `U8Range` of `op_a`'s limb 0, on a store row (`riscv_memory/unaligned/constraints.rs:200-205`)
+          (((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0)), [5, 7, 0, 0, (v.value_bytes.low_bytes_0 row 0), (((v.instruction.op_a_value_0 row 0) - (v.value_bytes.low_bytes_0 row 0)) * 2122383361)]),
+        -- 21: `U8Range` of `op_a`'s limb 1
+          (((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0)), [5, 7, 0, 0, (v.value_bytes.low_bytes_1 row 0), (((v.instruction.op_a_value_1 row 0) - (v.value_bytes.low_bytes_1 row 0)) * 2122383361)]),
+        -- 22: `U8Range` of `op_a`'s limb 2
+          (((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0)), [5, 7, 0, 0, (v.value_bytes.low_bytes_2 row 0), (((v.instruction.op_a_value_2 row 0) - (v.value_bytes.low_bytes_2 row 0)) * 2122383361)]),
+        -- 23: `U8Range` of `op_a`'s limb 3
+          (((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0)), [5, 7, 0, 0, (v.value_bytes.low_bytes_3 row 0), (((v.instruction.op_a_value_3 row 0) - (v.value_bytes.low_bytes_3 row 0)) * 2122383361)]),
+        -- 24: `U16Range` of `2 · sign_src - msb · 2^16`, the sign-bit check (`riscv_memory/unaligned/constraints.rs:265-271`)
+          ((((v.instruction.is_lb row 0) + (v.instruction.is_lh row 0)) + (v.instruction.is_lw row 0)), [5, 8, ((2 * (v.sign_src row 0)) - ((v.msb row 0) * 65536)), 0, 0, 0]),
+        -- 25: the `code_range` gadget's lookup of the code range (`gadgets/code_range.rs:126-134`)
+          (((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0)), [2, (v.code_range.code_start_0 row 0), (v.code_range.code_start_1 row 0), (v.code_range.code_end_0 row 0), (v.code_range.code_end_1 row 0)]),
+        -- 26: the gadget's `U16Range` of `distance_0` (`gadgets/code_range.rs:160-169`)
+          (((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0)), [5, 8, (v.code_range.distance_0 row 0), 0, 0, 0]),
+        -- 27: the gadget's `U16Range` of `distance_1` (`gadgets/code_range.rs:160-169`)
+          (((((v.instruction.is_sb row 0) + (v.instruction.is_sh row 0)) + (v.instruction.is_sw row 0)) + (v.instruction.is_sd row 0)), [5, 8, (v.code_range.distance_1 row 0), 0, 0, 0]) ]
+
+      @[constraint_and_interaction_simplification]
+      def constrain_interactions (air : Valid_MemoryUnalignedChip FKB ExtF) : Prop :=
+        air.bus =
+          List.flatMap
+            (fun row ↦ raw_bus_row air row)
+            (List.range (air.last_row + 1))
+
+    end row_buses
+
+    /-- The extracted `allHold` with each constraint and the bus messages replaced by their
+        restatements. -/
     @[constraint_and_interaction_simplification]
     def allHold_simplified
-      (air : Valid_MemoryUnalignedChip F ExtF)
+      (air : Valid_MemoryUnalignedChip FKB ExtF)
       (row : ℕ)
     : Prop :=
-      MemoryUnalignedChip.Extraction.constrain_interactions air ∧
+      constrain_interactions air ∧
       List.Forall (·) (row_constraint_list air row)
 
     @[simp]
     lemma allHold_iff_allHold_simplified
-      (air : Valid_MemoryUnalignedChip F ExtF)
+      (air : Valid_MemoryUnalignedChip FKB ExtF)
       (row : ℕ)
     :
       MemoryUnalignedChip.Extraction.allHold air row ↔ allHold_simplified air row
@@ -820,3 +895,162 @@ namespace MemoryUnalignedChip.ConstraintsAndBuses
   end constraint_simplification
 
 end MemoryUnalignedChip.ConstraintsAndBuses
+
+namespace MemoryUnalignedChip
+
+  open RV64IM_Interactions.V3
+
+  /-- The high byte `(x - lo) / 256` of a 16-bit piece `x` whose low byte is `lo`
+      (`gadgets/u16_to_u8.rs:71-72`). `2122383361` is `256`'s inverse. -/
+  abbrev high_byte [Field F] (x lo : F) : F := (x - lo) * 2122383361
+
+  /-- The 16-bit piece whose low byte is `x` and high byte `y`. -/
+  abbrev limb [Field F] (x y : F) : F := x + y * 256
+
+  /-- The number of bytes a store writes: 1, 2, 4 or 8 on a store row, 0 on any other row.
+      `width` in `MemoryUnalignedChip::eval` (`riscv_memory/unaligned/constraints.rs:311-315`),
+      the width it hands the `code_range` gadget. -/
+  def store_width [Field F] (air : Valid_MemoryUnalignedChip F ExtF) (row : ℕ) : F :=
+    let i := air.cols.instruction
+    i.is_sb row 0 + i.is_sh row 0 * 2 + i.is_sw row 0 * 4 + i.is_sd row 0 * 8
+
+  /-- The row's messages, sorted by contract. With `is_memory` the flags' sum, `is_store` the
+      store flags' sum, `dword0 = addr_word_0 - Σ k · offset_k` the low piece of the dword
+      holding the first byte, and `next0 = dword0 + 8 - 2^16 · next_carry`,
+      `next1 = addr_word_1 + next_carry` the next dword's address:
+
+      - `Memory`: the memory dispatch `[opcode, a, b, c, op_a_0, is_memory, chunk, clk]`,
+        received at `-is_memory`, its opcode `Σ flag · opcode`;
+      - `State`: the read of the dword `[chunk, prev_clk, dword0, addr_word_1, 0, prev_value]` at
+        `+is_memory` and its write `[chunk, clk, dword0, addr_word_1, 0, value]` at
+        `-is_memory`; then the read of the next dword `[chunk, prev_clk', next0, next1, 0,
+        prev_value']` at `+cross` and its write `[chunk, clk + 1, next0, next1, 0, value']` at
+        `-cross`;
+      - `Byte`: at `+is_memory`, the address's second piece, `dword0 / 8`, the two pieces of the
+        first access's `clk - prev_clk - 1` and the first dword's eight bytes; at `+cross`, the
+        next dword's second piece, the two pieces of the second access's clock difference and
+        the next dword's eight bytes; at `+is_store`, `op_a`'s eight bytes and the gadget's two
+        distance checks; and the sign-bit check;
+      - `CodeRange`: the gadget's lookup of the code range, at `+is_store`. -/
+  def AbsBuses (air : Valid_MemoryUnalignedChip FKB ExtF) (row : ℕ) : BusRow :=
+    let v := air.cols
+    let is_lb := v.instruction.is_lb row 0
+    let is_lbu := v.instruction.is_lbu row 0
+    let is_lh := v.instruction.is_lh row 0
+    let is_lhu := v.instruction.is_lhu row 0
+    let is_lw := v.instruction.is_lw row 0
+    let is_lwu := v.instruction.is_lwu row 0
+    let is_ld := v.instruction.is_ld row 0
+    let is_sb := v.instruction.is_sb row 0
+    let is_sh := v.instruction.is_sh row 0
+    let is_sw := v.instruction.is_sw row 0
+    let is_sd := v.instruction.is_sd row 0
+    let is_store := is_sb + is_sh + is_sw + is_sd
+    let is_memory := is_lb + is_lbu + is_lh + is_lhu + is_lw + is_lwu + is_ld + is_store
+    let opcode := is_lb * 10 + is_lbu * 13 + is_lh * 11 + is_lhu * 14 + is_lw * 12 +
+      is_lwu * 45 + is_ld * 46 + is_sb * 15 + is_sh * 16 + is_sw * 17 + is_sd * 47
+    let cross := v.cross row 0
+    let dword0 := v.addr_word_0 row 0 -
+      (v.offset_1 row 0 + v.offset_2 row 0 * 2 + v.offset_3 row 0 * 3 + v.offset_4 row 0 * 4 +
+        v.offset_5 row 0 * 5 + v.offset_6 row 0 * 6 + v.offset_7 row 0 * 7)
+    let next0 := dword0 + 8 - v.next_carry row 0 * 65536
+    let next1 := v.addr_word_1 row 0 + v.next_carry row 0
+    let prev_clk := v.clk row 0 -
+      (v.first.access.diff_16bit_limb row 0 + v.first.access.diff_hi9 row 0 * 65536) - 1
+    let prev_clk' := v.clk row 0 + 1 -
+      (v.second.access.diff_16bit_limb row 0 + v.second.access.diff_hi9 row 0 * 65536) - 1
+    let high := fun (x lo : FKB) => (x - lo) * 2122383361
+    {
+      Program := [],
+      ALU := [],
+      Byte := List.map RV64IM_Interactions.ByteBusEntry.deserialise [
+        (is_memory, #v[8, v.addr_word_1 row 0, 0, 0, 0]),
+        (is_memory, #v[9, dword0 * 1864368129, 0, 13, 0]),
+        (cross, #v[8, next1, 0, 0, 0]),
+        (is_memory, #v[8, v.first.access.diff_16bit_limb row 0, 0, 0, 0]),
+        (is_memory, #v[9, v.first.access.diff_hi9 row 0, 0, 9, 0]),
+        (cross, #v[8, v.second.access.diff_16bit_limb row 0, 0, 0, 0]),
+        (cross, #v[9, v.second.access.diff_hi9 row 0, 0, 9, 0]),
+        (is_memory, #v[7, 0, 0, v.first_bytes.low_bytes_0 row 0,
+          high (v.first.prev_value_0 row 0) (v.first_bytes.low_bytes_0 row 0)]),
+        (is_memory, #v[7, 0, 0, v.first_bytes.low_bytes_1 row 0,
+          high (v.first.prev_value_1 row 0) (v.first_bytes.low_bytes_1 row 0)]),
+        (is_memory, #v[7, 0, 0, v.first_bytes.low_bytes_2 row 0,
+          high (v.first.prev_value_2 row 0) (v.first_bytes.low_bytes_2 row 0)]),
+        (is_memory, #v[7, 0, 0, v.first_bytes.low_bytes_3 row 0,
+          high (v.first.prev_value_3 row 0) (v.first_bytes.low_bytes_3 row 0)]),
+        (cross, #v[7, 0, 0, v.second_bytes.low_bytes_0 row 0,
+          high (v.second.prev_value_0 row 0) (v.second_bytes.low_bytes_0 row 0)]),
+        (cross, #v[7, 0, 0, v.second_bytes.low_bytes_1 row 0,
+          high (v.second.prev_value_1 row 0) (v.second_bytes.low_bytes_1 row 0)]),
+        (cross, #v[7, 0, 0, v.second_bytes.low_bytes_2 row 0,
+          high (v.second.prev_value_2 row 0) (v.second_bytes.low_bytes_2 row 0)]),
+        (cross, #v[7, 0, 0, v.second_bytes.low_bytes_3 row 0,
+          high (v.second.prev_value_3 row 0) (v.second_bytes.low_bytes_3 row 0)]),
+        (is_store, #v[7, 0, 0, v.value_bytes.low_bytes_0 row 0,
+          high (v.instruction.op_a_value_0 row 0) (v.value_bytes.low_bytes_0 row 0)]),
+        (is_store, #v[7, 0, 0, v.value_bytes.low_bytes_1 row 0,
+          high (v.instruction.op_a_value_1 row 0) (v.value_bytes.low_bytes_1 row 0)]),
+        (is_store, #v[7, 0, 0, v.value_bytes.low_bytes_2 row 0,
+          high (v.instruction.op_a_value_2 row 0) (v.value_bytes.low_bytes_2 row 0)]),
+        (is_store, #v[7, 0, 0, v.value_bytes.low_bytes_3 row 0,
+          high (v.instruction.op_a_value_3 row 0) (v.value_bytes.low_bytes_3 row 0)]),
+        (is_lb + is_lh + is_lw, #v[8, 2 * v.sign_src row 0 - v.msb row 0 * 65536, 0, 0, 0]),
+        (is_store, #v[8, v.code_range.distance_0 row 0, 0, 0, 0]),
+        (is_store, #v[8, v.code_range.distance_1 row 0, 0, 0, 0])
+      ],
+      State := List.map RV64IM_Interactions.StateBusEntry.deserialise [
+        (is_memory, #v[v.chunk row 0, prev_clk, dword0, v.addr_word_1 row 0, 0,
+          v.first.prev_value_0 row 0, v.first.prev_value_1 row 0,
+          v.first.prev_value_2 row 0, v.first.prev_value_3 row 0]),
+        (-(is_memory), #v[v.chunk row 0, v.clk row 0, dword0, v.addr_word_1 row 0, 0,
+          v.first.access.value_0 row 0, v.first.access.value_1 row 0,
+          v.first.access.value_2 row 0, v.first.access.value_3 row 0]),
+        (cross, #v[v.chunk row 0, prev_clk', next0, next1, 0,
+          v.second.prev_value_0 row 0, v.second.prev_value_1 row 0,
+          v.second.prev_value_2 row 0, v.second.prev_value_3 row 0]),
+        (-(cross), #v[v.chunk row 0, v.clk row 0 + 1, next0, next1, 0,
+          v.second.access.value_0 row 0, v.second.access.value_1 row 0,
+          v.second.access.value_2 row 0, v.second.access.value_3 row 0])
+      ],
+      Memory := List.map MemoryBusEntry.deserialise [
+        (-(is_memory), #v[opcode,
+          v.instruction.op_a_value_0 row 0, v.instruction.op_a_value_1 row 0,
+          v.instruction.op_a_value_2 row 0, v.instruction.op_a_value_3 row 0,
+          v.instruction.op_b_value_0 row 0, v.instruction.op_b_value_1 row 0,
+          v.instruction.op_b_value_2 row 0, v.instruction.op_b_value_3 row 0,
+          v.instruction.op_c_value_0 row 0, v.instruction.op_c_value_1 row 0,
+          v.instruction.op_c_value_2 row 0, v.instruction.op_c_value_3 row 0,
+          v.instruction.op_a_0 row 0, is_memory, v.chunk row 0, v.clk row 0])
+      ],
+      CodeRange := [
+        CodeRangeBusEntry.deserialise (is_store,
+          #v[v.code_range.code_start_0 row 0, v.code_range.code_start_1 row 0,
+             v.code_range.code_end_0 row 0, v.code_range.code_end_1 row 0])
+      ]
+    }
+
+end MemoryUnalignedChip
+
+namespace MemoryUnalignedChip.Interactions
+
+  /-- The chip's messages on one row, sorted by contract. -/
+  def bus_row (air : Valid_MemoryUnalignedChip FKB ExtF) (row : ℕ) :
+      RV64IM_Interactions.V3.BusRow :=
+    MemoryUnalignedChip.AbsBuses air row
+
+  /-- Sorting the row's extracted messages gives `bus_row`. -/
+  @[simp]
+  lemma bus_row_equiv (air : Valid_MemoryUnalignedChip FKB ExtF) (row : ℕ) :
+    RV64IM_Interactions.V3.deserialise_bus_row
+      (MemoryUnalignedChip.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
+  := by
+    simp [
+      RV64IM_Interactions.V3.deserialise_bus_row,
+      constraint_and_interaction_simplification,
+      bus_row,
+      MemoryUnalignedChip.AbsBuses,
+      pico_encapsulation,
+    ]
+
+end MemoryUnalignedChip.Interactions

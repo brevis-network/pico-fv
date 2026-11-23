@@ -94,9 +94,8 @@ scripts/fv-check/        — theorem, layer, tactic and SOUNDNESS checks
 Within `RV64IM/Spec/` (and `Constraints/`), each chip used by Pico
 has its own file: ALU chips (`AddChip`, `SubChip`, `BitwiseChip`, `LtChip`,
 `SLLChip`, `ShiftRightChip`, `MulChip`, `DivRemChip`), the CPU chip
-(`CpuChip`), the memory chips (`MemoryReadWriteChip`, and
-`MemoryUnalignedChip`, which has a `Constraints/` file and no `Spec/`
-file yet), and any chip-local gadgets (`AddGadget`, `SubGadget`, `MulGadget`,
+(`CpuChip`), the memory chips (`MemoryReadWriteChip`,
+`MemoryUnalignedChip`), and any chip-local gadgets (`AddGadget`, `SubGadget`, `MulGadget`,
 `IsZeroGadget`, `LtSignedGadget`, …).
 
 Within `RV64IM/RVSail/Opcodes/`, every opcode has its own file
