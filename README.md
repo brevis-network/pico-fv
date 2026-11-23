@@ -157,13 +157,26 @@ and the specifications of the ALU chips already at v3.1.1
 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight), and the
 equivalence theorems the branch proves at v3.1.1 (listed above), with
 `Equivalence.utype_row_cases`, which shows that the `LUI` and `AUIPC` theorems
-together cover the row shape the two instructions share. The store and load
-theorems take the instruction whose decoding is the row's Program message;
-`Equivalence.store_decode_satisfiable` and `Equivalence.load_decode_satisfiable`,
-checked with them, show that every real store or load row, given its Program
-promise, has one. `check.sh` fails if a theorem is missing, depends on an axiom (a statement Lean accepts without proof) outside two lists,
-or its axioms or statement differ from the snapshots in `axioms.txt` and
-`signatures.txt`:
+together cover the row shape the two instructions share. The theorems of the
+classes below take the instruction whose decoding is the row's Program message,
+and a lemma checked with each class shows that every real row of the class,
+given its Program promise, has one:
+
+- the stores: `Equivalence.store_decode_satisfiable`;
+- the loads: `Equivalence.load_decode_satisfiable`;
+- `RTYPE`: `Equivalence.rtype_decode_satisfiable`, with `imm_c = 0` where an
+  immediate form shares the opcode;
+- `RTYPEW`: `Equivalence.rtypew_decode_satisfiable`, with `imm_c = 0` where an
+  immediate form shares the opcode;
+- `ITYPE`: `Equivalence.itype_decode_satisfiable`, with `imm_c = 1`, and
+  `imm_b = 0` for `ADDI`;
+- `ADDIW`: `Equivalence.addiw_decode_satisfiable`, with `imm_c = 1`;
+- `SHIFTIOP`: `Equivalence.shiftiop_decode_satisfiable`, with `imm_c = 1`;
+- `SHIFTIWOP`: `Equivalence.shiftiwop_decode_satisfiable`, with `imm_c = 1`.
+
+`check.sh` fails if a theorem is missing, depends on an axiom (a statement Lean
+accepts without proof) outside two lists, or its axioms or statement differ from
+the snapshots in `axioms.txt` and `signatures.txt`:
 
 - Lean's core axioms: `propext`, `Classical.choice`, `Quot.sound`, and
   `Lean.ofReduceBool` / `Lean.trustCompiler`, which `native_decide` and
