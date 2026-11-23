@@ -693,7 +693,7 @@ namespace Equivalence
     --
     -- The proofs pass hypotheses as `@h`, which Lean elaborates without
     -- unfolding their types; passed bare, the bus assumptions get unfolded,
-    -- which made this section's elaboration three times slower.
+    -- which made this section's elaboration more than twice as slow.
     -- ========================================================================
 
     /-- What a store's decoding says about the row: it is real, its opcode is the width's, its
