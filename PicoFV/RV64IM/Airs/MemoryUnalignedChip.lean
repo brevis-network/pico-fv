@@ -17,8 +17,8 @@ set_option linter.unusedVariables false
 # MemoryUnalignedChip (64-bit)
 
 Lean formalisation of `MemoryUnalignedCols` from
-`vm/src/chips/chips/riscv_memory/unaligned/columns.rs:21-68` at Pico v3.1.6
-(`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`).
+`vm/src/chips/chips/riscv_memory/unaligned/columns.rs:21-68` at Pico v3.2.0
+(`fcfa504624657d0c417c43f1233d5d891f293ff9`).
 
 This chip receives the same memory dispatch as `MemoryReadWriteChip` and proves the loads and
 stores whose address is not a multiple of their width; it is correct for an aligned access too,
@@ -79,8 +79,8 @@ is no `values` array: the columns are the row.
 On a row that does not cross, every message about `second` or `second_bytes` has multiplicity
 `cross` and is off, and no constraint sets those columns to zero: constraints 32 to 35, 48, 50,
 52 and 54 relate them to other columns whatever `cross` is. Pico's trace generator leaves them
-zero: the trace starts all zero (`riscv_memory/unaligned/traces.rs:54`), and only a row that
-crosses fills `second` and `second_bytes` (`riscv_memory/unaligned/traces.rs:186-197`). The
+zero: the trace starts all zero (`riscv_memory/unaligned/traces.rs:56`), and only a row that
+crosses fills `second` and `second_bytes` (`riscv_memory/unaligned/traces.rs:200-211`). The
 constraints do not enforce it.
 
 `MemoryInstructionCols` is in `Airs/SubAirs.lean`: both memory chips have one, and a chip's

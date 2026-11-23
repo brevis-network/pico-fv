@@ -9,8 +9,8 @@ set_option maxHeartbeats 1_000_000_000
 # MemoryUnalignedChip — the Memory promise
 
 What the chip proves about each row (`MemoryUnalignedChip::eval`,
-`vm/src/chips/chips/riscv_memory/unaligned/constraints.rs`, Pico v3.1.6
-`6aa644efeff9ddbec6beb538200f98f2a70f5d8e`; constraints and messages in
+`vm/src/chips/chips/riscv_memory/unaligned/constraints.rs`, Pico v3.2.0
+`fcfa504624657d0c417c43f1233d5d891f293ff9`; constraints and messages in
 `Constraints/MemoryUnalignedChip.lean`).
 
 - `spec_LB` … `spec_SD`, one per opcode: on a row whose flag for that instruction is 1, the
@@ -826,7 +826,7 @@ namespace MemoryUnalignedChip.Spec
       cleared, and the second's `[next0, next1, 0]` is 8 more. The low pieces `dword0` and
       `next0` are 16-bit, so each address is given piece by piece, as the memory argument
       matches it
-      (`riscv_memory/unaligned/constraints.rs:95-116, 130-153` at v3.1.6). From `address`, the
+      (`riscv_memory/unaligned/constraints.rs:95-116, 130-153` at v3.2.0). From `address`, the
       one-hot offset (constraints 17 to 25), the `BitRange(13)` check of `dword0 / 8`, the
       pinning of `next_carry` (constraints 27 to 29) and the `U16Range` check of `next1`. -/
   lemma aligned_address
@@ -1739,7 +1739,7 @@ namespace MemoryUnalignedChip.Spec
       the code range `[code_start, code_end)` the row looks up: they end at or below its start,
       or start at or above its end. The `code_range` gadget proves it
       (`CodeRangeGadget.Spec.gadget_spec`); the chip hands it `addr_word` and `store_width`
-      (`riscv_memory/unaligned/constraints.rs:311-322` at v3.1.6) and supplies its premises: the
+      (`riscv_memory/unaligned/constraints.rs:311-322` at v3.2.0) and supplies its premises: the
       address's two pieces are 16-bit and equal `b + c` (`address`), and the width is at most 8.
       The bytes written may lie in two dwords; the range they cover is the same. As in the
       gadget, the range is the one in the row's columns: the Program table's promise

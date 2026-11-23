@@ -24,9 +24,9 @@ namespace Equivalence
     -- takes them.
     --
     -- A store row reads `rs2` into `op_a` and writes it back unchanged
-    -- (`op_a_kept`; Pico v3.1.6, `riscv_cpu/register/constraints.rs:117-123`),
+    -- (`op_a_kept`; Pico v3.2.0, `riscv_cpu/register/constraints.rs:117-123`),
     -- reads `rs1` into `op_b`, and carries the 12-bit offset in `op_c`
-    -- (`imm_c = 1`). It sends one Memory message (Pico v3.1.6,
+    -- (`imm_c = 1`). It sends one Memory message (Pico v3.2.0,
     -- `riscv_cpu/constraints.rs:117-133`), whose promise
     -- (`memory_message_spec`, the contract of `RVSail/BusesV3.lean`) puts the
     -- address `op_b + op_c` below `2 ^ 32`, inside the memory region
@@ -35,7 +35,7 @@ namespace Equivalence
     -- splits the store into aligned pieces, which the Sail lemmas of `SH`,
     -- `SW` and `SD` cover (`RVSail/Misaligned.lean`). The row sets no branch
     -- or jump selector, so its next pc is `pc + 4`
-    -- (`is_sequential_active_constraints`; Pico v3.1.6,
+    -- (`is_sequential_active_constraints`; Pico v3.2.0,
     -- `riscv_cpu/constraints.rs:318-326`).
     --
     -- The width is the only thing that differs: the chip writes the low byte
