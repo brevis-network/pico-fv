@@ -3,3 +3,4 @@ Equivalence.equivalence_SLLW
 Equivalence.equivalence_SRAW
 Equivalence.equivalence_SRLW
 Equivalence.equivalence_SUBW
+Equivalence.rtypew_decode_satisfiable
