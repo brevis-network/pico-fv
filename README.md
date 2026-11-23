@@ -164,8 +164,15 @@ given its Program promise, has one:
 
 - the stores: `Equivalence.store_decode_satisfiable`;
 - the loads: `Equivalence.load_decode_satisfiable`;
-- `RTYPE`: `Equivalence.rtype_decode_satisfiable`;
-- `RTYPEW`: `Equivalence.rtypew_decode_satisfiable`;
+- `RTYPE`: `Equivalence.rtype_decode_satisfiable`, with `imm_c = 0` where an
+  immediate form shares the opcode;
+- `RTYPEW`: `Equivalence.rtypew_decode_satisfiable`, with `imm_c = 0` where an
+  immediate form shares the opcode;
+- `ITYPE`: `Equivalence.itype_decode_satisfiable`, with `imm_c = 1`, and
+  `imm_b = 0` for `ADDI`;
+- `ADDIW`: `Equivalence.addiw_decode_satisfiable`, with `imm_c = 1`;
+- `SHIFTIOP`: `Equivalence.shiftiop_decode_satisfiable`, with `imm_c = 1`;
+- `SHIFTIWOP`: `Equivalence.shiftiwop_decode_satisfiable`, with `imm_c = 1`;
 - the multiplies: `Equivalence.mul_decode_satisfiable` (for opcode 30, `MUL`, at
   every signedness with `result_part := .Low`) and
   `Equivalence.mulw_decode_satisfiable`;
