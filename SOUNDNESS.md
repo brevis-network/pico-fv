@@ -695,18 +695,18 @@ lists: the modules `PicoFV64.lean` imports, directly or through other PicoFV mod
 the modules listed in C2, because the kernel cannot replay what those tactics computed. The job
 fails when the listing fails or is empty, or when fewer modules replay than were listed.
 
-It ran green on 2026-11-26 on the Lean files of `main` at `47d64f7`:
-[run 45839928832](https://github.com/brevis-network/pico-fv/actions/runs/45839928832) replayed
-204 of 204 modules in 28 minutes. At that commit:
+It ran green on 2026-11-26, dispatched by hand on a branch whose Lean files are those of `main` at
+`47d64f7`: [run 45839928832](https://github.com/brevis-network/pico-fv/actions/runs/45839928832)
+replayed 204 of 204 modules in 28 minutes. At that commit:
 
 - `imported_modules.py` lists 210 modules: every `.lean` file under `PicoFV/`, so none is left out
   for want of a build.
-- Skipped, the six modules of C2: `Fundamentals/Core`, `Fundamentals/KoalaBear`,
-  `Fundamentals/Word`, `RVSail/Execution` and the specifications of the Bitwise and DivRem chips.
+- Skipped: the modules C2 lists, six at that commit.
 - Replayed: the other 204, the count the run's log reports as `listed` and `replayed`.
-- Not replayed: the Lean packages the proofs depend on (Mathlib, LeanRV, Sail,
-  LeanZKCircuit_Plonky3). Without `--fresh`, `leanchecker` replays a module's own declarations
-  into the environment its imports built, and takes the imported declarations as loaded.
+- Not replayed: every declaration outside `PicoFV/`, that is Lean's own library and every package
+  in `lake-manifest.json`. Without `--fresh`, `leanchecker` replays only a module's own
+  declarations, into the environment its imports built, and takes the imported declarations as
+  loaded.
 
 `Equivalence/Common`, `Jumps` and `BType` used to fail with "(kernel) deep recursion detected":
 one `simp` sorted all 17 messages of a CPU row at once, and the proof term it built was deeper
