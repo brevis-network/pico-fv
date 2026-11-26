@@ -689,29 +689,31 @@ branch's, so the uses only go down.
 
 ### C3. Declarations the kernel did not check
 
-A weekly CI job (`.github/workflows/replay.yml`) is written to replay the declarations of every
-module the build imports into the kernel with `leanchecker`, except the modules listed in C2:
-the kernel cannot replay what those tactics computed. Today that excludes `Fundamentals/Core`,
-`Fundamentals/KoalaBear`, `Fundamentals/Word`, `RVSail/Execution` and the specifications of the
-Bitwise and DivRem chips. Modules the build does not import are not replayed.
+A CI job (`.github/workflows/replay.yml`, Mondays at 04:00 UTC and on demand) replays into the
+kernel, with `leanchecker`, the declarations of every module `scripts/ci/imported_modules.py`
+lists: the modules `PicoFV64.lean` imports, directly or through other PicoFV modules. It skips
+the modules listed in C2, because the kernel cannot replay what those tactics computed. The job
+fails when the listing fails or is empty, or when fewer modules replay than were listed.
 
-**The job has not run yet.** GitHub runs a scheduled workflow only from the repository's default
-branch, `main`, so its first scheduled run is the Monday after the workflow reaches `main`. Until it
-runs, this section describes what it would check, not a result. Run by hand on the fourteen `Equivalence/` modules the build imports (the
-thirteen class files and `Common`), `lake env leanchecker` replays them all: `Equivalence/Common`,
-`Equivalence/Addiw`, `Equivalence/RTypeW`, `Equivalence/ShiftIWOp`, `Equivalence/IType`,
-`Equivalence/ShiftIOp`, `Equivalence/RType`, `Equivalence/MulFamily`, `Equivalence/DivFamily`,
-`Equivalence/Jumps`, `Equivalence/BType`, `Equivalence/Stores`, `Equivalence/Loads` and
-`Equivalence/UType`.
-`Common`, `Jumps` and `BType` used to fail with "(kernel) deep recursion detected": one `simp`
-sorted all 17 messages of a CPU row at once, and the proof term it built was deeper than
-`leanchecker`'s kernel stack (`lake build` runs Lean with `--tstack=400000` in the lakefile). The
-parts of a sorted row are now separate lemmas checked by evaluation
+Its first run, on commit `dee8567` (the same Lean files as `47d64f7`), replayed 204 of 204
+modules in 25 minutes:
+[run 45833193731](https://github.com/brevis-network/pico-fv/actions/runs/45833193731). At that
+commit:
+
+- Listed: 210 modules.
+- Skipped, the modules of C2: `Fundamentals/Core`, `Fundamentals/KoalaBear`, `Fundamentals/Word`,
+  `RVSail/Execution` and the specifications of the Bitwise and DivRem chips.
+- Not replayed because the build does not import them, so no build of theirs exists: 37 files
+  under `PicoFV/`, the ShiftRight chip's `Airs`, `Constraints`, `Extraction` and `Spec`, and 33
+  Sail lemma files under `RVSail/Opcodes/` (`comm -23 <(find PicoFV -name '*.lean' | sort)
+  <(python3 scripts/ci/imported_modules.py)` lists them).
+
+`Equivalence/Common`, `Jumps` and `BType` used to fail with "(kernel) deep recursion detected":
+one `simp` sorted all 17 messages of a CPU row at once, and the proof term it built was deeper
+than `leanchecker`'s kernel stack (`lake build` runs Lean with `--tstack=400000` in the
+lakefile). The parts of a sorted row are now separate lemmas checked by evaluation
 (`deserialise_raw_bus_row_Program`, `_State` and `_Memory` in `Equivalence/Common.lean`), and
 the lemmas that compute a row's bus operations rewrite with them.
-Of the other modules, the read/write memory chip's `Airs`, `Constraints` and `Spec`,
-`Airs/SubAirs`, `RVSail/Misaligned` and the Sail lemmas `RVSail/Opcodes/sh`, `sw`, `sd`, `lh`, `lhu`, `lw`, `lwu`
-and `ld` replay too; the rest have not been replayed by hand.
 
 ## D. Does the use of the results hold together?
 
