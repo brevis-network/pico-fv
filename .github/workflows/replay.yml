@@ -43,9 +43,30 @@ jobs:
       # build imports are replayed: a file nothing imports has no build to replay. The kernel
       # cannot replay what native_decide / bv_decide computed, so the files that use them (the
       # tactic baseline) are skipped; SOUNDNESS.md lists them.
+      # The step fails when the listing fails or is empty, or when fewer modules replay than were
+      # listed: a green run means every listed module was replayed.
       - name: replay
         run: |
-          python3 scripts/ci/imported_modules.py \
-            | grep -vxF -f <(awk '{ print $2 }' scripts/fv-check/tactic-baseline.txt) \
-            | sed 's/\.lean$//; s#/#.#g' \
-            | xargs -P 2 -I{} lake env leanchecker {}
+          set -o pipefail
+          skip=$(awk '{ print $2 }' scripts/fv-check/tactic-baseline.txt)
+          modules=$(python3 scripts/ci/imported_modules.py \
+            | { grep -vxF -f <(printf '%s\n' "$skip") || true; } \
+            | sed 's/\.lean$//; s#/#.#g') \
+            || { echo "::error::listing the modules failed"; exit 1; }
+          listed=$(printf '%s' "$modules" | grep -c . || true)
+          echo "listed: $listed modules"
+          if [ "$listed" -eq 0 ]; then
+            echo "::error::no modules listed: nothing to replay"
+            exit 1
+          fi
+          replayed_log=$(mktemp)
+          status=0
+          printf '%s\n' "$modules" \
+            | xargs -P 2 -I{} sh -c 'lake env leanchecker "$1" && echo "$1" >> "$2"' _ {} "$replayed_log" \
+            || status=$?
+          replayed=$(grep -c . "$replayed_log" || true)
+          echo "replayed: $replayed of $listed modules"
+          if [ "$status" -ne 0 ] || [ "$replayed" -ne "$listed" ]; then
+            echo "::error::$((listed - replayed)) of $listed modules did not replay"
+            exit 1
+          fi
