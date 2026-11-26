@@ -705,7 +705,8 @@ It ran green on 2026-11-26 on the Lean files of `main` at `47d64f7`:
   `Fundamentals/Word`, `RVSail/Execution` and the specifications of the Bitwise and DivRem chips.
 - Replayed: the other 204, the count the run's log reports as `listed` and `replayed`.
 - Not replayed: the Lean packages the proofs depend on (Mathlib, LeanRV, Sail,
-  LeanZKCircuit_Plonky3); the job replays only PicoFV's own modules.
+  LeanZKCircuit_Plonky3). Without `--fresh`, `leanchecker` replays a module's own declarations
+  into the environment its imports built, and takes the imported declarations as loaded.
 
 `Equivalence/Common`, `Jumps` and `BType` used to fail with "(kernel) deep recursion detected":
 one `simp` sorted all 17 messages of a CPU row at once, and the proof term it built was deeper
