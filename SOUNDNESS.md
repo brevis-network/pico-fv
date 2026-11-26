@@ -695,18 +695,17 @@ lists: the modules `PicoFV64.lean` imports, directly or through other PicoFV mod
 the modules listed in C2, because the kernel cannot replay what those tactics computed. The job
 fails when the listing fails or is empty, or when fewer modules replay than were listed.
 
-Its first run, on commit `dee8567` (the same Lean files as `47d64f7`), replayed 204 of 204
-modules in 25 minutes:
-[run 45833193731](https://github.com/brevis-network/pico-fv/actions/runs/45833193731). At that
-commit:
+It ran green on 2026-11-26 on the Lean files of `main` at `47d64f7`:
+[run 45839928832](https://github.com/brevis-network/pico-fv/actions/runs/45839928832) replayed
+204 of 204 modules in 28 minutes. At that commit:
 
-- Listed: 210 modules.
-- Skipped, the modules of C2: `Fundamentals/Core`, `Fundamentals/KoalaBear`, `Fundamentals/Word`,
-  `RVSail/Execution` and the specifications of the Bitwise and DivRem chips.
-- Not replayed because the build does not import them, so no build of theirs exists: 37 files
-  under `PicoFV/`, the ShiftRight chip's `Airs`, `Constraints`, `Extraction` and `Spec`, and 33
-  Sail lemma files under `RVSail/Opcodes/` (`comm -23 <(find PicoFV -name '*.lean' | sort)
-  <(python3 scripts/ci/imported_modules.py)` lists them).
+- `imported_modules.py` lists 210 modules: every `.lean` file under `PicoFV/`, so none is left out
+  for want of a build.
+- Skipped, the six modules of C2: `Fundamentals/Core`, `Fundamentals/KoalaBear`,
+  `Fundamentals/Word`, `RVSail/Execution` and the specifications of the Bitwise and DivRem chips.
+- Replayed: the other 204, the count the run's log reports as `listed` and `replayed`.
+- Not replayed: the Lean packages the proofs depend on (Mathlib, LeanRV, Sail,
+  LeanZKCircuit_Plonky3); the job replays only PicoFV's own modules.
 
 `Equivalence/Common`, `Jumps` and `BType` used to fail with "(kernel) deep recursion detected":
 one `simp` sorted all 17 messages of a CPU row at once, and the proof term it built was deeper
