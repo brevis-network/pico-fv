@@ -187,8 +187,9 @@ that every real row of the class, given its Program promise, has one:
   `ADD` or `ADDI` row has no U-type decoding).
 
 `check.sh` fails if a theorem is missing, depends on an axiom (a statement Lean
-accepts without proof) outside two lists, or its axioms or statement differ from
-the snapshots in `axioms.txt` and `signatures.txt`:
+accepts without proof) outside two lists, its axioms or statement differ from
+the snapshots in `axioms.txt` and `signatures.txt`, or a definition the
+statements reach differs from its fingerprint in `definitions.txt`:
 
 - Lean's core axioms: `propext`, `Classical.choice`, `Quot.sound`, and
   `Lean.ofReduceBool` / `Lean.trustCompiler`, which `native_decide` and
@@ -201,6 +202,17 @@ the snapshots in `axioms.txt` and `signatures.txt`:
 So a `sorry`, or an `axiom` declared in this repository, fails the check. A change to a theorem's
 statement shows up as a diff of `signatures.txt` for review; once reviewed,
 `check.sh --update` records it.
+
+A definition can change while every statement that names it reads the same, so
+`definitions.txt` fingerprints each definition of this repository that the
+statements reach, following definition bodies (it stops at Lean, Mathlib, the
+Sail model and the circuit framework, pinned in `lake-manifest.json`). A
+fingerprint hashes the definition with each definition it uses replaced by that
+one's fingerprint, so a change fails the check under its own name and under every
+definition above it, until it is reviewed and recorded with `check.sh --update`.
+Names do not enter a fingerprint: a rename listed in `definition-renames.txt`
+(`Transpiler.V3.X` to `Transpiler.X`, for example) is not drift, while a 2.x
+definition that a 3.x one replaces under the same name is.
 
 More checks run in CI: `check_layers.sh` (no chip imports another chip),
 `check_tactics.sh` (uses of `native_decide` / `bv_decide` / `decide +native` only go down),
