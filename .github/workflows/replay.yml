@@ -50,7 +50,7 @@ jobs:
           set -o pipefail
           skip=$(awk '{ print $2 }' scripts/fv-check/tactic-baseline.txt)
           modules=$(python3 scripts/ci/imported_modules.py \
-            | { grep -vxF -f <(printf '%s\n' "$skip") || true; } \
+            | { grep -vxF -f <(printf '%s\n' "$skip") || [ $? -eq 1 ]; } \
             | sed 's/\.lean$//; s#/#.#g') \
             || { echo "::error::listing the modules failed"; exit 1; }
           listed=$(printf '%s' "$modules" | grep -c . || true)
@@ -66,7 +66,11 @@ jobs:
             || status=$?
           replayed=$(grep -c . "$replayed_log" || true)
           echo "replayed: $replayed of $listed modules"
-          if [ "$status" -ne 0 ] || [ "$replayed" -ne "$listed" ]; then
+          if [ "$replayed" -ne "$listed" ]; then
             echo "::error::$((listed - replayed)) of $listed modules did not replay"
+            exit 1
+          fi
+          if [ "$status" -ne 0 ]; then
+            echo "::error::xargs exited with status $status"
             exit 1
           fi
