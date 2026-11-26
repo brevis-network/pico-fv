@@ -12,7 +12,8 @@ into their inductive type.
 
 A fingerprint hashes the constant's type and value with every reference to another reached
 constant replaced by that constant's fingerprint, and with binder names left out. It does not
-depend on any name from this repository, so a rename changes only the line's name, and a change
+depend on any name from this repository except a constructor's own last component (`DRS` in
+`drop.DRS`), so a rename changes only the line's name, and a change
 anywhere below a definition changes the fingerprints of the definitions above it. The only
 cycles are the members of one (mutual) inductive type: they are hashed together, each reference
 inside the group standing for the member's position. -/
@@ -48,7 +49,11 @@ def str (s : String) : UInt64 := hash s
 /-- The expressions a node's fingerprint covers, after its kind. -/
 def nodeExprs (env : Environment) (n : Name) : Except String (List Expr) :=
   match env.find? n with
-  | some (.defnInfo d) => .ok [d.type, d.value]
+  | some (.defnInfo d) =>
+    -- compiled code would run in place of the value, which the fingerprint does not cover
+    if (Compiler.getImplementedBy? env n).isSome || isExtern env n then
+      .error s!"{n} is implemented_by or extern: it cannot be fingerprinted"
+    else .ok [d.type, d.value]
   | some (.thmInfo t) => .ok [t.type]
   | some (.inductInfo i) => .ok <| i.all.flatMap fun m =>
       match env.find? m with
@@ -60,11 +65,26 @@ def nodeExprs (env : Environment) (n : Name) : Except String (List Expr) :=
   | some _ => .error s!"{n} is a constructor or recursor, not a node"
   | none => .error s!"{n} is not in the environment"
 
+/-- The constants an expression names, the structure of each projection included
+(`Expr.getUsedConstants` leaves those out). Shared subterms are visited once. -/
+partial def usedConstants (e : Expr) : StateM (Std.HashSet ExprStructEq × NameSet) Unit := do
+  if (← get).1.contains e then return
+  modify fun (seen, out) => (seen.insert e, out)
+  match e with
+  | .const c _ => modify fun (seen, out) => (seen, out.insert c)
+  | .proj s _ b => modify (fun (seen, out) => (seen, out.insert s)); usedConstants b
+  | .app f a => usedConstants f; usedConstants a
+  | .lam _ t b _ | .forallE _ t b _ => usedConstants t; usedConstants b
+  | .letE _ t v b _ => usedConstants t; usedConstants v; usedConstants b
+  | .mdata _ b => usedConstants b
+  | _ => pure ()
+
 /-- The local nodes a node refers to, itself excluded. -/
 def deps (env : Environment) (n : Name) : Except String (Array Name) := do
   let mut out : NameSet := {}
   for e in ← nodeExprs env n do
-    for c in e.getUsedConstants do
+    let ((), (_, cs)) := (usedConstants e).run ({}, {})
+    for c in cs do
       if isLocal env c then
         let m := node env c
         if m != n then out := out.insert m
@@ -103,7 +123,9 @@ def refHash (ctx : Ctx) (c : Name) : Except String UInt64 := do
   | some (.recInfo _) => return mix 24 [← base c.getPrefix, str (c.componentsRev.head!.toString)]
   | _ => base c
 
-abbrev HashM := StateT (Std.HashMap Expr UInt64) (Except String)
+/-- The cache is keyed on exact structure (`Expr.equal`): `Expr`'s own equality ignores binder
+kinds, so an explicit and an implicit binder would share an entry. -/
+abbrev HashM := StateT (Std.HashMap ExprStructEq UInt64) (Except String)
 
 /-- Hashes an expression, caching shared subterms. Binder names and metadata are left out. -/
 partial def hashExpr (ctx : Ctx) (e : Expr) : HashM UInt64 := do
@@ -124,7 +146,7 @@ partial def hashExpr (ctx : Ctx) (e : Expr) : HashM UInt64 := do
     | .mdata _ b => hashExpr ctx b
     | .proj s i b => return mix 40 [← liftExcept (refHash ctx s), i.toUInt64, ← hashExpr ctx b]
     | .fvar _ | .mvar _ => throw s!"free or meta variable in a declaration"
-  modify (·.insert e h)
+  modify (·.insert (e : ExprStructEq) h)
   return h
 
 /-- The fingerprints of a node's members: one for a definition or theorem, one per member for an
@@ -143,7 +165,9 @@ def hashNode (env : Environment) (fps : NameMap UInt64) (n : Name) :
       for c in j.ctors do
         let some (.ctorInfo k) := env.find? c | throw s!"{c} is not a constructor"
         let (h, _) ← (hashExpr ctx k.type).run {}
-        acc := acc ++ [k.numFields.toUInt64, h]
+        -- a constructor's own name counts: a statement can name it (`drop.DRS`), and swapping two
+        -- constructors' names would otherwise leave every hash the same
+        acc := acc ++ [k.numFields.toUInt64, str (c.componentsRev.head!.toString), h]
     let g := mix 0 acc
     return i.all.zipIdx.map fun (m, k) => (m, mix 41 [g, k.toUInt64])
   | some ci =>

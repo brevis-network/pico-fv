@@ -485,7 +485,8 @@ change is reviewed and recorded with `check.sh --update`. A fingerprint covers e
 this repository that a checked statement reaches, through definition bodies; it stops at Lean,
 Mathlib, the Sail model and the circuit framework, which `lake-manifest.json` pins. It does not
 depend on this repository's names, so a rename listed in `definition-renames.txt` passes the check
-without drift.
+without drift, unless the new name already belongs to another definition (a 2.x definition that a
+3.x one replaces): that name then reports drift.
 
 #### The whole-trace assumption
 

@@ -26,7 +26,8 @@ status=0
 expected=$(cat "$dir"/theorems.d/*.txt | grep -c . || true)
 found=$(grep -c '^AXIOMS ' "$tmp/report" || true)
 if grep '^MISSING ' "$tmp/report"; then status=1; fi
-if grep '^DEFINITION-ERROR ' "$tmp/report"; then status=1; fi
+deferror=0
+if grep '^DEFINITION-ERROR ' "$tmp/report"; then status=1; deferror=1; fi
 
 # Byte order, whatever the locale: a UTF-8 locale's collation ignores case and punctuation on its
 # first pass, so a plain `sort` orders the snapshots differently on a default macOS shell than on CI.
@@ -106,7 +107,9 @@ else
       status=1
     fi
   done
-  if ! compare_definitions; then
+  if [[ $deferror != 0 ]]; then
+    echo "definitions.txt not compared: Report.lean could not fingerprint the definitions (see above)"
+  elif ! compare_definitions; then
     echo "DRIFT in definitions.txt: review each definition named above (a change also shows on every"
     echo "definition that uses it), then rerun with --update"
     status=1
