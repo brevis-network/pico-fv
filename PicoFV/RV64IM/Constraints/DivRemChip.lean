@@ -2448,15 +2448,15 @@ namespace DivRemChip.Interpretations
           -- (21) U16MSBGadget × 7
           h_msb_b3, h_msb_c3, h_msb_rem3,
           h_msb_b1, h_msb_c1, h_msb_rem1, h_msb_q1,
-          -- (22) Boolean checks (8 selectors + 10 flags + 8 carries)
+          -- (22) Boolean checks (8 carries + 8 selectors + 10 flags)
+          bool_cy0, bool_cy1, bool_cy2, bool_cy3,
+          bool_cy4, bool_cy5, bool_cy6, bool_cy7,
           bool_is_div, bool_is_divu, bool_is_rem, bool_is_remu,
           bool_is_divw, bool_is_remw, bool_is_divuw, bool_is_remuw,
           bool_is_overflow, bool_is_real_not_word,
           bool_b_neg, bool_b_neg_not_overflow, bool_b_not_neg_not_overflow,
           bool_rem_neg, bool_c_neg, bool_is_real,
           bool_abs_c_event, bool_abs_rem_event,
-          bool_cy0, bool_cy1, bool_cy2, bool_cy3,
-          bool_cy4, bool_cy5, bool_cy6, bool_cy7,
           -- (23) exactly-one selector
           eq_one_selector
         ⟩ := h_constraints
