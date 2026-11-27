@@ -39,8 +39,7 @@ set_option maxHeartbeats 1_000_000_000
 
     Pico line numbers in this file are at v3.1.1 (`2acc7c1828fb`), except in `MemoryBus.Spec`,
     the memory chips' citations in `MemoryBusEntry` and the code-range section, which are at
-    v3.2.0 (`fcfa50462465`), and in the register-access, ALU and byte sections, which keep the
-    citations they were written with for 2.x.
+    v3.2.0 (`fcfa50462465`).
     From v3.1.1 to v3.1.6, and to v3.2.0, the CPU chip's constraint files are unchanged; its
     trace generation (`riscv_cpu/event.rs`, `traces.rs`) changed, as did the Program chip's and
     `MemoryReadWriteChip`'s columns, constraints and trace generation. Since v3.1.2 the memory
@@ -1141,7 +1140,7 @@ namespace RV64IM_Interactions
 
         - A load's value has four 16-bit pieces. `rw`: the pieces are the memory value's
           (`:417-442`), which the memory argument's promise bounds (`StateBusEntry`,
-          `Buses.lean`), or a byte split by the U8Range check at `:535-542`, plus the
+          this file), or a byte split by the U8Range check at `:535-542`, plus the
           `0xFF00` / `0xFFFF` sign fill. `un`: every piece is two of the bytes the access
           reads, selected at `:216-227` and placed at `:232-250`, plus the same fill; those
           bytes are U8Range-checked (`:185-205`), the first dword's on every row and the second
@@ -1567,8 +1566,9 @@ namespace RV64IM_Interactions
 
     /-- The register and memory operations a row's messages stand for: a pc read per Program
         message, a register read or write per register-access message, and a memory read or
-        write per memory dispatch. Same as the 2.x `bus_operations` except that the pc has two
-        pieces and the access width and direction come from the opcode. -/
+        write per memory dispatch. Same as the 2.x `bus_operations` (`RVSail/Operations.lean` at
+        `f4f9924`) except that the pc has two pieces and the access width and direction come from
+        the opcode. -/
     def bus_operations (row : BusRow) : List Operation :=
       let program : List Operation :=
         List.map (fun program_row =>

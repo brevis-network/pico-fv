@@ -24,7 +24,7 @@ git show 353238a:scripts/fv-check/axioms.txt
 They differ from those at `353238a` in three ways, plus the dropped hypotheses,
 the immediate of the register-immediate theorems and the operand shapes of `LUI`
 and `AUIPC`, described after them. The bus assumptions name the v3.1.1 contracts
-(`RV64IM_Interactions.V3` in `RVSail/BusesV3.lean`) instead of the 2.x ones. The
+(`RV64IM_Interactions` in `RVSail/Buses.lean`) instead of the 2.x ones at `353238a`. The
 register held in `op_a` (the destination, `rs1` for a branch, or `rs2` for a
 store) is read from `instruction.op_a` instead of `instruction.op_a_0`: v3.1.1
 keeps the 5-bit index in one column, so every theorem whose `rd`, branch `rs1`
@@ -45,7 +45,7 @@ gains three conjuncts in its definition:
 
 Some restored statements also drop an immediate-flag hypothesis that the v3.1.1
 decoder already fixes for its opcode (`imm_b_of_opcode`, `imm_c_of_opcode` in
-`RVSail/BusesV3.lean`): `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`,
+`RVSail/Buses.lean`): `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`,
 `ANDI`, `SLTI`, `SLTIU`, `SLLI`, `SRLI` and `SRAI` no longer take `imm_b = 0`,
 and `SUBW` and `SUB` no longer take `imm_c = 0`. Dropping a hypothesis makes the
 theorem stronger. `ADDI` kept `imm_b = 0` (its column form still does): the
@@ -93,7 +93,7 @@ shape; the shape hypotheses stay on their column forms, `equivalence_LUI_row`
 and `equivalence_AUIPC_row`.
 
 A restored memory theorem also names what the Memory message promises it
-(`MemoryBus.Spec` in `RVSail/BusesV3.lean`) only through the bus assumptions,
+(`MemoryBus.Spec` in `RVSail/Buses.lean`) only through the bus assumptions,
 as the ALU classes name `ALUBus.Spec`. Both chips that take the dispatch, the
 read/write and the unaligned memory chip, prove the promise's serving side:
 `SOUNDNESS.md` A3 says so for the stores and the loads, and a pull request that
@@ -110,12 +110,12 @@ that value to the instruction. The column form names the low 6 bits (5 for the
 32), or its low 12 bits for the other seven, and the proof needs the constraint
 that ties the two (`op_c_value_setWidth_eq_op_c_0`). The decoder sign-extends
 the program's 12-bit immediates and zero-extends its shift amounts
-(`Transpiler.V3.imm_operand` with its sign flag `true` or `false`), and writes
+(`Transpiler.imm_operand` with its sign flag `true` or `false`), and writes
 the low 16 bits of the result into `op_c_0`, so on a row the program decoded
 those bits are the program's immediate, but the column form does not tie
 `op_c_0` to the decoder. The classes in decoded form do, and tie their register
 columns to it in the same way: each theorem takes the instruction and the
-hypothesis `h_decode` that the decoder (`Transpiler.V3.transpile_op`, at
+hypothesis `h_decode` that the decoder (`Transpiler.transpile_op`, at
 multiplicity 1) turns it into the row's Program message, in place of
 `is_real = 1`, the opcode and the immediate flags it took (for `LUI` and
 `AUIPC`, also the operand shape), and the class's lemma derives that hypothesis

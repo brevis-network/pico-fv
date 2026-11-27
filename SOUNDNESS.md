@@ -458,7 +458,7 @@ operations are `JAL`'s, the pc read, the read of `rd`'s old value and the write 
 next pc.
 
 The 2.x statements were last recorded at `353238a`, against the 2.x constraints and the contracts
-of `RVSail/Buses.lean`. Two definitions every instruction
+of `RVSail/Buses.lean` at that commit. Two definitions every instruction
 theorem names were rewritten at v3.1.1 behind unchanged names: `Equivalence.CPU_bus_operations`, the
 operations the theorem compares the Sail step against (now a two-piece pc, with the memory width and
 direction taken from the opcode), and `CpuChip.Interpretations.bus_row`, which sorts the row's
