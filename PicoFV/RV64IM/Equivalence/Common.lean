@@ -11,10 +11,11 @@ set_option linter.constructorNameAsVariable false
 
 The operand values a row reads and writes, the operations its messages stand for, the control-flow
 facts every ALU-class row shares, and the helpers of the decoded form (section `Decoded`:
-`decoded_field`, `regidx_reg_to_KB`, `reg_reg_decoded`, `reg_imm_decoded`,
-`op_c_value_eq_signExtend_of_imm_operand`, `program_bus_decoded`). The one assumption the theorems
-make about the whole trace rather than about a row, `pico_CpuChip_control_flow_assumptions`, is
-defined in `Constraints/CpuChipInterpretations.lean` so that the lemmas there can take it.
+`decoded_field`, `regidx_reg_to_KB`, `reg_reg_decoded`, `reg_imm_decoded`, `imm_operand_low_cast`,
+`op_c_value_eq_signExtend_of_imm_operand`, `load_store_offset`, `program_bus_decoded`). The one
+assumption the theorems make about the whole trace rather than about a row,
+`pico_CpuChip_control_flow_assumptions`, is defined in `Constraints/CpuChipInterpretations.lean` so
+that the lemmas there can take it.
 
 The pc-alignment lemmas that the 2.x file also held are not here. A real row's next pc is
 4-aligned by `CpuChip.Interpretations.next_pc_mod_four_eq_zero`, which keeps the 2.x name but
@@ -792,7 +793,12 @@ namespace Equivalence
         opcode and, where classes share an opcode, the immediate flags that tell them apart
         (`imm_c`; `imm_b` for `ADDI` and U-type), `h_decode` holds for some instruction fields and
         an address that is 4-aligned and below `Transpiler.code_address_bound`. Each starts from
-        `program_bus_decoded`. -/
+        `program_bus_decoded`.
+
+        Two lemmas read the immediate in a row's `op_c` columns:
+        `op_c_value_eq_signExtend_of_imm_operand`, from the columns' decoded pieces, and
+        `load_store_offset`, which finds those pieces for a load or store row from the row's Program
+        promise. -/
 
     open Transpiler
 
@@ -852,7 +858,7 @@ namespace Equivalence
     /-- An immediate of at most 16 bits reads back from the low piece of its operand
         (`imm_operand imm sgn`), at its own width, whether the decoder sign- or zero-extended it:
         the extension keeps the immediate's bits, and the piece keeps the low 16. -/
-    lemma imm_operand_zero_cast {w : ℕ} (imm : BitVec w) (sgn : Bool) (hw : w ≤ 16) :
+    lemma imm_operand_low_cast {w : ℕ} (imm : BitVec w) (sgn : Bool) (hw : w ≤ 16) :
       (((imm_operand imm sgn)[0]).val : BitVec w) = imm
     := by
       apply BitVec.eq_of_toNat_eq
@@ -871,7 +877,7 @@ namespace Equivalence
         of `ITYPE`, `ADDIW`, `SHIFTIOP` and `SHIFTIWOP`): it is real, its opcode is the clause's,
         its second operand is a register (`imm_b = 0`) and its third an immediate (`imm_c = 1`),
         its `op_a` and `op_b` columns name `rd` and `rs1`, and its `op_c_0` column holds the
-        immediate, of at most 16 bits (`imm_operand_zero_cast`). -/
+        immediate, of at most 16 bits (`imm_operand_low_cast`). -/
     lemma reg_imm_decoded
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -903,7 +909,7 @@ namespace Equivalence
         decoded_field h_data ProgramBusEntry.opcode, decoded_field h_data ProgramBusEntry.imm_b,
         decoded_field h_data ProgramBusEntry.imm_c, by rw [h_op_a]; exact regidx_reg_to_KB rd,
         by rw [h_op_b]; exact regidx_reg_to_KB rs1,
-        by rw [h_c0]; exact imm_operand_zero_cast imm sgn hw ⟩
+        by rw [h_c0]; exact imm_operand_low_cast imm sgn hw ⟩
 
     /-- On a row whose `op_c` is an immediate (`imm_c = 1`) and whose `op_c` columns hold the
         decoder's encoding of a signed immediate `imm` of at most 32 bits

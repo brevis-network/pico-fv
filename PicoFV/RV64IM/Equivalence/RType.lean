@@ -28,7 +28,7 @@ namespace Equivalence
     -- shares 1, so the decoder already gives SUB `imm_c = 0`
     -- (`imm_c_eq_zero_of_opcode`) and its column form takes the opcode alone.
     -- The checked theorems take the decoded instruction instead, whose decoding
-    -- fixes the opcode and `imm_c = 0` for all ten (`rtype_decoded`).
+    -- fixes the opcode and `imm_c = 0` for all ten (`reg_reg_decoded`).
     -- The row reads both operands from registers
     -- (`imm_b = 0`, which `imm_c = 0` fixes, and `imm_c = 0`) and sets no class
     -- selector. Every column form closes with `alu_reg_reg_close` (`Common.lean`),

@@ -27,7 +27,7 @@ namespace Equivalence
     -- SUBW `imm_c = 0` (`ALURowFacts.imm_c_eq_zero`) and its column form takes
     -- the opcode alone. The checked theorems take the decoded instruction
     -- instead, whose decoding fixes the opcode and `imm_c = 0` for all five
-    -- (`rtypew_decoded`). The row reads both operands from registers
+    -- (`reg_reg_decoded`). The row reads both operands from registers
     -- (`imm_b = 0`, `imm_c = 0`) and sets no class selector;
     -- `eq_operation_list_effect_state_of_reg_reg` does everything but the
     -- opcode's arm of `ALUBus.Spec`, which applies `setWidth 32` to both
