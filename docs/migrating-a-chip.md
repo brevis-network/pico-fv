@@ -1,15 +1,15 @@
 # Moving a chip to the pinned Pico
 
 This is the procedure for moving one chip's proofs onto the Pico commit `extractor/` is pinned
-to, worked through on `LtChip`, for the chips listed in `extractor/pending.txt`. Pull requests
-target `main`. Moving a chip touches only that chip's files and its entries in the shared
-registers (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
+to, worked through on `LtChip`. It applies to a chip listed in `extractor/pending.txt`: the
+extractor leaves a listed chip's file alone, since its proofs still expect the old extraction.
+Every chip has moved, so the list is empty. Pull requests target `main`. Moving a chip touches
+only that chip's files and its entries in the shared registers (see
+[CONTRIBUTING.md](../CONTRIBUTING.md)).
 
-The files in `pending.txt` were extracted from a Pico development branch of the 2.x series
-(the commit named in each file's first line), which carried fixes for the 13 gaps in
-`Report.pdf`. Their proofs verify that branch, not a Pico release. Pico 3.x may implement a fix
-differently or not at all, so a proof that breaks during the move needs a look at the gap the
-chip used to have (see [`rv64-bug-mapping.md`](rv64-bug-mapping.md)) before it is repaired.
+A proof that breaks during the move may mean that the new Pico closes one of the recorded
+soundness gaps differently or not at all: check the chip's rows in
+[`rv64-bug-mapping.md`](rv64-bug-mapping.md) before repairing it.
 
 ## 1. Regenerate the extraction and see what changed
 
@@ -62,12 +62,13 @@ Rebuild and repair `Spec/<Chip>.lean`. Repairs should not change a theorem's sta
 proof needs a new or stronger hypothesis, or a constraint looks too weak, stop and report it.
 It may be a soundness gap in Pico.
 
-A chip may now serve bus messages that the bus contract (`RVSail/Buses.lean`) does not specify
-yet. `LtChip`'s merged branch-comparison rows serve ALU opcodes `264` / `265`, which are not in
-`ALUBus.validOpcode`. Under the current contract such a row contradicts the ALU entry's external
-assumption, so the proof splits on `is_cmp` and dismisses `is_cmp = 1` (`is_cmp_eq_zero`).
-Changing the contract to specify the new opcodes is a framework change; record this contract
-gap in the chip's issue and in `SOUNDNESS.md` (under A4).
+A chip may serve a bus message that the bus contract (`RVSail/Buses.lean`) has to specify.
+`LtChip`'s merged branch-comparison rows (`is_cmp = 1`) serve ALU opcodes `264` / `265`, which
+`ALUBus.validOpcode` lists and `ALUBus.Spec` states piece by piece (the two comparison bits). The
+spec proves one theorem per row shape: `spec_SLT` and `spec_SLTU` take `is_cmp = 0`,
+`spec_CMP_SLT` and `spec_CMP_SLTU` take `is_cmp = 1`, and `wf_asrt` splits on `is_cmp`. A message
+the contract does not specify yet needs a framework change, reviewed as one (see
+[CONTRIBUTING.md](../CONTRIBUTING.md)).
 
 ## 5. Check the statements did not change
 
@@ -86,8 +87,8 @@ one. Review that each named definition is one the move meant to change.
 
 If the chip's theorems are new to the list, compare their statements with the ones on `main`:
 build `main` with the same `theorems.d/<chip>.txt` and run `check.sh` there, then diff the two
-outputs. This costs a second full build. For `LtChip` the four theorems' statements and axioms were identical
-before and after. Record them, and the definitions, with `check.sh --update`.
+outputs. This costs a second full build. Record the theorems, and the definitions, with
+`check.sh --update`.
 
 ## 6. Finish
 
@@ -98,6 +99,6 @@ python3 scripts/fv-check/soundness_facts.py          # pending list and facts
 (cd extractor && cargo run --release -- --check ../PicoFV/RV64IM/Extraction)
 ```
 
-If the chip closes one of the gaps found in the 2.x development, fill in its row in
-[`rv64-bug-mapping.md`](rv64-bug-mapping.md): the Pico constraint that closes it (file and line
-at the pinned commit) and the extracted constraint and theorem that rely on it.
+If the chip closes one of the gaps in [`rv64-bug-mapping.md`](rv64-bug-mapping.md), bring its
+row up to date: the Pico constraint that closes it (file and line at the pinned commit) and the
+extracted constraint and theorem that rely on it.

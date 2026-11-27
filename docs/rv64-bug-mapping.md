@@ -1,18 +1,18 @@
-# RV64IM soundness gaps and the Pico 3.x constraints that close them
+# RV64IM soundness gaps and the pinned Pico constraints that close them
+
+Citations read at Pico v3.2.0.
 
 The formalisation of the 2.x series of Pico found 13 soundness gaps in its RV64IM chips
 (described in `Report.pdf`, and for the memory chip in
 [`RV64_MemoryReadWriteChip_soundness_gaps.md`](https://github.com/brevis-network/pico-fv/blob/c8b945581cb4218f0bd72baa81ce7a100e67f33d/RV64_MemoryReadWriteChip_soundness_gaps.md),
 removed once all three of its gaps were filled below). This table records, for each gap, the Pico
 constraint that closes it at the pinned commit
-([`fcfa5046`](https://github.com/brevis-network/pico/tree/fcfa504624657d0c417c43f1233d5d891f293ff9),
-v3.2.0), and the extracted constraint and theorem that rely on it. Every row is filled. The MRW
-rows were written against v3.1.6; the others were first written against v3.1.1. The files they
-cite are the same at v3.1.6 and v3.2.0, so their links point to the pinned commit at the same
-lines. When the pin moves, each link moves with it, once its line is checked again (see
+([`fcfa5046`](https://github.com/brevis-network/pico/tree/fcfa504624657d0c417c43f1233d5d891f293ff9)),
+and the extracted constraint and theorem that rely on it. Every row is filled. When the pin
+moves, each link moves with it, once its line is checked again (see
 [`migrating-a-chip.md`](migrating-a-chip.md)). If a gap turns out not to be closed at the pinned
-commit, report it privately ([SECURITY.md](../SECURITY.md)); its row stays pending until the gap is
-fixed or disclosed.
+commit, report it privately ([SECURITY.md](../SECURITY.md)); its row stays pending until the gap
+is fixed or disclosed.
 
 | ID | Chip | Gap in 2.x | Closed by (Pico, pinned commit) | Lean evidence |
 |----|------|------------|----------------------------------|---------------|
