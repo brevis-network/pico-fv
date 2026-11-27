@@ -1,0 +1,46 @@
+# List where Pico's `dev` and `main` branches differ from the Pico the extractor pins: each
+# extracted chip's constraints, the two RISC-V chip lists, the Plonky3 revision and the files of
+# the AIR builder. The pin is not changed. The list goes to the job summary only.
+#
+# The job fails when a branch could not be compared (not found, the extractor did not build
+# against it, or a comparison came out empty), so a green run means both branches were compared.
+# Differences alone do not fail it.
+
+name: drift
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/drift.yml
+      - scripts/ci/drift.py
+      - extractor/src/**
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # rustup reads the toolchain from extractor/rust-toolchain.toml.
+      - name: toolchain
+        working-directory: extractor
+        run: rustup show active-toolchain || rustup toolchain install
+      # The extractor job's build of the pin (ci.yml). Restore only: the branches' builds would
+      # make a large entry that changes every week.
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            extractor/target
+          key: extractor-${{ runner.os }}-${{ hashFiles('extractor/Cargo.lock', 'extractor/rust-toolchain.toml') }}
+      - name: compare dev and main with the pin
+        run: python3 scripts/ci/drift.py dev main
