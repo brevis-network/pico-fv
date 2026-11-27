@@ -13,8 +13,10 @@ set_option maxHeartbeats 1_000_000_000
     messages other tables answer, and what it must guarantee about the ones it sends, for the
     message formats that changed from 2.x. It also holds the v3.2.0 code-range contract between
     the rows that write guest memory (store rows of the two memory chips, and precompile rows)
-    and the Program table, which the CPU chip never sends. It sits beside `Buses.lean`, whose
-    2.x contracts stay unchanged because the ALU chips' proofs still use them.
+    and the Program table, which the CPU chip never sends. Every chip's row is this file's
+    `BusRow`, the ALU chips' included; from `Buses.lean` it reuses only the register-access, ALU
+    and byte entry contracts. The rest of `Buses.lean` (its row, Program and Memory contracts) is
+    reached by no checked result and is retired with it.
 
     | message | tag (`LookupType`) | fields | contract |
     |---------|-----|----|----------|

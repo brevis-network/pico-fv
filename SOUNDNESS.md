@@ -93,9 +93,11 @@ of `LUI` and `AUIPC`, hypotheses no checked theorem takes.
   (`MemoryReadWriteChip.Spec.*`, `MemoryUnalignedChip.Spec.*`) and those of the ALU chips already
   at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight).
 
-  Every chip specification is stated over the 3.x row: `RV64IM_Interactions.V3.BusRow`, its
-  `deserialise_bus_row` and its checks `bus_row_ext_asm`, `bus_row_wf_asm`, `bus_row_ext_asrt` and
-  `bus_row_wf_asrt` (`RVSail/BusesV3.lean`). The ALU chips (Add, Addw, Bitwise, DivRem, Lt, Mul,
+  Every chip specification is stated over the 3.x row, `RV64IM_Interactions.V3.BusRow` and its
+  `deserialise_bus_row` (`RVSail/BusesV3.lean`). The ALU and CPU results take the row's five-list
+  checks (`bus_row_ext_asm`, `bus_row_wf_asm`, `bus_row_ext_asrt`, `bus_row_wf_asrt`); the memory
+  and code-range results take the six-list ones (`bus_row_all_*`, which add `CodeRange`; see A3's
+  paragraph on them below). The ALU chips (Add, Addw, Bitwise, DivRem, Lt, Mul,
   ShiftRight, SLL, Sub and Subw, with the gadgets they embed) were stated over the 2.x row
   (`RVSail/Buses.lean`) until they moved, with their statements unchanged but for the row's
   namespace. On their rows the two rows say the same. Their rows exchange only tag 4 (ALU, 13

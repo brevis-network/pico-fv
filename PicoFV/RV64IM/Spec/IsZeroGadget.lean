@@ -29,8 +29,6 @@ matching the rest of the gadget Specs in this directory
 
 namespace IsZeroGadget.Spec
 
-  open RV64IM_Interactions
-
   set_option maxHeartbeats 1_000_000_000
 
   /-- Pure / parametric gadget spec. -/

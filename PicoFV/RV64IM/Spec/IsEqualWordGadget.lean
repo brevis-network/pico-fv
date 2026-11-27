@@ -18,8 +18,6 @@ matching the rest of the gadget Specs.
 
 namespace IsEqualWordGadget.Spec
 
-  open RV64IM_Interactions
-
   set_option maxHeartbeats 1_000_000_000
 
   /-- Pure / parametric gadget spec. -/

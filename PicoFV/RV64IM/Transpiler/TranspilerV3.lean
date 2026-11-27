@@ -26,8 +26,9 @@ import PicoFV.RV64IM.Transpiler.Transpiler
       pc_carry ]                                      -- [pc[0] >= 0xFFFC]
     ```
 
-    Differences from the 2.x decoder in `Transpiler.lean`, which stays unchanged because the
-    2.x bus contracts (still used by the ALU chips) refer to it:
+    Differences from the 2.x decoder in `Transpiler.lean`, whose helpers this file still opens
+    (`imm_to_KB`, `reg_to_KB`, `is_register`, the `opcode_of_*` tables); its own
+    `transpile_op` is reached by no checked result:
 
     * the pc is a natural number with two 16-bit pieces, not three field limbs;
     * register `a` is one field (`instruction/columns.rs:19`);
