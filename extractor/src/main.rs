@@ -11,7 +11,7 @@
 //!   cargo run --release -- --lists             print Pico's two RISC-V chip lists and where the
 //!                                              extracted chips stand in them
 //!
-//! `--compare` and `--lists` serve `scripts/ci/drift.sh`, which runs them against a copy of this
+//! `--compare` and `--lists` serve `scripts/ci/drift.py`, which runs them against a copy of this
 //! crate re-pointed at a Pico branch; they make no claim about the pin.
 
 mod gadgets;
@@ -211,7 +211,8 @@ fn without_first_line(text: &str) -> &str {
 
 /// Prints Pico's two RISC-V chip lists, `chiptype <name>` for `RiscvChipType::all_chip_variants`
 /// and `air <name>` for the MLE machine's `mle_riscv_air_refs`, then `extracted <Lean name>
-/// <chip name> <air name>` for each chip `extract_all` covers.
+/// <chip name> <air name>`, tab-separated after `extracted `, for each chip `extract_all`
+/// covers. AIR names can contain spaces.
 fn print_lists() {
     for chip in RiscvChipType::<F>::all_chip_variants() {
         println!("chiptype {}", chip.name());
@@ -221,11 +222,12 @@ fn print_lists() {
         println!("air {}", air.name());
     }
     for (lean_name, chip_name, air_name) in extracted_chip_names() {
-        println!("extracted {lean_name} {chip_name} {air_name}");
+        println!("extracted {lean_name}\t{chip_name}\t{air_name}");
     }
 }
 
-/// `(Lean name, chip name, AIR name)` of each chip `extract_all` covers.
+/// `(Lean name, chip name, AIR name)` of each chip `extract_all` covers;
+/// `extracted_chips_match_extract_all` checks that the two lists agree.
 fn extracted_chip_names() -> Vec<(&'static str, String, String)> {
     fn names<A: ChipBehavior<F>>(
         lean_name: &'static str,
@@ -346,6 +348,19 @@ mod tests {
             SymbolicExpression::Neg { x, .. } => max_main_column(x),
             _ => None,
         }
+    }
+
+    /// `--lists` reports the chips `extract_all` extracts, so the two hand-written lists agree.
+    #[test]
+    fn extracted_chips_match_extract_all() {
+        let gadgets: BTreeSet<&str> = gadgets::ALL.iter().map(|g| g.lean_name()).collect();
+        let chips: Vec<String> = extract_all()
+            .into_iter()
+            .map(|(name, _)| name)
+            .filter(|name| !gadgets.contains(name.as_str()))
+            .collect();
+        let listed: Vec<&str> = extracted_chip_names().iter().map(|(n, _, _)| *n).collect();
+        assert_eq!(chips, listed);
     }
 
     /// A wrapper wider than the columns its layout uses would add unconstrained columns.

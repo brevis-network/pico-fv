@@ -4,7 +4,9 @@
 #
 # The job fails when a branch could not be compared (not found, the extractor did not build
 # against it, or a comparison came out empty), so a green run means both branches were compared.
-# Differences alone do not fail it.
+# Differences alone do not fail it. On a pull request it runs only when its own files change, so a
+# break in Pico upstream does not turn unrelated pull requests red; `extractor/Cargo.toml` is
+# included because the script reads the pin from it.
 
 name: drift
 
@@ -16,7 +18,7 @@ on:
     paths:
       - .github/workflows/drift.yml
       - scripts/ci/drift.py
-      - extractor/src/**
+      - extractor/Cargo.toml
 
 permissions:
   contents: read
