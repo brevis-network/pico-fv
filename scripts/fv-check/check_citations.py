@@ -10,8 +10,9 @@ A path that starts with `extractor/` names a file of this repository; any other 
 by its last components, against the files of Pico at the commit `extractor/Cargo.lock` pins for
 the `pico-vm` dependency of `extractor/Cargo.toml`. A Markdown link whose text is a citation
 (`[alu/lt/constraints.rs:81-82](…#L81-L82)`) counts once, and its text must cite what its link
-does. The files read are `PicoFV/` (not `Extraction/`) and `docs/`, or the FILEs given. A finding
-is one of:
+does; a link whose text carries more than the citation, or that has no `#L` anchor, is read as
+two citations and not compared. The files read are `PicoFV/` (not `Extraction/`) and `docs/`, or
+the FILEs given. A finding is one of:
 
   NO FILE        the path matches no file
   AMBIGUOUS      the path matches several files: give more of it
@@ -131,7 +132,7 @@ def check(root, src, paths):
                     cited = True
                     said = (inner[1], ranges_of(inner))
                     meant = (link[2], [(int(link[3]), int(link[4] or link[3]))])
-                    if not link[2].endswith(said[0]) or said[1] != meant[1]:
+                    if not (link[2] == said[0] or link[2].endswith('/' + said[0])) or said[1] != meant[1]:
                         yield 'LINK MISMATCH', where, md[1], f'link cites {link[2]}#L{link[3]}' + \
                             (f'-L{link[4]}' if link[4] else ''), None
                     else:
@@ -219,13 +220,20 @@ def self_test(src):
         'OTHER COMMIT': f'{url}/blob/v0.0.1/{good}#L1',
         'LINK MISMATCH': f'[`{short}:1-2`]({url}/blob/{src.rev}/{good}#L2-L3)',
     }
+    more = [  # (kind, line): links at other refs, a tag link, a link text naming another file
+        ('OTHER COMMIT', f'{url}/tree/v0.0.1'),
+        ('OK', f'{url}/blob/{src.tag}/{good}#L1'),
+        ('LINK MISMATCH', f'[`{twice}:1`]({url}/blob/{src.rev}/{good}#L1)'),
+        ('LINK MISMATCH', f'[`{good.rsplit("/", 1)[1][1:]}:1`]({url}/blob/{src.rev}/{good}#L1)'),
+    ]
     with tempfile.TemporaryDirectory() as tmp:
         tmp = pathlib.Path(tmp)
         (tmp / 'Planted.lean').write_text(f'/-! Citations read at Pico {src.tag}. -/\n'
                                           + ''.join(f'-- {k}: {v}\n' for k, v in planted.items())
                                           + f'-- OK: `{short}:1, {size + 5} lines later`\n'
                                           + f'-- OK: [`{short}:1-2`]({url}/blob/{src.rev}/{good}#L1-L2)\n'
-                                          + f'-- OUT OF RANGE: {url}/blob/{src.rev}/{good}#L0\n')
+                                          + f'-- OUT OF RANGE: {url}/blob/{src.rev}/{good}#L0\n'
+                                          + ''.join(f'-- {k}: {v}\n' for k, v in more))
         (tmp / 'Untagged.lean').write_text(f'-- `{short}:1`\n')
         (tmp / 'Stale.lean').write_text(f'-- `{short}:1`\n-- Citations read at Pico v0.0.1.\n')
         got = list(check(tmp, src, sorted(tmp.glob('*.lean'))))
@@ -235,6 +243,7 @@ def self_test(src):
     want |= {('OK', 'Planted.lean:8'), ('OK', 'Planted.lean:9'), ('OUT OF RANGE', 'Planted.lean:10'),
              ('NO TAG', 'Untagged.lean'), ('STALE TAG', 'Stale.lean'),
              ('OK', 'Untagged.lean:1'), ('OK', 'Stale.lean:1')}
+    want |= {(k, f'Planted.lean:{i}') for i, (k, _) in enumerate(more, 11)}
     missing, extra = want - kinds, kinds - want
     ok = not missing and not extra and status == 1 and len(got) == len(want)
     print('self-test:', 'OK' if ok else f'FAILED (missing {sorted(missing)}, extra {sorted(extra)}, '
