@@ -67,6 +67,7 @@ jobs:
           python3 ../scripts/fv-check/check_citations.py --self-test
           python3 ../scripts/fv-check/check_citations.py --github
       - name: extraction files match the pinned Pico
+        if: ${{ !cancelled() }}
         run: cargo run --release --locked -- --check ../PicoFV/RV64IM/Extraction
 
   # A cold build takes hours, so it runs in stages, and on main each stage saves the
