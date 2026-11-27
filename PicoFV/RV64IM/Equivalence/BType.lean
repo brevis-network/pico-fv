@@ -2,6 +2,10 @@ import PicoFV.RV64IM.Equivalence.Common
 
 set_option maxHeartbeats 2_000_000
 
+/-!
+Citations read at Pico v3.2.0.
+-/
+
 namespace Equivalence
 
   open Plonky3
@@ -20,7 +24,7 @@ namespace Equivalence
     -- flags and the row's class selector, and no statement takes them.
     --
     -- A branch row reads `rs1` into `op_a` and `rs2` into `op_b` and writes
-    -- both back unchanged (`op_a_kept`, constraint 13), so it writes no
+    -- both back unchanged (`op_a_kept`, constraints 13 to 16), so it writes no
     -- register. Its `op_c` is the 13-bit offset (`imm_c = 1`). The comparison
     -- runs on the ALU bus: `branch_compare_spec` gives the two bits `a_lt_b`
     -- and `a_gt_b` as the strict comparisons of the two operands, signed for
@@ -32,16 +36,17 @@ namespace Equivalence
     -- that the target is 4-aligned on the taken branch alone, which
     -- `next_pc_mod_four_eq_zero` carries.
     --
-    -- Pico source at the pinned v3.2.0, under `vm/src/chips/chips/riscv_cpu/`:
+    -- Pico source, under `vm/src/chips/chips/`:
     --   * `op_a` keeps its previous value on a branch or store row:
-    --     `register/constraints.rs:117-123`;
+    --     `riscv_cpu/register/constraints.rs:117-123`;
     --   * every branch row has `imm_c = 1`, and the taken target
-    --     `next_pc = pc + offset`: `branch/constraints.rs:74-86`;
+    --     `next_pc = pc + offset`: `riscv_cpu/branch/constraints.rs:74-86`;
     --   * the comparison message on the ALU bus, opcode `SLT` or `SLTU` plus
-    --     `LT_CMP_OPCODE_TAG`: `branch/constraints.rs:103-117`;
-    --   * the taken predicate: `branch_taken_expr`, `constraints.rs:356-363`;
+    --     `LT_CMP_OPCODE_TAG`: `riscv_cpu/branch/constraints.rs:103-117`;
+    --   * the taken predicate: `branch_taken_expr`,
+    --     `riscv_cpu/constraints.rs:356-363`;
     --   * `next_pc = pc + 4` on a real row that is not a taken branch, a jump
-    --     or a halt: `constraints.rs:318-326`.
+    --     or a halt: `riscv_cpu/constraints.rs:318-326`.
     --
     -- The six column-form theorems (`equivalence_BEQ_row` to
     -- `equivalence_BGEU_row`) differ only in the comparison. Each derives the
