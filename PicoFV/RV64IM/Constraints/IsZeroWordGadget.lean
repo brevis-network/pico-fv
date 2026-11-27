@@ -10,9 +10,10 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # IsZeroWordGadget — abstract constraints & buses
 
+Citations read at Pico v3.2.0.
+
 `IsZeroWordGadget`'s Pico Rust source is
-`vm/src/chips/gadgets/is_zero_word.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`. Tests whether a 4-limb
+`vm/src/chips/gadgets/is_zero_word.rs`. Tests whether a 4-limb
 (u16-limb) 64-bit word equals `0` at the field level — *no* range
 checks are done on the input.
 

@@ -10,10 +10,11 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # ShiftRightChip — human-readable constraints and bus interactions
 
+Citations read at Pico v3.2.0.
+
 The `ConstraintsAndBuses` namespace below restates each constraint and
 the list of bus interactions emitted by `ShiftRightChip::eval`
-(`vm/src/chips/chips/alu/sr/constraints.rs` at Pico v3.1.1,
-`2acc7c1828fb4ec1bed5963511bb370870c5b608`) in terms of the
+(`vm/src/chips/chips/alu/sr/constraints.rs`) in terms of the
 `Valid_ShiftRightChip` air's named accessors, plus a `_equiv` lemma per
 constraint proving equality with the raw form in
 `PicoFV.RV64IM.Extraction.ShiftRightChip`.
@@ -77,8 +78,8 @@ Algebraic constraint breakdown (65 total):
 - 59..62: `(is_srlw + is_sraw)`-gated u16-shift dispatch (2 selectors × 2 limbs).
 - 63..64: `(is_srlw + is_sraw)` × `a_2/a_3 = srw_msb · 65535` (sign-extend to 64).
 
-Constraints 7, 26..29 and 59..62 close the three ShiftRightChip gaps found in
-the 2.x series (`docs/rv64-bug-mapping.md`).
+Constraints 7, 26..29 and 59..62 are SR-3, SR-2 and SR-1 in
+`docs/rv64-bug-mapping.md`.
 
 Bus interactions (13 entries):
 - 9 ByteBus opcode-9 (BitRange) entries:
@@ -413,7 +414,7 @@ namespace ShiftRightChip.ConstraintsAndBuses
       -- (with v_0123 = 2^(16 - s4), this reduces to
       --  b[i] = lower_limb[i] + higher_limb[i] · 2^s4).
       -- Without these, the range-checked (lower_limb_i, higher_limb_i) pair
-      -- was free of b[i], letting a prover fabricate an arbitrary shift
+      -- would be free of b[i], letting a prover fabricate an arbitrary shift
       -- result.
       -- =====================================================================
 

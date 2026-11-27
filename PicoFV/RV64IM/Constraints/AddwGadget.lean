@@ -10,8 +10,9 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # AddwGadget — abstract constraints & buses
 
-`AddwGadget`'s Pico Rust source is `vm/src/chips/gadgets/addw.rs` at
-commit `22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`. The gadget computes
+Citations read at Pico v3.2.0.
+
+`AddwGadget`'s Pico Rust source is `vm/src/chips/gadgets/addw.rs`. The gadget computes
 the low 32 bits of `b + c` as two u16 limbs `value_0`, `value_1`, and
 captures the MSB of `value_1` in a separate boolean column `msb`. The
 high two limbs of the full 64-bit ADDW result are reconstructed by the

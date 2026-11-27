@@ -11,8 +11,9 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # MulGadget — abstract constraints & buses
 
-`MulGadget`'s Pico Rust source is `vm/src/chips/gadgets/mul.rs` at
-commit `22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`. The gadget computes
+Citations read at Pico v3.2.0.
+
+`MulGadget`'s Pico Rust source is `vm/src/chips/gadgets/mul.rs`. The gadget computes
 `a = b * c` as 16 u8-limbs of the unsigned 128-bit product via
 schoolbook polynomial multiplication with carry propagation, then
 selects which window of the 128-bit product is placed back into `a`

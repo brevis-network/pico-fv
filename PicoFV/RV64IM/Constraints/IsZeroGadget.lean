@@ -9,8 +9,9 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # IsZeroGadget — abstract constraints & buses
 
-`IsZeroGadget`'s Pico Rust source is `vm/src/chips/gadgets/is_zero.rs`
-at commit `22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`. Smallest gadget
+Citations read at Pico v3.2.0.
+
+`IsZeroGadget`'s Pico Rust source is `vm/src/chips/gadgets/is_zero.rs`. Smallest gadget
 in the codebase: 2 owned columns (`inverse`, `result`) plus the
 externally-supplied `input` and `is_real` selector.
 

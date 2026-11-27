@@ -10,12 +10,14 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # MemoryReadWriteChip — constraints and bus messages
 
-`MemoryReadWriteChip::eval` (`vm/src/chips/chips/riscv_memory/read_write/constraints.rs`, Pico
-v3.2.0 `fcfa504624657d0c417c43f1233d5d891f293ff9`) emits 45 constraints and 13 bus messages,
+Citations read at Pico v3.2.0.
+
+`MemoryReadWriteChip::eval` (`vm/src/chips/chips/riscv_memory/read_write/constraints.rs`) emits
+45 constraints and 13 bus messages,
 extracted in `PicoFV.RV64IM.Extraction.MemoryReadWriteChip`. This file restates them on the named
 columns of `Valid_MemoryReadWriteChip` (`Airs/MemoryReadWriteChip.lean`), with an `_equiv` lemma
 per constraint, and sorts the messages by contract (`AbsBuses`). Pico paths below are under
-`vm/src/chips/chips/`, `vm/src/chips/` or `vm/src/`, at v3.2.0.
+`vm/src/chips/chips/`, `vm/src/chips/` or `vm/src/`.
 
 The chip takes the loads and stores whose address is aligned to their width. Per row:
 

@@ -11,9 +11,10 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # LtSignedGadget — abstract constraints & buses
 
+Citations read at Pico v3.2.0.
+
 `LtSignedGadget`'s Pico Rust source is
-`vm/src/chips/gadgets/lt_signed.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`. The gadget extends
+`vm/src/chips/gadgets/lt_signed.rs`. The gadget extends
 `LtWordU16Gadget` with the standard signed-via-unsigned-compare trick:
 the top u16 limb of each operand is XOR'd with `0x8000` when
 `is_signed = 1`, expressed arithmetically as

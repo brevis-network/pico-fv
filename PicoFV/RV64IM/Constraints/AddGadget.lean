@@ -9,10 +9,11 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # AddGadget — human-readable constraints and bus interactions
 
+Citations read at Pico v3.2.0.
+
 The `ConstraintsAndBuses` namespace below restates each of the 5
 constraints and the 4 byte-bus interactions emitted by `AddGadget::eval`
-(`vm/src/chips/gadgets/add.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`) in terms of the
+(`vm/src/chips/gadgets/add.rs`) in terms of the
 `Valid_AddGadgetAir`'s named accessors, plus a `_equiv` lemma per
 constraint proving equality with the raw form in
 `PicoFV.RV64IM.Extraction.AddGadget`.
@@ -78,7 +79,7 @@ namespace AddGadget
       accessors) extended with the chip's own bus entries on each of the
       `Program/ALU/Byte/State/Memory` lists. The standalone
       `Valid_AddGadgetAir` has nothing else to add — see
-      `Interactions.bus_row_eq_abs`. -/
+      `Interpretations.bus_row_abs`. -/
   def AbsBuses
     (is_real value_0 value_1 value_2 value_3 : FKB)
   : BusRow :=

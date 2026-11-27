@@ -10,9 +10,10 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # IsEqualWordGadget — abstract constraints & buses
 
+Citations read at Pico v3.2.0.
+
 `IsEqualWordGadget`'s Pico Rust source is
-`vm/src/chips/gadgets/is_equal_word.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`. Tests whether two 4-limb
+`vm/src/chips/gadgets/is_equal_word.rs`. Tests whether two 4-limb
 (u16-limb) 64-bit words are equal at the field level. Reduces directly
 to `IsZeroWordGadget` applied to the per-limb differences `a_i - b_i`.
 
