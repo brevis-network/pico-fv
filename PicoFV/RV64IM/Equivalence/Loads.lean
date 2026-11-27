@@ -205,16 +205,7 @@ namespace Equivalence
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 4 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
@@ -411,16 +402,7 @@ namespace Equivalence
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 1 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
@@ -605,16 +587,7 @@ namespace Equivalence
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 2 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
@@ -804,16 +777,7 @@ namespace Equivalence
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 1 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
@@ -998,16 +962,7 @@ namespace Equivalence
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 2 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
@@ -1197,16 +1152,7 @@ namespace Equivalence
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 4 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
@@ -1403,16 +1349,7 @@ namespace Equivalence
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 8 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]

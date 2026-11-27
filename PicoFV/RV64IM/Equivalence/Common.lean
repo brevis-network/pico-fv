@@ -751,6 +751,25 @@ namespace Equivalence
       exact eq_operation_list_effect_state_of_reg_imm h h_imm_b h_imm_c h_bus_hypotheses _
         (fun h_pc h_rs1 => h_exec _ _ ⟨ h_pc, h_rs1 ⟩) (fun h_spec => h_shift h_spec)
 
+    /-- The address Sail computes for a load or store, `rs1` plus the sign-extended offset, is the
+        sum of the row's `op_b` and `op_c` access values that the memory chip's promise speaks of,
+        once `h_op_c` says `op_c` is that offset. -/
+    lemma op_b_value_add_signExtend_eq
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ) {w : ℕ} {imm' : BitVec w}
+      (h_op_c : U64w.toBV (op_c_value air row) = BitVec.signExtend 64 imm')
+    :
+      U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
+        U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
+                      (air.cols.op_b_access.access.value_1 row 0 : FKB),
+                      (air.cols.op_b_access.access.value_2 row 0 : FKB),
+                      (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
+        U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
+                      (air.cols.op_c_access.access.value_1 row 0 : FKB),
+                      (air.cols.op_c_access.access.value_2 row 0 : FKB),
+                      (air.cols.op_c_access.access.value_3 row 0 : FKB) ]
+    := by rw [← h_op_c]; rfl
+
   end Auxiliaries
 
   section Decoded
