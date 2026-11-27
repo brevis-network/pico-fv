@@ -7,7 +7,7 @@ the committed signature snapshot.
 It also prints a `DEFINITION <name> <fingerprint>` line for every constant of this repository
 that the statements reach, following definition bodies (and theorem statements, but not their
 proofs). The walk stops at constants from other packages (Lean, Mathlib, the Sail model, the
-constraint framework): `lake-manifest.json` pins those. Constructors and recursors are folded
+constraint framework): `lean-toolchain` and `lake-manifest.json` pin those. Constructors and recursors are folded
 into their inductive type.
 
 A fingerprint hashes the constant's type and value with every reference to another reached

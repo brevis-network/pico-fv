@@ -79,8 +79,9 @@ often a new message in the bus contract), say so and have it reviewed as one.
   `scripts/fv-check/definition-renames.txt` is not a change, unless the new name already belonged
   to another definition (a 2.x definition that a 3.x one replaces): that name reports drift.
   Lean numbers auxiliary definitions (`._proof_N`, `.match_N`) per declaration, so an edit can
-  renumber them; they then show as `GONE` and `NEW` with the same fingerprints, and are recorded
-  with `check.sh --update` like any other change.
+  renumber them; they then show as `GONE` and `NEW` with the same fingerprints, or as `DRIFT` on
+  an auxiliary name whose parent did not drift, and are recorded with `check.sh --update` like any
+  other change.
 - Name new theorems by the [Mathlib conventions](https://leanprover-community.github.io/contribute/naming.html).
 
 ## Checks

@@ -205,14 +205,16 @@ statement shows up as a diff of `signatures.txt` for review; once reviewed,
 
 A definition can change while every statement that names it reads the same, so
 `definitions.txt` fingerprints each definition of this repository that the
-statements reach, following definition bodies (it stops at Lean, Mathlib, the
-Sail model and the circuit framework, pinned in `lake-manifest.json`). A
+statements reach, following definition bodies (it stops at Lean, pinned in
+`lean-toolchain`, and at Mathlib, the Sail model and the circuit framework,
+pinned in `lake-manifest.json`). A
 fingerprint hashes the definition with each definition it uses replaced by that
 one's fingerprint, so a change fails the check under its own name and under every
 definition above it, until it is reviewed and recorded with `check.sh --update`.
-Names do not enter a fingerprint: a rename listed in `definition-renames.txt`
-(`Transpiler.V3.X` to `Transpiler.X`, for example) is not drift, while a 2.x
-definition that a 3.x one replaces under the same name is.
+No name of this repository enters a fingerprint except a constructor's own (`DRS`
+in `drop.DRS`), so renaming a constructor is drift, while a rename listed in
+`definition-renames.txt` (`Transpiler.V3.X` to `Transpiler.X`, for example) is
+not; a 2.x definition that a 3.x one replaces under the same name is drift.
 
 More checks run in CI: `check_layers.sh` (no chip imports another chip),
 `check_tactics.sh` (uses of `native_decide` / `bv_decide` / `decide +native` only go down),

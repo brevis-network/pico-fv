@@ -483,8 +483,9 @@ leaves `signatures.txt` as it is, but changes the definition's fingerprint in `d
 and `check.sh` fails on it, naming the definition and every definition that uses it, until the
 change is reviewed and recorded with `check.sh --update`. A fingerprint covers every definition of
 this repository that a checked statement reaches, through definition bodies; it stops at Lean,
-Mathlib, the Sail model and the circuit framework, which `lake-manifest.json` pins. It does not
-depend on this repository's names, so a rename listed in `definition-renames.txt` passes the check
+which `lean-toolchain` pins, and at Mathlib, the Sail model and the circuit framework, which
+`lake-manifest.json` pins. It depends on no name of this repository except a constructor's own (a
+renamed constructor is drift), so a rename listed in `definition-renames.txt` passes the check
 without drift, unless the new name already belongs to another definition (a 2.x definition that a
 3.x one replaces): that name then reports drift.
 

@@ -4,8 +4,9 @@
 # axioms and statement recorded in axioms.txt and signatures.txt. Run after `lake build`.
 # It also checks the definitions those statements reach (in this repository, following definition
 # bodies): each keeps the fingerprint recorded in definitions.txt, so a changed definition fails
-# the check until it is reviewed, even when no statement's text changes. A fingerprint does not
-# depend on this repository's names, so a rename listed in definition-renames.txt is not drift.
+# the check until it is reviewed, even when no statement's text changes. A fingerprint depends on
+# no name of this repository except a constructor's own, so a rename listed in
+# definition-renames.txt is not drift, unless the new name already belonged to another definition.
 #   scripts/fv-check/check.sh            check; exit 1 on any violation or drift
 #   scripts/fv-check/check.sh --update   after a clean check of the rules, rewrite the snapshots
 set -euo pipefail
