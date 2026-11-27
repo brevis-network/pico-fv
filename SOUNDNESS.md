@@ -93,13 +93,13 @@ of `LUI` and `AUIPC`, hypotheses no checked theorem takes.
   (`MemoryReadWriteChip.Spec.*`, `MemoryUnalignedChip.Spec.*`) and those of the ALU chips already
   at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight).
 
-  Every chip specification is stated over the 3.x row, `RV64IM_Interactions.V3.BusRow` and its
-  `deserialise_bus_row` (`RVSail/BusesV3.lean`). The ALU and CPU results take the row's five-list
+  Every chip specification is stated over one row, `RV64IM_Interactions.BusRow` and its
+  `deserialise_bus_row` (`RVSail/Buses.lean`). The ALU and CPU results take the row's five-list
   checks (`bus_row_ext_asm`, `bus_row_wf_asm`, `bus_row_ext_asrt`, `bus_row_wf_asrt`); the memory
   and code-range results take the six-list ones (`bus_row_all_*`, which add `CodeRange`; see A3's
   paragraph on them below). The ALU chips (Add, Addw, Bitwise, DivRem, Lt, Mul,
   ShiftRight, SLL, Sub and Subw, with the gadgets they embed) were stated over the 2.x row
-  (`RVSail/Buses.lean`) until they moved, with their statements unchanged but for the row's
+  until they moved to this one, with their statements unchanged but for the row's
   namespace. On their rows the two rows say the same. Their rows exchange only tag 4 (ALU, 13
   fields) and tag 5 (byte, 5 fields) messages: each chip receives one ALU message, its own
   operation, and sends byte messages, and DivRem also sends two ALU messages
@@ -108,10 +108,10 @@ of `LUI` and `AUIPC`, hypotheses no checked theorem takes.
   `DivRemChip.lean:715-955`, `LtChip.lean:85-91`, `MulChip.lean:121-191`,
   `ShiftRightChip.lean:149-173`, `SLLChip.lean:125-145`, `SubChip.lean:31-39` and
   `SubwChip.lean:31-37` has one of those two tags. Both deserialisers sort those two tags alike,
-  into the same `ALUBusEntry` and `ByteBusEntry` lists (`RVSail/Buses.lean:1394-1405`,
-  `RVSail/BusesV3.lean:1135-1146`), so on these rows Program, State, Memory and the 3.x row's
-  `CodeRange` stay empty, and each check is the same condition on the ALU and byte entries in
-  either row.
+  into the same `ALUBusEntry` and `ByteBusEntry` lists (the 2.x row's at `f4f9924`,
+  `RVSail/Buses.lean:1394-1405`; this row's at `RVSail/Buses.lean:1536-1547`), so on these rows
+  Program, State, Memory and `CodeRange` stay empty, and each check is the same condition on the
+  ALU and byte entries in either row.
 
   The memory chips' say that a row receiving the memory dispatch meets the memory promise
   (`spec_LB` to `spec_SD`, one per opcode, and `wf_asrt`, which also gives each double word the
@@ -144,7 +144,7 @@ of `LUI` and `AUIPC`, hypotheses no checked theorem takes.
   about its instruction and the register file's promise about the values it reads
   (`CpuChip.Interpretations.bus_row_reads_asm`), every message the row sends with
   multiplicity 1 gives the receiver what the contract lets the receiver assume of a sender
-  (`externals` in `RVSail/Buses.lean` and `RVSail/BusesV3.lean`):
+  (`externals` in `RVSail/Buses.lean`):
   - the ALU dispatch carries a valid ALU opcode and 16-bit operand pieces;
   - the branch comparison carries opcode 264 or 265 and 16-bit operand pieces;
   - the memory dispatch carries a load or store opcode, `is_memory = 1`, 16-bit pieces for the
@@ -167,7 +167,7 @@ of `LUI` and `AUIPC`, hypotheses no checked theorem takes.
   `width` below 2^16) that satisfies the gadget's constraints, the write `[addr, addr + width)`
   misses the range `[code_start, code_end)` the row looks up from the Program table.
   That range is read from the row's own columns: the Program table's promise
-  (`V3.CodeRangeBus.Spec`) gives only that its four pieces are below 2^16, not that they are this
+  (`CodeRangeBus.Spec`) gives only that its four pieces are below 2^16, not that they are this
   program's code range, so these theorems do not yet say that a store misses the program's code
   (see A4). `wf_asrt` and `ext_asrt` say the gadget's messages owe nothing to the tables that
   answer them.
@@ -301,7 +301,7 @@ checked instruction theorems of `Stores.lean`, `Loads.lean`, `RType.lean`, `RTyp
 `DivFamily.lean`, `BType.lean`, `Jumps.lean` and `UType.lean` are in decoded form.
 
 Since v3.1.6 a row's messages fall into six lists, not five: the code-range message
-(`V3.CodeRangeBusEntry`), which a store row and a precompile row send to the Program table, has
+(`CodeRangeBusEntry`), which a store row and a precompile row send to the Program table, has
 its own list, `CodeRange`, empty on every CPU-chip row. The four checks above (and
 `bus_row_ext_asrt`) cover the other five lists only; the code range has its own checks
 (`bus_row_code_range_wf_asm` and its siblings), kept apart because adding the list to the five
@@ -314,8 +314,8 @@ five-list check (`bus_row_all_wf_asm_iff` and its siblings), so the equivalence 
 use the five-list checks, leave out no message their rows send.
 
 The instruction theorems checked at the moment (listed under "What is proved") are recorded at
-v3.1.1, against the v3.1.1 CPU constraints and the v3.1.1 contracts (`RV64IM_Interactions.V3` in
-`RVSail/BusesV3.lean`). The column forms of `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`,
+v3.1.1, against the v3.1.1 CPU constraints and the v3.1.1 contracts (`RV64IM_Interactions` in
+`RVSail/Buses.lean`). The column forms of `ADDIW`, `SLLIW`, `SRLIW`, `SRAIW`, `XORI`, `ORI`,
 `ANDI`, `SLTI`, `SLTIU`, `SLLI`, `SRLI` and `SRAI` do not assume `imm_b = 0`, which the v3.1.1
 decoder fixes for their opcodes, and `SUBW` and `SUB` no longer assume `imm_c = 0`, which it fixes
 for opcodes 41 and 1. `ADDI`'s column form assumes `imm_b = 0`: its opcode 0 with `imm_c = 1` is
@@ -351,7 +351,7 @@ immediate, copies `op_c_0` into the first 16-bit piece of the `op_c` value
 (`op_c_value_setWidth_eq_op_c_0`, through `imm_c_eq_1_constraints`). A shift's amount is
 `op_c_0`'s low 6 bits (5 for the 32-bit shifts), that is `op_c_0` modulo 64 (or 32); the other
 seven take `op_c_0`'s low 12 bits. The decoder sign-extends the seven 12-bit immediates and
-zero-extends the six shift amounts (`Transpiler.V3.imm_operand` with its sign flag `true` or
+zero-extends the six shift amounts (`Transpiler.imm_operand` with its sign flag `true` or
 `false`), and writes the low 16 bits of the result into `op_c_0`, the next 16 into `op_c_1` and
 the sign into `op_c_sign`. So on a row the program decoded those bits are the program's shift
 amount or 12-bit immediate; the column forms do not state that link.
@@ -366,7 +366,7 @@ and `AUIPC` (`UType.lean`). Each takes the instruction itself, written in the st
 `ADDI`, `instruction.RTYPE (rs2, rs1, rd, rop.ADD)` for `ADD`,
 `instruction.BTYPE (imm, rs2, rs1, bop.BEQ)` for `BEQ`, `instruction.JAL (imm, rd)`,
 `instruction.UTYPE (imm, rd, uop.LUI)`), with the hypothesis `h_decode` that the decoder
-(`Transpiler.V3.transpile_op`, at multiplicity 1 and some address `addr`) turns it into the row's
+(`Transpiler.transpile_op`, at multiplicity 1 and some address `addr`) turns it into the row's
 Program message, and concludes that Sail's step on that instruction equals the row's effect. The
 decoding fixes `is_real = 1`, the opcode, the immediate flags, the register columns and the offset
 or immediate (for `LUI` and `AUIPC`, the operand shape), so these theorems take none of them as
@@ -381,7 +381,7 @@ row's Program promise, the decoding hypothesis is no stronger than the hypothese
 `Equivalence.rem_decode_satisfiable`, `Equivalence.remw_decode_satisfiable`,
 `Equivalence.btype_decode_satisfiable`, `Equivalence.jal_decode_satisfiable` and
 `Equivalence.jalr_decode_satisfiable` (checked, listed with their classes) derive it, for some
-instruction fields and a 4-aligned address below `Transpiler.V3.code_address_bound`, from
+instruction fields and a 4-aligned address below `Transpiler.code_address_bound`, from
 `is_real = 1`, the opcode of each store or load width, register-register, register-immediate,
 multiply, divide or remainder operation, branch or jump (with `imm_c = 0` for a register-register
 opcode an immediate form shares, as its column form takes it, and on the opcodes of `SUB` and `SUBW`
@@ -401,7 +401,7 @@ The four store theorems take no opcode: the decoding fixes it (their `_row` form
 as the store theorems did at `353238a`). They gain the whole-trace assumption, which their 2.x
 statements did not take. Like every restored theorem they
 rest on the Program table's promise (A4, A5). Of the Memory message's promise (`MemoryBus.Spec` in
-`RVSail/BusesV3.lean`) a store uses one clause: the address `op_b + op_c` is below `2 ^ 32`, so the
+`RVSail/Buses.lean`) a store uses one clause: the address `op_b + op_c` is below `2 ^ 32`, so the
 whole access lies in the memory region `RISC_V_assumptions` gives Sail (at least `2 ^ 48` bytes);
 Sail traps instead of storing outside it. The promise says nothing about alignment and the theorems
 do not assume it. At an address that is not a multiple of the width, Sail splits the store into
@@ -463,7 +463,7 @@ theorem names were rewritten at v3.1.1 behind unchanged names: `Equivalence.CPU_
 operations the theorem compares the Sail step against (now a two-piece pc, with the memory width and
 direction taken from the opcode), and `CpuChip.Interpretations.bus_row`, which sorts the row's
 messages (now with the v3.1.1 deserialiser). A third was rewritten against v3.1.6:
-`V3.MemoryBus.Spec`, the memory chips' promise, which every checked 3.x instruction theorem
+`MemoryBus.Spec`, the memory chips' promise, which every checked 3.x instruction theorem
 assumes through its `bus_row_wf_asm` hypothesis. It lost its three alignment clauses (see the
 composition section below), so that hypothesis now assumes less, and each theorem says more.
 
@@ -532,7 +532,7 @@ carries a duty is sent 0 or 1 times, `CpuChip.Spec.multiplicity_eq_zero_or_one`)
 assumes only the Program table's and the register file's promises, not those of the ALU and
 memory chips it sends to, so the CPU's side of each of those links does not rest on the
 receiving chip's theorem. Both memory chips' specifications assume of the CPU what the 3.x
-contract states (`MemoryBus.externals` in `RVSail/BusesV3.lean`), the duty the CPU is proven to
+contract states (`MemoryBus.externals` in `RVSail/Buses.lean`), the duty the CPU is proven to
 meet.
 
 At v3.2.0, the pin, the memory dispatch has two receivers. Since v3.1.2 Pico has
@@ -540,7 +540,7 @@ At v3.2.0, the pin, the memory dispatch has two receivers. Since v3.1.2 Pico has
 17-field message on the same bus as `MemoryReadWriteChip` and serves loads and stores whose
 address is not a multiple of their width. The CPU chip's constraints did not change, so either
 chip may take any load or store. The promise the CPU chip assumes of the dispatch
-(`MemoryBus.Spec` in `RVSail/BusesV3.lean`) therefore states only what holds whichever chip takes
+(`MemoryBus.Spec` in `RVSail/Buses.lean`) therefore states only what holds whichever chip takes
 the message: a load's value has 16-bit pieces, the address `b + c` is at least `2^16` and below
 `2^32`, and, unless the destination is `x0`, a load's value is the sign or zero extension its
 opcode names. The address bound and the extensions follow from each chip's constraints at v3.2.0
@@ -585,7 +585,7 @@ The code-range message rests on a chip that is not covered. A store row of eithe
 and every precompile chip for what it writes, looks up the code's range `[code_start, code_end)`
 from the Program table (`gadgets/code_range.rs:1-11` at v3.2.0), and the
 `CodeRangeGadget.Spec` theorems assume what the table answers: four pieces below 2^16
-(`V3.CodeRangeBus.Spec`). The Program chip has no proof here (A5), so that promise is trusted.
+(`CodeRangeBus.Spec`). The Program chip has no proof here (A5), so that promise is trusted.
 It is also weaker than what Pico intends: it does not say the four pieces are this program's
 code range, which the Program table's preprocessed columns hold
 (`riscv_program/columns.rs:36-40`, `traces.rs:132-136`) and `program_commit` fixes, so no theorem
@@ -610,7 +610,7 @@ are none among the RV64IM ALU chips at v3.2.0.
 `ECALL` and syscalls, the precompile chips, the program, global memory and memory
 initialisation chips, the recursion layers, and Pico's proof system itself. The
 `CodeRangeGadget.Spec` theorems assume the Program chip's code-range promise
-(`V3.CodeRangeBus.Spec`), which rests on the Program chip and so is trusted (see A4).
+(`CodeRangeBus.Spec`), which rests on the Program chip and so is trusted (see A4).
 The precompile chips also send the code-range message; no theorem here covers their side of it.
 
 Deferred by decision of 2026-11-23:
@@ -625,15 +625,15 @@ Deferred by decision of 2026-11-23:
 
 ### A6. The instruction decoder
 
-The Program contract (`RV64IM_Interactions.V3.ProgramBusEntry.operand_properties` in
-`PicoFV/RV64IM/RVSail/BusesV3.lean`; the 2.x contract of the same short name is in `Buses.lean`)
-says that a fetched instruction is the row the Lean decoder `Transpiler.V3.transpile_op`
-(`PicoFV/RV64IM/Transpiler/TranspilerV3.lean`) gives some Sail instruction at a 4-aligned address
+The Program contract (`RV64IM_Interactions.ProgramBusEntry.operand_properties` in
+`PicoFV/RV64IM/RVSail/Buses.lean`)
+says that a fetched instruction is the row the Lean decoder `Transpiler.transpile_op`
+(`PicoFV/RV64IM/Transpiler/Transpiler.lean`) gives some Sail instruction at a 4-aligned address
 below `0x7800_0000`. That decoder models Pico's decoder
 (`vm/src/compiler/riscv/disassembler/rrs.rs`) and Program table builder
 (`vm/src/chips/chips/riscv_program/traces.rs`). It was written against v3.1.1. Only review compares
 the Lean decoder with the Rust one; Pico's own decoder tests are restated as `example`s at the end
-of `TranspilerV3.lean`. The decoder starts from an already-decoded Sail instruction, not from the
+of `Transpiler.lean`. The decoder starts from an already-decoded Sail instruction, not from the
 32-bit word: that a word decodes to the same instruction in Sail and in Pico is not modelled.
 
 The contract was read again against v3.1.5, and again against v3.1.6. The decoder
@@ -644,7 +644,7 @@ Program chip still receives the CPU's 26-field instruction message, and it now a
 message giving that range, which store rows look up to prove that they do not write into the code.
 Pico's LogUp fingerprint includes a message's length (`eval_interaction` in
 `mle-core/src/prover/logup_zerocheck/evaluator.rs`), so the two messages never match each other. The
-Lean reader of the CPU row's messages (`deserialise_bus_row` in `RVSail/BusesV3.lean`) takes only
+Lean reader of the CPU row's messages (`deserialise_bus_row` in `RVSail/Buses.lean`) takes only
 26-field messages as instructions. The ELF loader (`vm/src/compiler/riscv/disassembler/elf.rs`)
 rejects more files than at v3.1.1 (32-bit ELFs, segments that are both writable and executable, an
 entry point outside the code) and builds the instructions in the same way. From v3.1.5 to v3.1.6

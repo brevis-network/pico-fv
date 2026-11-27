@@ -31,9 +31,7 @@ Proof strategy: case-split on the sum of `u16_flags`.
 
 namespace LtWordU16Gadget.Spec
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   set_option maxHeartbeats 1_000_000_000
 
   /-- Pure / parametric gadget spec. -/

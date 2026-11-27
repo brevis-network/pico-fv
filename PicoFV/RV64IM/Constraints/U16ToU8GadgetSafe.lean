@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 import PicoFV.RV64IM.Extraction.U16ToU8GadgetSafe
 import PicoFV.RV64IM.Airs.U16ToU8GadgetSafe
 
@@ -43,9 +43,7 @@ This file therefore provides only the parametric (empty)
 
 namespace U16ToU8GadgetSafe
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   /-- `U16ToU8GadgetSafe` contributes no algebraic constraints. -/
   def AbsConstraints
     {F : Type} [Field F]

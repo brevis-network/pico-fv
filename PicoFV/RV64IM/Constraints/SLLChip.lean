@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 import PicoFV.RV64IM.Extraction.SLLChip
 import PicoFV.RV64IM.Airs.SLLChip
 import PicoFV.RV64IM.Constraints.U16MSBGadget
@@ -819,9 +819,7 @@ end SLLChip.ConstraintsAndBuses
 
 namespace SLLChip.Interactions
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   /-- The typed `BusRow` per `SLLChip` row: 10 byte-bus entries (1 for
       the shift-amount range check, 8 for the shift carry chain, 1 for
       the U16MSBGadget on `a_1`) plus 1 ALU entry. -/
@@ -867,7 +865,7 @@ namespace SLLChip.Interactions
   set_option maxRecDepth 4_000_000 in
   @[simp]
   lemma bus_row_equiv (air : Valid_SLLChip FKB ExtF) (row : ℕ) :
-    RV64IM_Interactions.V3.deserialise_bus_row
+    RV64IM_Interactions.deserialise_bus_row
       (SLLChip.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
   := by
     dsimp [
@@ -882,9 +880,7 @@ end SLLChip.Interactions
 
 namespace SLLChip.Interpretations
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   open SLLChip.ConstraintsAndBuses
   open SLLChip.Interactions
 

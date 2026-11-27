@@ -7,7 +7,7 @@ namespace Equivalence
   open Plonky3
 
   open RV64IM
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open CpuChip.ConstraintsAndBuses
   open CpuChip.Interpretations
 
@@ -90,9 +90,9 @@ namespace Equivalence
       (h_imm_b : air.cols.opcode_selector.imm_b row 0 = 1)
     :
       ∃ imm' : BitVec 21,
-        air.cols.instruction.op_b_0 row 0 = (Transpiler.V3.imm_operand imm' true)[0] ∧
-        air.cols.instruction.op_b_1 row 0 = (Transpiler.V3.imm_operand imm' true)[1] ∧
-        air.cols.instruction.op_b_sign row 0 = (Transpiler.V3.imm_operand imm' true)[2] ∧
+        air.cols.instruction.op_b_0 row 0 = (Transpiler.imm_operand imm' true)[0] ∧
+        air.cols.instruction.op_b_1 row 0 = (Transpiler.imm_operand imm' true)[1] ∧
+        air.cols.instruction.op_b_sign row 0 = (Transpiler.imm_operand imm' true)[2] ∧
         U64w.toBV (op_b_value air row) = BitVec.signExtend 64 imm'
     := by
       have h_prog := program_bus_operand_properties air row h_is_real h_wf
@@ -102,22 +102,22 @@ namespace Equivalence
       simp [ProgramBusEntry.decoded_from, h_opcode] at h_decoded
       obtain ⟨ imm', rd', h_eq_instr ⟩ := h_decoded
       subst h_eq_instr
-      simp [Transpiler.V3.transpile_op, -Vector.eq_mk] at h_eq
+      simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
       obtain ⟨ h_eq_data, - ⟩ := h_eq
       subst h_eq_data
       rw [deserialise_program_bus_entry] at h_eq_entry
       simp [ProgramBusEntry.deserialise] at h_eq_entry
       have eq_b0 : air.cols.instruction.op_b_0 row 0 =
-          (Transpiler.V3.imm_operand imm' true)[0] := by simp [h_eq_entry]
+          (Transpiler.imm_operand imm' true)[0] := by simp [h_eq_entry]
       have eq_b1 : air.cols.instruction.op_b_1 row 0 =
-          (Transpiler.V3.imm_operand imm' true)[1] := by simp [h_eq_entry]
+          (Transpiler.imm_operand imm' true)[1] := by simp [h_eq_entry]
       have eq_bs : air.cols.instruction.op_b_sign row 0 =
-          (Transpiler.V3.imm_operand imm' true)[2] := by simp [h_eq_entry]
+          (Transpiler.imm_operand imm' true)[2] := by simp [h_eq_entry]
       refine ⟨ imm', eq_b0, eq_b1, eq_bs, ?_ ⟩
       have h_imm_b_eqs := imm_b_eq_1_constraints air row h_imm_b h_constraints
       simp only [op_b_value, h_imm_b_eqs.1, h_imm_b_eqs.2.1, h_imm_b_eqs.2.2.1,
                  h_imm_b_eqs.2.2.2, eq_b0, eq_b1, eq_bs]
-      exact Transpiler.V3.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
+      exact Transpiler.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
 
     /-- JALR's offset: the Program message says the row's `op_c` columns encode a 12-bit
         immediate `imm'`, and `op_c` is then its 64-bit sign extension (constraints 4 to 7,
@@ -140,22 +140,22 @@ namespace Equivalence
       simp [ProgramBusEntry.decoded_from, h_opcode] at h_decoded
       obtain ⟨ imm', rs1', rd', h_eq_instr ⟩ := h_decoded
       subst h_eq_instr
-      simp [Transpiler.V3.transpile_op, -Vector.eq_mk] at h_eq
+      simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
       obtain ⟨ h_eq_data, - ⟩ := h_eq
       subst h_eq_data
       rw [deserialise_program_bus_entry] at h_eq_entry
       simp [ProgramBusEntry.deserialise] at h_eq_entry
       have eq_c0 : air.cols.instruction.op_c_0 row 0 =
-          (Transpiler.V3.imm_operand imm' true)[0] := by simp [h_eq_entry]
+          (Transpiler.imm_operand imm' true)[0] := by simp [h_eq_entry]
       have eq_c1 : air.cols.instruction.op_c_1 row 0 =
-          (Transpiler.V3.imm_operand imm' true)[1] := by simp [h_eq_entry]
+          (Transpiler.imm_operand imm' true)[1] := by simp [h_eq_entry]
       have eq_cs : air.cols.instruction.op_c_sign row 0 =
-          (Transpiler.V3.imm_operand imm' true)[2] := by simp [h_eq_entry]
+          (Transpiler.imm_operand imm' true)[2] := by simp [h_eq_entry]
       refine ⟨ imm', ?_ ⟩
       have h_imm_c_eqs := imm_c_eq_1_constraints air row h_imm_c h_constraints
       simp only [op_c_value, h_imm_c_eqs.1, h_imm_c_eqs.2.1, h_imm_c_eqs.2.2.1,
                  h_imm_c_eqs.2.2.2, eq_c0, eq_c1, eq_cs]
-      exact Transpiler.V3.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
+      exact Transpiler.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
 
     /-- The operations a JAL row's messages stand for, in order: the pc read, the read of
         `rd`'s old value and the write of the return address, and the next pc. Both operands
@@ -178,7 +178,7 @@ namespace Equivalence
       obtain ⟨ h_imm_b, h_imm_c, -, -, h_s_mem ⟩ :=
         jal_row_selectors air row h_is_real h_wf h_opcode
       obtain ⟨ h_reg_rd, -, - ⟩ := register_indices_lt air row h_is_real h_wf
-      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+      rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
           deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
           deserialise_raw_bus_row_Memory]
       simp [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -392,7 +392,7 @@ namespace Equivalence
 
     -- ========================================================================
     -- The checked jump theorems, in decoded form: each takes the jump and an
-    -- address whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1)
+    -- address whose decoding (`Transpiler.transpile_op`, at multiplicity 1)
     -- is the row's Program message, and is proved from its column form.
     --
     -- The proofs pass hypotheses as `@h`. On the store and load sections,
@@ -409,7 +409,7 @@ namespace Equivalence
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
       (h_constraints : CpuChip.Extraction.allHold air row)
       {imm : BitVec 21} {rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.JAL (imm, rd)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.JAL (imm, rd)) 1 addr =
         some (program_bus_entry air row, props))
     :
       air.cols.is_real row 0 = 1 ∧
@@ -417,22 +417,22 @@ namespace Equivalence
       regidx.Regidx (air.cols.instruction.op_a row 0).val = rd ∧
       (U64w.toBV (op_b_value air row)).setWidth 21 = imm
     := by
-      simp only [Transpiler.V3.transpile_op, Option.some.injEq, Prod.mk.injEq] at h_decode
+      simp only [Transpiler.transpile_op, Option.some.injEq, Prod.mk.injEq] at h_decode
       have h_data := h_decode.1.symm
       have h_op_a : air.cols.instruction.op_a row 0 = Transpiler.reg_to_KB rd :=
         decoded_field h_data ProgramBusEntry.op_a
       obtain ⟨ e0, e1, e2, e3 ⟩ := imm_b_eq_1_constraints air row
         (decoded_field h_data ProgramBusEntry.imm_b) h_constraints
-      have h_b0 : air.cols.instruction.op_b_0 row 0 = (Transpiler.V3.imm_operand imm true)[0] :=
+      have h_b0 : air.cols.instruction.op_b_0 row 0 = (Transpiler.imm_operand imm true)[0] :=
         decoded_field h_data ProgramBusEntry.b_0
-      have h_b1 : air.cols.instruction.op_b_1 row 0 = (Transpiler.V3.imm_operand imm true)[1] :=
+      have h_b1 : air.cols.instruction.op_b_1 row 0 = (Transpiler.imm_operand imm true)[1] :=
         decoded_field h_data ProgramBusEntry.b_1
       have h_bs : air.cols.instruction.op_b_sign row 0 =
-          (Transpiler.V3.imm_operand imm true)[2] :=
+          (Transpiler.imm_operand imm true)[2] :=
         decoded_field h_data ProgramBusEntry.b_sign
       have h_op_b : U64w.toBV (op_b_value air row) = BitVec.signExtend 64 imm := by
         simp only [op_b_value, e0, e1, e2, e3, h_b0, h_b1, h_bs]
-        exact Transpiler.V3.imm_operand_toBV_sgn imm (by norm_num) (by norm_num)
+        exact Transpiler.imm_operand_toBV_sgn imm (by norm_num) (by norm_num)
       exact ⟨ decoded_field h_data ProgramBusEntry.multiplicity,
         decoded_field h_data ProgramBusEntry.opcode,
         by rw [h_op_a]; exact regidx_reg_to_KB rd,
@@ -446,7 +446,7 @@ namespace Equivalence
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
       (h_constraints : CpuChip.Extraction.allHold air row)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.JALR (imm, rs1, rd)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.JALR (imm, rs1, rd)) 1 addr =
         some (program_bus_entry air row, props))
     :
       air.cols.is_real row 0 = 1 ∧
@@ -455,7 +455,7 @@ namespace Equivalence
       regidx.Regidx (air.cols.instruction.op_b_0 row 0).val = rs1 ∧
       (U64w.toBV (op_c_value air row)).setWidth 12 = imm
     := by
-      simp only [Transpiler.V3.transpile_op, Option.some.injEq, Prod.mk.injEq] at h_decode
+      simp only [Transpiler.transpile_op, Option.some.injEq, Prod.mk.injEq] at h_decode
       have h_data := h_decode.1.symm
       have h_op_a : air.cols.instruction.op_a row 0 = Transpiler.reg_to_KB rd :=
         decoded_field h_data ProgramBusEntry.op_a
@@ -471,7 +471,7 @@ namespace Equivalence
         by rw [h_op_c]; exact setWidth_signExtend_self imm (by norm_num) ⟩
 
     /-- Equivalence for JAL (opcode 24, `instruction.JAL`): for every `JAL` instruction and
-        address `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the
+        address `addr` whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the
         row's Program message, Sail's step on that instruction equals the row's effect. The
         decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
     theorem equivalence_JAL
@@ -483,7 +483,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 21} {rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.JAL (imm, rd)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.JAL (imm, rd)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -498,7 +498,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for JALR (opcode 25, `instruction.JALR`): for every `JALR` instruction and
-        address `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the
+        address `addr` whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the
         row's Program message, Sail's step on that instruction equals the row's effect. The
         decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
     theorem equivalence_JALR
@@ -510,7 +510,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.JALR (imm, rs1, rd)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.JALR (imm, rs1, rd)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -526,7 +526,7 @@ namespace Equivalence
 
     /-- `equivalence_JAL`'s decoding hypothesis holds on every real row of opcode 24: there the
         Program table's promise (in `bus_row_wf_asm`) gives a `JAL` and a 4-aligned address
-        below `Transpiler.V3.code_address_bound` whose decoding is the row's Program message. -/
+        below `Transpiler.code_address_bound` whose decoding is the row's Program message. -/
     theorem jal_decode_satisfiable
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -535,8 +535,8 @@ namespace Equivalence
       (h_opcode : air.cols.instruction.opcode row 0 = 24)
     :
       ∃ (imm : BitVec 21) (rd : regidx) (addr : ℕ) (props : Prop),
-        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
-        Transpiler.V3.transpile_op (.JAL (imm, rd)) 1 addr =
+        addr % 4 = 0 ∧ addr < Transpiler.code_address_bound ∧
+        Transpiler.transpile_op (.JAL (imm, rd)) 1 addr =
           some (program_bus_entry air row, props)
     := by
       obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=
@@ -547,7 +547,7 @@ namespace Equivalence
 
     /-- `equivalence_JALR`'s decoding hypothesis holds on every real row of opcode 25: there the
         Program table's promise (in `bus_row_wf_asm`) gives a `JALR` and a 4-aligned address
-        below `Transpiler.V3.code_address_bound` whose decoding is the row's Program message. -/
+        below `Transpiler.code_address_bound` whose decoding is the row's Program message. -/
     theorem jalr_decode_satisfiable
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -556,8 +556,8 @@ namespace Equivalence
       (h_opcode : air.cols.instruction.opcode row 0 = 25)
     :
       ∃ (imm : BitVec 12) (rs1 rd : regidx) (addr : ℕ) (props : Prop),
-        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
-        Transpiler.V3.transpile_op (.JALR (imm, rs1, rd)) 1 addr =
+        addr % 4 = 0 ∧ addr < Transpiler.code_address_bound ∧
+        Transpiler.transpile_op (.JALR (imm, rs1, rd)) 1 addr =
           some (program_bus_entry air row, props)
     := by
       obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=

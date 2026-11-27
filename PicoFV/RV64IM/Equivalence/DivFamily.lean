@@ -9,7 +9,7 @@ namespace Equivalence
   open Plonky3
 
   open RV64IM
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open CpuChip.ConstraintsAndBuses
   open CpuChip.Interpretations
 
@@ -228,7 +228,7 @@ namespace Equivalence
 
     -- ========================================================================
     -- The checked divide and remainder theorems, in decoded form: each takes the
-    -- instruction and an address whose decoding (`Transpiler.V3.transpile_op`,
+    -- instruction and an address whose decoding (`Transpiler.transpile_op`,
     -- at multiplicity 1) is the row's Program message, and is proved from its
     -- column form.
     --
@@ -246,12 +246,12 @@ namespace Equivalence
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
       {instr : instruction} {rs2 rs1 rd : regidx} {opc : FKB} {addr : ℕ} {props props' : Prop}
-      (h_decode : Transpiler.V3.transpile_op instr 1 addr = some (program_bus_entry air row, props))
-      (h_clause : Transpiler.V3.transpile_op instr 1 addr =
-        some ((1, #v[Transpiler.V3.pc_lo addr, Transpiler.V3.pc_hi addr, opc, opc,
+      (h_decode : Transpiler.transpile_op instr 1 addr = some (program_bus_entry air row, props))
+      (h_clause : Transpiler.transpile_op instr 1 addr =
+        some ((1, #v[Transpiler.pc_lo addr, Transpiler.pc_hi addr, opc, opc,
           Transpiler.reg_to_KB rd, Transpiler.reg_to_KB rs1, 0, 0, Transpiler.reg_to_KB rs2, 0, 0,
           if rd == regidx.Regidx 0 then 1 else 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-          Transpiler.V3.pc_carry addr]), props'))
+          Transpiler.pc_carry addr]), props'))
     :
       air.cols.is_real row 0 = 1 ∧ air.cols.instruction.opcode row 0 = opc ∧
       regidx.Regidx (air.cols.instruction.op_a row 0).val = rd ∧
@@ -272,7 +272,7 @@ namespace Equivalence
 
     /-- Equivalence for DIV (opcode 34, `instruction.DIV` with `is_unsigned := false`), the signed
         64-bit quotient: for every `DIV` instruction and address `addr` whose decoding
-        (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
+        (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
         on that instruction equals the row's effect. The decoding fixes `addr` only modulo `2 ^ 32`,
         through the row's two 16-bit pc pieces. -/
     theorem equivalence_DIV
@@ -284,7 +284,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {rs2 rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.DIV (rs2, rs1, rd, false)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.DIV (rs2, rs1, rd, false)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -299,7 +299,7 @@ namespace Equivalence
 
     /-- Equivalence for DIVU (opcode 35, `instruction.DIV` with `is_unsigned := true`), the unsigned
         64-bit quotient: for every `DIVU` instruction and address `addr` whose decoding
-        (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
+        (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
         on that instruction equals the row's effect. The decoding fixes `addr` only modulo `2 ^ 32`,
         through the row's two 16-bit pc pieces. -/
     theorem equivalence_DIVU
@@ -311,7 +311,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {rs2 rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.DIV (rs2, rs1, rd, true)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.DIV (rs2, rs1, rd, true)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -326,7 +326,7 @@ namespace Equivalence
 
     /-- Equivalence for REM (opcode 36, `instruction.REM` with `is_unsigned := false`), the signed
         64-bit remainder: for every `REM` instruction and address `addr` whose decoding
-        (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
+        (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
         on that instruction equals the row's effect. The decoding fixes `addr` only modulo `2 ^ 32`,
         through the row's two 16-bit pc pieces. -/
     theorem equivalence_REM
@@ -338,7 +338,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {rs2 rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.REM (rs2, rs1, rd, false)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.REM (rs2, rs1, rd, false)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -353,7 +353,7 @@ namespace Equivalence
 
     /-- Equivalence for REMU (opcode 37, `instruction.REM` with `is_unsigned := true`), the unsigned
         64-bit remainder: for every `REMU` instruction and address `addr` whose decoding
-        (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
+        (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
         on that instruction equals the row's effect. The decoding fixes `addr` only modulo `2 ^ 32`,
         through the row's two 16-bit pc pieces. -/
     theorem equivalence_REMU
@@ -365,7 +365,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {rs2 rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.REM (rs2, rs1, rd, true)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.REM (rs2, rs1, rd, true)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -380,7 +380,7 @@ namespace Equivalence
 
     /-- Equivalence for DIVW (opcode 49, `instruction.DIVW` with `is_unsigned := false`), the signed
         32-bit quotient, sign-extended: for every `DIVW` instruction and address `addr` whose
-        decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's Program message,
+        decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program message,
         Sail's step on that instruction equals the row's effect. The decoding fixes `addr` only
         modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
     theorem equivalence_DIVW
@@ -392,7 +392,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {rs2 rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.DIVW (rs2, rs1, rd, false)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.DIVW (rs2, rs1, rd, false)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -407,7 +407,7 @@ namespace Equivalence
 
     /-- Equivalence for DIVUW (opcode 50, `instruction.DIVW` with `is_unsigned := true`), the
         unsigned 32-bit quotient, sign-extended: for every `DIVUW` instruction and address `addr`
-        whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's Program
+        whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program
         message, Sail's step on that instruction equals the row's effect. The decoding fixes `addr`
         only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
     theorem equivalence_DIVUW
@@ -419,7 +419,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {rs2 rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.DIVW (rs2, rs1, rd, true)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.DIVW (rs2, rs1, rd, true)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -434,7 +434,7 @@ namespace Equivalence
 
     /-- Equivalence for REMW (opcode 51, `instruction.REMW` with `is_unsigned := false`), the signed
         32-bit remainder, sign-extended: for every `REMW` instruction and address `addr` whose
-        decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's Program message,
+        decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program message,
         Sail's step on that instruction equals the row's effect. The decoding fixes `addr` only
         modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
     theorem equivalence_REMW
@@ -446,7 +446,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {rs2 rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.REMW (rs2, rs1, rd, false)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.REMW (rs2, rs1, rd, false)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -461,7 +461,7 @@ namespace Equivalence
 
     /-- Equivalence for REMUW (opcode 52, `instruction.REMW` with `is_unsigned := true`), the
         unsigned 32-bit remainder, sign-extended: for every `REMUW` instruction and address `addr`
-        whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's Program
+        whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program
         message, Sail's step on that instruction equals the row's effect. The decoding fixes `addr`
         only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
     theorem equivalence_REMUW
@@ -473,7 +473,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {rs2 rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.REMW (rs2, rs1, rd, true)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.REMW (rs2, rs1, rd, true)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -488,7 +488,7 @@ namespace Equivalence
 
     /-- The `DIV` and `DIVU` theorems' decoding hypothesis holds on every real row of opcode 34 or
         35: there the Program table's promise (in `bus_row_wf_asm`) gives a `DIV` of the opcode's
-        signedness (`is_unsigned`) and a 4-aligned address below `Transpiler.V3.code_address_bound`
+        signedness (`is_unsigned`) and a 4-aligned address below `Transpiler.code_address_bound`
         whose decoding is the row's Program message. -/
     theorem div_decode_satisfiable
       [Field ExtF]
@@ -499,8 +499,8 @@ namespace Equivalence
       (h_u : (u = false ∧ opc = 34) ∨ (u = true ∧ opc = 35))
     :
       ∃ (rs2 rs1 rd : regidx) (addr : ℕ) (props : Prop),
-        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
-        Transpiler.V3.transpile_op (.DIV (rs2, rs1, rd, u)) 1 addr =
+        addr % 4 = 0 ∧ addr < Transpiler.code_address_bound ∧
+        Transpiler.transpile_op (.DIV (rs2, rs1, rd, u)) 1 addr =
           some (program_bus_entry air row, props)
     := by
       obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=
@@ -512,7 +512,7 @@ namespace Equivalence
 
     /-- The `REM` and `REMU` theorems' decoding hypothesis holds on every real row of opcode 36 or
         37: there the Program table's promise (in `bus_row_wf_asm`) gives a `REM` of the opcode's
-        signedness (`is_unsigned`) and a 4-aligned address below `Transpiler.V3.code_address_bound`
+        signedness (`is_unsigned`) and a 4-aligned address below `Transpiler.code_address_bound`
         whose decoding is the row's Program message. -/
     theorem rem_decode_satisfiable
       [Field ExtF]
@@ -523,8 +523,8 @@ namespace Equivalence
       (h_u : (u = false ∧ opc = 36) ∨ (u = true ∧ opc = 37))
     :
       ∃ (rs2 rs1 rd : regidx) (addr : ℕ) (props : Prop),
-        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
-        Transpiler.V3.transpile_op (.REM (rs2, rs1, rd, u)) 1 addr =
+        addr % 4 = 0 ∧ addr < Transpiler.code_address_bound ∧
+        Transpiler.transpile_op (.REM (rs2, rs1, rd, u)) 1 addr =
           some (program_bus_entry air row, props)
     := by
       obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=
@@ -536,7 +536,7 @@ namespace Equivalence
 
     /-- The `DIVW` and `DIVUW` theorems' decoding hypothesis holds on every real row of opcode 49 or
         50: there the Program table's promise (in `bus_row_wf_asm`) gives a `DIVW` of the opcode's
-        signedness (`is_unsigned`) and a 4-aligned address below `Transpiler.V3.code_address_bound`
+        signedness (`is_unsigned`) and a 4-aligned address below `Transpiler.code_address_bound`
         whose decoding is the row's Program message. -/
     theorem divw_decode_satisfiable
       [Field ExtF]
@@ -547,8 +547,8 @@ namespace Equivalence
       (h_u : (u = false ∧ opc = 49) ∨ (u = true ∧ opc = 50))
     :
       ∃ (rs2 rs1 rd : regidx) (addr : ℕ) (props : Prop),
-        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
-        Transpiler.V3.transpile_op (.DIVW (rs2, rs1, rd, u)) 1 addr =
+        addr % 4 = 0 ∧ addr < Transpiler.code_address_bound ∧
+        Transpiler.transpile_op (.DIVW (rs2, rs1, rd, u)) 1 addr =
           some (program_bus_entry air row, props)
     := by
       obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=
@@ -560,7 +560,7 @@ namespace Equivalence
 
     /-- The `REMW` and `REMUW` theorems' decoding hypothesis holds on every real row of opcode 51 or
         52: there the Program table's promise (in `bus_row_wf_asm`) gives a `REMW` of the opcode's
-        signedness (`is_unsigned`) and a 4-aligned address below `Transpiler.V3.code_address_bound`
+        signedness (`is_unsigned`) and a 4-aligned address below `Transpiler.code_address_bound`
         whose decoding is the row's Program message. -/
     theorem remw_decode_satisfiable
       [Field ExtF]
@@ -571,8 +571,8 @@ namespace Equivalence
       (h_u : (u = false ∧ opc = 51) ∨ (u = true ∧ opc = 52))
     :
       ∃ (rs2 rs1 rd : regidx) (addr : ℕ) (props : Prop),
-        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
-        Transpiler.V3.transpile_op (.REMW (rs2, rs1, rd, u)) 1 addr =
+        addr % 4 = 0 ∧ addr < Transpiler.code_address_bound ∧
+        Transpiler.transpile_op (.REMW (rs2, rs1, rd, u)) 1 addr =
           some (program_bus_entry air row, props)
     := by
       obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=

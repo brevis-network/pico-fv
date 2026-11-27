@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 import PicoFV.RV64IM.Extraction.MemoryReadWriteChip
 import PicoFV.RV64IM.Airs.MemoryReadWriteChip
 import PicoFV.RV64IM.Constraints.CodeRangeGadget
@@ -627,7 +627,7 @@ end MemoryReadWriteChip.ConstraintsAndBuses
 
 namespace MemoryReadWriteChip
 
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
 
   /-- The row's messages, sorted by contract. With `is_memory` the flags' sum and `is_store` the
       store flags' sum:
@@ -710,17 +710,17 @@ namespace MemoryReadWriteChip.Interactions
 
   /-- The chip's messages on one row, sorted by contract. -/
   def bus_row (air : Valid_MemoryReadWriteChip FKB ExtF) (row : ℕ) :
-      RV64IM_Interactions.V3.BusRow :=
+      RV64IM_Interactions.BusRow :=
     MemoryReadWriteChip.AbsBuses air row
 
   /-- Sorting the row's extracted messages gives `bus_row`. -/
   @[simp]
   lemma bus_row_equiv (air : Valid_MemoryReadWriteChip FKB ExtF) (row : ℕ) :
-    RV64IM_Interactions.V3.deserialise_bus_row
+    RV64IM_Interactions.deserialise_bus_row
       (MemoryReadWriteChip.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
   := by
     simp [
-      RV64IM_Interactions.V3.deserialise_bus_row,
+      RV64IM_Interactions.deserialise_bus_row,
       constraint_and_interaction_simplification,
       bus_row,
       MemoryReadWriteChip.AbsBuses,
@@ -731,7 +731,7 @@ end MemoryReadWriteChip.Interactions
 
 namespace MemoryReadWriteChip.Interpretations
 
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open MemoryReadWriteChip.ConstraintsAndBuses
   open MemoryReadWriteChip.Interactions
 

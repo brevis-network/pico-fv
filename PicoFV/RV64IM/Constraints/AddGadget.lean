@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 import PicoFV.RV64IM.Extraction.AddGadget
 import PicoFV.RV64IM.Airs.AddGadget
 
@@ -39,9 +39,7 @@ bus (opcode 5, sub-op 8 = `U16Range`), gated by `+is_real`.
 
 namespace AddGadget
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   /-- The conjunction of algebraic facts the Pico `AddGadget` asserts on a
       row, expressed parametrically in the 13 column values. This is a
       *circuit-side* statement — it describes only what the gadget's
@@ -244,9 +242,7 @@ end AddGadget.ConstraintsAndBuses
 
 namespace AddGadget.Interactions
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   /-- The bus row emitted per `AddGadget` row, packaged as a typed
       `BusRow`. Identical (by `rfl`) to `AbsBuses` instantiated at the
       air's accessors, since the standalone gadget air contributes
@@ -261,7 +257,7 @@ namespace AddGadget.Interactions
 
   @[simp]
   lemma bus_row_equiv (air : Valid_AddGadgetAir FKB ExtF) (row : ℕ) :
-    RV64IM_Interactions.V3.deserialise_bus_row
+    RV64IM_Interactions.deserialise_bus_row
       (AddGadget.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
   := by
     simp [

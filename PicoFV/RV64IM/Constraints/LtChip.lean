@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 import PicoFV.RV64IM.Extraction.LtChip
 import PicoFV.RV64IM.Airs.LtChip
 import PicoFV.RV64IM.Constraints.LtSignedGadget
@@ -50,9 +50,7 @@ entry (opcode 4, sub-op `is_slt*8 + is_slt_u*9 + is_cmp*256`: 8 (SLT) and
 
 namespace LtChip
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   /-- The bus entries the chip contributes per row, packaged as a typed
       `BusRow`. Built compositionally from `LtSignedGadget.AbsBuses`
       (the 3 byte-bus entries: the two `U16MSBGadget` consistency
@@ -749,9 +747,7 @@ end LtChip.ConstraintsAndBuses
 
 namespace LtChip.Interactions
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   /-- The typed `BusRow` per `LtChip` row. Defined directly as
       `LtChip.AbsBuses` applied to the chip's accessors, making
       `bus_row_abs` definitionally true. -/
@@ -774,7 +770,7 @@ namespace LtChip.Interactions
 
   @[simp]
   lemma bus_row_equiv (air : Valid_LtChip FKB ExtF) (row : ℕ) :
-    RV64IM_Interactions.V3.deserialise_bus_row
+    RV64IM_Interactions.deserialise_bus_row
       (LtChip.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
   := by
     dsimp [
@@ -793,9 +789,7 @@ end LtChip.Interactions
 
 namespace LtChip.Interpretations
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   open LtChip.ConstraintsAndBuses
   open LtChip.Interactions
 

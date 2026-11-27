@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 import PicoFV.RV64IM.Extraction.CodeRangeGadget
 import PicoFV.RV64IM.Airs.CodeRangeGadget
 
@@ -37,7 +37,7 @@ The 4 constraints:
 
 The 3 bus messages, each with multiplicity `is_store`:
 - the code-range lookup `[code_start_0, code_start_1, code_end_0, code_end_1]` on the Program
-  tag (`V3.CodeRangeBusEntry`), which the Program table answers;
+  tag (`CodeRangeBusEntry`), which the Program table answers;
 - a `U16Range` check of `distance_0` and one of `distance_1` on the byte bus.
 -/
 
@@ -64,7 +64,7 @@ namespace CodeRangeGadget
       to its own row. -/
   def AbsBuses
     (is_store code_start_0 code_start_1 code_end_0 code_end_1 distance_0 distance_1 : FKB)
-  : RV64IM_Interactions.V3.BusRow :=
+  : RV64IM_Interactions.BusRow :=
     {
       Program := [],
       ALU := [],
@@ -75,7 +75,7 @@ namespace CodeRangeGadget
       State := [],
       Memory := [],
       CodeRange := [
-        RV64IM_Interactions.V3.CodeRangeBusEntry.deserialise
+        RV64IM_Interactions.CodeRangeBusEntry.deserialise
           (is_store, #v[code_start_0, code_start_1, code_end_0, code_end_1])
       ]
     }
@@ -198,7 +198,7 @@ end CodeRangeGadget.ConstraintsAndBuses
 namespace CodeRangeGadget.Interactions
 
   /-- The standalone gadget air's messages on one row, sorted: exactly the gadget's own. -/
-  def bus_row (air : Valid_CodeRangeGadgetAir FKB ExtF) (row : ℕ) : RV64IM_Interactions.V3.BusRow :=
+  def bus_row (air : Valid_CodeRangeGadgetAir FKB ExtF) (row : ℕ) : RV64IM_Interactions.BusRow :=
     CodeRangeGadget.AbsBuses
       (air.cols.is_store row 0)
       (air.cols.gadget.code_start_0 row 0) (air.cols.gadget.code_start_1 row 0)
@@ -209,11 +209,11 @@ namespace CodeRangeGadget.Interactions
       code-range lookup. -/
   @[simp]
   lemma bus_row_equiv (air : Valid_CodeRangeGadgetAir FKB ExtF) (row : ℕ) :
-    RV64IM_Interactions.V3.deserialise_bus_row
+    RV64IM_Interactions.deserialise_bus_row
       (CodeRangeGadget.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
   := by
     simp [
-      RV64IM_Interactions.V3.deserialise_bus_row,
+      RV64IM_Interactions.deserialise_bus_row,
       constraint_and_interaction_simplification,
       bus_row,
       CodeRangeGadget.AbsBuses,

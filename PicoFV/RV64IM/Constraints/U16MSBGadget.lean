@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 import PicoFV.RV64IM.Extraction.U16MSBGadget
 import PicoFV.RV64IM.Airs.U16MSBGadget
 
@@ -36,9 +36,7 @@ wrapping Air, so this file only provides the *parametric*
 
 namespace U16MSBGadget
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   /-- The conjunction of algebraic facts the Pico `U16MSBGadget`
       asserts on a row, expressed parametrically in the 2 column
       values it owns plus the parent's `is_real` and `value`. The

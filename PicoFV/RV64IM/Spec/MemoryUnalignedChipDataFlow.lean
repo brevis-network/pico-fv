@@ -17,7 +17,7 @@ row whose access runs into the next double word (`cross = 1`) it does the same f
 at `A + 8` (`riscv_memory/unaligned/constraints.rs:155-176` at v3.2.0); each read is sent at
 multiplicity 1 and each write back received at -1 (`machine/builder/riscv_memory.rs:194-208` at
 v3.2.0). It receives the memory dispatch from the CPU chip
-(`riscv_memory/unaligned/constraints.rs:39-63` at v3.2.0). `V3.bus_operations` reads each State pair
+(`riscv_memory/unaligned/constraints.rs:39-63` at v3.2.0). `bus_operations` reads each State pair
 as a double-word `ReadMem` and `WriteMem`, and the dispatch as one access of its opcode's width at
 `b + c`: a `WriteMem` of `a` for a store, a `ReadMem` of `a` for a load, or a `ReadMemAny` for a
 load into `x0`.
@@ -46,7 +46,7 @@ where its byte splits are range-checked.
 
 namespace MemoryUnalignedChip.Spec
 
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open MemoryUnalignedChip.ConstraintsAndBuses
   open MemoryUnalignedChip.Interactions
 
@@ -61,20 +61,20 @@ namespace MemoryUnalignedChip.Spec
   :
     Prop
   :=
-    let dispatch_bus : RV64IM_Interactions.V3.BusRow := {
+    let dispatch_bus : RV64IM_Interactions.BusRow := {
       Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory
     }
-    let access_bus : RV64IM_Interactions.V3.BusRow := {
+    let access_bus : RV64IM_Interactions.BusRow := {
       Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := []
     }
     (RV64IM.operation_list_effect
-        (RV64IM_Interactions.V3.bus_operations access_bus) state).hypotheses →
+        (RV64IM_Interactions.bus_operations access_bus) state).hypotheses →
       (RV64IM.operation_list_effect
-          (RV64IM_Interactions.V3.bus_operations dispatch_bus) state).hypotheses ∧
+          (RV64IM_Interactions.bus_operations dispatch_bus) state).hypotheses ∧
       (RV64IM.operation_list_effect
-          (RV64IM_Interactions.V3.bus_operations dispatch_bus) state).state =
+          (RV64IM_Interactions.bus_operations dispatch_bus) state).state =
         (RV64IM.operation_list_effect
-          (RV64IM_Interactions.V3.bus_operations access_bus) state).state
+          (RV64IM_Interactions.bus_operations access_bus) state).state
 
   private abbrev SailState := PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 
@@ -746,12 +746,12 @@ namespace MemoryUnalignedChip.Spec
     (h_mem : is_memory air row = 1)
   :
     (air.cols.cross row 0 = 0 ∧
-      RV64IM_Interactions.V3.bus_operations
+      RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := [] } =
         [ .ReadMem (dispatch_addr air row - dispatch_addr air row % 8) .Double (P1 air row),
           .WriteMem (dispatch_addr air row - dispatch_addr air row % 8) .Double (V1 air row) ]) ∨
     (air.cols.cross row 0 = 1 ∧
-      RV64IM_Interactions.V3.bus_operations
+      RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := [] } =
         [ .ReadMem (dispatch_addr air row - dispatch_addr air row % 8) .Double (P1 air row),
           .WriteMem (dispatch_addr air row - dispatch_addr air row % 8) .Double (V1 air row),
@@ -777,7 +777,7 @@ namespace MemoryUnalignedChip.Spec
           air.cols.offset_5 row 0 * 5 + air.cols.offset_6 row 0 * 6 +
           air.cols.offset_7 row 0 * 7)).val + 65536 * (air.cols.addr_word_1 row 0).val < 32) := by
         omega
-      simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses, h_mem,
+      simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses, h_mem,
         hx, h_ge]
     · right
       obtain ⟨ -, -, h_n ⟩ := h_next hx
@@ -795,7 +795,7 @@ namespace MemoryUnalignedChip.Spec
           65536 * (air.cols.addr_word_1 row 0 + air.cols.next_carry row 0).val < 32) := by
         omega
       rw [← h_n, ← h_al]
-      simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses, h_mem,
+      simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses, h_mem,
         hx, h_ge, h_ge2]
 
   /-- What the State messages do on a real row that stores `n` bytes (`n = 0` on a load): they
@@ -814,12 +814,12 @@ namespace MemoryUnalignedChip.Spec
     (h_n : StoreWidth air row n)
   :
     (air.cols.cross row 0 = 0 ∧
-      AccessEffect (RV64IM_Interactions.V3.bus_operations
+      AccessEffect (RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := [] })
         s (dispatch_addr air row - dispatch_addr air row % 8) 8
         (fun i => BitVec.ofNat 8 (wnat air row i)) (fun i => BitVec.ofNat 8 (wrnat air row n i))) ∨
     (air.cols.cross row 0 = 1 ∧
-      AccessEffect (RV64IM_Interactions.V3.bus_operations
+      AccessEffect (RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := [] })
         s (dispatch_addr air row - dispatch_addr air row % 8) 16
         (fun i => BitVec.ofNat 8 (wnat air row i)) (fun i => BitVec.ofNat 8 (wrnat air row n i)))
@@ -897,12 +897,12 @@ namespace MemoryUnalignedChip.Spec
     (h_x : ∀ j < w, xb j = BitVec.ofNat 8 (wnat air row (dispatch_addr air row % 8 + j)))
     (h_load : StoreWidth air row 0)
   :
-    (RV64IM.operation_list_effect (RV64IM_Interactions.V3.bus_operations
+    (RV64IM.operation_list_effect (RV64IM_Interactions.bus_operations
         { Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := [] })
         s).hypotheses →
       (RV64IM.operation_list_effect ops s).hypotheses ∧
       (RV64IM.operation_list_effect ops s).state =
-        (RV64IM.operation_list_effect (RV64IM_Interactions.V3.bus_operations
+        (RV64IM.operation_list_effect (RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := [] })
           s).state
   := by
@@ -936,12 +936,12 @@ namespace MemoryUnalignedChip.Spec
     (h_fit : air.cols.cross row 0 = 0 → dispatch_addr air row % 8 + w ≤ 8)
     (h_load : StoreWidth air row 0)
   :
-    (RV64IM.operation_list_effect (RV64IM_Interactions.V3.bus_operations
+    (RV64IM.operation_list_effect (RV64IM_Interactions.bus_operations
         { Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := [] })
         s).hypotheses →
       (RV64IM.operation_list_effect ops s).hypotheses ∧
       (RV64IM.operation_list_effect ops s).state =
-        (RV64IM.operation_list_effect (RV64IM_Interactions.V3.bus_operations
+        (RV64IM.operation_list_effect (RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := [] })
           s).state
   := by
@@ -974,12 +974,12 @@ namespace MemoryUnalignedChip.Spec
     (h_fit : air.cols.cross row 0 = 0 → dispatch_addr air row % 8 + n ≤ 8)
     (h_y : ∀ j < n, yb j = BitVec.ofNat 8 (rnat air row j))
   :
-    (RV64IM.operation_list_effect (RV64IM_Interactions.V3.bus_operations
+    (RV64IM.operation_list_effect (RV64IM_Interactions.bus_operations
         { Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := [] })
         s).hypotheses →
       (RV64IM.operation_list_effect ops s).hypotheses ∧
       (RV64IM.operation_list_effect ops s).state =
-        (RV64IM.operation_list_effect (RV64IM_Interactions.V3.bus_operations
+        (RV64IM.operation_list_effect (RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := [] })
           s).state
   := by
@@ -1104,12 +1104,12 @@ namespace MemoryUnalignedChip.Spec
     dsimp only
     rcases bool_cases c41 with h0 | h0
     · simp [constraint_37, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0, sub_eq_zero] at c37
-      have h_disp : RV64IM_Interactions.V3.bus_operations
+      have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Byte
               (BitVec.ofNat 8 (air.cols.instruction.op_a_value_0 row 0).val) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       refine row_load air row state h_ext_asm h_wf_asm h_constraints h_mem 1 _
@@ -1125,11 +1125,11 @@ namespace MemoryUnalignedChip.Spec
       · rw [val_add_of_lt (by rw [show (65280 : FKB).val = 65280 from rfl]; omega),
           show (65280 : FKB).val = 65280 from rfl]
         omega
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Byte ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       exact row_any air row state h_ext_asm h_wf_asm h_constraints h_mem 1 _
@@ -1164,11 +1164,11 @@ namespace MemoryUnalignedChip.Spec
     dsimp only
     rcases bool_cases c41 with h0 | h0
     · simp [constraint_37, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0, sub_eq_zero] at c37
-      have h_disp : RV64IM_Interactions.V3.bus_operations
+      have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Byte (BitVec.ofNat 8 (air.cols.instruction.op_a_value_0 row 0).val) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
       rw [h_disp]
       refine row_load air row state h_ext_asm h_wf_asm h_constraints h_mem 1 _
         (fun j => (BitVec.ofNat 8 (air.cols.instruction.op_a_value_0 row 0).val).extractLsb'
@@ -1179,11 +1179,11 @@ namespace MemoryUnalignedChip.Spec
       show _ = wnat air row (dispatch_addr air row % 8)
       rw [← h_sb, c37]
       omega
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Byte ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
       rw [h_disp]
       exact row_any air row state h_ext_asm h_wf_asm h_constraints h_mem 1 _
         (read_any_effect state _ .Byte) (by norm_num) (fun _ => by omega) h_load
@@ -1229,22 +1229,22 @@ namespace MemoryUnalignedChip.Spec
     dsimp only
     rcases bool_cases c41 with h0 | h0
     · simp [constraint_37, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0, sub_eq_zero] at c37
-      have h_disp : RV64IM_Interactions.V3.bus_operations
+      have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Half
               (BitVec.ofNat 16 (air.cols.instruction.op_a_value_0 row 0).val) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
       rw [h_disp]
       exact row_load air row state h_ext_asm h_wf_asm h_constraints h_mem 2 _
         (fun j => (BitVec.ofNat 16 (air.cols.instruction.op_a_value_0 row 0).val).extractLsb' (8 * j) 8)
         (read_half_effect state _ _) (by norm_num) h_fit
         (half_bytes _ (wnat air row) _ hb (by rw [c37]; exact h_s0 (h_cond.imp_left (by omega)))) h_load
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Half ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
       rw [h_disp]
       exact row_any air row state h_ext_asm h_wf_asm h_constraints h_mem 2 _
         (read_any_effect state _ .Half) (by norm_num) h_fit h_load
@@ -1290,22 +1290,22 @@ namespace MemoryUnalignedChip.Spec
     dsimp only
     rcases bool_cases c41 with h0 | h0
     · simp [constraint_37, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0, sub_eq_zero] at c37
-      have h_disp : RV64IM_Interactions.V3.bus_operations
+      have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Half
               (BitVec.ofNat 16 (air.cols.instruction.op_a_value_0 row 0).val) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
       rw [h_disp]
       exact row_load air row state h_ext_asm h_wf_asm h_constraints h_mem 2 _
         (fun j => (BitVec.ofNat 16 (air.cols.instruction.op_a_value_0 row 0).val).extractLsb' (8 * j) 8)
         (read_half_effect state _ _) (by norm_num) h_fit
         (half_bytes _ (wnat air row) _ hb (by rw [c37]; exact h_s0 (h_cond.imp_left (by omega)))) h_load
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Half ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
       rw [h_disp]
       exact row_any air row state h_ext_asm h_wf_asm h_constraints h_mem 2 _
         (read_any_effect state _ .Half) (by norm_num) h_fit h_load
@@ -1351,13 +1351,13 @@ namespace MemoryUnalignedChip.Spec
     dsimp only
     rcases bool_cases c41 with h0 | h0
     · simp [constraint_37, constraint_38, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0, sub_eq_zero] at c37 c38
-      have h_disp : RV64IM_Interactions.V3.bus_operations
+      have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Word
               (BitVec.ofNat 16 (air.cols.instruction.op_a_value_1 row 0).val ++
               BitVec.ofNat 16 (air.cols.instruction.op_a_value_0 row 0).val) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
       rw [h_disp]
       exact row_load air row state h_ext_asm h_wf_asm h_constraints h_mem 4 _
         (fun j => (BitVec.ofNat 16 (air.cols.instruction.op_a_value_1 row 0).val ++
@@ -1365,11 +1365,11 @@ namespace MemoryUnalignedChip.Spec
         (read_word_effect state _ _) (by norm_num) h_fit
         (word_bytes _ _ (wnat air row) _ hb (by rw [c37]; exact h_s0 (h_cond.imp_left (by omega)))
           (by rw [c38]; exact h_s1 (h_cond.imp_left (by omega)))) h_load
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Word ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
       rw [h_disp]
       exact row_any air row state h_ext_asm h_wf_asm h_constraints h_mem 4 _
         (read_any_effect state _ .Word) (by norm_num) h_fit h_load
@@ -1415,13 +1415,13 @@ namespace MemoryUnalignedChip.Spec
     dsimp only
     rcases bool_cases c41 with h0 | h0
     · simp [constraint_37, constraint_38, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0, sub_eq_zero] at c37 c38
-      have h_disp : RV64IM_Interactions.V3.bus_operations
+      have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Word
               (BitVec.ofNat 16 (air.cols.instruction.op_a_value_1 row 0).val ++
               BitVec.ofNat 16 (air.cols.instruction.op_a_value_0 row 0).val) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
       rw [h_disp]
       exact row_load air row state h_ext_asm h_wf_asm h_constraints h_mem 4 _
         (fun j => (BitVec.ofNat 16 (air.cols.instruction.op_a_value_1 row 0).val ++
@@ -1429,11 +1429,11 @@ namespace MemoryUnalignedChip.Spec
         (read_word_effect state _ _) (by norm_num) h_fit
         (word_bytes _ _ (wnat air row) _ hb (by rw [c37]; exact h_s0 (h_cond.imp_left (by omega)))
           (by rw [c38]; exact h_s1 (h_cond.imp_left (by omega)))) h_load
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Word ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
       rw [h_disp]
       exact row_any air row state h_ext_asm h_wf_asm h_constraints h_mem 4 _
         (read_any_effect state _ .Word) (by norm_num) h_fit h_load
@@ -1481,15 +1481,15 @@ namespace MemoryUnalignedChip.Spec
     dsimp only
     rcases bool_cases c41 with h0 | h0
     · simp [constraint_37, constraint_38, constraint_39, constraint_40, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0, sub_eq_zero] at c37 c38 c39 c40
-      have h_disp : RV64IM_Interactions.V3.bus_operations
+      have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Double
               (U64w.toBV #v[air.cols.instruction.op_a_value_0 row 0,
               air.cols.instruction.op_a_value_1 row 0,
               air.cols.instruction.op_a_value_2 row 0,
               air.cols.instruction.op_a_value_3 row 0]) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
       rw [h_disp]
       exact row_load air row state h_ext_asm h_wf_asm h_constraints h_mem 8 _
         (fun j => (U64w.toBV #v[air.cols.instruction.op_a_value_0 row 0,
@@ -1502,11 +1502,11 @@ namespace MemoryUnalignedChip.Spec
           (by rw [c38]; exact h_s1 (h_cond.imp_left (by omega)))
           (by rw [c39]; exact h_s2 (h_cond.imp_left (by omega)))
           (by rw [c40]; exact h_s3 (h_cond.imp_left (by omega)))) h_load
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Double ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, h0]
       rw [h_disp]
       exact row_any air row state h_ext_asm h_wf_asm h_constraints h_mem 8 _
         (read_any_effect state _ .Double) (by norm_num) h_fit h_load
@@ -1538,12 +1538,12 @@ namespace MemoryUnalignedChip.Spec
     have h_fit : air.cols.cross row 0 = 0 → dispatch_addr air row % 8 + 1 ≤ 8 := fun _ => by omega
     unfold DataFlow
     dsimp only
-    have h_disp : RV64IM_Interactions.V3.bus_operations
+    have h_disp : RV64IM_Interactions.bus_operations
         { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
         [ .WriteMem (dispatch_addr air row) .Byte
             (BitVec.ofNat 8 (air.cols.instruction.op_a_value_0 row 0).val) ] := by
-      simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-        RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]
+      simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+        RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]
     rw [h_disp]
     exact row_store air row state h_ext_asm h_wf_asm h_constraints h_mem 1 h_st _
       (fun j => (BitVec.ofNat 8 (air.cols.instruction.op_a_value_0 row 0).val).extractLsb' (8 * j) 8)
@@ -1585,12 +1585,12 @@ namespace MemoryUnalignedChip.Spec
     obtain ⟨ h_cond, h_fit ⟩ := cross_cases (w := 2) (t := 7) hc (by norm_num)
     unfold DataFlow
     dsimp only
-    have h_disp : RV64IM_Interactions.V3.bus_operations
+    have h_disp : RV64IM_Interactions.bus_operations
         { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
         [ .WriteMem (dispatch_addr air row) .Half
             (BitVec.ofNat 16 (air.cols.instruction.op_a_value_0 row 0).val) ] := by
-      simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-        RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]
+      simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+        RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]
     rw [h_disp]
     exact row_store air row state h_ext_asm h_wf_asm h_constraints h_mem 2 h_st _
       (fun j => (BitVec.ofNat 16 (air.cols.instruction.op_a_value_0 row 0).val).extractLsb' (8 * j) 8)
@@ -1632,13 +1632,13 @@ namespace MemoryUnalignedChip.Spec
     obtain ⟨ h_cond, h_fit ⟩ := cross_cases (w := 4) (t := 5) hc (by norm_num)
     unfold DataFlow
     dsimp only
-    have h_disp : RV64IM_Interactions.V3.bus_operations
+    have h_disp : RV64IM_Interactions.bus_operations
         { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
         [ .WriteMem (dispatch_addr air row) .Word
             (BitVec.ofNat 16 (air.cols.instruction.op_a_value_1 row 0).val ++
             BitVec.ofNat 16 (air.cols.instruction.op_a_value_0 row 0).val) ] := by
-      simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-        RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]
+      simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+        RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]
     rw [h_disp]
     exact row_store air row state h_ext_asm h_wf_asm h_constraints h_mem 4 h_st _
       (fun j => (BitVec.ofNat 16 (air.cols.instruction.op_a_value_1 row 0).val ++
@@ -1683,15 +1683,15 @@ namespace MemoryUnalignedChip.Spec
     obtain ⟨ h_cond, h_fit ⟩ := cross_cases (w := 8) (t := 1) hc (by norm_num)
     unfold DataFlow
     dsimp only
-    have h_disp : RV64IM_Interactions.V3.bus_operations
+    have h_disp : RV64IM_Interactions.bus_operations
         { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
         [ .WriteMem (dispatch_addr air row) .Double
             (U64w.toBV #v[air.cols.instruction.op_a_value_0 row 0,
             air.cols.instruction.op_a_value_1 row 0,
             air.cols.instruction.op_a_value_2 row 0,
             air.cols.instruction.op_a_value_3 row 0]) ] := by
-      simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-        RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]
+      simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+        RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]
     rw [h_disp]
     exact row_store air row state h_ext_asm h_wf_asm h_constraints h_mem 8 h_st _
       (fun j => (U64w.toBV #v[air.cols.instruction.op_a_value_0 row 0,
@@ -1727,8 +1727,8 @@ namespace MemoryUnalignedChip.Spec
         simp only [constraint_26, f2, f3, f4, f5, f6, f8, f9, f10] at c26
         linear_combination c26
       unfold DataFlow
-      simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
-        RV64IM_Interactions.V3.mem_width_of_opcode, RV64IM.operation_list_effect, f0, f1, f2, f3,
+      simp [RV64IM_Interactions.bus_operations, bus_row, MemoryUnalignedChip.AbsBuses,
+        RV64IM_Interactions.mem_width_of_opcode, RV64IM.operation_list_effect, f0, f1, f2, f3,
         f4, f5, f6, f7, f8, f9, f10, hx]
     · exact dataFlow_LB air row state h_ext_asm h_wf_asm h_constraints f0
     · exact dataFlow_LBU air row state h_ext_asm h_wf_asm h_constraints f1

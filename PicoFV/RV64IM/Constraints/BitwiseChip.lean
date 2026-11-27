@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 import PicoFV.RV64IM.Extraction.BitwiseChip
 import PicoFV.RV64IM.Airs.BitwiseChip
 
@@ -257,9 +257,7 @@ end BitwiseChip.ConstraintsAndBuses
 
 namespace BitwiseChip.Interactions
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   /-- The typed `BusRow` per `BitwiseChip` row: 8 byte-bus entries (one
       per byte of the 64-bit result) plus 1 ALU entry. -/
   def bus_row (air : Valid_BitwiseChip FKB ExtF) (row : ℕ) : BusRow :=
@@ -317,7 +315,7 @@ namespace BitwiseChip.Interactions
 
   @[simp]
   lemma bus_row_equiv (air : Valid_BitwiseChip FKB ExtF) (row : ℕ) :
-    RV64IM_Interactions.V3.deserialise_bus_row
+    RV64IM_Interactions.deserialise_bus_row
       (BitwiseChip.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
   := by
     simp [
@@ -331,9 +329,7 @@ end BitwiseChip.Interactions
 
 namespace BitwiseChip.Interpretations
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   open BitwiseChip.ConstraintsAndBuses
   open BitwiseChip.Interactions
 

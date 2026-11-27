@@ -42,9 +42,7 @@ list inside each `spec_S*` proof.
 
 namespace ShiftRightChip.Spec
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   open ShiftRightChip.ConstraintsAndBuses
   open ShiftRightChip.Interactions
   open ShiftRightChip.Interpretations

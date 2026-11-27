@@ -15,7 +15,7 @@ What the chip proves about each row (`MemoryUnalignedChip::eval`,
 
 - `spec_LB` … `spec_SD`, one per opcode: on a row whose flag for that instruction is 1, the
   memory dispatch the row receives from the CPU chip meets the Memory promise
-  `V3.MemoryBus.Spec` (`RVSail/BusesV3.lean`): a load's value has 16-bit pieces, the address
+  `MemoryBus.Spec` (`RVSail/Buses.lean`): a load's value has 16-bit pieces, the address
   `b + c` lies in `[2^16, 2^32)`, and a load's value is the sign or zero extension its opcode
   names when `op_a_0 = 0`.
 - `wf_asrt`: every message the row receives at `-1` meets its promise: the memory dispatch the
@@ -50,7 +50,7 @@ it. `Spec/MemoryUnalignedChipDataFlow.lean` proves that apart, for every row
 
 namespace MemoryUnalignedChip.Interpretations
 
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open MemoryUnalignedChip.ConstraintsAndBuses
   open MemoryUnalignedChip.Interactions
 
@@ -110,7 +110,7 @@ end MemoryUnalignedChip.Interpretations
 
 namespace MemoryUnalignedChip.Spec
 
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open MemoryUnalignedChip.ConstraintsAndBuses
   open MemoryUnalignedChip.Interactions
   open MemoryUnalignedChip.Interpretations

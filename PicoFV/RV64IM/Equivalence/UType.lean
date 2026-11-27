@@ -7,7 +7,7 @@ namespace Equivalence
   open Plonky3
 
   open RV64IM
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open CpuChip.ConstraintsAndBuses
   open CpuChip.Interpretations
 
@@ -69,7 +69,7 @@ namespace Equivalence
       -- Opcode 0 sets no class selector, so the row sends no Memory message.
       have h_s_mem := (alu_class_selectors_zero air row h_is_real h_wf (by rw [h_op]; rfl)).2.1
       obtain ⟨ h_reg_rd, -, - ⟩ := register_indices_lt air row h_is_real h_wf
-      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+      rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
           deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
           deserialise_raw_bus_row_Memory]
       simp [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -156,10 +156,10 @@ namespace Equivalence
       · refine Or.inl ⟨ imm, ?_, ?_ ⟩
         · simp [op_b_value, h_b.1, h_b.2.1, h_b.2.2.1, h_b.2.2.2, eq_b0, eq_b1, eq_bs, U64w.toBV]
         · simp only [op_c_value, h_c.1, h_c.2.1, h_c.2.2.1, h_c.2.2.2, eq_c0, eq_c1, eq_cs]
-          exact Transpiler.V3.imm_operand_toBV_sgn (imm ++ 0#12) (by norm_num) (by norm_num)
+          exact Transpiler.imm_operand_toBV_sgn (imm ++ 0#12) (by norm_num) (by norm_num)
       · refine Or.inr ⟨ imm, ?_, ?_ ⟩
         · simp only [op_b_value, h_b.1, h_b.2.1, h_b.2.2.1, h_b.2.2.2, eq_b0, eq_b1, eq_bs]
-          exact Transpiler.V3.imm_operand_toBV_sgn (imm ++ 0#12) (by norm_num) (by norm_num)
+          exact Transpiler.imm_operand_toBV_sgn (imm ++ 0#12) (by norm_num) (by norm_num)
         · simp [op_c_value, pc, h_c.1, h_c.2.1, h_c.2.2.1, h_c.2.2.2, eq_c0, eq_c1, eq_cs,
                 h_pc.1, h_pc.2.1]
 
@@ -246,7 +246,7 @@ namespace Equivalence
 
     -- ========================================================================
     -- The checked U-type theorems, in decoded form: each takes the instruction
-    -- and an address whose decoding (`Transpiler.V3.transpile_op`, at
+    -- and an address whose decoding (`Transpiler.transpile_op`, at
     -- multiplicity 1) is the row's Program message, and is proved from its
     -- column form. The decoding fixes the operand shape, so neither takes it.
     --
@@ -267,7 +267,7 @@ namespace Equivalence
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
       (h_constraints : CpuChip.Extraction.allHold air row)
       {imm : BitVec 20} {rd : regidx} {op : uop} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.UTYPE (imm, rd, op)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.UTYPE (imm, rd, op)) 1 addr =
         some (program_bus_entry air row, props))
     :
       air.cols.is_real row 0 = 1 ∧
@@ -282,7 +282,7 @@ namespace Equivalence
         U64w.toBV (op_b_value air row) = BitVec.signExtend 64 (imm ++ 0#12) ∧
         U64w.toBV (op_c_value air row) = U64w.toBV (pc air row))
     := by
-      simp only [Transpiler.V3.transpile_op, Option.some.injEq, Prod.mk.injEq] at h_decode
+      simp only [Transpiler.transpile_op, Option.some.injEq, Prod.mk.injEq] at h_decode
       have h_data := h_decode.1.symm
       have h_imm_b : air.cols.opcode_selector.imm_b row 0 = 1 :=
         decoded_field h_data ProgramBusEntry.imm_b
@@ -309,31 +309,31 @@ namespace Equivalence
       · rintro rfl
         obtain ⟨ f0, f1, f2, f3 ⟩ := imm_c_eq_1_constraints air row h_imm_c h_constraints
         have h_b0 : air.cols.instruction.op_b_0 row 0 =
-            (Transpiler.V3.imm_operand (imm ++ 0#12) true)[0] :=
+            (Transpiler.imm_operand (imm ++ 0#12) true)[0] :=
           decoded_field h_data ProgramBusEntry.b_0
         have h_b1 : air.cols.instruction.op_b_1 row 0 =
-            (Transpiler.V3.imm_operand (imm ++ 0#12) true)[1] :=
+            (Transpiler.imm_operand (imm ++ 0#12) true)[1] :=
           decoded_field h_data ProgramBusEntry.b_1
         have h_bs : air.cols.instruction.op_b_sign row 0 =
-            (Transpiler.V3.imm_operand (imm ++ 0#12) true)[2] :=
+            (Transpiler.imm_operand (imm ++ 0#12) true)[2] :=
           decoded_field h_data ProgramBusEntry.b_sign
-        have h_c0 : air.cols.instruction.op_c_0 row 0 = Transpiler.V3.pc_lo addr :=
+        have h_c0 : air.cols.instruction.op_c_0 row 0 = Transpiler.pc_lo addr :=
           decoded_field h_data ProgramBusEntry.c_0
-        have h_c1 : air.cols.instruction.op_c_1 row 0 = Transpiler.V3.pc_hi addr :=
+        have h_c1 : air.cols.instruction.op_c_1 row 0 = Transpiler.pc_hi addr :=
           decoded_field h_data ProgramBusEntry.c_1
         have h_cs : air.cols.instruction.op_c_sign row 0 = 0 :=
           decoded_field h_data ProgramBusEntry.c_sign
-        have h_pc0 : air.cols.pc_0 row 0 = Transpiler.V3.pc_lo addr :=
+        have h_pc0 : air.cols.pc_0 row 0 = Transpiler.pc_lo addr :=
           decoded_field h_data ProgramBusEntry.pc_0
-        have h_pc1 : air.cols.pc_1 row 0 = Transpiler.V3.pc_hi addr :=
+        have h_pc1 : air.cols.pc_1 row 0 = Transpiler.pc_hi addr :=
           decoded_field h_data ProgramBusEntry.pc_1
         refine ⟨ ?_, by simp [op_c_value, pc, f0, f1, f2, f3, h_c0, h_c1, h_cs, h_pc0, h_pc1] ⟩
         simp only [op_b_value, e0, e1, e2, e3, h_b0, h_b1, h_bs]
-        exact Transpiler.V3.imm_operand_toBV_sgn (imm ++ 0#12) (by norm_num) (by norm_num)
+        exact Transpiler.imm_operand_toBV_sgn (imm ++ 0#12) (by norm_num) (by norm_num)
 
     /-- Equivalence for LUI (opcode 0 with `imm_b = 1` and `imm_c = 1`,
         `instruction.UTYPE (imm, rd, .LUI)`): for every `LUI` instruction and address `addr`
-        whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's Program
+        whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program
         message, Sail's step on that instruction equals the row's effect. The decoding puts the
         row in the `LUI` shape, so the theorem takes no operand hypothesis. The decoding fixes
         `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
@@ -346,7 +346,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 20} {rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.UTYPE (imm, rd, .LUI)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.UTYPE (imm, rd, .LUI)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -362,7 +362,7 @@ namespace Equivalence
 
     /-- Equivalence for AUIPC (opcode 0 with `imm_b = 1` and `imm_c = 1`,
         `instruction.UTYPE (imm, rd, .AUIPC)`): for every `AUIPC` instruction and address
-        `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        `addr` whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's
         Program message, Sail's step on that instruction equals the row's effect. The decoding
         puts the row in the `AUIPC` shape, so the theorem takes no operand hypothesis. The
         decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
@@ -375,7 +375,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 20} {rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.UTYPE (imm, rd, .AUIPC)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.UTYPE (imm, rd, .AUIPC)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -392,7 +392,7 @@ namespace Equivalence
     /-- The U-type theorems' decoding hypothesis holds, for `LUI` or for `AUIPC`, on every real
         row of opcode 0 with `imm_b = 1`: there the Program table's promise (in
         `bus_row_wf_asm`) gives a `LUI` or an `AUIPC` and a 4-aligned address below
-        `Transpiler.V3.code_address_bound` whose decoding is the row's Program message. The flag
+        `Transpiler.code_address_bound` whose decoding is the row's Program message. The flag
         is what tells the two from `ADD` and `ADDI`, which share opcode 0 with `imm_b = 0`.
         Which of the two it is the opcode and the flags do not say
         (`ProgramBusEntry.decoded_from`); the operand shapes tell them apart except where they
@@ -406,8 +406,8 @@ namespace Equivalence
       (h_imm_b : air.cols.opcode_selector.imm_b row 0 = 1)
     :
       ∃ (imm : BitVec 20) (rd : regidx) (op : uop) (addr : ℕ) (props : Prop),
-        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
-        Transpiler.V3.transpile_op (.UTYPE (imm, rd, op)) 1 addr =
+        addr % 4 = 0 ∧ addr < Transpiler.code_address_bound ∧
+        Transpiler.transpile_op (.UTYPE (imm, rd, op)) 1 addr =
           some (program_bus_entry air row, props)
     := by
       obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=

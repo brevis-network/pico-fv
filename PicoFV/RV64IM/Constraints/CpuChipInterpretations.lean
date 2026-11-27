@@ -1,5 +1,5 @@
 import PicoFV.RV64IM.Constraints.CpuChip
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 
 open Plonky3
 
@@ -11,7 +11,7 @@ set_option linter.constructorNameAsVariable false
 # CpuChip interpretations (RV64, Pico v3.2.0)
 
 Readable facts about one row of the v3.1.1 `CpuChip`, derived from the restated constraints of
-`Constraints/CpuChip.lean` and the bus contracts of `RVSail/BusesV3.lean`: first what every
+`Constraints/CpuChip.lean` and the bus contracts of `RVSail/Buses.lean`: first what every
 instruction class needs, then what one class does — the branch and jump targets, the JALR
 addition, the comparison message and the memory dispatch. Pico line numbers are at v3.1.1
 (`2acc7c1828fb`).
@@ -94,7 +94,7 @@ end Equivalence
 namespace CpuChip.Interpretations
 
   open CpuChip.ConstraintsAndBuses
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
 
   -- ============================================================================
   -- One constraint of a row
@@ -532,7 +532,7 @@ namespace CpuChip.Interpretations
     obtain ⟨ h0, h1, h4, hsum, hcarry ⟩ := h
     refine ⟨ h0, h1, h4, ?_, hcarry ⟩
     rw [hsum]
-    simpa [Transpiler.V3.code_address_bound] using h_lt
+    simpa [Transpiler.code_address_bound] using h_lt
 
   /-- The row's packed `U64w` pc is 4-aligned. Only the alignment: that the packed pc is the
       Program table's address needs `pc_facts`' bounds. -/
@@ -1237,14 +1237,14 @@ namespace CpuChip.Interpretations
       below take as a hypothesis, and this is what a branch or jump theorem discharges it
       with, from the immediate its Program message was decoded from. -/
   lemma imm_operand_offset_bounds {w : ℕ} (hw0 : 0 < w) (hw : w ≤ 21) (imm : BitVec w) :
-      ((Transpiler.V3.imm_operand imm true)[2] = 0 →
-        (Transpiler.V3.imm_operand imm true)[0].val +
-          65536 * (Transpiler.V3.imm_operand imm true)[1].val ≤ 0x10_0000) ∧
-      ((Transpiler.V3.imm_operand imm true)[2] = 1 →
-        0x1_0000_0000 - 0x10_0000 ≤ (Transpiler.V3.imm_operand imm true)[0].val +
-          65536 * (Transpiler.V3.imm_operand imm true)[1].val)
+      ((Transpiler.imm_operand imm true)[2] = 0 →
+        (Transpiler.imm_operand imm true)[0].val +
+          65536 * (Transpiler.imm_operand imm true)[1].val ≤ 0x10_0000) ∧
+      ((Transpiler.imm_operand imm true)[2] = 1 →
+        0x1_0000_0000 - 0x10_0000 ≤ (Transpiler.imm_operand imm true)[0].val +
+          65536 * (Transpiler.imm_operand imm true)[1].val)
   := by
-    obtain ⟨ h_0, h_1, h_s ⟩ := Transpiler.V3.imm_operand_sext imm hw0 (by omega)
+    obtain ⟨ h_0, h_1, h_s ⟩ := Transpiler.imm_operand_sext imm hw0 (by omega)
     simp only at h_0 h_1 h_s
     have h_lt : imm.toNat < 2 ^ w := imm.isLt
     have h_pow : 2 ^ w ≤ 2 ^ 21 := Nat.pow_le_pow_right (by norm_num) hw
