@@ -12,10 +12,10 @@ set_option linter.constructorNameAsVariable false
 The operand values a row reads and writes, the operations its messages stand for, the control-flow
 facts every ALU-class row shares, and the helpers of the decoded form (section `Decoded`:
 `decoded_field`, `regidx_reg_to_KB`, `reg_reg_decoded`, `reg_imm_decoded`, `imm_operand_low_cast`,
-`op_c_value_eq_signExtend_of_imm_operand`, `load_store_offset`, `program_bus_decoded`). The one
-assumption the theorems make about the whole trace rather than about a row,
-`pico_CpuChip_control_flow_assumptions`, is defined in `Constraints/CpuChipInterpretations.lean` so
-that the lemmas there can take it.
+`op_c_value_eq_signExtend_of_imm_operand`, `program_bus_decoded`), and the load and store column
+forms' offset, `load_store_offset`. The one assumption the theorems make about the whole trace
+rather than about a row, `pico_CpuChip_control_flow_assumptions`, is defined in
+`Constraints/CpuChipInterpretations.lean` so that the lemmas there can take it.
 
 The pc-alignment lemmas that the 2.x file also held are not here. A real row's next pc is
 4-aligned by `CpuChip.Interpretations.next_pc_mod_four_eq_zero`, which keeps the 2.x name but
@@ -795,10 +795,10 @@ namespace Equivalence
         an address that is 4-aligned and below `Transpiler.code_address_bound`. Each starts from
         `program_bus_decoded`.
 
-        Two lemmas read the immediate in a row's `op_c` columns:
-        `op_c_value_eq_signExtend_of_imm_operand`, from the columns' decoded pieces, and
-        `load_store_offset`, which finds those pieces for a load or store row from the row's Program
-        promise. -/
+        `load_store_offset` is not a decoded-form lemma: the load and store column forms (`_row`)
+        call it, from the opcode and the row's Program promise, as the I-type column forms call
+        `op_c_value_eq_signExtend_imm12`. It sits in this section because it closes through
+        `op_c_value_eq_signExtend_of_imm_operand`. -/
 
     open Transpiler
 
@@ -876,8 +876,9 @@ namespace Equivalence
         decoder's row for the instruction's clause (`h_clause`, which `rfl` proves for each opcode
         of `ITYPE`, `ADDIW`, `SHIFTIOP` and `SHIFTIWOP`): it is real, its opcode is the clause's,
         its second operand is a register (`imm_b = 0`) and its third an immediate (`imm_c = 1`),
-        its `op_a` and `op_b` columns name `rd` and `rs1`, and its `op_c_0` column holds the
-        immediate, of at most 16 bits (`imm_operand_low_cast`). -/
+        its `op_a` and `op_b` columns name `rd` and `rs1`, and the low `w` bits of its `op_c_0`
+        column are the immediate, of at most 16 bits. The decoder writes there the low 16 bits of
+        the immediate's sign or zero extension (`imm_operand_low_cast`). -/
     lemma reg_imm_decoded
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
