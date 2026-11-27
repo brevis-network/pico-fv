@@ -9,7 +9,7 @@ set_option maxHeartbeats 1_000_000_000
 
 `LtWordU16Gadget` produces a single bit `bit` indicating whether
 `U64w.toBV a < U64w.toBV b` (unsigned). The gadget has no standalone
-wrapping air — it is used inside `LtSignedGadget` (in `LtChip`) and in
+wrapping air — among the chips modelled here it is used inside `LtSignedGadget` (in `LtChip`) and in
 `DivRemChip`. This file therefore provides only the parametric
 `gadget_spec` and `flags_sum_spec`.
 

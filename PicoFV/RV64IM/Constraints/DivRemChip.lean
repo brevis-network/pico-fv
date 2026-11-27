@@ -102,12 +102,13 @@ namespace DivRemChip.ConstraintsAndBuses
       `remainder_comp` setup, embedded `MulGadget`×2, embedded
       `IsEqualWordGadget`×4 + `is_overflow`/`b_neg_not_overflow`/
       `b_not_neg_not_overflow` + overflow-case clamping,
-      `c·quotient + remainder = b` 8-byte carry chain, `a = quotient`
+      `c·quotient + remainder = b` 8-limb carry chain, `a = quotient`
       / `a = remainder`, sign-consistency, `IsZeroWordGadget` +
       division-by-zero clamps, abs-value reconstructions + embedded
       `AddGadget`×2 + `LtWordU16Gadget`, MSB consistency
-      (`U16MSBGadget`×3 in each of two gated modes), boolean checks
-      on all flags + carry bits, and the exactly-one selector. -/
+      (`U16MSBGadget` ×3 gated by `is_real_not_word`, ×4 by
+      `is_word_operation`), boolean checks on all flags + carry bits,
+      and the exactly-one selector. -/
   @[constraint_and_interaction_simplification]
   def AbsConstraints (air : Valid_DivRemChip F ExtF) (row : ℕ) : Prop :=
     -- =====================================================================
@@ -728,7 +729,7 @@ namespace DivRemChip.ConstraintsAndBuses
       conclusions (`ALUBus.Spec`, `result ↔ word_eq`, etc.) and
       `AbsConstraints_NoGadgets` carries the chip-own algebraic facts
       (sign pairings, `quotient_comp` / `remainder_comp` setup,
-      overflow predicates, the 8-byte carry chain, `a = q/r`,
+      overflow predicates, the 8-limb carry chain, `a = q/r`,
       div-by-zero clamps, abs-value reconstructions, boolean checks,
       and the exact-one-selector constraint). -/
   def AbsConstraints_NoGadgets (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : Prop :=
@@ -1802,7 +1803,7 @@ namespace DivRemChip.ConstraintsAndBuses
       For `MulChip` (5 selectors, 51 constraints) the analogous lemma
       closes by a single `simp` invocation. For `DivRemChip` (8
       selectors, 348 extracted constraints, 2 nested `MulGadget`s +
-      `LtWordU16Gadget` + 2 `AddGadget`s + `IsZeroWordGadget` + 2
+      `LtWordU16Gadget` + 2 `AddGadget`s + `IsZeroWordGadget` + 4
       `IsEqualWordGadget`s + 7 `U16MSBGadget`s) it is a heavyweight
       derivation — the same simp set, and much slower.
       Drives `allHold_abs` (and via it, the chip-level `spec`s). -/

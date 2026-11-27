@@ -18,8 +18,7 @@ rather than about a row, `pico_CpuChip_control_flow_assumptions`, is defined in
 `Constraints/CpuChipInterpretations.lean` so that the lemmas there can take it.
 
 The pc-alignment lemmas are in the interpretations file: a real row's next pc is 4-aligned by
-`CpuChip.Interpretations.next_pc_mod_four_eq_zero`, and `pc_facts` gives any real row's pc
-alignment.
+`CpuChip.Interpretations.next_pc_mod_four_eq_zero`, and its pc by `pc_mod_four_eq_zero`.
 
 An ALU-class instruction theorem with register operands closes in one call,
 `eq_operation_list_effect_state_of_reg_reg` or `eq_operation_list_effect_state_of_reg_imm`

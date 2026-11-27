@@ -44,7 +44,7 @@ interactions).
 
 -- ============================================================================
 -- U16ToU8Gadget — shared 4-column struct (used by both variants and embedded
--- in BitWiseU16Gadget / MulGadget / EcallCols).
+-- in BitWiseU16Gadget / MulGadget / MemoryUnalignedChip).
 -- ============================================================================
 
 #define_subair "U16ToU8Gadget" using "pico_encapsulation" where
