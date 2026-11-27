@@ -5,7 +5,7 @@
   check_citations.py --self-test [--pico DIR]
 
 A citation is `path.rs:line`, `path.rs:from-to` (more ranges may follow, `path.rs:3-5, 9`, and
-may go on at the start of the next line after a line-final comma), or a
+inside a code span may go on into the next lines after a line-final comma), or a
 link into `github.com/brevis-network/pico/` (`blob/<ref>/<path>#L<from>-L<to>`, `tree/<ref>`).
 A path that starts with `extractor/` names a file of this repository; any other path is matched,
 by its last components, against the files of Pico at the commit `extractor/Cargo.lock` pins for
@@ -46,8 +46,9 @@ MORE = re.compile(r'(\d+)(?:-(\d+))?')
 LINK = re.compile(r'github\.com/brevis-network/pico/(?:blob|tree)/([^/\s#)>`]+)(?:/([^\s#)>`]*))?'
                   r'(?:#L(\d+)(?:-L(\d+))?)?')
 MDLINK = re.compile(r'\[([^\]]*)\]\((https://' + LINK.pattern + r')\)')
-# A citation whose line ends in a comma goes on with the ranges that open the next line, after its
-# comment mark (`x.rs:3-5,` then `-- 9-12`).
+# A citation that ends its line with a comma inside a code span left open goes on with the ranges
+# that open the next line, after any comment mark, for as long as those lines end with a comma too
+# (`` `x.rs:3-5, `` then `` 9-12` ``).
 CONT = re.compile(r'[ \t]*(?:--|/-|\*|>)?[ \t]*(\d+(?:-\d+)?' + END + r'(?:,[ \t]*\d+(?:-\d+)?' + END + r')*)')
 MARK = re.compile(r'Citations read at Pico (\S+?)\.(?:\s|$)')
 KINDS = ['NO FILE', 'AMBIGUOUS', 'OUT OF RANGE', 'OTHER COMMIT', 'LINK MISMATCH', 'NO TAG', 'STALE TAG']
@@ -150,10 +151,12 @@ def check(root, src, paths):
             for m in CITE.finditer(plain):
                 cited = True
                 cite, ranges = m[0], ranges_of(m)
-                cont = CONT.match(lines[n]) if n < len(lines) and re.fullmatch(r',\s*', plain[m.end():]) else None
-                if cont:
+                k, wraps = n, (re.fullmatch(r',\s*', plain[m.end():]) and lines[n - 1].rstrip().endswith(',')
+                               and lines[n - 1].count('`') % 2 == 1)
+                while wraps and k < len(lines) and (cont := CONT.match(lines[k])):
                     cite += ', ' + cont[1]
                     ranges += [(int(x[1]), int(x[2] or x[1])) for x in MORE.finditer(cont[1])]
+                    wraps, k = re.fullmatch(r',\s*', lines[k][cont.end():]), k + 1
                 yield from judge(src, where, cite, m[1], ranges)
         marks = MARK.findall(text)
         if cited and not marks:
@@ -245,20 +248,30 @@ def self_test(src):
                                           + f'-- OK: [`{short}:1-2`]({url}/blob/{src.rev}/{good}#L1-L2)\n'
                                           + f'-- OUT OF RANGE: {url}/blob/{src.rev}/{good}#L0\n'
                                           + ''.join(f'-- {k}: {v}\n' for k, v in more)
-                                          + f'-- OUT OF RANGE: `{short}:1,\n-- {size + 1}`\n')
+                                          + f'-- OUT OF RANGE: `{short}:1,\n-- {size + 1}`\n'
+                                          # wrapped over three lines, no comment mark: the last range is out
+                                          + f'-- OUT OF RANGE: `{short}:1,\n    2,\n    {size + 1}`\n'
+                                          + f'-- OK: `{short}:1,\n    {size}`\n'
+                                          # no open code span, or the comma is not the line's end: no wrap
+                                          + f'-- OK: read at {short}:1,\n-- {size + 1}. Next step\n'
+                                          + f'-- OK: `{short}:1, [`{short}:2`]({url}/blob/{src.rev}/{good}#L2)\n'
+                                          + f'-- {size + 1}. Next step\n')
         (tmp / 'Untagged.lean').write_text(f'-- `{short}:1`\n')
         (tmp / 'Stale.lean').write_text(f'-- `{short}:1`\n-- Citations read at Pico v0.0.1.\n')
         got = list(check(tmp, src, sorted(tmp.glob('*.lean'))))
         status = report(got, src, strict=True, show=False, github=False)
-    kinds = {(r[0], r[1]) for r in got}
+    kinds = collections.Counter((r[0], r[1]) for r in got)
     want = {(k, f'Planted.lean:{i}') for i, k in enumerate(planted, 2)}
     want |= {('OK', 'Planted.lean:8'), ('OK', 'Planted.lean:9'), ('OUT OF RANGE', 'Planted.lean:10'),
              ('NO TAG', 'Untagged.lean'), ('STALE TAG', 'Stale.lean'),
              ('OK', 'Untagged.lean:1'), ('OK', 'Stale.lean:1')}
     want |= {(k, f'Planted.lean:{i}') for i, (k, _) in enumerate(more, 11)}
-    want.add(('OUT OF RANGE', f'Planted.lean:{11 + len(more)}'))
+    w = 11 + len(more)
+    want |= {('OUT OF RANGE', f'Planted.lean:{w}'), ('OUT OF RANGE', f'Planted.lean:{w + 2}'),
+             ('OK', f'Planted.lean:{w + 5}'), ('OK', f'Planted.lean:{w + 7}')}
+    want = collections.Counter(want) + collections.Counter({('OK', f'Planted.lean:{w + 9}'): 2})
     missing, extra = want - kinds, kinds - want
-    ok = not missing and not extra and status == 1 and len(got) == len(want)
+    ok = not missing and not extra and status == 1
     print('self-test:', 'OK' if ok else f'FAILED (missing {sorted(missing)}, extra {sorted(extra)}, '
                                          f'{len(got)} results for {len(want)}, strict exit {status})')
     return 0 if ok else 1
