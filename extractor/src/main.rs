@@ -6,11 +6,23 @@
 //!   cargo run --release -- --all <out_dir>     write every file, pending ones included
 //!   cargo run --release -- --check <out_dir>   fail unless the files there are up to date
 //!   cargo run --release -- --list              print the names of all RISC-V chips in this Pico
+//!   cargo run --release -- --compare <dir>     print, per file, whether this Pico's extraction
+//!                                              differs from the one in <dir>, first line ignored
+//!   cargo run --release -- --lists             print Pico's two RISC-V chip lists and where the
+//!                                              extracted chips stand in them
+//!
+//! `--compare` and `--lists` serve `scripts/ci/drift.py`, which runs them against a copy of this
+//! crate re-pointed at a Pico branch; they make no claim about the pin.
 
 mod gadgets;
 mod render;
 
-use std::{collections::BTreeSet, fs, path::PathBuf};
+use std::{
+    collections::BTreeSet,
+    fs,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use p3_air::{Air, BaseAir};
 use p3_koala_bear::KoalaBear;
@@ -18,7 +30,7 @@ use pico_mle_core::air::{
     any_air::BaseAirWithPublicValues,
     symbolic::{get_symbolic_builder, SymbolicRapBuilder},
 };
-use pico_mle_core::keygen::types::TraceWidth;
+use pico_mle_core::{get_air_name, keygen::types::TraceWidth};
 use pico_vm::{
     chips::chips::{
         alu::{
@@ -28,8 +40,10 @@ use pico_vm::{
         riscv_cpu::CpuChip,
         riscv_memory::{read_write::MemoryReadWriteChip, unaligned::MemoryUnalignedChip},
     },
+    compiler::riscv::program::Program,
     instances::chiptype::riscv_chiptype::RiscvChipType,
     machine::chip::ChipBehavior,
+    mle::machine::riscv::mle_riscv_air_refs,
 };
 use render::{pair_interaction_meta, render_module, ExtractedAir};
 
@@ -58,10 +72,21 @@ fn main() {
             }
             return;
         }
+        [flag] if flag == "--lists" => {
+            print_lists();
+            return;
+        }
+        [flag, dir] if flag == "--compare" => {
+            compare(&PathBuf::from(dir));
+            return;
+        }
         [flag, dir] if flag == "--check" => (true, false, PathBuf::from(dir)),
         [flag, dir] if flag == "--all" => (false, true, PathBuf::from(dir)),
         [dir] => (false, false, PathBuf::from(dir)),
-        _ => panic!("usage: pico-fv-extractor [--all] <out_dir> | --check <dir> | --list"),
+        _ => panic!(
+            "usage: pico-fv-extractor [--all] <out_dir> | --check <dir> | --list \
+             | --compare <dir> | --lists"
+        ),
     };
 
     let modules = extract_all();
@@ -134,8 +159,101 @@ fn main() {
     }
 }
 
+/// Prints one line per module: `same`, `differs`, `added` (no file in `dir`) or `removed` (a
+/// file in `dir` this extractor does not produce), then the name. The first line of each file
+/// names the Pico commit, so it is not compared. Fails when `dir` holds no extraction file.
+fn compare(dir: &Path) {
+    let modules = extract_all();
+    let generated: BTreeSet<String> = modules
+        .iter()
+        .map(|(name, _)| format!("{name}.lean"))
+        .collect();
+    let mut compared = 0;
+    for (lean_name, content) in &modules {
+        let status = match fs::read_to_string(dir.join(format!("{lean_name}.lean"))) {
+            Ok(theirs) => {
+                compared += 1;
+                if without_first_line(&theirs) == without_first_line(content) {
+                    "same"
+                } else {
+                    "differs"
+                }
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => "added",
+            Err(e) => panic!("read {lean_name}.lean in {}: {e}", dir.display()),
+        };
+        println!("{status} {lean_name}");
+    }
+    let mut theirs: Vec<String> = fs::read_dir(dir)
+        .unwrap_or_else(|e| panic!("read {}: {e}", dir.display()))
+        .map(|entry| {
+            entry
+                .expect("read dir")
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
+        })
+        .filter(|f| f.ends_with(".lean") && !HAND_WRITTEN.contains(&f.as_str()))
+        .collect();
+    theirs.sort();
+    for file in theirs.iter().filter(|f| !generated.contains(*f)) {
+        println!("removed {}", file.trim_end_matches(".lean"));
+    }
+    if compared == 0 {
+        eprintln!("no extraction file of this extractor in {}", dir.display());
+        std::process::exit(1);
+    }
+}
+
+fn without_first_line(text: &str) -> &str {
+    text.split_once('\n').map_or("", |(_, rest)| rest)
+}
+
+/// Prints Pico's two RISC-V chip lists, `chiptype <name>` for `RiscvChipType::all_chip_variants`
+/// and `air <name>` for the MLE machine's `mle_riscv_air_refs`, then `extracted <Lean name>
+/// <chip name> <air name>`, tab-separated after `extracted `, for each chip `extract_all`
+/// covers. AIR names can contain spaces.
+fn print_lists() {
+    for chip in RiscvChipType::<F>::all_chip_variants() {
+        println!("chiptype {}", chip.name());
+    }
+    // The program feeds only the preprocessed tables' traces, which are not built here.
+    for air in mle_riscv_air_refs(Arc::new(Program::default()), false) {
+        println!("air {}", air.name());
+    }
+    for (lean_name, chip_name, air_name) in extracted_chip_names() {
+        println!("extracted {lean_name}\t{chip_name}\t{air_name}");
+    }
+}
+
+/// `(Lean name, chip name, AIR name)` of each chip `extract_all` covers;
+/// `extracted_chips_match_extract_all` checks that the two lists agree.
+fn extracted_chip_names() -> Vec<(&'static str, String, String)> {
+    fn names<A: ChipBehavior<F>>(
+        lean_name: &'static str,
+        chip: A,
+    ) -> (&'static str, String, String) {
+        (lean_name, chip.name(), get_air_name(&chip))
+    }
+    vec![
+        names("AddChip", AddChip::<F>::default()),
+        names("SubChip", SubChip::<F>::default()),
+        names("AddwChip", AddwChip::<F>::default()),
+        names("SubwChip", SubwChip::<F>::default()),
+        names("BitwiseChip", BitwiseChip::<F>::default()),
+        names("LtChip", LtChip::<F>::default()),
+        names("SLLChip", SLLChip::<F>::default()),
+        names("ShiftRightChip", ShiftRightChip::<F>::default()),
+        names("MulChip", MulChip::<F>::default()),
+        names("DivRemChip", DivRemChip::<F>::default()),
+        names("CpuChip", CpuChip::<F>::default()),
+        names("MemoryReadWriteChip", MemoryReadWriteChip::<F>::default()),
+        names("MemoryUnalignedChip", MemoryUnalignedChip::<F>::default()),
+    ]
+}
+
 /// Every `(Lean namespace, module text)` this extractor produces: one per RV64IM chip, then one
-/// standalone wrapper per gadget.
+/// standalone wrapper per gadget. `extracted_chip_names` lists the same chips.
 fn extract_all() -> Vec<(String, String)> {
     let mut modules = vec![
         extract("AddChip", &AddChip::<F>::default()),
@@ -230,6 +348,19 @@ mod tests {
             SymbolicExpression::Neg { x, .. } => max_main_column(x),
             _ => None,
         }
+    }
+
+    /// `--lists` reports the chips `extract_all` extracts, so the two hand-written lists agree.
+    #[test]
+    fn extracted_chips_match_extract_all() {
+        let gadgets: BTreeSet<&str> = gadgets::ALL.iter().map(|g| g.lean_name()).collect();
+        let chips: Vec<String> = extract_all()
+            .into_iter()
+            .map(|(name, _)| name)
+            .filter(|name| !gadgets.contains(name.as_str()))
+            .collect();
+        let listed: Vec<&str> = extracted_chip_names().iter().map(|(n, _, _)| *n).collect();
+        assert_eq!(chips, listed);
     }
 
     /// A wrapper wider than the columns its layout uses would add unconstrained columns.

@@ -247,7 +247,7 @@ one differs from the committed file, and its `build` job rebuilds the proofs and
 | C1 | The Lean kernel or its axioms are unsound | None |
 | C2 | A proof trusts compiled code | Ratchet in `check_tactics.sh`; listed in C2 |
 | C3 | A declaration reached the environment unchecked | Weekly kernel replay in CI, except the modules of C2 |
-| D1 | A dependency changes | Pinned in `lake-manifest.json`, `extractor/Cargo.lock` and `extractor/Cargo.toml` |
+| D1 | A dependency changes | Pinned in `lake-manifest.json`, `extractor/Cargo.lock` and `extractor/Cargo.toml`; a weekly job lists where Pico `dev` and `main` differ from the pin (`scripts/ci/drift.py`) |
 
 ## A. Does each definition say what it should?
 
