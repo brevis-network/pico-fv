@@ -36,7 +36,9 @@ The proof structure mirrors RV32:
 
 namespace SLLChip.Spec
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
+
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   open SLLChip.ConstraintsAndBuses
   open SLLChip.Interactions
   open SLLChip.Interpretations

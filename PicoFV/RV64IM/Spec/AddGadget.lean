@@ -28,7 +28,9 @@ Layout mirrors `PicoFV.RV32IM.Spec.AddSubAir`:
 
 namespace AddGadget.Spec
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
+
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   open AddGadget.ConstraintsAndBuses
   open AddGadget.Interactions
   open AddGadget.Interpretations

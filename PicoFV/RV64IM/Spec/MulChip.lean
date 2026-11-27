@@ -36,7 +36,9 @@ binding interface that `CpuChip` consumes for the MUL family opcodes.
 
 namespace MulChip.Spec
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
+
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   open MulChip.ConstraintsAndBuses
   open MulChip.Interactions
   open MulChip.Interpretations

@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.Operations
+import PicoFV.RV64IM.RVSail.BusesV3
 import PicoFV.RV64IM.Extraction.SubwGadget
 import PicoFV.RV64IM.Airs.SubwGadget
 import PicoFV.RV64IM.Constraints.U16MSBGadget
@@ -43,8 +43,9 @@ predicates — consumed by the single chip that embeds the gadget
 
 namespace SubwGadget
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
 
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   /-- The conjunction of algebraic facts the Pico `SubwGadget` asserts
       on a row, expressed parametrically in the 8 column values that
       flow through the gadget. Only the low 32 bits of `b` and `c` are

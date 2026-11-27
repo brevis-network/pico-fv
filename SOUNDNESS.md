@@ -93,21 +93,22 @@ of `LUI` and `AUIPC`, hypotheses no checked theorem takes.
   (`MemoryReadWriteChip.Spec.*`, `MemoryUnalignedChip.Spec.*`) and those of the ALU chips already
   at v3.1.1 (Add, Sub, Addw, Subw, Bitwise, Mul, Lt, DivRem, SLL, ShiftRight).
 
-  The ALU chips' specifications (Add, Addw, Bitwise, DivRem, Lt, Mul, ShiftRight, SLL, Sub and Subw,
-  with the gadgets they embed) are stated over the 2.x row: `RV64IM_Interactions.BusRow`, its
+  Every chip specification is stated over the 3.x row: `RV64IM_Interactions.V3.BusRow`, its
   `deserialise_bus_row` and its checks `bus_row_ext_asm`, `bus_row_wf_asm`, `bus_row_ext_asrt` and
-  `bus_row_wf_asrt` (`RVSail/Buses.lean`). The CPU, memory and code-range results use the 3.x ones
-  (`RV64IM_Interactions.V3`, `RVSail/BusesV3.lean`). For the ALU chips the two say the same. Their
-  rows exchange only tag 4 (ALU, 13 fields) and tag 5 (byte, 5 fields) messages: each chip receives
-  one ALU message, its own operation, and sends byte messages, and DivRem also sends two ALU
-  messages (`Extraction/DivRemChip.lean:871, 873`). Every entry of the interaction lists in
+  `bus_row_wf_asrt` (`RVSail/BusesV3.lean`). The ALU chips (Add, Addw, Bitwise, DivRem, Lt, Mul,
+  ShiftRight, SLL, Sub and Subw, with the gadgets they embed) were stated over the 2.x row
+  (`RVSail/Buses.lean`) until they moved, with their statements unchanged but for the row's
+  namespace. On their rows the two rows say the same. Their rows exchange only tag 4 (ALU, 13
+  fields) and tag 5 (byte, 5 fields) messages: each chip receives one ALU message, its own
+  operation, and sends byte messages, and DivRem also sends two ALU messages
+  (`Extraction/DivRemChip.lean:871, 873`). Every entry of the interaction lists in
   `Extraction/AddChip.lean:31-39`, `AddwChip.lean:31-37`, `BitwiseChip.lean:29-45`,
   `DivRemChip.lean:715-955`, `LtChip.lean:85-91`, `MulChip.lean:121-191`,
   `ShiftRightChip.lean:149-173`, `SLLChip.lean:125-145`, `SubChip.lean:31-39` and
   `SubwChip.lean:31-37` has one of those two tags. Both deserialisers sort those two tags alike,
   into the same `ALUBusEntry` and `ByteBusEntry` lists (`RVSail/Buses.lean:1394-1405`,
-  `RVSail/BusesV3.lean:1066-1077`), so on these rows Program, State and Memory stay empty, as does
-  the 3.x row's `CodeRange`, and each check is the same condition on the ALU and byte entries in
+  `RVSail/BusesV3.lean:1135-1146`), so on these rows Program, State, Memory and the 3.x row's
+  `CodeRange` stay empty, and each check is the same condition on the ALU and byte entries in
   either row.
 
   The memory chips' say that a row receiving the memory dispatch meets the memory promise

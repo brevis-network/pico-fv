@@ -3,7 +3,7 @@ import PicoFV.RV64IM.Spec.U16MSBGadget
 import PicoFV.RV64IM.Spec.U16ToU8GadgetSafe
 import PicoFV.RV64IM.Spec.MulGadgetCore
 import PicoFV.RV64IM.RVSail.Execution
-import PicoFV.RV64IM.RVSail.Buses
+import PicoFV.RV64IM.RVSail.BusesV3
 import Mathlib.Tactic.LinearCombination
 
 open Plonky3
@@ -52,8 +52,9 @@ consume.
 
 namespace MulGadget.Spec
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
 
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   set_option maxHeartbeats 1_000_000_000
   set_option maxRecDepth 1_000_000
 

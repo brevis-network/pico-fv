@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.Operations
+import PicoFV.RV64IM.RVSail.BusesV3
 import PicoFV.RV64IM.Extraction.MulGadget
 import PicoFV.RV64IM.Airs.MulGadget
 import PicoFV.RV64IM.Constraints.U16MSBGadget
@@ -126,8 +126,9 @@ This file therefore provides only the parametric `AbsConstraints` and
 
 namespace MulGadget
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
 
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   /-- The conjunction of algebraic facts the Pico `MulGadget` asserts
       on a row, expressed parametrically in the 45 owned column values
       plus the parent-supplied `a`, `b`, `c`, `is_real`, and the five

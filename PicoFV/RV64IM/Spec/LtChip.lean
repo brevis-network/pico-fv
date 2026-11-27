@@ -51,7 +51,9 @@ supplies `operand_range` on `b`/`c`.
 
 namespace LtChip.Spec
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
+
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   open LtChip.ConstraintsAndBuses
   open LtChip.Interactions
   open LtChip.Interpretations

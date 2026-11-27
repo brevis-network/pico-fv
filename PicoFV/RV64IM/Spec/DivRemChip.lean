@@ -6,7 +6,7 @@ import PicoFV.RV64IM.Spec.IsEqualWordGadget
 import PicoFV.RV64IM.Spec.LtWordU16Gadget
 import PicoFV.RV64IM.Spec.U16MSBGadget
 import PicoFV.RV64IM.RVSail.Execution
-import PicoFV.RV64IM.RVSail.Buses
+import PicoFV.RV64IM.RVSail.BusesV3
 
 open Plonky3
 open RV64IM
@@ -141,7 +141,9 @@ end U32w
 
 namespace DivRemChip.Spec
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
+
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   open DivRemChip.ConstraintsAndBuses
   open DivRemChip.Interactions
   open DivRemChip.Interpretations
