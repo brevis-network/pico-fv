@@ -4,7 +4,8 @@
   check_citations.py [--pico DIR] [--strict] [--show] [--github] [FILE ...]
   check_citations.py --self-test [--pico DIR]
 
-A citation is `path.rs:line`, `path.rs:from-to` (more ranges may follow, `path.rs:3-5, 9`), or a
+A citation is `path.rs:line`, `path.rs:from-to` (more ranges may follow, `path.rs:3-5, 9`, and
+may go on at the start of the next line after a line-final comma), or a
 link into `github.com/brevis-network/pico/` (`blob/<ref>/<path>#L<from>-L<to>`, `tree/<ref>`).
 A path that starts with `extractor/` names a file of this repository; any other path is matched,
 by its last components, against the files of Pico at the commit `extractor/Cargo.lock` pins for
@@ -45,6 +46,9 @@ MORE = re.compile(r'(\d+)(?:-(\d+))?')
 LINK = re.compile(r'github\.com/brevis-network/pico/(?:blob|tree)/([^/\s#)>`]+)(?:/([^\s#)>`]*))?'
                   r'(?:#L(\d+)(?:-L(\d+))?)?')
 MDLINK = re.compile(r'\[([^\]]*)\]\((https://' + LINK.pattern + r')\)')
+# A citation whose line ends in a comma goes on with the ranges that open the next line, after its
+# comment mark (`x.rs:3-5,` then `-- 9-12`).
+CONT = re.compile(r'[ \t]*(?:--|/-|\*|>)?[ \t]*(\d+(?:-\d+)?' + END + r'(?:,[ \t]*\d+(?:-\d+)?' + END + r')*)')
 MARK = re.compile(r'Citations read at Pico (\S+?)\.(?:\s|$)')
 KINDS = ['NO FILE', 'AMBIGUOUS', 'OUT OF RANGE', 'OTHER COMMIT', 'LINK MISMATCH', 'NO TAG', 'STALE TAG']
 
@@ -122,7 +126,8 @@ def check(root, src, paths):
         rel = f.relative_to(root) if f.is_relative_to(root) else f
         text = f.read_text()
         cited = False
-        for n, line in enumerate(text.splitlines(), 1):
+        lines = text.splitlines()
+        for n, line in enumerate(lines, 1):
             where = f'{rel}:{n}'
             # A Markdown link with a citation as its text: one citation, text and link compared.
             for md in MDLINK.finditer(line):
@@ -141,9 +146,15 @@ def check(root, src, paths):
             for m in LINK.finditer(line):
                 cited = True
                 yield from judge_link(src, where, m)
-            for m in CITE.finditer(LINK.sub('', line)):
+            plain = LINK.sub('', line)
+            for m in CITE.finditer(plain):
                 cited = True
-                yield from judge(src, where, m[0], m[1], ranges_of(m))
+                cite, ranges = m[0], ranges_of(m)
+                cont = CONT.match(lines[n]) if n < len(lines) and re.fullmatch(r',\s*', plain[m.end():]) else None
+                if cont:
+                    cite += ', ' + cont[1]
+                    ranges += [(int(x[1]), int(x[2] or x[1])) for x in MORE.finditer(cont[1])]
+                yield from judge(src, where, cite, m[1], ranges)
         marks = MARK.findall(text)
         if cited and not marks:
             yield 'NO TAG', str(rel), '', f'add the line `Citations read at Pico {src.tag}.`', None
@@ -233,7 +244,8 @@ def self_test(src):
                                           + f'-- OK: `{short}:1, {size + 5} lines later`\n'
                                           + f'-- OK: [`{short}:1-2`]({url}/blob/{src.rev}/{good}#L1-L2)\n'
                                           + f'-- OUT OF RANGE: {url}/blob/{src.rev}/{good}#L0\n'
-                                          + ''.join(f'-- {k}: {v}\n' for k, v in more))
+                                          + ''.join(f'-- {k}: {v}\n' for k, v in more)
+                                          + f'-- OUT OF RANGE: `{short}:1,\n-- {size + 1}`\n')
         (tmp / 'Untagged.lean').write_text(f'-- `{short}:1`\n')
         (tmp / 'Stale.lean').write_text(f'-- `{short}:1`\n-- Citations read at Pico v0.0.1.\n')
         got = list(check(tmp, src, sorted(tmp.glob('*.lean'))))
@@ -244,6 +256,7 @@ def self_test(src):
              ('NO TAG', 'Untagged.lean'), ('STALE TAG', 'Stale.lean'),
              ('OK', 'Untagged.lean:1'), ('OK', 'Stale.lean:1')}
     want |= {(k, f'Planted.lean:{i}') for i, (k, _) in enumerate(more, 11)}
+    want.add(('OUT OF RANGE', f'Planted.lean:{11 + len(more)}'))
     missing, extra = want - kinds, kinds - want
     ok = not missing and not extra and status == 1 and len(got) == len(want)
     print('self-test:', 'OK' if ok else f'FAILED (missing {sorted(missing)}, extra {sorted(extra)}, '
