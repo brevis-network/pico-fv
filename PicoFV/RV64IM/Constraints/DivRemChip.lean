@@ -2414,14 +2414,14 @@ namespace DivRemChip.Interpretations
           -- (8c) is_overflow + b_neg_not_overflow + b_not_neg_not_overflow
           eq_is_overflow, eq_b_neg_not_overflow, eq_b_not_neg_not_overflow,
           -- (8d) Overflow case clamp (8)
-          eq_of_q0, eq_of_q1, eq_of_q2, eq_of_q3,
-          eq_of_r0, eq_of_r1, eq_of_r2, eq_of_r3,
+          eq_of_q0, eq_of_r0, eq_of_q1, eq_of_r1,
+          eq_of_q2, eq_of_r2, eq_of_q3, eq_of_r3,
           -- (9) `b = c·q + r` carry chain (8)
           eq_cqr0, eq_cqr1, eq_cqr2, eq_cqr3,
           eq_cqr4, eq_cqr5, eq_cqr6, eq_cqr7,
           -- (10) a = q / r per opcode (8)
-          eq_aq0, eq_aq1, eq_aq2, eq_aq3,
-          eq_ar0, eq_ar1, eq_ar2, eq_ar3,
+          eq_aq0, eq_ar0, eq_aq1, eq_ar1,
+          eq_aq2, eq_ar2, eq_aq3, eq_ar3,
           -- (11) Sign consistency (2)
           eq_rn_bn, eq_rnz_bn,
           -- (12) IsZeroWordGadget on c
@@ -2430,8 +2430,8 @@ namespace DivRemChip.Interpretations
           eq_dbz_q0, eq_dbz_q1, eq_dbz_q2, eq_dbz_q3,
           eq_dbz_r0, eq_dbz_r1, eq_dbz_r2, eq_dbz_r3,
           -- (14) Abs-values when not negative (8)
-          eq_abs_c0, eq_abs_c1, eq_abs_c2, eq_abs_c3,
-          eq_abs_r0, eq_abs_r1, eq_abs_r2, eq_abs_r3,
+          eq_abs_c0, eq_abs_r0, eq_abs_c1, eq_abs_r1,
+          eq_abs_c2, eq_abs_r2, eq_abs_c3, eq_abs_r3,
           -- (15) max_abs_c_or_1 (4)
           eq_mc0, eq_mc1, eq_mc2, eq_mc3,
           -- (16) rcm, abs_c_event, abs_rem_event (3)
