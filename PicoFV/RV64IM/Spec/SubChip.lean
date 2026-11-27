@@ -31,8 +31,8 @@ Re-use pattern (identical to `AddChip.Spec`):
 3. `SubGadget.Spec.gadget_spec` (parametric) ⇒ the subtraction correctness.
 
 The chip adds an extra `ALUBus` entry that the gadget doesn't, and
-takes operand range hypotheses externally (the chip itself does not
-range-check `operand_1` / `operand_2`).
+takes the operand ranges from that entry's externals (the chip itself
+does not range-check `operand_1` / `operand_2`).
 -/
 
 namespace SubChip.Spec
@@ -161,9 +161,9 @@ namespace SubChip.Spec
   -- =====================================================================
   -- Mirrors `AddChip.Spec.wf_asrt`:
   --   * 4 byte entries (multiplicity `+is_sub` ∈ {0, 1}) never trigger
-  --     `wf_assert_cond` (= multiplicity 1), so they're vacuously
+  --     `wf_assert_cond` (= multiplicity -1), so they're vacuously
   --     well-formed.
-  --   * 1 ALU entry (multiplicity `is_sub` ∈ {0, 1}) is well-formed by
+  --   * 1 ALU entry (multiplicity `-is_sub`) is well-formed by
   --     `spec` whenever `is_sub = 1`.
   -- =====================================================================
 

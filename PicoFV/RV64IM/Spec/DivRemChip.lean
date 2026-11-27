@@ -24,6 +24,8 @@ attribute [-simp]
 /-!
 # DivRemChip — semantic specification (RV64)
 
+Citations read at Pico v3.2.0.
+
 Eight per-opcode specs deriving `ALUBus.Spec OPCODE a b c` from the
 chip's `AbsConstraints` + bus hypotheses + the active-selector
 witness. `b` and `c` are the operands in computational form; the ALU
@@ -48,8 +50,9 @@ All W-form variants sign-extend their 32-bit result to 64 bits
 (RV64 ISA convention), even for the unsigned `DIVUW`/`REMUW`
 selectors. The chip encodes this via the `U16MSBGadget` on
 `quotient_1` / `remainder_1` (gated by `is_word_operation`,
-`constraints.rs:635-640`): `quotient_2 = quotient_3 =
-quot_msb · 0xFFFF` (resp. `remainder_*`).
+`alu/divrem/constraints.rs:619-640`) and the word-row fill
+`quotient_2 = quotient_3 = quot_msb · 0xFFFF` (resp. `remainder_*`,
+`alu/divrem/constraints.rs:216-219, 240-243`).
 
 ## Proof approach (signed grouped `spec_DIV_REM` — proved)
 
@@ -58,7 +61,7 @@ The grouped proof has six phases:
 1. **Selector cleanup** — `selector_breakdown` + `is_div + is_rem = 1`
    forces the other six selectors to 0 (six `clear *- … ; grind` calls).
 2. **`gadget_specs_pack`** (in `Constraints/DivRemChip.lean`,
-   `Interpretations` namespace) packages bus splitting + all 11
+   `Interpretations` namespace) packages bus splitting + all 17
    sub-gadget `Spec.gadget_spec` invocations into one preprocessing
    call. Caller does
    `have := gadget_specs_pack air row; simp [*] at this; obtain
@@ -89,9 +92,9 @@ The grouped proof has six phases:
      b. **`|r| < |c|`** — uses `LtWordU16Gadget` spec; depends on
         `remainder_lt_gadget.bit = 1`, pinned by
         `builder.when(remainder_check_multiplicity).assert_one(bit)`
-        (`constraints.rs:595-597`). The bridge between `ar.toNat`/`ac.toNat` and
+        (`alu/divrem/constraints.rs:595-597`). The bridge between `ar.toNat`/`ac.toNat` and
         `|r|.natAbs` / `|c|.natAbs` goes through `U64w.msb_3_negative`
-        + constraint-13 abs-value identities.
+        + the abs-value identities of `AbsConstraints` section 14.
      c. **`sign(r) = sign(b) ∨ r = 0`** — by-cases on `r = 0`; else
         `Int.split_nzp` (3-way `< 0 / = 0 / > 0`) + sign-consistency
         constraints + the algebraic equation to rule out `b = 0`
@@ -105,18 +108,6 @@ corresponding paired lemma: `spec_DIV` / `spec_REM` ← `spec_DIV_REM`,
 (`div_active = 1` branch) or `a = remainder` (`rem_active = 1`
 branch) from `AbsConstraints`, derives the u16 range on `q` / `r`
 from the byte-bus, and closes `ALUBus.Spec OPCODE` by `grind`.
-
-**Status:**
-  * `spec_DIV_REM` — proven (relies on the `bit = 1` pin,
-    `constraints.rs:595-597`).
-  * `spec_DIVU_REMU` — proven.
-  * `spec_DIVUW_REMUW` — proven.
-  * `spec_DIVW_REMW` — proven.
-  * All eight individual `spec_*` projections (`spec_DIV`, `spec_REM`,
-    `spec_DIVU`, `spec_REMU`, `spec_DIVW`, `spec_REMW`, `spec_DIVUW`,
-    `spec_REMUW`) — proven.
-  * `ext_asrt` — proven.
-  * `wf_asrt` — proven.
 -/
 
 namespace U32w
@@ -307,7 +298,7 @@ namespace DivRemChip.Spec
   -- Proof structure (six phases):
   --   1. **Selector cleanup** — `selector_breakdown` + `is_div + is_rem
   --      = 1` forces the other six selectors to 0 (six grind calls).
-  --   2. **`gadget_specs_pack`** packages bus splitting + all 11
+  --   2. **`gadget_specs_pack`** packages bus splitting + all 17
   --      sub-gadget `Spec.gadget_spec` invocations into one
   --      preprocessing call. After `simp [*]` propagates `h_is_real
   --      = 1` and the zeroed selectors, the conditional thunks
@@ -337,7 +328,7 @@ namespace DivRemChip.Spec
   --           the 8 carry-chain equations + `combine_MUL_MULH` lifted
   --           through `BitVec.toInt_inj`.
   --        b. **`|r| < |c|`** — uses `LtWordU16Gadget` spec; depends
-  --           on `remainder_lt_gadget.bit = 1` (`constraints.rs:595-597`).
+  --           on `remainder_lt_gadget.bit = 1` (`alu/divrem/constraints.rs:595-597`).
   --        c. **`sign(r) = sign(b) ∨ r = 0`** — by-cases on `r = 0`;
   --           else `Int.split_nzp` + sign-consistency constraints +
   --           the algebraic equation to rule out `b = 0` when `r ≠ 0`.
@@ -436,7 +427,6 @@ namespace DivRemChip.Spec
         BitVec.ofNat 16 ↑(air.cols.values.c_3 row 0)] with eq_c_BV
       have h_c_neq_0_bv : ¬ (c_BV.toBV = 0)
       := by
-        -- Commented proof
         clear *- h_c_zero ub_c_0 ub_c_1 ub_c_2 ub_c_3
         subst c_BV; intro h_c_bv_zero; apply h_c_zero; clear h_c_zero
         simp [← BitVec.toNat_inj, U64w.toNat] at h_c_bv_zero
@@ -1045,7 +1035,7 @@ namespace DivRemChip.Spec
     --     `rc_2 = rc_3 = rem_msb · 0xFFFF`,
     --   * `q_2 = q_3 = quot_msb · 0xFFFF`,
     --     `r_2 = r_3 = rem_msb · 0xFFFF`,
-    --   * `b_2 = b_3 = b_neg · 0xFFFF` (new b-extension constraint),
+    --   * `b_2 = b_3 = b_neg · 0xFFFF` (b-extension constraint),
     --   * `c_2 = c_3 = c_neg · 0xFFFF` (c-extension constraint).
     obtain ⟨ eq_rnw,
              eq_b_neg_msb, eq_rem_neg_msb, eq_c_neg_msb,
@@ -1322,8 +1312,7 @@ namespace DivRemChip.Spec
             rw [Int.tdiv_tmod_unique_full h_c_nz]
             -- 3a: integer equation b_BV.toInt = q_BV.toInt · c_BV.toInt + r_BV.toInt.
             --
-            -- Strategy (mirrors `spec_DIVUW_REMUW` and the signed RV32IM
-            -- proof):
+            -- Strategy (mirrors `spec_DIVUW_REMUW`):
             --   (a) Extract the four lower carry equations (sec 9, branch
             --       `is_overflow = 0`) and the four lower carry-bit
             --       booleans (sec 22) from `h_constraints`.
@@ -1807,14 +1796,14 @@ namespace DivRemChip.Spec
     -- MulGadget, the two 64-bit `IsEqualWord` thunks (`b == INT_MIN_64`
     -- / `c == −1_64`), and the three 64-bit `U16MSB` thunks collapse
     -- to `True` and are absorbed by simp. The two 32-bit `IsEqualWord`
-    -- thunks (gated by `is_word_operation = 1`) and the three 32-bit
+    -- thunks (gated by `is_word_operation = 1`) and the four 32-bit
     -- `U16MSB` thunks DO fire. The `AddGadget` × 2 and `LtWordU16`
     -- thunks remain conditional (on the respective `*_event` gates).
     simp [*] at gadget_specs
     -- Residual tuple (11 top-level slots, same arity as `spec_DIVU_REMU`
     -- but with the 64-bit `IsEqualWord` × 2 and `U16MSB` × 3 swapped for
     -- the 32-bit `IsEqualWord` × 2 and `U16MSB` × 4 — note the extra
-    -- `quot_msb`-on-`q_1` thunk, `constraints.rs:635-640`). Note: `simp [*]`
+    -- `quot_msb`-on-`q_1` thunk, `alu/divrem/constraints.rs:635-640`). Note: `simp [*]`
     -- eagerly case-splits the U16MSB disjunctions and AndSplits the
     -- inner conjuncts, so we use `all_goals` afterwards.
     obtain ⟨ h_mul_lo,
@@ -2461,7 +2450,7 @@ namespace DivRemChip.Spec
   -- =====================================================================
   -- Externality assertions for the DivRemChip bus row.
   -- The chip emits sub-gadget byte/ALU entries (MulGadget × 2,
-  -- AddGadget × 2, LtWordU16Gadget, U16MSBGadget × 6, plus
+  -- AddGadget × 2, LtWordU16Gadget, U16MSBGadget × 7, plus
   -- IsZeroWord/IsEqualWord internals) along with three chip-own
   -- ALU events: two looking ADD entries (multiplicities
   -- `-abs_c_alu_event`, `-abs_rem_alu_event` ∈ {0, -1}) and one
@@ -2629,7 +2618,7 @@ namespace DivRemChip.Spec
         air.cols.values.is_real_not_word row 0 ≠ (-1 : FKB) := by
       rcases h_irnw_b with h | h <;> rw [h] <;> decide
     -- `remainder_check_multiplicity = (1 - is_c_0_result) · is_real`
-    -- (constraint 16). With `is_real = 1`, this gives `rcm = 1 - is_c_0`,
+    -- (`AbsConstraints` section 16). With `is_real = 1`, this gives `rcm = 1 - is_c_0`,
     -- so `rcm ∈ {0, 1}` cannot equal `-1` in FKB.
     have h_rcm_eq :
         air.cols.values.remainder_check_multiplicity row 0

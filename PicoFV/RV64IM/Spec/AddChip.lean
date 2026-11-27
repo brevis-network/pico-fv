@@ -15,7 +15,7 @@ chip and demonstrates re-use of the gadget's spec:
               (vacuous: byte/ALU buses have no chip-external
               constraints relevant to AddChip).
 - `spec`     — the addition correctness `value = operand_1 + operand_2`,
-              proved by invoking `AddGadget.Spec.spec` (the gadget
+              proved by invoking `AddGadget.Spec.gadget_spec` (the gadget
               already does the carry-chain algebra; the chip only
               substitutes its own accessors).
 - `wf_asrt`  — well-formedness assertions on emitted entries
@@ -28,11 +28,11 @@ Re-use pattern:
 2. The chip's bus-row hypotheses about the gadget's contribution are
    stated directly via `AddGadget.AbsBuses` (using `bus_row_abs` to
    bridge to the chip's typed `bus_row`).
-3. `AddGadget.Spec.spec` (parametric) ⇒ the addition correctness.
+3. `AddGadget.Spec.gadget_spec` (parametric) ⇒ the addition correctness.
 
 The chip adds an extra `ALUBus` entry that the gadget doesn't, and
-takes operand range hypotheses externally (the chip itself does not
-range-check `operand_1` / `operand_2`).
+takes the operand ranges from that entry's externals (the chip itself
+does not range-check `operand_1` / `operand_2`).
 -/
 
 namespace AddChip.Spec
@@ -45,19 +45,19 @@ namespace AddChip.Spec
   set_option maxHeartbeats 1_000_000_000
 
   --
-  -- Semantic specification — reuses AddGadget.Spec.spec
+  -- Semantic specification — reuses AddGadget.Spec.gadget_spec
   --
 
   -- =====================================================================
   -- spec: the chip's addition correctness. Proved entirely by deferring
-  -- to `AddGadget.Spec.spec` after substituting the chip's accessors for
+  -- to `AddGadget.Spec.gadget_spec` after substituting the chip's accessors for
   -- the gadget's column-value parameters.
   --
   -- The chip-level wrapper:
   --   * derives `AbsConstraints` from `allHold` via `allHold_abs`,
   --   * passes the AbsBuses-routed bus hypotheses through unchanged,
-  --   * accepts operand u16-ranges as external hypotheses (these would
-  --     normally come from `CpuChip`'s state bus / range checks).
+  --   * extracts operand u16-ranges from the chip's `ALUBus` external
+  --     assumption.
   -- =====================================================================
 
   lemma spec
@@ -158,11 +158,11 @@ namespace AddChip.Spec
   --
 
   -- =====================================================================
-  -- Mirrors `RV32IM.AddSubAir.Spec.wf_asrt`:
+  -- Well-formedness assertions on the AddChip bus row:
   --   * 4 byte entries (multiplicity `+is_add` ∈ {0, 1}) never trigger
-  --     `wf_assert_cond` (= multiplicity 1), so they're vacuously
+  --     `wf_assert_cond` (= multiplicity -1), so they're vacuously
   --     well-formed.
-  --   * 1 ALU entry (multiplicity `is_add` ∈ {0, 1}) is well-formed by
+  --   * 1 ALU entry (multiplicity `-is_add`) is well-formed by
   --     `spec` whenever `is_add = 1`.
   -- =====================================================================
 

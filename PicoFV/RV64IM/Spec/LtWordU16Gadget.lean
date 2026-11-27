@@ -9,8 +9,11 @@ set_option maxHeartbeats 1_000_000_000
 
 `LtWordU16Gadget` produces a single bit `bit` indicating whether
 `U64w.toBV a < U64w.toBV b` (unsigned). The gadget has no standalone
-wrapping air — used only inside `LtSignedGadget` inside `LtChip`. This
-file therefore provides only the parametric `gadget_spec`.
+wrapping air — it is used inside `LtSignedGadget` (in `LtChip`) and in
+`DivRemChip`. This file therefore provides only the parametric
+`gadget_spec` and `flags_sum_spec`.
+
+Citations read at Pico v3.2.0.
 
 Proof strategy: case-split on the sum of `u16_flags`.
 

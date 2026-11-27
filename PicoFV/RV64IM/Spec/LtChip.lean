@@ -9,7 +9,9 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # LtChip — semantic specification
 
-The `LtChip.Spec` namespace below states the chip's two ALU outputs
+Citations read at Pico v3.2.0.
+
+The `LtChip.Spec` namespace below states the chip's four ALU outputs
 and demonstrates re-use of `LtSignedGadget`'s spec:
 
 - `ext_asrt` — externality assertions on the chip's bus row.
@@ -21,14 +23,14 @@ and demonstrates re-use of `LtSignedGadget`'s spec:
   the resulting `bit ↔ b.toInt < c.toInt` to
   `a = zero_extend (bool_to_bit ...)` via the chip's `a_0 = bit`
   identity + `a_{1,2,3} = 0` zeroing (`a_1 = 0` through `is_cmp = 0`,
-  which these two now take as a hypothesis: a row with `is_cmp = 1`
+  which these two take as a hypothesis: a row with `is_cmp = 1`
   serves 264 / 265 instead).
 - `spec_SLTU` — opcode 9 (unsigned compare). Identical to `spec_SLT`
   except `is_signed = 0` (`bit ↔ b.toNat < c.toNat`).
 - `spec_CMP_SLT` / `spec_CMP_SLTU` — opcodes 264 / 265, the merged
   branch-comparison rows (`is_cmp = 1`, so the served opcode carries
   `LT_CMP_OPCODE_TAG`). These carry two strict bits rather than one
-  word: `a_0 = [b < c]` is the gadget's `bit` as before, and
+  word: `a_0 = [b < c]` is the gadget's `bit` as in `spec_SLT`, and
   `a_1 = Σ u16_flags − bit` is `[c < b]` because the flag sum is the
   inequality indicator (`LtSignedGadget.Spec.flags_sum_spec`).
 - `wf_asrt` — dispatches the single ALU entry to one of the four

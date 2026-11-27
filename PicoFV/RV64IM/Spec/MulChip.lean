@@ -30,7 +30,7 @@ Each proof follows the same shape:
    substitutions from step 2, the selector-encoded opcode resolves to
    the concrete opcode `30 / 31 / 32 / 33 / 48`.
 
-All five proofs are complete (no sorries). Together they form the
+Together the five specs form the
 binding interface that `CpuChip` consumes for the MUL family opcodes.
 -/
 

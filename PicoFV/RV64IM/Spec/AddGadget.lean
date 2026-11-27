@@ -14,16 +14,15 @@ assumptions on the operand limbs, the result word satisfies the actual
 `AddGadget.AbsConstraints` (which only states the polynomial constraint
 shape).
 
-Layout mirrors `PicoFV.RV32IM.Spec.AddSubAir`:
-
-- `ext_asrt`     — externality assertions on the gadget's bus row
-                    (vacuous: the byte bus has no chip-external
-                    constraints).
-- `spec_addition` — the semantic statement `value = b + c` (RV64
-                    analogue of `spec_ADD`).
-- `wf_asrt`      — well-formedness assertions on emitted entries
-                    (vacuous: all entries have multiplicity `+is_real`,
-                    so `wf_assert_cond` is never satisfied).
+- `ext_asrt`    — externality assertions on the gadget's bus row
+                   (vacuous: the byte bus has no chip-external
+                   constraints).
+- `gadget_spec` — the semantic statement `value = b + c`, over the
+                   gadget's column values; `spec` is its form over the
+                   standalone gadget air.
+- `wf_asrt`     — well-formedness assertions on emitted entries
+                   (vacuous: all entries have multiplicity `+is_real`,
+                   so `wf_assert_cond` is never satisfied).
 -/
 
 namespace AddGadget.Spec
@@ -60,7 +59,7 @@ namespace AddGadget.Spec
   --
 
   -- =====================================================================
-  -- spec_addition (RV64 analogue of `spec_ADD`): proves the actual
+  -- gadget_spec: proves the actual
   -- 64-bit addition `value = b + c` (as `BitVec 64` via `U64w.toBV`)
   -- under:
   --   * `is_real = 1`,
@@ -83,7 +82,7 @@ namespace AddGadget.Spec
       accessors substituted for the parameters.
 
       For the standalone `Valid_AddGadgetAir`, the air-based wrapper
-      `spec_air` below does the same plumbing with no chip extras. -/
+      `spec` below does the same plumbing with no chip extras. -/
   lemma gadget_spec
     (is_real
      b_0 b_1 b_2 b_3
@@ -132,7 +131,7 @@ namespace AddGadget.Spec
 
   /-- Air-based wrapper for the standalone gadget air: feeds
       `Valid_AddGadgetAir`-shaped hypotheses (typed `bus_row`,
-      `Extraction.allHold`) into the pure `spec` by decomposing through
+      `Extraction.allHold`) into the pure `gadget_spec` by decomposing through
       `bus_row_abs` and `allHold_abs`. -/
   lemma spec
     [Field ExtF]

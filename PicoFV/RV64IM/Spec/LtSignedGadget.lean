@@ -24,8 +24,7 @@ Proof strategy:
    `b_msb = c_msb = 0`, so the shifted top limbs equal the originals,
    and `LtWordU16Gadget.Spec.gadget_spec` gives the unsigned compare
    directly.
-3. When `is_signed = 1`: `is_real = 1` (from the own constraint
-   `(is_real - 1) * is_signed = 0`), `U16MSBGadget.Spec.gadget_spec`
+3. When `is_signed = 1`: `U16MSBGadget.Spec.gadget_spec`
    pins `b_msb`/`c_msb` to the actual msbs of `a_3`/`b_3`, and the
    shifted-top-limb unsigned comparison equals the signed comparison
    via the identity `shifted.toNat = original.toInt + 2^63`.

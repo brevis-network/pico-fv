@@ -87,7 +87,7 @@ namespace MulGadget.Spec
       The 16 b-bytes (and 16 c-bytes) are exposed as **abstract**
       placeholders: `bb0..bb7` (low / high byte of `b_0..b_3`) and
       `bbS` (the sign-extension fill byte, reused for positions 8..15),
-      analogously for `c`. At the call site you instantiate them with
+      analogously for `c`. The call site instantiates them with
       the actual byte expressions from the Pico extraction:
 
       ```

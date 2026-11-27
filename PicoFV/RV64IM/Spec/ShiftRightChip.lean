@@ -15,28 +15,29 @@ Four ALU outputs handled (vs two for SLLChip):
 - `spec_SRLW` (opcode 43): 32-bit logical right shift, then sign-extend to 64.
 - `spec_SRAW` (opcode 44): 32-bit arithmetic right shift, then sign-extend to 64.
 
-## Soundness fixes present at Pico v3.1.1
+Citations read at Pico v3.2.0.
 
-The three soundness gaps of the 2.x series (`docs/rv64-bug-mapping.md`)
-are closed by constraints of Pico v3.1.1
-(`vm/src/chips/chips/alu/sr/constraints.rs`):
+## Constraints the word and decomposition proofs rely on
+
+Three constraint groups of `vm/src/chips/chips/alu/sr/constraints.rs` close
+the soundness gaps recorded in `docs/rv64-bug-mapping.md`:
 
 1. **`b[i] · v_0123 = higher_limb[i] · 65536 + lower_limb[i] · v_0123`**
-   for `i ∈ {0..3}` (Constraints 26..29, `:171-177`) — ties the range-checked
+   for `i ∈ {0..3}` (Constraints 26..29, `alu/sr/constraints.rs:171-177`) — ties the range-checked
    `(lower_limb_i, higher_limb_i)` decomposition back to `b_i`. The
    bridge from this carry equation to the Nat-level decomposition is
    performed by the `b_decomp_from_carry` helper below.
 
-2. **`c = c_for_lookup_0`** (Constraint 7, `:75`) — binds the scalar
+2. **`c = c_for_lookup_0`** (Constraint 7, `alu/sr/constraints.rs:75`) — binds the scalar
    shift-amount column to the Word low limb broadcast on the ALU bus.
 
-3. **Word-row output limbs `a[0]`, `a[1]`** (Constraints 59..62, `:236-256`)
+3. **Word-row output limbs `a[0]`, `a[1]`** (Constraints 59..62, `alu/sr/constraints.rs:236-256`)
    — on SRLW/SRAW rows the 32-bit result is set from `limb_result_0`,
    `higher_limb_1`, the sign correction and the sign fill, instead of being
    free witnesses. `spec_SRLW` and `spec_SRAW` rely on these.
 
-All these extracted constraints land in `Extraction.ShiftRightChip` /
-`ConstraintsAndBuses` and are now part of the destructured constraint
+These constraints land in `Extraction.ShiftRightChip` /
+`ConstraintsAndBuses` and are part of the destructured constraint
 list inside each `spec_S*` proof.
 -/
 
@@ -812,7 +813,7 @@ namespace ShiftRightChip.Spec
   -- spec_SRA — opcode 7 (64-bit arithmetic right shift, sign-extends b's MSB).
   --
   -- Same skeleton as `spec_SRL` (4-way case split on (c_bits_4, c_bits_5))
-  -- but `b_msb` is no longer pinned to 0. Instead it is bound to the actual
+  -- but `b_msb` is not pinned to 0: it is bound to the actual
   -- MSB of `b_3` by the U16MSB byte-bus entry (gated by `is_sra`); the
   -- partition `b_msb = 0 ∧ b_3 < 32768 ∨ b_msb = 1 ∧ 32768 ≤ b_3` is then
   -- derived directly from `h_msb_u16` and `h_b_msb_b` via `grind`. We then

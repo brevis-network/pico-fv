@@ -8,7 +8,7 @@ set_option maxRecDepth 2_000_000
 set_option linter.constructorNameAsVariable false
 
 /-!
-# CpuChip — what the chip guarantees as a sender (RV64, Pico v3.2.0)
+# CpuChip — what the chip guarantees as a sender
 
 A message the CPU chip sends with multiplicity 1 carries two predicates
 (`Fundamentals/Interaction.lean`): the receiver's promise `wf_assume`, which the instruction

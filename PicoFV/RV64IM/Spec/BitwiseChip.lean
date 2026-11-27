@@ -10,7 +10,7 @@ set_option maxHeartbeats 1_000_000_000
 The `BitwiseChip.Spec` namespace below states the semantic content of
 the chip's three operations (XOR, OR, AND) on full 64-bit words.
 
-Layout (mirroring RV32 `BitwiseAir.Spec` but adapted for u16 limbs):
+Layout:
 
 - `selector_breakdown` — the three selectors are binary and their sum
   is 0 or 1 (in `Interpretations`; we just consume it here).
@@ -26,10 +26,9 @@ Layout (mirroring RV32 `BitwiseAir.Spec` but adapted for u16 limbs):
 - `wf_asrt` — well-formedness, dispatching to whichever of XOR/OR/AND
   is currently active.
 
-The byte/limb plumbing — specifically the inline high-byte expression
-`(limb - low_byte) * inv(256)` — is what makes this longer than the
-RV32 version; the high byte is *not* a column but a derived expression
-pinned to `< 256` by the byte bus.
+The high byte of each u16 limb is *not* a column but the derived
+expression `(limb - low_byte) * inv(256)`, pinned to `< 256` by the
+byte bus.
 -/
 
 namespace BitwiseChip.Spec
@@ -42,8 +41,7 @@ namespace BitwiseChip.Spec
   set_option maxHeartbeats 1_000_000_000
 
   --
-  -- Byte-level FKB↔BitVec bitwise conversion (re-imported from the
-  -- RV32 BitwiseAir spec — these are private there)
+  -- Byte-level FKB↔BitVec bitwise conversion
   --
 
   private lemma FKB.ofNat_xor_eq (a b : FKB) (ha : a.val < 256) (hb : b.val < 256) :
