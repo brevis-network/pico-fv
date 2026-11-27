@@ -59,6 +59,13 @@ jobs:
           key: extractor-${{ runner.os }}-${{ hashFiles('extractor/Cargo.lock', 'extractor/rust-toolchain.toml') }}
       - name: tests
         run: cargo test --release --locked
+      # Reads the Pico checkout that cargo made for the build above. A citation that does not
+      # resolve is a warning in the job summary, not a failure; a broken checker fails.
+      - name: Pico citations (warning only)
+        if: ${{ !cancelled() }}
+        run: |
+          python3 ../scripts/fv-check/check_citations.py --self-test
+          python3 ../scripts/fv-check/check_citations.py --github
       - name: extraction files match the pinned Pico
         run: cargo run --release --locked -- --check ../PicoFV/RV64IM/Extraction
 
