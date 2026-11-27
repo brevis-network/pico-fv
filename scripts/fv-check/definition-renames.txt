@@ -1,0 +1,8 @@
+# Renames check.sh accepts in definitions.txt without reporting drift: `<old> <new>`, one per line,
+# each a run of whole name components. A name that left definitions.txt is looked up with the
+# first such run replaced, wherever it starts (a private name begins with its module's name); if
+# the new name has the same fingerprint, the definition was only renamed. The
+# map never merges two definitions: a 2.x name that a 3.x definition replaces keeps its own line
+# and reports drift.
+RV64IM_Interactions.V3 RV64IM_Interactions
+Transpiler.V3 Transpiler

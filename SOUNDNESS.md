@@ -240,7 +240,7 @@ one differs from the committed file, and its `build` job rebuilds the proofs and
 |----|------|---------------------|
 | A1 | The extracted constraints differ from Pico's | Extracted by running each chip through Pico's own symbolic builder; `extractor --check` in CI |
 | A2 | The RISC-V specification is not what RISC-V means | The official Sail model, translated to Lean, pinned (source commit not recorded; platform configuration set by hand; see Pinned inputs) |
-| A3 | A theorem holds only under a hypothesis | Hypotheses are part of each statement, snapshotted in `signatures.txt` |
+| A3 | A theorem holds only under a hypothesis | Hypotheses are part of each statement, snapshotted in `signatures.txt`; the definitions they name are fingerprinted in `definitions.txt` |
 | A4 | The chips' bus messages do not compose as assumed | None yet: not proven (see A4) |
 | A5 | A part of Pico is not covered | Listed in A5 |
 | A6 | The Lean model of Pico's instruction decoder differs from Pico's at the pinned commit | Compared line by line in review; Pico's decoder tests restated as Lean `example`s |
@@ -479,7 +479,15 @@ those recorded at v3.1.1 have.
 
 A change that weakens or strengthens a hypothesis changes `signatures.txt`, and `check.sh` fails
 until the change is reviewed and recorded. A change to the definition behind a hypothesis's name
-does not, so it has to be listed in the pull request that makes it.
+leaves `signatures.txt` as it is, but changes the definition's fingerprint in `definitions.txt`,
+and `check.sh` fails on it, naming the definition and every definition that uses it, until the
+change is reviewed and recorded with `check.sh --update`. A fingerprint covers every definition of
+this repository that a checked statement reaches, through definition bodies; it stops at Lean,
+which `lean-toolchain` pins, and at Mathlib, the Sail model and the circuit framework, which
+`lake-manifest.json` pins. It depends on no name of this repository except a constructor's own (a
+renamed constructor is drift), so a rename listed in `definition-renames.txt` passes the check
+without drift, unless the new name already belongs to another definition (a 2.x definition that a
+3.x one replaces): that name then reports drift.
 
 #### The whole-trace assumption
 

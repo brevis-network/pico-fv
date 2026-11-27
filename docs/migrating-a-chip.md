@@ -79,10 +79,15 @@ on: each `spec` / `spec_*` and the chip's `ext_asrt` and `wf_asrt`. Then, after 
 scripts/fv-check/check.sh            # the new theorems show up as additions only
 ```
 
+The definitions those theorems reach are fingerprinted in `scripts/fv-check/definitions.txt`, so
+`check.sh` also prints `DEFINITION DRIFT`, `NEW` or `GONE` lines: the regenerated
+`<Chip>.Extraction.*` definitions, the chip's new definitions, and every definition above a changed
+one. Review that each named definition is one the move meant to change.
+
 If the chip's theorems are new to the list, compare their statements with the ones on `main`:
 build `main` with the same `theorems.d/<chip>.txt` and run `check.sh` there, then diff the two
 outputs. This costs a second full build. For `LtChip` the four theorems' statements and axioms were identical
-before and after. Record them with `check.sh --update`.
+before and after. Record them, and the definitions, with `check.sh --update`.
 
 ## 6. Finish
 
