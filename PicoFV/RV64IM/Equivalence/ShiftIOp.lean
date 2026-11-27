@@ -30,7 +30,7 @@ namespace Equivalence
     -- The checked theorems, `equivalence_<OP>`, take the instruction instead
     -- and the hypothesis that the decoder turns it into the row's Program
     -- message, which fixes `is_real`, the opcode, `imm_c`, the two register
-    -- columns and `op_c_0` (`shiftiop_decoded`).
+    -- columns and `op_c_0` (`reg_imm_decoded`).
     -- ========================================================================
 
     /-- `equivalence_SLLI` in column form (opcode 5, `sop.SLLI`), the 64-bit shift left logical by
@@ -156,41 +156,6 @@ namespace Equivalence
     -- against its expected type still unfolds `operation_list_effect`.
     -- ========================================================================
 
-    /-- What the decoding of a 64-bit shift by an immediate says about the row: it is real, its
-        opcode is the operation's (`Transpiler.opcode_of_sop`), `imm_c = 1`, its `op_a` and `op_b_0`
-        columns name `rd` and `rs1`, and the low 6 bits of `op_c_0` are `imm`. The decoder
-        zero-extends the shift amount into `op_c_0` (`Transpiler.imm_operand imm false`). -/
-    private lemma shiftiop_decoded
-      [Field ExtF]
-      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
-      {imm : BitVec 6} {rs1 rd : regidx} {op : sop} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.transpile_op (.SHIFTIOP (imm, rs1, rd, op)) 1 addr =
-        some (program_bus_entry air row, props))
-    :
-      air.cols.is_real row 0 = 1 ∧
-      air.cols.instruction.opcode row 0 = Transpiler.opcode_of_sop op ∧
-      air.cols.opcode_selector.imm_c row 0 = 1 ∧
-      regidx.Regidx (air.cols.instruction.op_a row 0).val = rd ∧
-      regidx.Regidx (air.cols.instruction.op_b_0 row 0).val = rs1 ∧
-      ((air.cols.instruction.op_c_0 row 0).val : BitVec 6) = imm
-    := by
-      simp only [Transpiler.transpile_op, Option.some.injEq, Prod.mk.injEq] at h_decode
-      have h_data := h_decode.1.symm
-      have h_op_a : air.cols.instruction.op_a row 0 = Transpiler.reg_to_KB rd :=
-        decoded_field h_data ProgramBusEntry.op_a
-      have h_op_b : air.cols.instruction.op_b_0 row 0 = Transpiler.reg_to_KB rs1 :=
-        decoded_field h_data ProgramBusEntry.b_0
-      have h_c0 : air.cols.instruction.op_c_0 row 0 = (Transpiler.imm_operand imm false)[0] :=
-        decoded_field h_data ProgramBusEntry.c_0
-      refine ⟨ decoded_field h_data ProgramBusEntry.multiplicity,
-        decoded_field h_data ProgramBusEntry.opcode, decoded_field h_data ProgramBusEntry.imm_c,
-        by rw [h_op_a]; exact regidx_reg_to_KB rd, by rw [h_op_b]; exact regidx_reg_to_KB rs1, ?_ ⟩
-      rw [h_c0]
-      apply BitVec.eq_of_toNat_eq
-      have := imm.isLt
-      simp [Transpiler.imm_operand, Transpiler.imm_to_KB, BitVec.extend, U64w.fromNat]
-      omega
-
     /-- Equivalence for SLLI (opcode 5, `sop.SLLI`), the 64-bit shift left logical by an immediate:
         for every `SLLI` instruction and address `addr` whose decoding
         (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
@@ -213,8 +178,8 @@ namespace Equivalence
       execute_instruction (instruction.SHIFTIOP (imm, rs1, rd, sop.SLLI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ :=
-        shiftiop_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, -, h_imm_c, rfl, rfl, rfl ⟩ :=
+        reg_imm_decoded air row h_decode rfl (by norm_num)
       exact equivalence_SLLI_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
@@ -240,8 +205,8 @@ namespace Equivalence
       execute_instruction (instruction.SHIFTIOP (imm, rs1, rd, sop.SRLI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ :=
-        shiftiop_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, -, h_imm_c, rfl, rfl, rfl ⟩ :=
+        reg_imm_decoded air row h_decode rfl (by norm_num)
       exact equivalence_SRLI_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
@@ -267,8 +232,8 @@ namespace Equivalence
       execute_instruction (instruction.SHIFTIOP (imm, rs1, rd, sop.SRAI)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ :=
-        shiftiop_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, -, h_imm_c, rfl, rfl, rfl ⟩ :=
+        reg_imm_decoded air row h_decode rfl (by norm_num)
       exact equivalence_SRAI_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
