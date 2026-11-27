@@ -120,8 +120,8 @@ namespace Equivalence
       exact Transpiler.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
 
     /-- JALR's offset: the Program message says the row's `op_c` columns encode a 12-bit
-        immediate `imm'`, and `op_c` is then its 64-bit sign extension (constraints 4 to 7,
-        through `imm_c_eq_1_constraints`). -/
+        immediate `imm'`, and `op_c` is then its 64-bit sign extension
+        (`op_c_value_eq_signExtend_of_imm_operand`). -/
     private lemma jalr_offset
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -145,17 +145,9 @@ namespace Equivalence
       subst h_eq_data
       rw [deserialise_program_bus_entry] at h_eq_entry
       simp [ProgramBusEntry.deserialise] at h_eq_entry
-      have eq_c0 : air.cols.instruction.op_c_0 row 0 =
-          (Transpiler.imm_operand imm' true)[0] := by simp [h_eq_entry]
-      have eq_c1 : air.cols.instruction.op_c_1 row 0 =
-          (Transpiler.imm_operand imm' true)[1] := by simp [h_eq_entry]
-      have eq_cs : air.cols.instruction.op_c_sign row 0 =
-          (Transpiler.imm_operand imm' true)[2] := by simp [h_eq_entry]
-      refine ⟨ imm', ?_ ⟩
-      have h_imm_c_eqs := imm_c_eq_1_constraints air row h_imm_c h_constraints
-      simp only [op_c_value, h_imm_c_eqs.1, h_imm_c_eqs.2.1, h_imm_c_eqs.2.2.1,
-                 h_imm_c_eqs.2.2.2, eq_c0, eq_c1, eq_cs]
-      exact Transpiler.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
+      exact ⟨ imm', op_c_value_eq_signExtend_of_imm_operand air row imm' (by norm_num)
+        (by norm_num) h_imm_c h_constraints (by simp [h_eq_entry]) (by simp [h_eq_entry])
+        (by simp [h_eq_entry]) ⟩
 
     /-- The operations a JAL row's messages stand for, in order: the pc read, the read of
         `rd`'s old value and the write of the return address, and the next pc. Both operands

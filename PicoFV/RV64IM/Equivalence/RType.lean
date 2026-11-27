@@ -28,7 +28,7 @@ namespace Equivalence
     -- shares 1, so the decoder already gives SUB `imm_c = 0`
     -- (`imm_c_eq_zero_of_opcode`) and its column form takes the opcode alone.
     -- The checked theorems take the decoded instruction instead, whose decoding
-    -- fixes the opcode and `imm_c = 0` for all ten (`rtype_decoded`).
+    -- fixes the opcode and `imm_c = 0` for all ten (`reg_reg_decoded`).
     -- The row reads both operands from registers
     -- (`imm_b = 0`, which `imm_c = 0` fixes, and `imm_c = 0`) and sets no class
     -- selector. Every column form closes with `alu_reg_reg_close` (`Common.lean`),
@@ -313,36 +313,6 @@ namespace Equivalence
     -- against its expected type still unfolds `operation_list_effect`.
     -- ========================================================================
 
-    /-- What an `RTYPE` instruction's decoding says about the row: it is real, its opcode is
-        the operation's (`Transpiler.opcode_of_rop`), its third operand is a register
-        (`imm_c = 0`), and its `op_a`, `op_b` and `op_c` columns name `rd`, `rs1` and `rs2`. -/
-    private lemma rtype_decoded
-      [Field ExtF]
-      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
-      {rs2 rs1 rd : regidx} {op : rop} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.transpile_op (.RTYPE (rs2, rs1, rd, op)) 1 addr =
-        some (program_bus_entry air row, props))
-    :
-      air.cols.is_real row 0 = 1 ∧
-      air.cols.instruction.opcode row 0 = Transpiler.opcode_of_rop op ∧
-      air.cols.opcode_selector.imm_c row 0 = 0 ∧
-      regidx.Regidx (air.cols.instruction.op_a row 0).val = rd ∧
-      regidx.Regidx (air.cols.instruction.op_b_0 row 0).val = rs1 ∧
-      regidx.Regidx (air.cols.instruction.op_c_0 row 0).val = rs2
-    := by
-      simp only [Transpiler.transpile_op, Option.some.injEq, Prod.mk.injEq] at h_decode
-      have h_data := h_decode.1.symm
-      have h_op_a : air.cols.instruction.op_a row 0 = Transpiler.reg_to_KB rd :=
-        decoded_field h_data ProgramBusEntry.op_a
-      have h_op_b : air.cols.instruction.op_b_0 row 0 = Transpiler.reg_to_KB rs1 :=
-        decoded_field h_data ProgramBusEntry.b_0
-      have h_op_c : air.cols.instruction.op_c_0 row 0 = Transpiler.reg_to_KB rs2 :=
-        decoded_field h_data ProgramBusEntry.c_0
-      exact ⟨ decoded_field h_data ProgramBusEntry.multiplicity,
-        decoded_field h_data ProgramBusEntry.opcode, decoded_field h_data ProgramBusEntry.imm_c,
-        by rw [h_op_a]; exact regidx_reg_to_KB rd, by rw [h_op_b]; exact regidx_reg_to_KB rs1,
-        by rw [h_op_c]; exact regidx_reg_to_KB rs2 ⟩
-
     /-- Equivalence for ADD (opcode 0, `rop.ADD`), the 64-bit add: for every `ADD` instruction and
         address `addr` whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's
         Program message, Sail's step on that instruction equals the row's effect. The decoding fixes
@@ -364,7 +334,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.ADD)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := rtype_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_ADD_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
@@ -389,7 +359,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.SUB)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, -, rfl, rfl, rfl ⟩ := rtype_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, -, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_SUB_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions @h_opc @h_bus_hypotheses
 
@@ -414,7 +384,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.XOR)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := rtype_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_XOR_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
@@ -439,7 +409,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.OR)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := rtype_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_OR_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
@@ -464,7 +434,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.AND)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := rtype_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_AND_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
@@ -490,7 +460,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.SLL)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := rtype_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_SLL_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
@@ -516,7 +486,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.SRL)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := rtype_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_SRL_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
@@ -542,7 +512,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.SRA)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := rtype_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_SRA_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
@@ -567,7 +537,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.SLT)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := rtype_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_SLT_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
@@ -592,7 +562,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPE (rs2, rs1, rd, rop.SLTU)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := rtype_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_SLTU_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 

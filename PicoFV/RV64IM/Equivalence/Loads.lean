@@ -122,51 +122,6 @@ namespace Equivalence
       rw [h_opcode] at h_sel h_imm_b h_imm_c
       exact ⟨ h_imm_b 0 h_b, h_imm_c 1 h_c, h_sel ⟩
 
-    /-- A load row's offset: the Program message says the row's `op_c` columns encode a 12-bit
-        immediate `imm'`, and `op_c` is then its 64-bit sign extension (constraints 4 to 7,
-        through `imm_c_eq_1_constraints`). The seven opcodes share one proof. -/
-    private lemma load_offset
-      [Field ExtF]
-      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
-      (h_is_real : air.cols.is_real row 0 = 1)
-      (h_wf : bus_row_wf_asm (bus_row air row))
-      (h_constraints : CpuChip.Extraction.allHold air row)
-      (h_opcode : air.cols.instruction.opcode row 0 = 10 ∨
-                  air.cols.instruction.opcode row 0 = 11 ∨
-                  air.cols.instruction.opcode row 0 = 12 ∨
-                  air.cols.instruction.opcode row 0 = 13 ∨
-                  air.cols.instruction.opcode row 0 = 14 ∨
-                  air.cols.instruction.opcode row 0 = 45 ∨
-                  air.cols.instruction.opcode row 0 = 46)
-      (h_imm_c : air.cols.opcode_selector.imm_c row 0 = 1)
-    :
-      ∃ imm' : BitVec 12, U64w.toBV (op_c_value air row) = BitVec.signExtend 64 imm'
-    := by
-      have h_prog := program_bus_operand_properties air row h_is_real h_wf
-      obtain ⟨ instr, pc_value, data, props, -, -, h_eq, h_eq_entry, - ⟩ := h_prog
-      have h_decoded := ProgramBusEntry.operand_properties_inversion h_eq h_eq_entry
-      rw [deserialise_program_bus_entry] at h_decoded
-      rcases h_opcode with h_op | h_op | h_op | h_op | h_op | h_op | h_op <;>
-      · simp [ProgramBusEntry.decoded_from, h_op] at h_decoded
-        obtain ⟨ imm', rs1', rd', h_eq_instr ⟩ := h_decoded
-        subst h_eq_instr
-        simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
-        obtain ⟨ h_eq_data, - ⟩ := h_eq
-        subst h_eq_data
-        rw [deserialise_program_bus_entry] at h_eq_entry
-        simp [ProgramBusEntry.deserialise] at h_eq_entry
-        have eq_c0 : air.cols.instruction.op_c_0 row 0 =
-            (Transpiler.imm_operand imm' true)[0] := by simp [h_eq_entry]
-        have eq_c1 : air.cols.instruction.op_c_1 row 0 =
-            (Transpiler.imm_operand imm' true)[1] := by simp [h_eq_entry]
-        have eq_cs : air.cols.instruction.op_c_sign row 0 =
-            (Transpiler.imm_operand imm' true)[2] := by simp [h_eq_entry]
-        refine ⟨ imm', ?_ ⟩
-        have h_imm_c_eqs := imm_c_eq_1_constraints air row h_imm_c h_constraints
-        simp only [op_c_value, h_imm_c_eqs.1, h_imm_c_eqs.2.1, h_imm_c_eqs.2.2.1,
-                   h_imm_c_eqs.2.2.2, eq_c0, eq_c1, eq_cs]
-        exact Transpiler.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
-
     /-- `equivalence_LW` in column form: for a row of opcode 12, Sail's step on the `LOAD` of
         width 4 (sign-extended) whose registers and offset are read off the row's columns equals
         the row's effect. -/
@@ -199,22 +154,13 @@ namespace Equivalence
       obtain ⟨ h_ecall, h_memory, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
                h_jalr, h_jal ⟩ := h_s
       obtain ⟨ imm', h_op_c ⟩ :=
-        load_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
+        load_store_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
       obtain ⟨ h_reg_rd, h_reg_rs1, - ⟩ := register_indices_lt air row h_is_real h_wf
       replace h_reg_rs1 := h_reg_rs1 h_imm_b
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 4 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
@@ -405,22 +351,13 @@ namespace Equivalence
       obtain ⟨ h_ecall, h_memory, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
                h_jalr, h_jal ⟩ := h_s
       obtain ⟨ imm', h_op_c ⟩ :=
-        load_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
+        load_store_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
       obtain ⟨ h_reg_rd, h_reg_rs1, - ⟩ := register_indices_lt air row h_is_real h_wf
       replace h_reg_rs1 := h_reg_rs1 h_imm_b
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 1 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
@@ -599,22 +536,13 @@ namespace Equivalence
       obtain ⟨ h_ecall, h_memory, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
                h_jalr, h_jal ⟩ := h_s
       obtain ⟨ imm', h_op_c ⟩ :=
-        load_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
+        load_store_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
       obtain ⟨ h_reg_rd, h_reg_rs1, - ⟩ := register_indices_lt air row h_is_real h_wf
       replace h_reg_rs1 := h_reg_rs1 h_imm_b
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 2 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
@@ -798,22 +726,13 @@ namespace Equivalence
       obtain ⟨ h_ecall, h_memory, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
                h_jalr, h_jal ⟩ := h_s
       obtain ⟨ imm', h_op_c ⟩ :=
-        load_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
+        load_store_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
       obtain ⟨ h_reg_rd, h_reg_rs1, - ⟩ := register_indices_lt air row h_is_real h_wf
       replace h_reg_rs1 := h_reg_rs1 h_imm_b
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 1 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
@@ -992,22 +911,13 @@ namespace Equivalence
       obtain ⟨ h_ecall, h_memory, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
                h_jalr, h_jal ⟩ := h_s
       obtain ⟨ imm', h_op_c ⟩ :=
-        load_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
+        load_store_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
       obtain ⟨ h_reg_rd, h_reg_rs1, - ⟩ := register_indices_lt air row h_is_real h_wf
       replace h_reg_rs1 := h_reg_rs1 h_imm_b
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 2 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
@@ -1191,22 +1101,13 @@ namespace Equivalence
       obtain ⟨ h_ecall, h_memory, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
                h_jalr, h_jal ⟩ := h_s
       obtain ⟨ imm', h_op_c ⟩ :=
-        load_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
+        load_store_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
       obtain ⟨ h_reg_rd, h_reg_rs1, - ⟩ := register_indices_lt air row h_is_real h_wf
       replace h_reg_rs1 := h_reg_rs1 h_imm_b
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 4 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
@@ -1397,22 +1298,13 @@ namespace Equivalence
       obtain ⟨ h_ecall, h_memory, h_store, h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu,
                h_jalr, h_jal ⟩ := h_s
       obtain ⟨ imm', h_op_c ⟩ :=
-        load_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
+        load_store_offset air row h_is_real h_wf h_constraints (by simp [h_opcode]) h_imm_c
       obtain ⟨ h_reg_rd, h_reg_rs1, - ⟩ := register_indices_lt air row h_is_real h_wf
       replace h_reg_rs1 := h_reg_rs1 h_imm_b
       -- The memory chip's promise for the dispatch this row sends.
       have h_mem_spec := memory_message_spec air row h_is_real h_wf h_memory
       simp only [MemoryBus.Spec, h_opcode] at h_mem_spec
-      have h_addr_bridge : U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm' =
-          U64w.toBV #v[ (air.cols.op_b_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_b_access.access.value_3 row 0 : FKB) ] +
-          U64w.toBV #v[ (air.cols.op_c_access.access.value_0 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_1 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_2 row 0 : FKB),
-                        (air.cols.op_c_access.access.value_3 row 0 : FKB) ] := by
-        rw [← h_op_c]; rfl
+      have h_addr_bridge := op_b_value_add_signExtend_eq air row h_op_c
       have h_range : (U64w.toBV (op_b_value air row) + BitVec.signExtend 64 imm').toNat + 8 ≤
           Pico_address_space_size_64 := by
         rw [h_addr_bridge]
