@@ -178,36 +178,6 @@ namespace Equivalence
     -- against its expected type still unfolds `operation_list_effect`.
     -- ========================================================================
 
-    /-- What an `RTYPEW` instruction's decoding says about the row: it is real, its opcode is
-        the operation's (`Transpiler.opcode_of_ropw`), its third operand is a register
-        (`imm_c = 0`), and its `op_a`, `op_b` and `op_c` columns name `rd`, `rs1` and `rs2`. -/
-    private lemma rtypew_decoded
-      [Field ExtF]
-      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
-      {rs2 rs1 rd : regidx} {op : ropw} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.transpile_op (.RTYPEW (rs2, rs1, rd, op)) 1 addr =
-        some (program_bus_entry air row, props))
-    :
-      air.cols.is_real row 0 = 1 ∧
-      air.cols.instruction.opcode row 0 = Transpiler.opcode_of_ropw op ∧
-      air.cols.opcode_selector.imm_c row 0 = 0 ∧
-      regidx.Regidx (air.cols.instruction.op_a row 0).val = rd ∧
-      regidx.Regidx (air.cols.instruction.op_b_0 row 0).val = rs1 ∧
-      regidx.Regidx (air.cols.instruction.op_c_0 row 0).val = rs2
-    := by
-      simp only [Transpiler.transpile_op, Option.some.injEq, Prod.mk.injEq] at h_decode
-      have h_data := h_decode.1.symm
-      have h_op_a : air.cols.instruction.op_a row 0 = Transpiler.reg_to_KB rd :=
-        decoded_field h_data ProgramBusEntry.op_a
-      have h_op_b : air.cols.instruction.op_b_0 row 0 = Transpiler.reg_to_KB rs1 :=
-        decoded_field h_data ProgramBusEntry.b_0
-      have h_op_c : air.cols.instruction.op_c_0 row 0 = Transpiler.reg_to_KB rs2 :=
-        decoded_field h_data ProgramBusEntry.c_0
-      exact ⟨ decoded_field h_data ProgramBusEntry.multiplicity,
-        decoded_field h_data ProgramBusEntry.opcode, decoded_field h_data ProgramBusEntry.imm_c,
-        by rw [h_op_a]; exact regidx_reg_to_KB rd, by rw [h_op_b]; exact regidx_reg_to_KB rs1,
-        by rw [h_op_c]; exact regidx_reg_to_KB rs2 ⟩
-
     /-- Equivalence for ADDW (opcode 40, `ropw.ADDW`), the 32-bit add: for every `ADDW` instruction
         and address `addr` whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the
         row's Program message, Sail's step on that instruction equals the row's effect. The decoding
@@ -229,7 +199,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPEW (rs2, rs1, rd, ropw.ADDW)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := rtypew_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_ADDW_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
@@ -254,7 +224,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPEW (rs2, rs1, rd, ropw.SUBW)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, -, rfl, rfl, rfl ⟩ := rtypew_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, -, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_SUBW_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions @h_opc @h_bus_hypotheses
 
@@ -280,7 +250,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPEW (rs2, rs1, rd, ropw.SLLW)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := rtypew_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_SLLW_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
@@ -306,7 +276,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPEW (rs2, rs1, rd, ropw.SRLW)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := rtypew_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_SRLW_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
@@ -332,7 +302,7 @@ namespace Equivalence
       execute_instruction (instruction.RTYPEW (rs2, rs1, rd, ropw.SRAW)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := rtypew_decoded air row h_decode
+      obtain ⟨ h_is_real, h_opc, h_imm_c, rfl, rfl, rfl ⟩ := reg_reg_decoded air row h_decode rfl
       exact equivalence_SRAW_row air row @h_row @h_is_real @h_all_wf @h_all_constraints
         @pico_assumptions ⟨ h_opc, h_imm_c ⟩ @h_bus_hypotheses
 
