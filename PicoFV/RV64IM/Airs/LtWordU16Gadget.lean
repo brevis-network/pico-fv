@@ -14,8 +14,9 @@ set_option linter.unusedVariables false
 # LtWordU16Gadget (64-bit)
 
 Lean formalisation of `LtWordU16Gadget` from
-`vm/src/chips/gadgets/lt_word_u16.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
+`vm/src/chips/gadgets/lt_word_u16.rs`.
+
+Citations read at Pico v3.2.0.
 
 ```rust
 pub struct LtWordU16Gadget<T> {

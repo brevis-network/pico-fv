@@ -9,9 +9,10 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # LtWordU16Gadget — abstract constraints & buses
 
+Citations read at Pico v3.2.0.
+
 `LtWordU16Gadget`'s Pico Rust source is
-`vm/src/chips/gadgets/lt_word_u16.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`. The gadget performs an
+`vm/src/chips/gadgets/lt_word_u16.rs`. The gadget performs an
 *unsigned* 64-bit comparison `a < b` by finding the most-significant
 differing u16 limb (MSDL) and emitting a single bit indicating the
 direction of inequality.
@@ -46,8 +47,8 @@ The 1 ByteBus entry is `U16Range` on `(comp_0 - comp_1) + bit * 65536`,
 gated by `+is_real`. The standard Δ + bit·2¹⁶ trick: combined with the
 constraints above, it forces `bit = 1 ⟺ comp_0 < comp_1`.
 
-The gadget has no standalone wrapping Air — used only by `LtSignedGadget`
-inside `LtChip`. This file therefore provides only the *parametric*
+The gadget has no standalone wrapping Air; `LtSignedGadget`, `DivRemChip` and the memory
+initialize/finalize chip embed it. This file therefore provides only the *parametric*
 `AbsConstraints` and `AbsBuses` predicates.
 -/
 

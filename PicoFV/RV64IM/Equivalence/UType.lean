@@ -2,6 +2,10 @@ import PicoFV.RV64IM.Equivalence.Common
 
 set_option maxHeartbeats 1_000_000
 
+/-!
+Citations read at Pico v3.2.0.
+-/
+
 namespace Equivalence
 
   open Plonky3
@@ -15,13 +19,14 @@ namespace Equivalence
 
     -- ========================================================================
     -- UTYPE — `LUI` and `AUIPC`. Both are opcode 0 with both immediate flags
-    -- set, and Pico has no `is_auipc` selector and no opcode 27, so the
-    -- opcode and the flags no longer tell them apart: a `LUI` row and an
-    -- `AUIPC` row have the same shape, and the decoder's clause for opcode 0
-    -- (`ProgramBusEntry.decoded_from`) is a disjunction of the two.
+    -- set: the transpiler never emits opcode 27 (`AUIPC`) and the CPU chip has
+    -- no `is_auipc` selector, so the opcode and the flags do not tell them
+    -- apart: a `LUI` row and an `AUIPC` row have the same shape, and the
+    -- decoder's clause for opcode 0 (`ProgramBusEntry.decoded_from`) is a
+    -- disjunction of the two.
     --
     -- What tells them apart is where the row carries the 32-bit immediate
-    -- `imm ++ 0#12` (Pico v3.2.0, `disassembler/rrs.rs:342-366`):
+    -- `imm ++ 0#12` (`disassembler/rrs.rs:342-366`):
     --
     --   * `LUI`   — `op_b` is zero and `op_c` is the immediate;
     --   * `AUIPC` — `op_b` is the immediate and `op_c` is the row's pc.

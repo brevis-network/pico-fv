@@ -8,28 +8,29 @@ set_option maxHeartbeats 1_000_000_000
 # MemoryUnalignedChip — what a row does to memory
 
 The data flow of a row of `MemoryUnalignedChip` (`MemoryUnalignedChip::eval`,
-`vm/src/chips/chips/riscv_memory/unaligned/constraints.rs`, Pico v3.2.0
-`fcfa504624657d0c417c43f1233d5d891f293ff9`; messages in `Constraints/MemoryUnalignedChip.lean`).
+`vm/src/chips/chips/riscv_memory/unaligned/constraints.rs`; messages in
+`Constraints/MemoryUnalignedChip.lean`).
+
+Citations read at Pico v3.2.0.
 
 A real row sends the memory argument the read of the double word holding the access's first byte and
 receives its write back, at the aligned address `A`, `b + c` with its three low bits cleared; on a
 row whose access runs into the next double word (`cross = 1`) it does the same for the double word
-at `A + 8` (`riscv_memory/unaligned/constraints.rs:155-176` at v3.2.0); each read is sent at
-multiplicity 1 and each write back received at -1 (`machine/builder/riscv_memory.rs:194-208` at
-v3.2.0). It receives the memory dispatch from the CPU chip
-(`riscv_memory/unaligned/constraints.rs:39-63` at v3.2.0). `bus_operations` reads each State pair
-as a double-word `ReadMem` and `WriteMem`, and the dispatch as one access of its opcode's width at
-`b + c`: a `WriteMem` of `a` for a store, a `ReadMem` of `a` for a load, or a `ReadMemAny` for a
-load into `x0`.
+at `A + 8` (`riscv_memory/unaligned/constraints.rs:155-176`); each read is sent at multiplicity 1
+and each write back received at -1 (`machine/builder/riscv_memory.rs:194-208`). It receives the
+memory dispatch from the CPU chip (`riscv_memory/unaligned/constraints.rs:39-63`).
+`bus_operations` reads each State pair as a double-word `ReadMem` and `WriteMem`, and the dispatch
+as one access of its opcode's width at `b + c`: a `WriteMem` of `a` for a store, a `ReadMem` of
+`a` for a load, or a `ReadMemAny` for a load into `x0`.
 
 - `dataFlow_of_allHold`: on every row, in any Sail state that holds the double words the row
   reads, the dispatch's read holds too, so a load's value, taken at the load's width, is the bytes
   from `b + c` on of the one or two double words read
-  (`riscv_memory/unaligned/constraints.rs:211-250` at v3.2.0); and the two operation lists leave
-  the same state, so a store writes the double words back with the stored bytes in their place
-  and a load writes them back unchanged (`riscv_memory/unaligned/constraints.rs:273-308` at
-  v3.2.0). The sign or zero fill above a load's width is not read here: it is the Memory
-  promise's (`spec_LB` to `spec_LWU`).
+  (`riscv_memory/unaligned/constraints.rs:211-250`); and the two operation lists leave the
+  same state, so a store writes the double words back with the stored bytes in their place and a
+  load writes them back unchanged (`riscv_memory/unaligned/constraints.rs:273-308`). The sign or
+  zero fill above a load's width is not read here: it is the Memory promise's (`spec_LB` to
+  `spec_LWU`).
 
 `dataFlow_of_allHold` assumes what the Memory promise's theorems assume
 (`Spec/MemoryUnalignedChip.lean`): the row's constraints (`allHold`) and what its messages are
@@ -39,8 +40,8 @@ hypothesis of `DataFlow`. `bus_operations` does not read the messages' `chunk`, 
 `prev_clk` fields, and nothing here is said about them.
 
 The proof reads the row as bytes: `wnat` is the sixteen bytes of the two double words before the
-access (`w` in `constraints.rs`), `rnat` the eight bytes of `op_a` (`r`), and `wrnat` the sixteen
-after the access. The second double word's bytes are read only on a row that crosses, which is
+access (`w` in `riscv_memory/unaligned/constraints.rs`), `rnat` the eight bytes of `op_a` (`r`),
+and `wrnat` the sixteen after the access. The second double word's bytes are read only on a row that crosses, which is
 where its byte splits are range-checked.
 -/
 

@@ -10,10 +10,11 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # SLLChip — human-readable constraints and bus interactions
 
+Citations read at Pico v3.2.0.
+
 The `ConstraintsAndBuses` namespace below restates each constraint and
 the list of bus interactions emitted by `SLLChip::eval`
-(`vm/src/chips/chips/alu/sll/constraints.rs` at Pico v3.1.1,
-`2acc7c1828fb4ec1bed5963511bb370870c5b608`) in terms of the
+(`vm/src/chips/chips/alu/sll/constraints.rs`) in terms of the
 `Valid_SLLChip` air's named accessors, plus a `_equiv` lemma per
 constraint proving equality with the raw form in
 `PicoFV.RV64IM.Extraction.SLLChip`.
@@ -59,11 +60,11 @@ Algebraic constraint breakdown (53 total):
 Bus interactions (11 entries):
 - 1 ByteBus opcode-9 entry for `(c_0 − s5) · inv64 < 2^10`
   (pins the shift amount `s5` to the low 6 bits of `c_0`).
-- 8 ByteBus opcode-9 entries: shift_carry verification of
-  `(b_i · v_0123 − lower_limb_i · v_0123 · 65535/v_0123) = …`.
-  Pairs `(lower_limb_i, higher_limb_i)` against `(16 − shift, shift)`.
+- 8 ByteBus opcode-9 entries: `lower_limb_i` against `16 − s4` and
+  `higher_limb_i` against `s4`, where `s4 = c_bits_0..3` is the shift
+  within a limb.
 - 1 ByteBus opcode-8 entry: U16MSBGadget on `a_1`
-  (`constraints.rs:160`), `2 · a_1 − sllw_msb · 65536`, gated by
+  (`alu/sll/constraints.rs:160`), `2 · a_1 − sllw_msb · 65536`, gated by
   `+is_sllw`.
 - 1 ALU entry: opcode `is_sll · 5 + is_sllw · 42` ∈ {5 (SLL), 42 (SLLW)},
   gated by `-is_real`, carrying `(a, b, c)`.
@@ -730,15 +731,15 @@ namespace SLLChip.ConstraintsAndBuses
       -- Bus interactions (11 per row):
       --   1 ByteBus opcode-9 entry: `(c_0 - s5) * inv64 < 2^10`, pinning
       --     the shift amount `s5` to the low 6 bits of `c_0`.
-      --   8 ByteBus opcode-9 entries: shift_carry verification pairing
-      --     limb-result and higher_limb values against the low-4-bit
-      --     shift amount `s4 = c_bits_0..3` and `16 - s4`.
+      --   8 ByteBus opcode-9 entries: `lower_limb_i` against `16 - s4`
+      --     and `higher_limb_i` against the low-4-bit shift amount
+      --     `s4 = c_bits_0..3`.
       --   1 ByteBus opcode-8 entry: U16MSBGadget on a_1
       --     (gated by `+is_sllw`).
       --   1 ALU entry: opcode `is_sll · 5 + is_sllw · 42` ∈ {5, 42},
       --     gated by `-is_real`, carrying (a, b, c).
-      -- The `inv(2)` constant in the extraction is `2097414145`
-      -- (since `2 * 2097414145 ≡ 1 (mod KB_prime)`).
+      -- The `inv(64)` constant in the extraction is `2097414145`
+      -- (since `64 * 2097414145 ≡ 1 (mod KB_prime)`).
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]

@@ -17,8 +17,9 @@ set_option linter.unusedVariables false
 # MemoryUnalignedChip (64-bit)
 
 Lean formalisation of `MemoryUnalignedCols` from
-`vm/src/chips/chips/riscv_memory/unaligned/columns.rs:21-68` at Pico v3.2.0
-(`fcfa504624657d0c417c43f1233d5d891f293ff9`).
+`vm/src/chips/chips/riscv_memory/unaligned/columns.rs:21-68`.
+
+Citations read at Pico v3.2.0.
 
 This chip receives the same memory dispatch as `MemoryReadWriteChip` and proves the loads and
 stores whose address is not a multiple of their width; it is correct for an aligned access too,

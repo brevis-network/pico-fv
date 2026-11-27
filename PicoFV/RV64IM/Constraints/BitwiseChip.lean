@@ -9,10 +9,11 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # BitwiseChip — human-readable constraints and bus interactions
 
+Citations read at Pico v3.2.0.
+
 The `ConstraintsAndBuses` namespace below restates each constraint and
 the list of bus interactions emitted by `BitwiseChip::eval`
-(`vm/src/chips/chips/alu/bitwise/constraints.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`) in terms of the
+(`vm/src/chips/chips/alu/bitwise/constraints.rs`) in terms of the
 `Valid_BitwiseChip` air's named accessors, plus a `_equiv` lemma per
 constraint proving equality with the raw form in
 `PicoFV.RV64IM.Extraction.BitwiseChip`.
@@ -35,8 +36,8 @@ The high byte of each limb is not a column; it's computed inline as
 
 The 5 algebraic constraints emitted by the chip are:
 - `is_xor + is_or + is_and ∈ {0, 1}`                                (twice: c0 + c4;
-  the first is the chip's own `assert_bool(is_real)`, the second is
-  `BitWiseU16Gadget::eval`'s `assert_bool(is_real)` on the same sum.)
+  the first is `BitWiseU16Gadget::eval`'s `assert_bool(is_real)`, the second is
+  the chip's own `assert_bool(is_real)` on the same sum.)
 - `is_xor ∈ {0, 1}`, `is_or ∈ {0, 1}`, `is_and ∈ {0, 1}`            (c1, c2, c3)
 
 The bus interactions are:
@@ -61,7 +62,8 @@ namespace BitwiseChip.ConstraintsAndBuses
 
       -- =====================================================================
       -- Constraint 0: is_real = is_xor + is_or + is_and is boolean.
-      -- Comes from `BitwiseChip::eval`'s own `assert_bool(is_real)`.
+      -- Comes from `BitWiseU16Gadget::eval`'s `assert_bool(is_real)` with
+      -- `is_real = is_xor + is_or + is_and`.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]
@@ -106,8 +108,7 @@ namespace BitwiseChip.ConstraintsAndBuses
 
       -- =====================================================================
       -- Constraint 4: is_real boolean (duplicate of constraint 0).
-      -- Comes from `BitWiseU16Gadget::eval`'s `assert_bool(is_real)` with
-      -- `is_real = is_xor + is_or + is_and`.
+      -- Comes from `BitwiseChip::eval`'s own `assert_bool(is_real)`.
       -- =====================================================================
 
       @[constraint_and_interaction_simplification]

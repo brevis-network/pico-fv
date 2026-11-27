@@ -4,20 +4,17 @@ import Mathlib
 import PicoFV.Fundamentals.KoalaBear
 import PicoFV.RV64IM.RVSail.Auxiliaries
 
-/-! # Instruction decoder for the Pico v3.1.1 Program table
+/-! # Instruction decoder for the Pico Program table
 
-    The Pico v3.1.1 `CpuChip` fetches its instruction with one 26-field message on the
+    Citations read at Pico v3.2.0.
+
+    The `CpuChip` fetches its instruction with one 26-field message on the
     Program bus (tag 2). This file maps a Sail `instruction` at address `pc` to that message,
     following Pico's decoder `vm/src/compiler/riscv/disassembler/rrs.rs` and the table builder
-    `vm/src/chips/chips/riscv_program/traces.rs` at Pico v3.1.1 (`2acc7c1828fb`), where the
-    line numbers below point. It was read again at v3.1.5 and v3.1.6 and models both unchanged: the
-    instruction rows are the same, three lines further down `riscv_program/traces.rs`, and
-    `looked_program` is at `riscv_program/constraints.rs:71-101`, after the new code-range
-    message (`SOUNDNESS.md`, A6). The files cited here are unchanged at v3.2.0
-    (`git diff v3.1.6 v3.2.0` over them is empty).
+    `vm/src/chips/chips/riscv_program/traces.rs`.
 
     Layout, as sent by `riscv_cpu/constraints.rs:452-481` (`looking_program`) and received by
-    `riscv_program/constraints.rs:53-83` (`looked_program`):
+    `riscv_program/constraints.rs:71-101` (`looked_program`):
 
     ```
     [ pc[0], pc[1],                                   -- Pc (2)
@@ -30,11 +27,9 @@ import PicoFV.RV64IM.RVSail.Auxiliaries
       pc_carry ]                                      -- [pc[0] >= 0xFFFC]
     ```
 
-    The register, immediate and opcode helpers below (`reg_to_KB`, `imm_to_KB`, `is_register`,
-    the `opcode_of_*` tables) are the 2.x decoder's, kept unchanged. Differences from the 2.x
-    decoder's message (43 fields, retired):
+    The message and the decoder:
 
-    * the pc is a natural number with two 16-bit pieces, not three field limbs;
+    * the pc is a natural number with two 16-bit pieces;
     * register `a` is one field (`instruction/columns.rs:19`);
     * `b` and `c` are two 16-bit pieces plus one sign bit (`SignExtImm`,
       `instruction/columns.rs:43-48`);
@@ -45,7 +40,7 @@ import PicoFV.RV64IM.RVSail.Auxiliaries
     * `ECALL` has a row: `op_a = x5`, `b = x10`, `c = x11`, `is_ecall = 1` (`rrs.rs:368-377`);
     * trap instructions (`EBREAK` and `UNIMP`; Pico decodes CSR, `MRET` and `WFI` as `UNIMP`,
       `rrs.rs:485-507, 519-525`) have no row: the Program table gives them no pc of their own
-      (`riscv_program/traces.rs:111-120`), so the decoder returns `none` for them, as for
+      (`riscv_program/traces.rs:114-123`), so the decoder returns `none` for them, as for
       every constructor it does not list;
     * no evenness side condition on the `JALR` offset: RISC-V allows an odd one, and the chip
       clears the low bit itself (`riscv_cpu/jump/constraints.rs:79-126`).
@@ -82,23 +77,18 @@ namespace Transpiler
 
   /-! ## Immediate decomposition
 
-      In RV64 Pico, a `Word<T>` is `[T; 4]` with each `T` holding a u16 limb
+      In Pico, a `Word<T>` is `[T; 4]` with each `T` holding a u16 limb
       (the four 16-bit limbs together encode a 64-bit value). The transpiler
       therefore sign-extends (or zero-extends) the Sail immediate to 64 bits
       and decomposes it into 4 × 16-bit limbs that are then lifted into the
-      field.
-
-      The corresponding RV32 helper produced 4 × 8-bit byte limbs of a
-      sign/zero-extended 32-bit value. The shape (4 limbs) is the same; the
-      per-limb width is the only structural difference.                       -/
+      field. -/
 
   /-- Decompose a `BitVec w` extended to 64 bits into 4 × u16 limbs, each
       lifted into `FKB`. The element ordering is little-endian
       (`limb[0]` = bits 15..0, `limb[3]` = bits 63..48).
 
-      Mirrors the RV32 helper `Vector.map (·.toNat) ∘ U32b.fromNat` pattern:
-      we first build the 64-bit value's 4-u16-limb decomposition as a
-      `U64w` (`Vector (BitVec 16) 4`) via `U64w.fromNat`, then lift each
+      It builds the 64-bit value's 4-u16-limb decomposition as a
+      `U64w` (`Vector (BitVec 16) 4`) via `U64w.fromNat`, then lifts each
       `BitVec 16` limb into `FKB` (sound because `2^16 - 1 < KB_prime`). -/
   def imm_to_KB {w : ℕ} (imm : BitVec w) (sgn : Bool) : Vector FKB 4 :=
     let imm_u64w := U64w.fromNat (BitVec.extend imm 64 sgn).toNat
@@ -254,11 +244,8 @@ namespace Transpiler
   /-! ## Opcode encodings
 
       These mirror the Pico `Opcode` enum at
-      `vm/src/compiler/riscv/opcode.rs` (commit
-      `22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`). The RV32 codes for
-      common-base ALU/branch/jump/memory ops are unchanged; RV64 adds the
-      W-variants (40..44, 48..52) and the new `LWU/LD/SD` memory ops
-      (45..47).                                                                -/
+      `vm/src/compiler/riscv/opcode.rs:26-138`. The RV64 W-variants are
+      40..44 and 48..52, and the `LWU/LD/SD` memory ops 45..47. -/
 
   def opcode_of_rop (op : rop) : FKB :=
     match op with
@@ -323,11 +310,11 @@ namespace Transpiler
   def pc_hi (pc : ℕ) : FKB := ⟨pc / 65536 % 65536, by omega⟩
 
   /-- The Program table's `pc_carry` column: the carry out of limb 0 in `pc + 4`, i.e.
-      `[pc[0] >= 0xFFFC]` (`riscv_program/traces.rs:126`). -/
+      `[pc[0] >= 0xFFFC]` (`riscv_program/traces.rs:129`). -/
   def pc_carry (pc : ℕ) : FKB := if 0xFFFC ≤ pc % 65536 then 1 else 0
 
   /-- Guest addresses stay below this bound; the Program table asserts it for every row it
-      builds (`riscv_program/traces.rs:107-110`). -/
+      builds (`riscv_program/traces.rs:110-113`). -/
   def code_address_bound : ℕ := 0x7800_0000
 
   @[simp] lemma val_pc_lo (pc : ℕ) : (pc_lo pc).val = pc % 65536 := rfl

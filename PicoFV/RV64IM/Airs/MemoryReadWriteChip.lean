@@ -16,10 +16,11 @@ set_option linter.unusedVariables false
 # MemoryReadWriteChip (64-bit)
 
 Lean formalisation of `MemoryChipCols` / `MemoryChipValueCols` from
-`vm/src/chips/chips/riscv_memory/read_write/columns.rs` at Pico v3.2.0
-(`fcfa504624657d0c417c43f1233d5d891f293ff9`). `MemoryInstructionCols`, quoted below for the
+`vm/src/chips/chips/riscv_memory/read_write/columns.rs`. `MemoryInstructionCols`, quoted below for the
 table, is formalised in `Airs/SubAirs.lean`: `MemoryUnalignedChip` has one too, and a chip's files
 may not import another chip's.
+
+Citations read at Pico v3.2.0.
 
 ```rust
 pub struct MemoryChipCols<F> {
@@ -120,8 +121,8 @@ Layout: 1 + 1 + 2 + 3 + 1 + 10 + 7 + 24 + 8 = 57 columns, the width
 -- ============================================================================
 
 /-- The number of bytes a store writes: 1, 2, 4 or 8 on a store row, 0 on any other row.
-    `width` in `MemoryReadWriteChip::eval` (`riscv_memory/read_write/constraints.rs:97-101` at
-    v3.2.0), the width it hands the `code_range` gadget. -/
+    `width` in `MemoryReadWriteChip::eval` (`riscv_memory/read_write/constraints.rs:97-101`),
+    the width it hands the `code_range` gadget. -/
 def Valid_MemoryChipValueCols.store_width
   [Field F]
   (c : Valid_MemoryChipValueCols F) (row rotation : ℕ)

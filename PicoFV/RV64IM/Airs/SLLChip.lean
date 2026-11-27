@@ -15,8 +15,9 @@ set_option linter.unusedVariables false
 # SLLChip (64-bit)
 
 Lean formalisation of `ShiftLeftCols` / `ShiftLeftValueCols` from
-`vm/src/chips/chips/alu/sll/columns.rs` at Pico v3.1.1
-(`2acc7c1828fb4ec1bed5963511bb370870c5b608`).
+`vm/src/chips/chips/alu/sll/columns.rs`.
+
+Citations read at Pico v3.2.0.
 
 ```rust
 pub struct ShiftLeftCols<F: Copy + Sized> {

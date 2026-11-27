@@ -15,42 +15,33 @@ set_option linter.unusedVariables false
 # CpuChip (64-bit)
 
 Lean formalisation of `CpuCols` and its sub-structures from
-`vm/src/chips/chips/riscv_cpu/columns.rs` at commit
-`2acc7c1828fb4ec1bed5963511bb370870c5b608` (Pico v3.1.1), which pins
-the width itself (`columns.rs:20`):
+`vm/src/chips/chips/riscv_cpu/columns.rs`, which pins the width itself
+(`riscv_cpu/columns.rs:20`):
 
 ```rust
 const _: () = assert!(NUM_CPU_COLS == 58);
 ```
 
-The v3.1.1 chip is a rewrite of the 2.x one, not a renumbering: 58
-columns instead of 132, 65 constraints instead of 218 and 17 bus
-messages instead of 36. Three groups account for most of the
-difference.
+Citations read at Pico v3.2.0.
 
-- **No committed `chunk`, and no clk decomposition.** Every message
-  that names the chunk carries the `execution_chunk` public value
-  instead, and `clk` is one free witness bounded by the row chain
-  (`columns.rs:28-38`), so `chunk`, `clk_16bit_limb` and
-  `clk_8bit_limb` are gone.
+- **No committed `chunk`, one `clk` column.** Every message that names
+  the chunk carries the `execution_chunk` public value, and `clk` is one
+  free witness bounded by the row chain (`riscv_cpu/columns.rs:28-38`).
 - **Two-limb addresses and sign-extended operands.** `Pc<T>` is
   `[T; 2]` (`vm/src/compiler/addr.rs:287`), and an instruction operand
-  is a `SignExtImm<T>` — two u16 limbs plus one sign bit — rather than
-  a four-limb `Word` (`instruction/columns.rs:41-48`). `op_a` is a
-  5-bit register index in a single column.
-- **Lite register accesses.** `MemoryAccessLiteCols` drops the
-  committed `prev_chunk`, `prev_clk` and `compare_clk`, leaving
-  `value` plus the two difference limbs (`riscv_memory/read_write/
-  columns.rs:395-415`). So the three register-access groups are 10, 6
-  and 6 columns instead of 13, 9 and 9.
+  is a `SignExtImm<T>`: two u16 limbs plus one sign bit
+  (`instruction/columns.rs:41-48`). `op_a` is a 5-bit register index in
+  a single column.
+- **Lite register accesses.** `MemoryAccessLiteCols` holds `value` plus
+  the two difference limbs, with no committed `prev_clk`
+  (`riscv_memory/read_write/columns.rs:399-419`). The three
+  register-access groups are 10, 6 and 6 columns.
 
-The `opcode_specific` union is gone: the branch bits `a_gt_b` /
-`a_lt_b` and the jump witness `jalr_lsb` are plain columns, `a_eq_b`
-is derived as `1 - a_lt_b - a_gt_b`, and the Ecall chip owns what the
-2.x `EcallCols` held. The per-variant memory selectors moved to the
-memory chip, leaving `is_memory` and `is_store`; `is_alu` is derived
-as the one-hot complement of the other class selectors, and `branching`
-is replaced by `is_last`.
+The branch bits `a_gt_b` / `a_lt_b` and the jump witness `jalr_lsb` are
+plain columns, and `a_eq_b` is derived as `1 - a_lt_b - a_gt_b`. The
+per-variant memory selectors live in the memory chip, leaving
+`is_memory` and `is_store`; `is_alu` is derived as the one-hot
+complement of the other class selectors.
 
 ```rust
 pub struct SignExtImm<T> { pub limb: [T; 2], pub sign: T }          //  3
@@ -115,7 +106,7 @@ This matches `Extraction/CpuChip.lean`, which uses every index in
 The three register accesses use the lite layouts `MemoryReadWriteLiteCols`
 (10 columns) and `MemoryReadLiteCols` (6), defined in `Airs/SubAirs.lean`,
 because Pico's memory chip uses the same lite
-layout (`riscv_memory/read_write/columns.rs:73`).
+layout (`riscv_memory/read_write/columns.rs:72-74`).
 -/
 
 -- ============================================================================
@@ -142,7 +133,7 @@ layout (`riscv_memory/read_write/columns.rs:73`).
 --
 -- `opcode_selector/columns.rs:12-66`. `is_alu` is derived, not committed:
 -- `is_alu = is_real - (is_ecall + is_memory + Σbranch + is_jal + is_jalr)`.
--- The per-variant memory selectors live in the memory chip now.
+-- The per-variant memory selectors live in the memory chip.
 -- ============================================================================
 
 #define_subair "OpcodeSelectorCols" using "pico_encapsulation" where

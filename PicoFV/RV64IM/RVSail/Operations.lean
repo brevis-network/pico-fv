@@ -362,7 +362,7 @@ namespace RV64IM
       simp [Sail.writeReg, PreSail.writeReg]; congr
       rw [ExtDHashMap.insert_eq_self]; assumption
 
-    /-- Writing to `x0` leaves the state alone, whatever the value. The v3.1.1 CPU chip sends
+    /-- Writing to `x0` leaves the state alone, whatever the value. The CPU chip sends
         no ALU message on a row whose destination is `x0`, so each instruction theorem closes
         that row by cancelling the two writes rather than by comparing their values. -/
     lemma operation_list_effect_state_writeReg_x0

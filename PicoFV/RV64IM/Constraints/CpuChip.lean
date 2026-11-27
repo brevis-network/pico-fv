@@ -7,10 +7,11 @@ open Plonky3
 set_option maxHeartbeats 1_000_000_000
 
 /-!
-# CpuChip — abstract constraints & buses (RV64, Pico v3.2.0)
+# CpuChip — abstract constraints & buses (RV64)
 
-`CpuChip`'s Pico Rust source is `vm/src/chips/chips/riscv_cpu/` at
-commit `2acc7c1828fb4ec1bed5963511bb370870c5b608`, with `constraints.rs`
+Citations read at Pico v3.2.0.
+
+`CpuChip`'s Pico Rust source is `vm/src/chips/chips/riscv_cpu/`, with `constraints.rs`
 calling out to `register/`, `branch/`, `jump/`, `ecall/`,
 `public_values/` and `chunk_clk/`.
 
@@ -20,13 +21,12 @@ extracted constraints over the named columns of `Valid_CpuChip`, with a
 `Extraction/CpuChip.lean`, and restates the 17 bus messages the chip
 emits per row.
 
-The v3.1.1 chip checks much less itself than the 2.x one did (65
-constraints against 218). What it no longer does, it takes from
-elsewhere: the pc's range from the Program table, the next pc from the
-next row, the chunk's final pc from the public values. The constraints
-here are therefore mostly definitional — the operand values, the class
-selectors, the row chain — with real arithmetic only in the branch
-target, the jump return address and JALR's four-limb addition.
+The chip takes three facts from elsewhere: the pc's range from the
+Program table, the next pc from the next row, the chunk's final pc from
+the public values. The constraints here are therefore mostly
+definitional — the operand values, the class selectors, the row chain —
+with real arithmetic only in the branch target, the jump return address
+and JALR's four-limb addition.
 -/
 
 namespace CpuChip.ConstraintsAndBuses
@@ -118,7 +118,7 @@ namespace CpuChip.ConstraintsAndBuses
 
       -- ======================================================================
       -- Writes to x0 (8-11)
-      -- `register/constraints.rs:75`. A row whose destination is `x0` reads back zero, so the
+      -- `register/constraints.rs:74-76`. A row whose destination is `x0` reads back zero, so the
       -- chip pins the whole `op_a` value to zero rather than dispatching a write.
       -- ======================================================================
 
@@ -162,7 +162,7 @@ namespace CpuChip.ConstraintsAndBuses
       -- `is_real` is boolean (12)
       -- `register/constraints.rs:80-90`. The op_a register access is gated by `is_real`, and
       -- `eval_memory_access_lite` asserts its gate boolean (`machine/builder/riscv_memory.rs:137`).
-      -- Stated twice by the chip: constraint 44 is the same assertion from `constraints.rs:340`.
+      -- Stated twice by the chip: constraint 44 is the same assertion from `riscv_cpu/constraints.rs:340`.
       -- ======================================================================
 
       @[constraint_and_interaction_simplification]
@@ -218,7 +218,7 @@ namespace CpuChip.ConstraintsAndBuses
 
       -- ======================================================================
       -- The ALU dispatch multiplicity (17)
-      -- `constraints.rs:143-146`. `is_alu_not_x0 = is_alu_instruction * (1 - op_a_0)`, with the
+      -- `riscv_cpu/constraints.rs:143-146`. `is_alu_not_x0 = is_alu_instruction * (1 - op_a_0)`, with the
       -- ALU class derived as the one-hot complement
       -- `is_real - (is_beq + ... + is_bgeu + is_ecall + is_memory + is_jal + is_jalr)`
       -- (`opcode_selector/columns.rs:22-45`).
@@ -451,7 +451,7 @@ namespace CpuChip.ConstraintsAndBuses
 
       -- ======================================================================
       -- Sequential and branch-not-taken rows (37)
-      -- `constraints.rs:318-326`. One field equation `next_pc = pc + 4`, gated by
+      -- `riscv_cpu/constraints.rs:318-326`. One field equation `next_pc = pc + 4`, gated by
       -- `is_real - taken - is_jal - is_jalr - is_halt`. A pc fits in two limbs, so the addition
       -- stays inside `[0, p)` and needs no carry witness.
       -- ======================================================================
@@ -467,7 +467,7 @@ namespace CpuChip.ConstraintsAndBuses
 
       -- ======================================================================
       -- Public values (38-43)
-      -- `public_values/constraints.rs:30-50`. Row 0's pc is the chunk's start pc and the last real
+      -- `riscv_cpu/public_values/constraints.rs:30-50`. Row 0's pc is the chunk's start pc and the last real
       -- row's next pc is the chunk's final pc, each in two limbs with the third pinned to zero.
       -- ======================================================================
 
@@ -527,7 +527,7 @@ namespace CpuChip.ConstraintsAndBuses
 
       -- ======================================================================
       -- The row chain (44-51)
-      -- `constraints.rs:340-341` and `410-450`. Row 0 is real; the successor's pc and clk follow
+      -- `riscv_cpu/constraints.rs:340-341, 410-450`. Row 0 is real; the successor's pc and clk follow
       -- this row's `next_pc` and `clk + 4 + num_extra_clk`; `is_real` never comes back on, so the
       -- real rows are a physical prefix; and `is_last` is the drop in `is_real` on a transition
       -- row, or `is_real` itself on the last physical row.
@@ -607,7 +607,7 @@ namespace CpuChip.ConstraintsAndBuses
 
       -- ======================================================================
       -- Padding rows (52-64)
-      -- `constraints.rs:209-228`. Off a real row every selector that would send a message is
+      -- `riscv_cpu/constraints.rs:209-228`. Off a real row every selector that would send a message is
       -- zero, and the two immediate flags are one, so no register read is dispatched either.
       -- ======================================================================
 
@@ -808,7 +808,7 @@ namespace CpuChip.ConstraintsAndBuses
       -- entry: 1 Memory, 2 Program, 4 ALU, 5 Byte, 13 Ecall.
       --
       --   * Program (1): the instruction fetch, 26 fields, multiplicity
-      --     `is_real` (`constraints.rs:42-49`, built at `:465-480`).
+      --     `is_real` (`riscv_cpu/constraints.rs:42-49, 465-480`).
       --   * op_b register read (4): two timestamp range checks, the previous
       --     access and this one, gated by `1 - imm_b`
       --     (`register/constraints.rs:49-59`).
@@ -816,7 +816,7 @@ namespace CpuChip.ConstraintsAndBuses
       --   * op_a register access (4): the same at `clk + 3`, on every real row
       --     (`register/constraints.rs:80-90`).
       --   * memory dispatch (1): gated by `is_memory`, 17 fields.
-      --   * ALU dispatch (1): gated by `is_alu_not_x0` (`constraints.rs:147`).
+      --   * ALU dispatch (1): gated by `is_alu_not_x0` (`riscv_cpu/constraints.rs:147-153`).
       --   * ALU compare (1): one merged branch comparison for every branch
       --     row, opcode `SLT`/`SLTU + 256` (`branch/constraints.rs:98-117`).
       --   * Ecall (1): gated by `is_ecall`, 20 fields.

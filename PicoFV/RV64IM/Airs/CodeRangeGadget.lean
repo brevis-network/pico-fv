@@ -13,8 +13,9 @@ set_option linter.unusedVariables false
 /-!
 # CodeRangeGadget (64-bit)
 
-Lean formalisation of `CodeRangeCols` from `vm/src/chips/gadgets/code_range.rs` at Pico v3.2.0
-(`fcfa504624657d0c417c43f1233d5d891f293ff9`).
+Lean formalisation of `CodeRangeCols` from `vm/src/chips/gadgets/code_range.rs`.
+
+Citations read at Pico v3.2.0.
 
 ```rust
 pub struct CodeRangeCols<T> {

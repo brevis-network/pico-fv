@@ -601,7 +601,7 @@ namespace RV64IM
   section Memory
 
     -- Pico address space size. Pico's RV64 `Addr<T> = [T; 3]` representation
-    -- caps addresses at 48 bits, so we use `2^48` as the tight upper bound.
+    -- caps addresses at 48 bits, so `2^48` is the tight upper bound.
     notation "Pico_address_space_size_64" => 2 ^ 48
 
     @[simp]

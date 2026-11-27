@@ -9,8 +9,9 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # U16MSBGadget — abstract constraints & buses
 
-`U16MSBGadget`'s Pico Rust source is `vm/src/chips/gadgets/msb.rs` at
-commit `22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`. A single-column
+Citations read at Pico v3.2.0.
+
+`U16MSBGadget`'s Pico Rust source is `vm/src/chips/gadgets/msb.rs`. A single-column
 gadget that captures the most significant bit of a u16 value supplied
 by the parent context.
 
@@ -50,8 +51,8 @@ namespace U16MSBGadget
     (msb * (msb - 1) = 0)
 
   /-- The single bus entry the Pico `U16MSBGadget` contributes per
-      row: a `ByteBus` U16Range on `2 * value - msb * 65536`, gated by
-      `-is_real`. -/
+      row: a `ByteBus` U16Range on `2 * value - msb * 65536`, with
+      multiplicity `is_real`. -/
   def AbsBuses
     (is_real value msb : FKB)
   : BusRow :=

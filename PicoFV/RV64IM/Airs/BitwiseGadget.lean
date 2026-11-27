@@ -14,8 +14,9 @@ set_option linter.unusedVariables false
 # BitWiseGadget (64-bit)
 
 Lean formalisation of `BitWiseGadget` from
-`vm/src/chips/gadgets/bitwise.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
+`vm/src/chips/gadgets/bitwise.rs`.
+
+Citations read at Pico v3.2.0.
 
 ```rust
 pub struct BitWiseGadget<T> {
@@ -25,8 +26,9 @@ pub struct BitWiseGadget<T> {
 ```
 
 Stores the byte-level result of a bitwise operation (XOR/OR/AND) on a
-64-bit Word. Each byte is range-checked and validated against the byte bus
-by the parent chip.
+64-bit Word. The gadget sends one byte-table lookup per byte, which checks
+that both operand bytes are bytes and that `result[i]` is the operation applied
+to them.
 -/
 
 -- ============================================================================

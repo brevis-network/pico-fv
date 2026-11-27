@@ -15,9 +15,10 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # DivRemChip — abstract constraints & buses (RV64)
 
+Citations read at Pico v3.2.0.
+
 `DivRemChip`'s Pico Rust source is
-`vm/src/chips/chips/alu/divrem/constraints.rs` at commit
-`2acc7c1828fb4ec1bed5963511bb370870c5b608` (Pico v3.1.1).
+`vm/src/chips/chips/alu/divrem/constraints.rs`.
 
 The chip verifies `b = c · quotient + remainder` for each of the
 eight DIV/REM opcodes — `DIV`, `DIVU`, `REM`, `REMU`, `DIVW`, `REMW`,
@@ -34,8 +35,8 @@ eight DIV/REM opcodes — `DIV`, `DIVU`, `REM`, `REMU`, `DIVW`, `REMW`,
 3. **128-bit arithmetic** — two `MulGadget` instances compute the
    low/high 64 bits of `c · quotient_comp`; the 16-byte product plus
    the 8-byte sign-extended `remainder_comp` are added with carry
-   propagation (8 byte chain); the result's lower 32 bits must equal
-   `b`'s lower 32 bits, and the upper 32 must equal `b_neg · 0xFFFF`
+   propagation (an 8-limb chain); the result's lower 64 bits must equal
+   `b`, and each of its upper four limbs must equal `b_neg · 0xFFFF`
    (sign-extension of `b`) — except in the unique overflow case
    `b = INT_MIN, c = -1` where the constraint is relaxed.
 
@@ -101,12 +102,13 @@ namespace DivRemChip.ConstraintsAndBuses
       `remainder_comp` setup, embedded `MulGadget`×2, embedded
       `IsEqualWordGadget`×4 + `is_overflow`/`b_neg_not_overflow`/
       `b_not_neg_not_overflow` + overflow-case clamping,
-      `c·quotient + remainder = b` 8-byte carry chain, `a = quotient`
+      `c·quotient + remainder = b` 8-limb carry chain, `a = quotient`
       / `a = remainder`, sign-consistency, `IsZeroWordGadget` +
       division-by-zero clamps, abs-value reconstructions + embedded
       `AddGadget`×2 + `LtWordU16Gadget`, MSB consistency
-      (`U16MSBGadget`×3 in each of two gated modes), boolean checks
-      on all flags + carry bits, and the at-most-one selector. -/
+      (`U16MSBGadget` ×3 gated by `is_real_not_word`, ×4 by
+      `is_word_operation`), boolean checks on all flags + carry bits,
+      and the exactly-one selector. -/
   @[constraint_and_interaction_simplification]
   def AbsConstraints (air : Valid_DivRemChip F ExtF) (row : ℕ) : Prop :=
     -- =====================================================================
@@ -224,7 +226,7 @@ namespace DivRemChip.ConstraintsAndBuses
     (c_msb * is_signed_type - c_neg   = 0) ∧
     -- ---------------------------------------------------------------------
     -- (3) `b`, `c` from the raw register values `b_raw`, `c_raw` that
-    --     the ALU bus carries (`constraints.rs:178-195`). The low 32 bits
+    --     the ALU bus carries (`alu/divrem/constraints.rs:178-195`). The low 32 bits
     --     are equal; the upper limbs are the raw ones for 64-bit
     --     operations and `_neg · 0xFFFF` (the sign- or zero-extension of
     --     the low 32 bits) for DIVW/REMW/DIVUW/REMUW, whose registers'
@@ -568,7 +570,7 @@ namespace DivRemChip.ConstraintsAndBuses
     (is_c_0_result * (rc_3 - b_3) = 0) ∧
     -- ---------------------------------------------------------------------
     -- (14) `abs(c) = c` when `¬c_neg`; `abs(remainder) = remainder_comp`
-    --      when `¬rem_neg` (`constraints.rs:491-498`). (The negative case
+    --      when `¬rem_neg` (`alu/divrem/constraints.rs:491-498`). (The negative case
     --      is handled by the `AddGadget`s below — they verify
     --      `c + abs_c = 0` etc.)
     -- ---------------------------------------------------------------------
@@ -655,8 +657,8 @@ namespace DivRemChip.ConstraintsAndBuses
     -- (20) `LtWordU16Gadget` only enforces `bit ↔ (|rem| < max(|c|, 1))`
     --       (a consistency oracle); the chip separately pins
     --       `bit = 1` whenever the gadget fires, which is what actually
-    --       enforces `|remainder| < |c|` (`constraints.rs:595-597`;
-    --       absent in 2.x, gap DR-1).
+    --       enforces `|remainder| < |c|` (`alu/divrem/constraints.rs:595-597`;
+    --       DR-1 in `docs/rv64-bug-mapping.md`).
     -- ---------------------------------------------------------------------
     (remainder_check_multiplicity *
        (air.cols.values.remainder_lt_gadget.bit row 0 - 1) = 0) ∧
@@ -674,17 +676,15 @@ namespace DivRemChip.ConstraintsAndBuses
     U16MSBGadget.AbsConstraints is_word_operation b_msb ∧
     U16MSBGadget.AbsConstraints is_word_operation c_msb ∧
     U16MSBGadget.AbsConstraints is_word_operation r_msb ∧
-    -- `constraints.rs:635-640`: bind `quot_msb` to bit-15 of
+    -- `alu/divrem/constraints.rs:635-640`: bind `quot_msb` to bit-15 of
     -- `quotient_1` (the high u16 of the low 32-bit half), gated by
-    -- `is_word_operation`. Closes the 2.x gap DR-2, where `quot_msb`
-    -- was unconstrained.
+    -- `is_word_operation` (DR-2 in `docs/rv64-bug-mapping.md`).
     U16MSBGadget.AbsConstraints is_word_operation q_msb ∧
     -- ---------------------------------------------------------------------
-    -- (22) Boolean checks: 8 carry bits + 8 selectors + `is_overflow`,
-    --      `is_real_not_word`, `b_neg`, `b_neg_not_overflow`,
+    -- (22) Boolean checks: the 8 carry bits, then the 8 selectors,
+    --      `is_overflow`, `is_real_not_word`, `b_neg`, `b_neg_not_overflow`,
     --      `b_not_neg_not_overflow`, `rem_neg`, `c_neg`, `is_real`,
-    --      `abs_c_alu_event`, `abs_rem_alu_event` (= 18 bools),
-    --      plus 8 carry bits.
+    --      `abs_c_alu_event`, `abs_rem_alu_event` (18 flags).
     -- ---------------------------------------------------------------------
     (cy_0 * (cy_0 - 1) = 0) ∧
     (cy_1 * (cy_1 - 1) = 0) ∧
@@ -718,7 +718,7 @@ namespace DivRemChip.ConstraintsAndBuses
     (1 - (is_divu + is_remu + is_div + is_rem
           + is_divw + is_remw + is_divuw + is_remuw) = 0)
 
-  /-- `AbsConstraints` with all 11 sub-gadget `AbsConstraints` calls
+  /-- `AbsConstraints` with all 17 sub-gadget `AbsConstraints` calls
       stripped out (`MulGadget × 2`, `IsEqualWordGadget × 4`,
       `IsZeroWordGadget`, `AddGadget × 2`, `LtWordU16Gadget`,
       `U16MSBGadget × 7`).
@@ -729,7 +729,7 @@ namespace DivRemChip.ConstraintsAndBuses
       conclusions (`ALUBus.Spec`, `result ↔ word_eq`, etc.) and
       `AbsConstraints_NoGadgets` carries the chip-own algebraic facts
       (sign pairings, `quotient_comp` / `remainder_comp` setup,
-      overflow predicates, the 8-byte carry chain, `a = q/r`,
+      overflow predicates, the 8-limb carry chain, `a = q/r`,
       div-by-zero clamps, abs-value reconstructions, boolean checks,
       and the exact-one-selector constraint). -/
   def AbsConstraints_NoGadgets (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : Prop :=
@@ -894,8 +894,8 @@ namespace DivRemChip.ConstraintsAndBuses
     (abs_rem_alu_event = 1 →
       air.cols.values.rem_neg_gadget.value_0 row 0 = 0 ∧ air.cols.values.rem_neg_gadget.value_1 row 0 = 0 ∧
       air.cols.values.rem_neg_gadget.value_2 row 0 = 0 ∧ air.cols.values.rem_neg_gadget.value_3 row 0 = 0) ∧
-    -- (20) `bit = 1` pin (`constraints.rs:595-597`) — closes the LtWordU16Gadget
-    --       soundness gap (gadget only enforces `bit ↔ (a < b)`).
+    -- (20) `bit = 1` pin (`alu/divrem/constraints.rs:595-597`); the LtWordU16Gadget
+    --       alone only enforces `bit ↔ (a < b)`.
     (remainder_check_multiplicity = 1 →
       air.cols.values.remainder_lt_gadget.bit row 0 = 1) ∧
     -- (22) Boolean checks on carry bits + selectors + flags.
@@ -942,7 +942,7 @@ namespace DivRemChip.ConstraintsAndBuses
 
   /-- u16 range checks on the eight limbs of `c · quotient + remainder`,
       reconstructed from `c_times_quotient`, `remainder_comp` (sign-extended
-      by `rem_neg`) and the carry chain (`constraints.rs:423`). -/
+      by `rem_neg`) and the carry chain (`alu/divrem/constraints.rs:423`). -/
   def CarryChainBuses (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : BusRow :=
     let rc_0 := air.cols.values.remainder_comp_0 row 0
     let rc_1 := air.cols.values.remainder_comp_1 row 0
@@ -988,7 +988,7 @@ namespace DivRemChip.ConstraintsAndBuses
   /-- The two `looking_alu(ADD, 0, …)` sub-events that pin the absolute
       values: `c + abs_c = 0` when `c` is negative, and
       `remainder + abs_remainder = 0` when the remainder is negative
-      (`constraints.rs:501` and `:508`). -/
+      (`alu/divrem/constraints.rs:501, 508`). -/
   def AbsAluEventBuses (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : BusRow :=
     let c_0 := air.cols.values.c_0 row 0
     let c_1 := air.cols.values.c_1 row 0
@@ -1025,7 +1025,7 @@ namespace DivRemChip.ConstraintsAndBuses
       Memory := []
     } : BusRow)
 
-  /-- u16 range checks on `abs_c` (`constraints.rs:559`). -/
+  /-- u16 range checks on `abs_c` (`alu/divrem/constraints.rs:559`). -/
   def AbsCRangeBuses (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : BusRow :=
     let is_real := air.cols.values.is_real row 0
     ({
@@ -1041,7 +1041,7 @@ namespace DivRemChip.ConstraintsAndBuses
       Memory := []
     } : BusRow)
 
-  /-- u16 range checks on `abs_remainder` (`constraints.rs:570`). -/
+  /-- u16 range checks on `abs_remainder` (`alu/divrem/constraints.rs:570`). -/
   def AbsRemainderRangeBuses (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : BusRow :=
     let is_real := air.cols.values.is_real row 0
     ({
@@ -1058,7 +1058,7 @@ namespace DivRemChip.ConstraintsAndBuses
     } : BusRow)
 
   /-- u16 range checks on `quotient`, `remainder` and `c_times_quotient`
-      (`constraints.rs:645`, `:646` and `:652`). -/
+      (`alu/divrem/constraints.rs:645, 646, 652`). -/
   def SliceRangeBuses (air : Valid_DivRemChip FKB ExtF) (row : ℕ) : BusRow :=
     let is_real := air.cols.values.is_real row 0
     ({
@@ -1086,7 +1086,7 @@ namespace DivRemChip.ConstraintsAndBuses
       Memory := []
     } : BusRow)
 
-  /-- The chip's own `looked_alu` entry (`constraints.rs:717`): the
+  /-- The chip's own `looked_alu` entry (`alu/divrem/constraints.rs:717`): the
       selector-encoded ALU opcode, the output `a`, and the *raw* register
       operands `b_raw`, `c_raw` the CPU sent. The opcode sum is written in
       the extractor's order, so that `bus_row_equiv` closes by `dsimp`. -/
@@ -1412,14 +1412,14 @@ namespace DivRemChip.ConstraintsAndBuses
       (air.cols.values.c_times_quotient_upper.c_msb row 0)
       (air.cols.values.c_times_quotient_upper.product_msb.msb row 0)
     ++
-    -- (b) Chip-own: the carry-chain range checks (`constraints.rs:423`)
+    -- (b) Chip-own: the carry-chain range checks (`alu/divrem/constraints.rs:423`)
     --     and the two abs-value `looking_alu(ADD)` sub-events
-    --     (`constraints.rs:501`, `:508`).
+    --     (`alu/divrem/constraints.rs:501, 508`).
     CarryChainBuses air row
     ++ AbsAluEventBuses air row
     ++
-    -- (c) `AddGadget` on `c + abs_c` (`constraints.rs:552`), then the
-    --     chip-own range checks on `abs_c` (`constraints.rs:559`).
+    -- (c) `AddGadget` on `c + abs_c` (`alu/divrem/constraints.rs:552`), then the
+    --     chip-own range checks on `abs_c` (`alu/divrem/constraints.rs:559`).
     AddGadget.AbsBuses abs_c_alu_event
       (air.cols.values.c_neg_gadget.value_0 row 0)
       (air.cols.values.c_neg_gadget.value_1 row 0)
@@ -1428,8 +1428,8 @@ namespace DivRemChip.ConstraintsAndBuses
     ++ AbsCRangeBuses air row
     ++
     -- (d) `AddGadget` on `remainder_comp + abs_remainder`
-    --     (`constraints.rs:563`), then the range checks on
-    --     `abs_remainder` (`constraints.rs:570`).
+    --     (`alu/divrem/constraints.rs:563`), then the range checks on
+    --     `abs_remainder` (`alu/divrem/constraints.rs:570`).
     AddGadget.AbsBuses abs_rem_alu_event
       (air.cols.values.rem_neg_gadget.value_0 row 0)
       (air.cols.values.rem_neg_gadget.value_1 row 0)
@@ -1437,7 +1437,7 @@ namespace DivRemChip.ConstraintsAndBuses
       (air.cols.values.rem_neg_gadget.value_3 row 0)
     ++ AbsRemainderRangeBuses air row
     ++
-    -- (e) `LtWordU16Gadget` (`constraints.rs:586`).
+    -- (e) `LtWordU16Gadget` (`alu/divrem/constraints.rs:586`).
     LtWordU16Gadget.AbsBuses
       remainder_check_multiplicity
       (air.cols.values.remainder_lt_gadget.comparison_limbs_0 row 0)
@@ -1451,13 +1451,13 @@ namespace DivRemChip.ConstraintsAndBuses
     ++ U16MSBGadget.AbsBuses is_word_operation b_1 b_msb
     ++ U16MSBGadget.AbsBuses is_word_operation c_1 c_msb
     ++ U16MSBGadget.AbsBuses is_word_operation r_1 r_msb
-    -- `constraints.rs:635-640`: U16Range lookup on
+    -- `alu/divrem/constraints.rs:635-640`: U16Range lookup on
     -- `2 * q_1 - quot_msb * 65536` enforcing `quot_msb = bit-15(q_1)`.
     ++ U16MSBGadget.AbsBuses is_word_operation q_1 quot_msb
     ++
     -- (g) Chip-own: the remaining 16 slice u16 range checks
-    --     (`constraints.rs:645`, `:646`, `:652`) and the chip's own
-    --     `looked_alu` entry (`constraints.rs:717`).
+    --     (`alu/divrem/constraints.rs:645, 646, 652`) and the chip's own
+    --     `looked_alu` entry (`alu/divrem/constraints.rs:717`).
     SliceRangeBuses air row
     ++ LookedAluBuses air row
 
@@ -1643,7 +1643,7 @@ namespace DivRemChip.ConstraintsAndBuses
     let is_real := air.cols.values.is_real row 0
     let remainder_check_multiplicity := air.cols.values.remainder_check_multiplicity row 0
     [
-      -- `MulGadget` on `c · quotient_comp`, low 64 bits (`constraints.rs:254`):
+      -- `MulGadget` on `c · quotient_comp`, low 64 bits (`alu/divrem/constraints.rs:254`):
       -- 8 `U16ToU8GadgetSafe` entries on `quotient_comp` and `c`, 2 MSB byte
       -- lookups, the (unconditioned, gate 0) product-MSB entry, 16 carry
       -- range checks and 8 product byte-pair checks.
@@ -1682,7 +1682,7 @@ namespace DivRemChip.ConstraintsAndBuses
       (is_real, [5, 7, 0, 0, lo_product_10, lo_product_11]),
       (is_real, [5, 7, 0, 0, lo_product_12, lo_product_13]),
       (is_real, [5, 7, 0, 0, lo_product_14, lo_product_15]),
-      -- `MulGadget` on `c · quotient_comp`, high 64 bits (`constraints.rs:273`),
+      -- `MulGadget` on `c · quotient_comp`, high 64 bits (`alu/divrem/constraints.rs:273`),
       -- gated by `is_real_not_word`.
       (is_real_not_word, [5, 7, 0, 0, hi_b_low_0, ((quotient_comp_0 - hi_b_low_0) * 2122383361)]),
       (is_real_not_word, [5, 7, 0, 0, hi_b_low_1, ((quotient_comp_1 - hi_b_low_1) * 2122383361)]),
@@ -1720,7 +1720,7 @@ namespace DivRemChip.ConstraintsAndBuses
       (is_real_not_word, [5, 7, 0, 0, hi_product_12, hi_product_13]),
       (is_real_not_word, [5, 7, 0, 0, hi_product_14, hi_product_15]),
       -- u16 range checks on the `c · quotient + remainder` carry chain
-      -- (`constraints.rs:423`).
+      -- (`alu/divrem/constraints.rs:423`).
       (is_real, [5, 8, ((c_times_quotient_0 + remainder_comp_0) - (carry_0 * 65536)), 0, 0, 0]),
       (is_real, [5, 8, (((c_times_quotient_1 + remainder_comp_1) - (carry_1 * 65536)) + carry_0), 0, 0, 0]),
       (is_real, [5, 8, (((c_times_quotient_2 + remainder_comp_2) - (carry_2 * 65536)) + carry_1), 0, 0, 0]),
@@ -1731,54 +1731,54 @@ namespace DivRemChip.ConstraintsAndBuses
       (is_real, [5, 8, (((c_times_quotient_7 + (rem_neg * 65535)) - (carry_7 * 65536)) + carry_6), 0, 0, 0]),
       -- The two `looking_alu(ADD, 0, …)` sub-events that define `abs_c` and
       -- `abs_remainder` by `c + abs_c = 0` / `remainder + abs_remainder = 0`
-      -- (`constraints.rs:501` and `:508`).
+      -- (`alu/divrem/constraints.rs:501, 508`).
       (abs_c_alu_event, [4, 0, 0, 0, 0, 0, c_0, c_1, c_2, c_3, abs_c_0, abs_c_1, abs_c_2, abs_c_3]),
       (abs_rem_alu_event, [4, 0, 0, 0, 0, 0, remainder_0, remainder_1, remainder_2, remainder_3, abs_remainder_0, abs_remainder_1, abs_remainder_2, abs_remainder_3]),
-      -- `AddGadget` on `c + abs_c` (`constraints.rs:552`).
+      -- `AddGadget` on `c + abs_c` (`alu/divrem/constraints.rs:552`).
       (abs_c_alu_event, [5, 8, c_neg_val_0, 0, 0, 0]),
       (abs_c_alu_event, [5, 8, c_neg_val_1, 0, 0, 0]),
       (abs_c_alu_event, [5, 8, c_neg_val_2, 0, 0, 0]),
       (abs_c_alu_event, [5, 8, c_neg_val_3, 0, 0, 0]),
-      -- u16 range checks on `abs_c` (`constraints.rs:559`).
+      -- u16 range checks on `abs_c` (`alu/divrem/constraints.rs:559`).
       (is_real, [5, 8, abs_c_0, 0, 0, 0]),
       (is_real, [5, 8, abs_c_1, 0, 0, 0]),
       (is_real, [5, 8, abs_c_2, 0, 0, 0]),
       (is_real, [5, 8, abs_c_3, 0, 0, 0]),
-      -- `AddGadget` on `remainder_comp + abs_remainder` (`constraints.rs:563`).
+      -- `AddGadget` on `remainder_comp + abs_remainder` (`alu/divrem/constraints.rs:563`).
       (abs_rem_alu_event, [5, 8, rem_neg_val_0, 0, 0, 0]),
       (abs_rem_alu_event, [5, 8, rem_neg_val_1, 0, 0, 0]),
       (abs_rem_alu_event, [5, 8, rem_neg_val_2, 0, 0, 0]),
       (abs_rem_alu_event, [5, 8, rem_neg_val_3, 0, 0, 0]),
-      -- u16 range checks on `abs_remainder` (`constraints.rs:570`).
+      -- u16 range checks on `abs_remainder` (`alu/divrem/constraints.rs:570`).
       (is_real, [5, 8, abs_remainder_0, 0, 0, 0]),
       (is_real, [5, 8, abs_remainder_1, 0, 0, 0]),
       (is_real, [5, 8, abs_remainder_2, 0, 0, 0]),
       (is_real, [5, 8, abs_remainder_3, 0, 0, 0]),
       -- `LtWordU16Gadget` on `abs_remainder < max(abs_c, 1)`
-      -- (`constraints.rs:586`).
+      -- (`alu/divrem/constraints.rs:586`).
       (remainder_check_multiplicity, [5, 8, ((lt_comparison_limbs_0 - lt_comparison_limbs_1) + (lt_bit * 65536)), 0, 0, 0]),
       -- `U16MSBGadget` on the top limbs of `b`, `c`, `remainder`, for 64-bit
-      -- operations (`constraints.rs:610`).
+      -- operations (`alu/divrem/constraints.rs:610`).
       (is_real_not_word, [5, 8, ((2 * b_3) - (b_msb * 65536)), 0, 0, 0]),
       (is_real_not_word, [5, 8, ((2 * c_3) - (c_msb * 65536)), 0, 0, 0]),
       (is_real_not_word, [5, 8, ((2 * remainder_3) - (rem_msb * 65536)), 0, 0, 0]),
       -- `U16MSBGadget` on limb 1 of `b`, `c`, `remainder` and `quotient`, for
-      -- word operations (`constraints.rs:626` and `:635`).
+      -- word operations (`alu/divrem/constraints.rs:626, 635`).
       ((((is_divw + is_remw) + is_divuw) + is_remuw), [5, 8, ((2 * b_1) - (b_msb * 65536)), 0, 0, 0]),
       ((((is_divw + is_remw) + is_divuw) + is_remuw), [5, 8, ((2 * c_1) - (c_msb * 65536)), 0, 0, 0]),
       ((((is_divw + is_remw) + is_divuw) + is_remuw), [5, 8, ((2 * remainder_1) - (rem_msb * 65536)), 0, 0, 0]),
       ((((is_divw + is_remw) + is_divuw) + is_remuw), [5, 8, ((2 * quotient_1) - (quot_msb * 65536)), 0, 0, 0]),
-      -- u16 range checks on `quotient` (`constraints.rs:645`).
+      -- u16 range checks on `quotient` (`alu/divrem/constraints.rs:645`).
       (is_real, [5, 8, quotient_0, 0, 0, 0]),
       (is_real, [5, 8, quotient_1, 0, 0, 0]),
       (is_real, [5, 8, quotient_2, 0, 0, 0]),
       (is_real, [5, 8, quotient_3, 0, 0, 0]),
-      -- u16 range checks on `remainder` (`constraints.rs:646`).
+      -- u16 range checks on `remainder` (`alu/divrem/constraints.rs:646`).
       (is_real, [5, 8, remainder_0, 0, 0, 0]),
       (is_real, [5, 8, remainder_1, 0, 0, 0]),
       (is_real, [5, 8, remainder_2, 0, 0, 0]),
       (is_real, [5, 8, remainder_3, 0, 0, 0]),
-      -- u16 range checks on `c_times_quotient` (`constraints.rs:652`).
+      -- u16 range checks on `c_times_quotient` (`alu/divrem/constraints.rs:652`).
       (is_real, [5, 8, c_times_quotient_0, 0, 0, 0]),
       (is_real, [5, 8, c_times_quotient_1, 0, 0, 0]),
       (is_real, [5, 8, c_times_quotient_2, 0, 0, 0]),
@@ -1788,7 +1788,7 @@ namespace DivRemChip.ConstraintsAndBuses
       (is_real, [5, 8, c_times_quotient_6, 0, 0, 0]),
       (is_real, [5, 8, c_times_quotient_7, 0, 0, 0]),
       -- The chip's own `looked_alu` entry, with the selector-encoded opcode and
-      -- the *raw* register operands `b_raw`, `c_raw` (`constraints.rs:717`).
+      -- the *raw* register operands `b_raw`, `c_raw` (`alu/divrem/constraints.rs:717`).
       (-(is_real), [4, ((((((((is_divu * 35) + (is_remu * 37)) + (is_div * 34)) + (is_rem * 36)) + (is_divw * 49)) + (is_remw * 51)) + (is_divuw * 50)) + (is_remuw * 52)), a_0, a_1, a_2, a_3, b_raw_0, b_raw_1, b_raw_2, b_raw_3, c_raw_0, c_raw_1, c_raw_2, c_raw_3])
     ]
 
@@ -1802,10 +1802,10 @@ namespace DivRemChip.ConstraintsAndBuses
   /-- `Extraction.allHold` ↔ `constrain_interactions ∧ AbsConstraints`.
       For `MulChip` (5 selectors, 51 constraints) the analogous lemma
       closes by a single `simp` invocation. For `DivRemChip` (8
-      selectors, 337 extracted constraints, 2 nested `MulGadget`s +
-      `LtWordU16Gadget` + 2 `AddGadget`s + `IsZeroWordGadget` + 2
+      selectors, 348 extracted constraints, 2 nested `MulGadget`s +
+      `LtWordU16Gadget` + 2 `AddGadget`s + `IsZeroWordGadget` + 4
       `IsEqualWordGadget`s + 7 `U16MSBGadget`s) it is a heavyweight
-      derivation — the same simp set, but expected to be much slower.
+      derivation — the same simp set, and much slower.
       Drives `allHold_abs` (and via it, the chip-level `spec`s). -/
   @[constraint_and_interaction_simplification]
   def allHold_simplified
@@ -1894,7 +1894,7 @@ namespace DivRemChip.Interpretations
   /-- All eight DIV/REM selectors are boolean (each ∈ `{0, 1}`),
       and exactly one is `1` (their sum equals `1`). The boolean
       checks plus the exact-one constraint come from `AbsConstraints`
-      (Section 20 and 21). -/
+      (sections (22) and (23)). -/
   lemma selector_breakdown
     [Field F] [Field ExtF]
     (air : Valid_DivRemChip F ExtF) (row : ℕ)
@@ -1913,8 +1913,8 @@ namespace DivRemChip.Interpretations
      air.cols.values.is_divw  row 0 + air.cols.values.is_remw  row 0 +
      air.cols.values.is_divuw row 0 + air.cols.values.is_remuw row 0 = 1)
   := by
-    -- The 8 boolean checks are conjuncts inside `AbsConstraints` (Section
-    -- 20). The sum-equals-one constraint is Section 21.
+    -- The 8 boolean checks are conjuncts inside `AbsConstraints` (section
+    -- (22)). The sum-equals-one constraint is section (23).
     simp [AbsConstraints, sub_eq_zero] at h_constraints
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
       (clear *- h_constraints; aesop)
@@ -2004,7 +2004,7 @@ namespace DivRemChip.Interpretations
 
   set_option linter.constructorNameAsVariable false in
   /-- `b` and `c` in terms of the raw operands `b_raw`, `c_raw` that the ALU
-      bus carries (`AbsConstraints` (3), `constraints.rs:178-195`): the low
+      bus carries (`AbsConstraints` (3), `alu/divrem/constraints.rs:178-195`): the low
       32 bits are equal; the upper limbs are the raw ones for 64-bit
       operations and `b_neg · 0xFFFF` / `c_neg · 0xFFFF` for word
       operations. -/
@@ -2122,8 +2122,7 @@ namespace DivRemChip.Interpretations
   -- =====================================================================
   -- Preprocessing lemma: bus split + gadget-spec application.
   --
-  -- Every chip-level `spec_*` proof used to start with the same
-  -- boilerplate:
+  -- Every chip-level `spec_*` proof needs the same two steps:
   --   (i)  peel `bus_row_ext_asm` / `bus_row_wf_asm` over the 18-way
   --        `++` chain in `AbsBuses` into one `(ext_asm, wf_asm)` pair
   --        per sub-gadget plus a residual on `ChipExtraBuses`;
@@ -2133,7 +2132,7 @@ namespace DivRemChip.Interpretations
   -- `gadget_specs_pack` does both at once and returns:
   --   * chip-only `bus_row_ext_asm (ChipExtraBuses air row)`,
   --   * chip-only `bus_row_wf_asm  (ChipExtraBuses air row)`,
-  --   * `AbsConstraints_NoGadgets air row` (the 107 non-gadget
+  --   * `AbsConstraints_NoGadgets air row` (the non-gadget
   --     conjuncts of `AbsConstraints`),
   --   * the gadget specs as *conditional* facts (each curried on its
   --     parametric gate + any external range hypothesis).
@@ -2144,8 +2143,6 @@ namespace DivRemChip.Interpretations
   -- …): the caller substitutes selector-specific values (`is_real = 1`,
   -- `is_div + is_rem = 1`, etc.) before `simp [*] at gadget_specs`,
   -- which collapses the antecedents and exposes direct gadget conclusions.
-  --
-  -- See [memory] gadget_specs_pack_pattern.md for the call-site idiom.
   -- =====================================================================
 
   set_option linter.constructorNameAsVariable false in
@@ -2163,8 +2160,7 @@ namespace DivRemChip.Interpretations
       `AbsConstraints` parameters survive only inside the thunks.
 
       Used by `DivRemChip.Spec.spec_DIV_REM` (and the other spec_*
-      lemmas) as the single boilerplate-elimination step — see
-      [memory] gadget_specs_pack_pattern.md. -/
+      lemmas) as the single boilerplate-elimination step. -/
   lemma gadget_specs_pack
     [Field ExtF]
     (air : Valid_DivRemChip FKB ExtF) (row : ℕ)
@@ -2178,7 +2174,7 @@ namespace DivRemChip.Interpretations
     --     `@[constraint_and_interaction_simplification]` simp set).
     bus_row_ext_asm (ChipExtraBuses air row) ∧
     bus_row_wf_asm  (ChipExtraBuses air row) ∧
-    -- (2) Non-gadget AbsConstraints conjuncts (107 of them — sign
+    -- (2) Non-gadget AbsConstraints conjuncts (sign
     --     pairings, `*_comp` setup, overflow predicates, the carry
     --     chain, `a = q/r`, sign consistency, div-by-zero clamps,
     --     abs-value reconstructions, `max_abs_c_or_1` setup, the abs
@@ -2367,7 +2363,7 @@ namespace DivRemChip.Interpretations
       let value := air.cols.values.remainder_1 row 0
       (msb = 0 ∧ value.val < 32768) ∨ (msb = 1 ∧ 32768 ≤ value.val)) ∧
     -- (20) `U16MSBGadget` thunk on `quot_msb` for `q_1` (word-variant mode).
-    --      (`constraints.rs:635-640`) so `quot_msb` is tied to bit-15
+    --      (`alu/divrem/constraints.rs:635-640`) so `quot_msb` is tied to bit-15
     --      of `quotient_1` rather than being a free witness.
     (air.cols.values.is_divw  row 0 + air.cols.values.is_remw  row 0
        + air.cols.values.is_divuw row 0 + air.cols.values.is_remuw row 0 = 1 →
@@ -2389,10 +2385,10 @@ namespace DivRemChip.Interpretations
       simp [AbsConstraints_NoGadgets]
       simp [sub_eq_zero] at h_constraints ⊢
       -- Pull out every conjunct of `AbsConstraints` (in section order)
-      -- as a named hypothesis. The 11 gadget AbsConstraints calls
+      -- as a named hypothesis. The 17 gadget AbsConstraints calls
       -- (`h_mul_lo`, `h_mul_hi`, `h_overflow_b_64`, `h_overflow_c_64`,
       -- `h_overflow_b_32`, `h_overflow_c_32`, `h_iszero_c`, `h_add_c`,
-      -- `h_add_rem`, `h_lt`, `h_msb_b3..rem1`) survive as single
+      -- `h_add_rem`, `h_lt`, `h_msb_b3` to `h_msb_q1`) survive as single
       -- hypotheses; everything else is an inline scalar equation.
       obtain
         ⟨ eq_is_real_not_word,
@@ -2449,7 +2445,7 @@ namespace DivRemChip.Interpretations
           h_lt,
           -- (20) Enforcing lt
           h_is_lt,
-          -- (21) U16MSBGadget × 6
+          -- (21) U16MSBGadget × 7
           h_msb_b3, h_msb_c3, h_msb_rem3,
           h_msb_b1, h_msb_c1, h_msb_rem1, h_msb_q1,
           -- (22) Boolean checks (8 selectors + 10 flags + 8 carries)

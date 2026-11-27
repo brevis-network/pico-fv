@@ -15,8 +15,9 @@ set_option linter.unusedVariables false
 # LtChip (64-bit)
 
 Lean formalisation of `LtCols` / `LtValueCols` from
-`vm/src/chips/chips/alu/lt/columns.rs` at Pico v3.1.1
-(`2acc7c1828fb4ec1bed5963511bb370870c5b608`).
+`vm/src/chips/chips/alu/lt/columns.rs`.
+
+Citations read at Pico v3.2.0.
 
 ```rust
 pub struct LtCols<F: Copy> {

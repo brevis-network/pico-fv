@@ -9,8 +9,9 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # SubGadget — abstract constraints & buses
 
-`SubGadget`'s Pico Rust source is `vm/src/chips/gadgets/sub.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`. Per-limb subtraction with
+Citations read at Pico v3.2.0.
+
+`SubGadget`'s Pico Rust source is `vm/src/chips/gadgets/sub.rs`. Per-limb subtraction with
 borrow is encoded as 4 borrow-boolean checks and 4 u16 range checks on
 the result limbs.
 
@@ -54,8 +55,8 @@ namespace SubGadget
 
   /-- The bus entries the Pico `SubGadget` contributes per row. Same
       4-entry U16Range layout as `AddGadget.AbsBuses` (the gadget's only
-      bus emissions are u16 range checks on `value_0..3`, gated by
-      `-is_real`). -/
+      bus emissions are u16 range checks on `value_0..3`, with
+      multiplicity `is_real`). -/
   def AbsBuses
     (is_real value_0 value_1 value_2 value_3 : FKB)
   : BusRow :=

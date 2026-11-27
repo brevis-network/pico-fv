@@ -14,8 +14,9 @@ set_option linter.unusedVariables false
 # U16ToU8Gadget (Unsafe variant, 64-bit)
 
 Lean formalisation of `U16ToU8Gadget::eval_u16_to_u8_unsafe` from
-`vm/src/chips/gadgets/u16_to_u8.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
+`vm/src/chips/gadgets/u16_to_u8.rs`.
+
+Citations read at Pico v3.2.0.
 
 ```rust
 pub struct U16ToU8Gadget<T> {
@@ -23,7 +24,7 @@ pub struct U16ToU8Gadget<T> {
 }
 
 impl<F: Field> U16ToU8Gadget<F> {
-    pub fn eval_u16_to_u8_unsafe<CB>(builder, a, cols) -> [CB::Expr; WORD_SIZE]
+    pub fn eval_u16_to_u8_unsafe<CB>(builder, a, cols) -> [CB::Expr; WORD_BYTE_SIZE]
 }
 ```
 
@@ -43,7 +44,7 @@ interactions).
 
 -- ============================================================================
 -- U16ToU8Gadget — shared 4-column struct (used by both variants and embedded
--- in BitWiseU16Gadget / MulGadget / EcallCols).
+-- in BitWiseU16Gadget / MulGadget / MemoryUnalignedChip).
 -- ============================================================================
 
 #define_subair "U16ToU8Gadget" using "pico_encapsulation" where

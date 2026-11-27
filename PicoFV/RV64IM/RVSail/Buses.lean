@@ -8,43 +8,38 @@ set_option maxHeartbeats 1_000_000_000
 
 /-! # Bus contracts
 
-    The Pico v3.1.1 `CpuChip` sends 17 messages per row (`riscv_cpu/constraints.rs`, extracted
+    Citations read at Pico v3.2.0.
+
+    The `CpuChip` sends 17 messages per row (`riscv_cpu/constraints.rs`, extracted
     in `Extraction/CpuChip.lean`). This file states what the CPU chip may assume about the
     messages other tables answer, and what it must guarantee about the ones it sends, for the
-    messages its row carries. It also holds the v3.2.0 code-range contract between the rows that
+    messages its row carries. It also holds the code-range contract between the rows that
     write guest memory (store rows of the two memory chips, and precompile rows) and the Program
     table, which the CPU chip never sends. Every chip's row is this file's `BusRow`.
 
     | message | tag (`LookupType`) | fields | contract |
     |---------|-----|----|----------|
     | Program (instruction fetch) | 2 (Program) | 26 | `ProgramBusEntry`, this file |
-    | register read / write | 1 (Memory) | 9 | `StateBusEntry`, this file, 2.x shape |
+    | register read / write | 1 (Memory) | 9 | `StateBusEntry`, this file |
     | memory dispatch | 1 (Memory) | 17 | `MemoryBusEntry`, this file |
     | ALU dispatch, ALU compare | 4 (Alu) | 13 | `ALUBusEntry`, this file |
-    | byte range checks | 5 (Byte) | 5 | `ByteBusEntry`, this file, 2.x shape |
-    | Ecall | 13 (Ecall) | 20 | none: ignored, as tag 8 was in 2.x |
+    | byte range checks | 5 (Byte) | 5 | `ByteBusEntry`, this file |
+    | Ecall | 13 (Ecall) | 20 | none: ignored |
     | code range | 2 (Program) | 4 | `CodeRangeBusEntry`, this file |
 
     The CPU chip does not send the code-range message: a store row of either memory chip, and a
     precompile row for what it writes, does, through the `code_range` gadget
     (`gadgets/code_range.rs:1-11`, `Spec/CodeRangeGadget.lean`), and the Program table answers it. It
     shares the Program tag with the instruction fetch and is told apart by its length, 4 against
-    26 (`riscv_program/constraints.rs:55-57` at v3.2.0).
+    26 (`riscv_program/constraints.rs:55-57`).
 
-    The register-access message keeps its 2.x shape `[chunk, clk, addr(3), value(4)]`
-    (`machine/builder/riscv_memory.rs:174-208`), so its contract is the 2.x one: a value read
-    from the register file has four 16-bit pieces. The ALU contract is reused as well: it
-    covers the two comparison opcodes 264 and 265 (`SLT` / `SLTU` + 256) that the CPU sends
-    for every branch.
+    The register-access message is `[chunk, clk, addr(3), value(4)]`
+    (`machine/builder/riscv_memory.rs:174-208`), and its contract is that a value read from
+    the register file has four 16-bit pieces. The ALU contract also covers the two comparison
+    opcodes 264 and 265 (`SLT` / `SLTU` + 256) that the CPU sends for every branch.
 
-    Pico line numbers in this file are at v3.1.1 (`2acc7c1828fb`), except in `MemoryBus.Spec`,
-    the memory chips' citations in `MemoryBusEntry` and the code-range section, which are at
-    v3.2.0 (`fcfa50462465`).
-    From v3.1.1 to v3.1.6, and to v3.2.0, the CPU chip's constraint files are unchanged; its
-    trace generation (`riscv_cpu/event.rs`, `traces.rs`) changed, as did the Program chip's and
-    `MemoryReadWriteChip`'s columns, constraints and trace generation. Since v3.1.2 the memory
-    dispatch has a second receiver, `MemoryUnalignedChip`, so `MemoryBus.Spec` states only what
-    both receivers prove. -/
+    The memory dispatch has two receivers, `MemoryReadWriteChip` and `MemoryUnalignedChip`, so
+    `MemoryBus.Spec` states only what both receivers prove. -/
 
 namespace RV64IM_Interactions
 
@@ -80,7 +75,7 @@ namespace RV64IM_Interactions
     rfl := by intro op; cases op <;> rfl
     eq_of_beq := by intro op₁ op₂; cases op₁ <;> cases op₂ <;> simp <;> rfl
 
-  /-! The register-access, ALU and byte contracts, unchanged in shape since 2.x. -/
+  /-! The register-access, ALU and byte contracts. -/
 
   section SharedBuses
 
@@ -93,7 +88,7 @@ namespace RV64IM_Interactions
       /-- ALU bus entry — payload size 13.
 
           Layout: `[ALU_opcode, a[0..3], b[0..3], c[0..3]]`. Each operand limb
-          is a u16 (vs u8 in RV32). -/
+          is a u16. -/
       structure ALUBusEntry where
         multiplicity : F
         ALU_opcode : F
@@ -143,7 +138,7 @@ namespace RV64IM_Interactions
           - `BitwiseChip` (2, 3, 4): byte-bus AND/OR/XOR lookups require
             `x_2 < 256 ∧ x_3 < 256` on the operand bytes after the
             u16→u8 split, giving full u16 bounds.
-          - `MulChip` / `MulwChip` (30..33, 48): `MulGadget` emits
+          - `MulChip` (30..33, 48): `MulGadget` emits
             `[byte_op = 7] (low_byte, (limb − low_byte)·inv(256))` pairs
             for each operand limb. -/
       def ALUBus.operandsInternal (ALU_opcode : FKB) : Prop :=
@@ -303,12 +298,10 @@ namespace RV64IM_Interactions
 
     section ByteBus
 
-      /-- Byte bus entry — unchanged from RV32 (5-field payload).
+      /-- Byte bus entry — payload size 5: `[byte_opcode, x_0, x_1, x_2, x_3]`.
 
-          The byte chip in RV64 inherits the RV32 opcode set; the chip's
-          internal representation still works on bytes since u16 limbs are
-          decomposed when the bitwise / comparison gadgets are dispatched.
-                                                                              -/
+          The byte chip works on bytes: u16 limbs are decomposed when the
+          bitwise / comparison gadgets are dispatched. -/
       structure ByteBusEntry where
         multiplicity : F
         byte_opcode : F
@@ -333,9 +326,8 @@ namespace RV64IM_Interactions
 
       /-- Byte bus pure specification.
 
-          The RV64 byte chip reuses the RV32 opcodes 0..8 verbatim
-          (AND/OR/XOR/SLL/ShrCarry/LTU/MSB/U8Range/U16Range), and adds a
-          new variant:
+          The opcodes are `ByteOpcode`'s 0..8
+          (AND/OR/XOR/SLL/ShrCarry/LTU/MSB/U8Range/U16Range) and 9:
 
           * `9 = BitRange` — verifies that the value `x_0` fits in `x_2`
             bits, i.e. `x_0 < 2^x_2`. The chip emits
@@ -387,14 +379,12 @@ namespace RV64IM_Interactions
 
       /-- State bus entry — payload size 9.
 
-          Layout (from `Extraction/CpuChip.lean:462-463` at the tag `pico-v3-before-cpu`, 2.x):
+          Layout (`machine/builder/riscv_memory.rs:174-208`):
           `[chunk, clk, ptr_0, ptr_1, ptr_2, x_0, x_1, x_2, x_3]`.
 
-          Differences vs RV32 (7-field payload):
-
-          * `ptr` widens from one field element to 3 u16 limbs (48-bit
-            address space). For register accesses only `ptr_0` is non-zero.
-          * The value `x_0..x_3` are u16 limbs (vs u8 limbs in RV32).        -/
+          * `ptr` is 3 u16 limbs. For register accesses only `ptr_0` is
+            non-zero.
+          * The value `x_0..x_3` are u16 limbs. -/
       structure StateBusEntry where
         multiplicity : F
         chunk : F
@@ -535,14 +525,15 @@ namespace RV64IM_Interactions
     /-- What the Program table delivers: the message is the table row Pico builds for some
         instruction at some address `pc`.
 
-        Pico builds the table at keygen (`riscv_program/traces.rs:78-153`): row `i` holds the
-        address `pc_base + 4 i`, with `pc_base` 4-aligned (`traces.rs:83-87`) and every address
-        below `0x7800_0000` (`traces.rs:107-110`), its two 16-bit pieces, the decoded
-        instruction and `pc_carry = [pc[0] >= 0xFFFC]` (`traces.rs:121-128`). A trap
-        instruction gets a copy of row 0 instead (`traces.rs:116-120`) and padding repeats row
-        0 (`traces.rs:140-150`), so every row is of this form. The table is preprocessed, and
-        the CPU sends with multiplicity `is_real`, so on a real row the whole message equals
-        one such row (`riscv_cpu/constraints.rs:42-75`). -/
+        Pico builds the table at keygen (`riscv_program/traces.rs:81-161`): row `i` holds the
+        address `pc_base + 4 i`, with `pc_base` 4-aligned (`riscv_program/traces.rs:86-90`)
+        and every address below `0x7800_0000` (`riscv_program/traces.rs:110-113`), its two
+        16-bit pieces, the decoded instruction and `pc_carry = [pc[0] >= 0xFFFC]`
+        (`riscv_program/traces.rs:124-131`). A trap instruction gets a copy of row 0 instead
+        (`riscv_program/traces.rs:114-123`) and padding repeats row 0
+        (`riscv_program/traces.rs:148-158`), so every row is of this form. The table is
+        preprocessed, and the CPU sends with multiplicity `is_real`, so on a real row the whole
+        message equals one such row (`riscv_cpu/constraints.rs:42-75`). -/
     def ProgramBusEntry.operand_properties (entry : ProgramBusEntry FKB) : Prop :=
       ∃ instruction pc data props,
         pc % 4 = 0 ∧ pc < Transpiler.code_address_bound ∧
@@ -612,8 +603,7 @@ namespace RV64IM_Interactions
         shapes share an opcode (an ALU operation with a register or an immediate third operand,
         and opcode 0) the immediate flags tell them apart, except `LUI` and `AUIPC`: they give
         rows of the same shape, so opcode 0 with both flags is one of the two, each with its
-        operand shape. `False` for an opcode the decoder never produces. Against 2.x: there is
-        no opcode 27 (`AUIPC`), and opcode 28 is `ECALL`. -/
+        operand shape. `False` for an opcode the decoder never produces. -/
     def ProgramBusEntry.decoded_from (entry : ProgramBusEntry FKB) (instr : instruction)
         (pc : ℕ) : ℕ → Prop
       -- ALU
@@ -931,7 +921,7 @@ namespace RV64IM_Interactions
 
     /-- The two opcode fields are equal, and the opcode is one the decoder produces: 0 to 25,
         28, 30 to 37, or 40 to 52. There is no 26, 27, 29, 38 or 39; in particular no row has
-        the `AUIPC` opcode 27, which Pico v3.1.1 no longer emits. -/
+        the `AUIPC` opcode 27: the decoder gives `AUIPC` an opcode-0 row. -/
     lemma ProgramBusEntry.inversion_opcode_bounds
       { entry : ProgramBusEntry FKB }
       (h_trans : .some ⟨ data, props ⟩ =
@@ -1071,8 +1061,8 @@ namespace RV64IM_Interactions
 
         Layout of the `CpuChip` send (`riscv_cpu/constraints.rs:117-133`):
         `[opcode, a(4), b(4), c(4), op_a_0, is_memory, chunk, clk]`. The access width is
-        no longer a selector: each memory chip derives it from the opcode, through the one-hot
-        flags of `eval_instruction_flags` (v3.2.0: `riscv_memory/read_write/constraints.rs:165-210`,
+        not in the message: each memory chip derives it from the opcode, through the one-hot
+        flags of `eval_instruction_flags` (`riscv_memory/read_write/constraints.rs:165-210`,
         called by the unaligned chip at `riscv_memory/unaligned/constraints.rs:44-45`). `a` is
         the value of register `a` after the row: the loaded value for a load, the stored value
         for a store. -/
@@ -1132,9 +1122,9 @@ namespace RV64IM_Interactions
 
     /-- What the memory chips guarantee, which the CPU chip assumes when it sends.
 
-        Two chips receive the memory dispatch at the pin, `MemoryReadWriteChip` and, since
-        v3.1.2, `MemoryUnalignedChip`; either may take any load or store, so this states only
-        what both prove. Lines below are in `vm/src/chips/chips/riscv_memory/` at v3.2.0:
+        Two chips receive the memory dispatch, `MemoryReadWriteChip` and
+        `MemoryUnalignedChip`; either may take any load or store, so this states only
+        what both prove. Lines below are in `vm/src/chips/chips/riscv_memory/`:
         `rw` is `read_write/constraints.rs`, `un` is `unaligned/constraints.rs`. Both receive
         the same 17-field message (`rw:49-84`, `un:44-63`).
 
@@ -1235,18 +1225,20 @@ namespace RV64IM_Interactions
         store row of either memory chip sends it with multiplicity `is_store`, and every
         precompile chip sends it for what its event writes (`code_range.rs:1-11`,
         `CodeRangeCols::eval`, the `looking` call); the Program table answers it with a
-        prover-chosen multiplicity (`riscv_program/constraints.rs:58-66`, `columns.rs:46-52`).
+        prover-chosen multiplicity (`riscv_program/constraints.rs:58-66`,
+        `riscv_program/columns.rs:46-52`).
 
         Multiplicities summed onto one row. Trace generation puts the record's whole count of
         code-range lookups, one per store and one per precompile event
         (`code_range.rs:71-73`), on Program row 0 (`riscv_program/columns.rs:48-51`,
-        `traces.rs:178-180`). With `N` such lookups in a chunk, the table answers once at
-        multiplicity `-N`. `wf_assert_cond` holds only at `-1` (`Fundamentals/Interaction.lean`),
-        so for `N ≠ 1` a Program-chip `wf_asrt` would ask nothing of this answer, while each
-        sender assumes `CodeRangeBus.Spec` at `+1`. The two sides line up only through Pico's
-        LogUp argument, which no Lean theorem states (`SOUNDNESS.md`, A4); a composition
-        theorem has to treat a multiplicity summed onto one row. Here the promise holds whatever
-        the multiplicity, since every Program row carries the same preprocessed range. -/
+        `riscv_program/traces.rs:178-180`). With `N` such lookups in a chunk, the table answers
+        once at multiplicity `-N`. `wf_assert_cond` holds only at `-1`
+        (`Fundamentals/Interaction.lean`), so for `N ≠ 1` a Program-chip `wf_asrt` would ask
+        nothing of this answer, while each sender assumes `CodeRangeBus.Spec` at `+1`. The two
+        sides line up only through Pico's LogUp argument, which no Lean theorem states
+        (`SOUNDNESS.md`, A4); a composition theorem has to treat a multiplicity summed onto one
+        row. Here the promise holds whatever the multiplicity, since every Program row carries
+        the same preprocessed range. -/
     structure CodeRangeBusEntry where
       multiplicity : F
       code_start_0 : F
@@ -1270,11 +1262,11 @@ namespace RV64IM_Interactions
     /-- What the Program table delivers: four 16-bit pieces.
 
         The Program table answers with its preprocessed columns `code_start` and `code_end`
-        (`riscv_program/constraints.rs:58-66`, `columns.rs:36-40`). Pico fills them at keygen
-        with `limbs(value) = [value as u16, (value >> 16) as u16]` of the program's code range,
-        the same on every row (`riscv_program/traces.rs:132-136`), so each field is below
-        2^16. The message being the program's own code range is not stated here: no Lean
-        statement names that range yet. -/
+        (`riscv_program/constraints.rs:58-66`, `riscv_program/columns.rs:36-40`). Pico fills
+        them at keygen with `limbs(value) = [value as u16, (value >> 16) as u16]` of the
+        program's code range, the same on every row (`riscv_program/traces.rs:132-136`), so
+        each field is below 2^16. The message being the program's own code range is not stated
+        here: no Lean statement names that range yet. -/
     def CodeRangeBus.Spec (code_start_0 code_start_1 code_end_0 code_end_1 : FKB) : Prop :=
       code_start_0.val < 65536 ∧ code_start_1.val < 65536 ∧
       code_end_0.val < 65536 ∧ code_end_1.val < 65536
@@ -1566,9 +1558,8 @@ namespace RV64IM_Interactions
 
     /-- The register and memory operations a row's messages stand for: a pc read per Program
         message, a register read or write per register-access message, and a memory read or
-        write per memory dispatch. Same as the 2.x `bus_operations` (`RVSail/Operations.lean` at
-        `f4f9924`) except that the pc has two pieces and the access width and direction come from
-        the opcode. -/
+        write per memory dispatch. The pc has two pieces, and the access width and direction come
+        from the opcode. -/
     def bus_operations (row : BusRow) : List Operation :=
       let program : List Operation :=
         List.map (fun program_row =>

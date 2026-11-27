@@ -8,18 +8,18 @@ set_option maxRecDepth 2_000_000
 set_option linter.constructorNameAsVariable false
 
 /-!
-# CpuChip interpretations (RV64, Pico v3.2.0)
+# CpuChip interpretations (RV64)
 
-Readable facts about one row of the v3.1.1 `CpuChip`, derived from the restated constraints of
+Citations read at Pico v3.2.0.
+
+Readable facts about one row of `CpuChip`, derived from the restated constraints of
 `Constraints/CpuChip.lean` and the bus contracts of `RVSail/Buses.lean`: first what every
 instruction class needs, then what one class does — the branch and jump targets, the JALR
-addition, the comparison message and the memory dispatch. Pico line numbers are at v3.1.1
-(`2acc7c1828fb`).
+addition, the comparison message and the memory dispatch.
 
-The v3.1.1 chip checks much less itself than the 2.x one did, so the facts come from different
-places:
+The chip checks few of these facts itself, so they come from different places:
 
-- **The pc** is no longer range-checked by the chip. Its two 16-bit pieces, its alignment, the
+- **The pc** is not range-checked by the chip. Its two 16-bit pieces, its alignment, the
   `0x7800_0000` bound and the meaning of `pc_carry` all come from the Program table, through
   `ProgramBusEntry.operand_properties` and `inversion_pc_facts` (`pc_facts` below).
 - **The next pc** is not checked either. On an internal row it is the next row's pc, which the
@@ -37,7 +37,7 @@ places:
   the sign-extended offset folded into one subtraction of `2^32`. Reading one as a 64-bit
   addition needs a bound on the offset as well, which the decoder gives the instruction
   theorem, so `two_piece_plus_offset_implies_sum` takes it as a hypothesis.
-- **The two additions the chip still proves limb by limb** are the jump return address and
+- **The two additions the chip proves limb by limb** are the jump return address and
   the JALR target. The return address `op_a = pc + 4` (constraints 20 to 23) carries through
   `pc_carry`, which the Program table defines. The JALR target `op_b + op_c = next_pc +
   jalr_lsb` (constraints 27 to 30) has four carries that are expressions rather than columns;
@@ -46,19 +46,6 @@ places:
   the register file's takes `bus_row_reads_asm`, that part of `bus_row_wf_asm`; the sender
   theorem `CpuChip.Spec.ext_asrt` can then use it without assuming the promises of the chips
   it sends to. A caller holding `bus_row_wf_asm` passes `bus_row_reads_asm_of_wf_asm h_wf`.
-
-Names are the 2.x ones wherever the statement means the same, so the instruction-theorem files
-have less to rewrite. A lemma whose statement changed has a new name, so that a 2.x caller fails
-loudly rather than against a different statement:
-
-| 2.x lemma | v3.1.1 replacement |
-|-----------|--------------------|
-| `pc_next_pc_u16_bounds` | `pc_facts`, `next_pc_facts` |
-| `branching_next_pc_eq_pc_plus_op_c` | `branch_taken_next_pc` |
-| `jal_next_pc_eq_pc_plus_op_b` | `jal_next_pc` |
-| `op_a_eq_pc_plus_four_of_pc_carry_a_chain` | `jump_return_address` |
-| `jalr_next_pc_plus_specific_eq_op_b_plus_op_c` | `jalr_sum`, `jalr_target` |
-| `branch_instruction_a_lt_b`, `branch_instruction_a_gt_b` | `branch_compare_spec` |
 -/
 
 namespace Equivalence
@@ -70,12 +57,12 @@ namespace Equivalence
 
       Pico enforces this outside the chips, in the recursion circuit
       (`vm/src/mle/compiler/recursion/lowering.rs`): each chunk's final pc is the next
-      chunk's first pc (`assert_child_continuity`, 1081-1090), a chunk with no CPU rows
-      passes its pc through (1436-1440), and the root requires the last chunk's final pc to
-      be zero (`assert_root_complete`, 1748-1754). A chunk's first pc is its row 0's pc
+      chunk's first pc (`assert_child_continuity`, `lowering.rs:1194-1200`), a chunk with no
+      CPU rows passes its pc through (`lowering.rs:1558-1563`), and the root requires the last
+      chunk's final pc to be zero (`assert_root_complete`, `lowering.rs:1776-1779`). A chunk's first pc is its row 0's pc
       (`riscv_cpu/public_values/constraints.rs:26-33`), row 0 is real
       (`riscv_cpu/constraints.rs:340-341`), and its fetch matches the Program table, whose
-      addresses are 4-aligned and below `0x7800_0000` (`riscv_program/traces.rs:83-110`). So
+      addresses are 4-aligned and below `0x7800_0000` (`riscv_program/traces.rs:83-113`). So
       in an accepted recursive proof the final pc is either zero or a Program-table address,
       and either satisfies this. With it the theorems describe a chunk inside an accepted
       proof, not a chunk proof checked on its own.
@@ -309,7 +296,7 @@ namespace CpuChip.Interpretations
     program_bus_operand_properties_of_reads air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)
 
   /-- The opcode is one the decoder produces: 0 to 25, 28, 30 to 37, or 40 to 52. In
-      particular no row carries the 2.x `AUIPC` opcode 27. (The chip sends the same column as
+      particular no row carries opcode 27, `AUIPC`. (The chip sends the same column as
       both opcode fields of the message, so their agreement says nothing about the row.) -/
   lemma selector_breakdown
     [Field ExtF]
@@ -460,8 +447,8 @@ namespace CpuChip.Interpretations
     have h_le : n ≤ 52 := by omega
     interval_cases n <;> first | (exfalso; omega) | decide
 
-  /-- The ALU case of `selector_exclusivity`, the one the first wave of instruction theorems
-      needs: an opcode whose class selectors are all zero leaves every class selector zero, so
+  /-- The ALU case of `selector_exclusivity`, the one the instruction theorems of ALU-class
+      rows need: an opcode whose class selectors are all zero leaves every class selector zero, so
       the row is a sequential one. A caller discharges `h_class` by `rw [h_opcode]; rfl`. -/
   lemma alu_class_selectors_zero
     [Field ExtF]
@@ -555,10 +542,8 @@ namespace CpuChip.Interpretations
       only the whole-trace assumption bounds.
 
       The alignment comes from the same two places — a Program-table address is 4-aligned, and
-      the assumption says the chunk's final pc is — so this is where the 2.x
-      `Equivalence.next_pc_mod_four_eq_zero` ends up. In 2.x it had to split over every
-      instruction class, because each class had its own cross-row constraint; in v3.1.1
-      constraints 46 and 47 hold whatever the row does. -/
+      the assumption says the chunk's final pc is — and constraints 46 and 47 hold whatever the
+      row does, so the proof needs no split over instruction classes. -/
   lemma next_pc_facts
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -627,10 +612,7 @@ namespace CpuChip.Interpretations
         exact ⟨ h_pc_next.1, by omega, h_pc_next.2.2.2.1, h_pc_next.2.2.1 ⟩
 
   /-- A real row's next pc is 4-aligned: the alignment part of `next_pc_facts`, as the low
-      piece and as the whole value. This is the 2.x `Equivalence.next_pc_mod_four_eq_zero`,
-      which `equivalence_JAL_row` and `branch_equivalence` call. Against 2.x it takes the
-      arguments in this file's order (`air row h_row h_is_real h_wf h_constraints
-      pico_assumptions`), drops the Program-bus axioms, and adds the whole-value conjunct. -/
+      piece and as the whole value. `equivalence_JAL_row` and `branch_equivalence` call it. -/
   lemma next_pc_mod_four_eq_zero
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -1022,9 +1004,8 @@ namespace CpuChip.Interpretations
     exact h_c31
 
   /-- The branch-taken predicate, the gate of constraints 19 and 37
-      (`branch_taken_expr`, `riscv_cpu/constraints.rs:344-363`). v3.1.1 commits no column for
-      it: `a_eq_b` is `1 - a_lt_b - a_gt_b`, and the column the 2.x `branching` used became
-      `is_last`. -/
+      (`branch_taken_expr`, `riscv_cpu/constraints.rs:344-363`). The chip commits no column for
+      it: `a_eq_b` is `1 - a_lt_b - a_gt_b`. -/
   def branch_taken {ExtF : Type} [Field ExtF] (air : Valid_CpuChip FKB ExtF) (row : ℕ) : FKB :=
     air.cols.opcode_selector.is_beq row 0 *
         (1 - air.cols.a_lt_b row 0 - air.cols.a_gt_b row 0) +
@@ -1124,7 +1105,7 @@ namespace CpuChip.Interpretations
 
   /-- On a real row with no class selector set, the ALU message's multiplicity
       `is_alu_not_x0` is 1 when the destination is not `x0` and 0 when it is
-      (constraint 17). The v3.1.1 chip sends no ALU message for a write to `x0`. -/
+      (constraint 17). The chip sends no ALU message for a write to `x0`. -/
   lemma is_alu_not_x0_eq
     [Field ExtF]
     (air : Valid_CpuChip FKB ExtF) (row : ℕ)

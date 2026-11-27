@@ -7,10 +7,11 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # CodeRangeGadget — a store misses the code range it looks up
 
-`CodeRangeCols::eval` (`vm/src/chips/gadgets/code_range.rs`, Pico v3.2.0) proves that a write of
-`width` bytes at `addr` lands on no byte of the range `[code_start, code_end)` it looks up from
-the Program table: either it ends at or below the range's start, or it starts at or above its
-end.
+`CodeRangeCols::eval` (`vm/src/chips/gadgets/code_range.rs`) proves that a write of `width`
+bytes at `addr` lands on no byte of the range `[code_start, code_end)` it looks up from the
+Program table: either it ends at or below the range's start, or it starts at or above its end.
+
+Citations read at Pico v3.2.0.
 
 What is proved is about the range as read from the row's own columns. The Program table's
 promise (`CodeRangeBus.Spec`) gives only that its four pieces are below 2^16, not that they

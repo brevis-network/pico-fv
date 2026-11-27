@@ -8,8 +8,7 @@ set_option maxRecDepth 1_000_000
 
 This file isolates `core_mul_64` — the heavy ℕ-arithmetic lemma at
 the heart of the `MulGadget` proof — into its own compilation unit so
-that the rest of `Spec/MulGadget.lean` typechecks quickly. The lemma
-is the RV64 analogue of RV32's `MulAir.Spec.core_mul`: given 16
+that the rest of `Spec/MulGadget.lean` typechecks quickly. Given 16
 byte-level carry-propagation equations on 16-byte operands `bw`, `cw`,
 it concludes that the 16-byte `prod` satisfies
 `U128b.toBV prod = U128b.toBV bw * U128b.toBV cw`.
@@ -17,8 +16,7 @@ it concludes that the 16-byte `prod` satisfies
 
 namespace MulGadget.Spec
 
-  /-- Schoolbook multiplication correctness on 16-byte operands.
-      RV64 analogue of `RV32.MulAir.Spec.core_mul`. -/
+  /-- Schoolbook multiplication correctness on 16-byte operands. -/
   lemma core_mul_64
     (bw cw : U128b)
     (prod : U128b)

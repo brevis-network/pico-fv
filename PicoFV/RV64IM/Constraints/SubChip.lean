@@ -10,10 +10,11 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # SubChip — human-readable constraints and bus interactions
 
+Citations read at Pico v3.2.0.
+
 The `ConstraintsAndBuses` namespace below restates each constraint and the
 list of bus interactions emitted by `SubChip::eval`
-(`vm/src/chips/chips/alu/sub/constraints.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`) in terms of the
+(`vm/src/chips/chips/alu/sub/constraints.rs`) in terms of the
 `Valid_SubChip` air's named accessors, plus a `_equiv` lemma per
 constraint proving equality with the raw form in
 `PicoFV.RV64IM.Extraction.SubChip`.

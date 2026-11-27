@@ -15,8 +15,9 @@ set_option linter.unusedVariables false
 # SubwGadget (64-bit)
 
 Lean formalisation of `SubwGadget` from
-`vm/src/chips/gadgets/subw.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
+`vm/src/chips/gadgets/subw.rs`.
+
+Citations read at Pico v3.2.0.
 
 ```rust
 pub struct SubwGadget<T> {

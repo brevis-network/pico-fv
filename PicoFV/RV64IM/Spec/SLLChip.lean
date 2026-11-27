@@ -8,14 +8,13 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # SLLChip — semantic specification
 
-Ports the RV32 `SllAir.Spec` approach to the RV64 u16-limb width.
-There are two ALU outputs (vs one for RV32):
+There are two ALU outputs:
 
 - `spec_SLL`  (opcode 5):  64-bit left shift, shift amount = low 6 bits of `c`.
 - `spec_SLLW` (opcode 42): 32-bit left shift, sign-extended to 64 bits;
   shift amount = low 5 bits of `c`.
 
-The proof structure mirrors RV32:
+The proof structure:
 
 1. Extract operand `< 65536` bounds from the chip's ALU externals
    (opcodes 5 / 42 are not in `ALUBus.operandsInternal`).

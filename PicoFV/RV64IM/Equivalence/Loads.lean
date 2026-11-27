@@ -9,6 +9,10 @@ import PicoFV.RV64IM.RVSail.Opcodes.ld
 
 set_option maxHeartbeats 6_000_000
 
+/-!
+Citations read at Pico v3.2.0.
+-/
+
 namespace Equivalence
 
   open Plonky3
@@ -24,12 +28,11 @@ namespace Equivalence
     -- LOADS — the seven load opcodes: LB = 10, LH = 11, LW = 12, LBU = 13,
     -- LHU = 14, LWU = 45, LD = 46. None is shared
     -- (`ProgramBusEntry.decoded_from`), so the decoder fixes both immediate
-    -- flags and the row's class selectors, and no statement takes them, as
-    -- none did at 2.x either.
+    -- flags and the row's class selectors, and no statement takes them.
     --
     -- A load row reads `rs1` into `op_b`, carries the 12-bit offset in `op_c`
     -- (`imm_c = 1`), and writes the loaded word into `op_a`. It sends one
-    -- Memory message (Pico v3.2.0, `riscv_cpu/constraints.rs:117-133`), whose
+    -- Memory message (`riscv_cpu/constraints.rs:117-133`), whose
     -- promise (`memory_message_spec`) puts the address `op_b + op_c` below
     -- `2 ^ 32`, inside the memory region `RISC_V_assumptions` gives Sail, and
     -- gives the loaded word the opcode's extension — sign for `LB`, `LH` and
@@ -39,11 +42,11 @@ namespace Equivalence
     -- into aligned pieces, which the Sail lemmas of `LH`, `LHU`, `LW`, `LWU`
     -- and `LD` cover (`RVSail/Misaligned.lean`). The row sets no branch or
     -- jump selector, so its next pc is `pc + 4`
-    -- (`is_sequential_active_constraints`; Pico v3.2.0,
+    -- (`is_sequential_active_constraints`;
     -- `riscv_cpu/constraints.rs:318-326`).
     --
     -- Each `_row` theorem splits on whether the destination is `x0`. There the row
-    -- writes zero to `x0` (Pico v3.2.0, `riscv_cpu/register/constraints.rs:73-76`)
+    -- writes zero to `x0` (`riscv_cpu/register/constraints.rs:73-76`)
     -- and sends `ReadMemAny`, and Sail's write to `x0` changes nothing;
     -- elsewhere both read the same bytes and write the same extension.
     -- ========================================================================

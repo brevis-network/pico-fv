@@ -10,10 +10,11 @@ set_option maxHeartbeats 1_000_000_000
 /-!
 # LtChip — human-readable constraints and bus interactions
 
+Citations read at Pico v3.2.0.
+
 The `ConstraintsAndBuses` namespace below restates each constraint and
 the list of bus interactions emitted by `LtChip::eval`
-(`vm/src/chips/chips/alu/lt/constraints.rs` at Pico v3.1.1,
-`2acc7c1828fb4ec1bed5963511bb370870c5b608`) in terms of the
+(`vm/src/chips/chips/alu/lt/constraints.rs`) in terms of the
 `Valid_LtChip` air's named accessors, plus a `_equiv` lemma per
 constraint proving equality with the raw form in
 `PicoFV.RV64IM.Extraction.LtChip`.

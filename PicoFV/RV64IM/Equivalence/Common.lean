@@ -7,7 +7,7 @@ set_option maxRecDepth 1_000_000
 set_option linter.constructorNameAsVariable false
 
 /-!
-# Shared definitions of the RV64IM instruction theorems (Pico v3.2.0)
+# Shared definitions of the RV64IM instruction theorems
 
 The operand values a row reads and writes, the operations its messages stand for, the control-flow
 facts every ALU-class row shares, and the helpers of the decoded form (section `Decoded`:
@@ -17,11 +17,8 @@ forms' offset, `load_store_offset`. The one assumption the theorems make about t
 rather than about a row, `pico_CpuChip_control_flow_assumptions`, is defined in
 `Constraints/CpuChipInterpretations.lean` so that the lemmas there can take it.
 
-The pc-alignment lemmas that the 2.x file also held are not here. A real row's next pc is
-4-aligned by `CpuChip.Interpretations.next_pc_mod_four_eq_zero`, which keeps the 2.x name but
-takes its arguments in the interpretations file's order and no longer takes the Program-bus
-axioms. The 2.x `pc_next_row_mod_four_eq_zero` has no v3.2.0 counterpart: `pc_facts` gives
-any real row's pc alignment directly.
+The pc-alignment lemmas are in the interpretations file: a real row's next pc is 4-aligned by
+`CpuChip.Interpretations.next_pc_mod_four_eq_zero`, and its pc by `pc_mod_four_eq_zero`.
 
 An ALU-class instruction theorem with register operands closes in one call,
 `eq_operation_list_effect_state_of_reg_reg` or `eq_operation_list_effect_state_of_reg_imm`
@@ -89,7 +86,7 @@ namespace Equivalence
           air.cols.op_c_access.access.value_3 row 0 ]
 
     /-- The operations the row's messages stand for, followed by the write of its `next_pc`.
-        The v3.1.1 pc has two pieces instead of three, so `next_pc` packs two. -/
+        The pc has two pieces, so `next_pc` packs two. -/
     def CPU_bus_operations {ExtF : Type} [Field ExtF]
         (air : Valid_CpuChip FKB ExtF) (row : ℕ) :=
       RV64IM_Interactions.bus_operations (deserialise_bus_row (raw_bus_row air row)) ++
