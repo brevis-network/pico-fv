@@ -925,6 +925,48 @@ namespace Equivalence
       simp only [op_c_value, e0, e1, e2, e3, h_c0, h_c1, h_cs]
       exact imm_operand_toBV_sgn imm hw0 hw
 
+    /-- A load or store row's offset: the Program message says the row's `op_c` columns encode a
+        12-bit immediate `imm'`, and `op_c` is then its 64-bit sign extension
+        (`op_c_value_eq_signExtend_of_imm_operand`). The eleven opcodes share one proof. -/
+    lemma load_store_offset
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+      (h_is_real : air.cols.is_real row 0 = 1)
+      (h_wf : bus_row_wf_asm (bus_row air row))
+      (h_constraints : CpuChip.Extraction.allHold air row)
+      (h_opcode : air.cols.instruction.opcode row 0 = 10 ∨
+                  air.cols.instruction.opcode row 0 = 11 ∨
+                  air.cols.instruction.opcode row 0 = 12 ∨
+                  air.cols.instruction.opcode row 0 = 13 ∨
+                  air.cols.instruction.opcode row 0 = 14 ∨
+                  air.cols.instruction.opcode row 0 = 15 ∨
+                  air.cols.instruction.opcode row 0 = 16 ∨
+                  air.cols.instruction.opcode row 0 = 17 ∨
+                  air.cols.instruction.opcode row 0 = 45 ∨
+                  air.cols.instruction.opcode row 0 = 46 ∨
+                  air.cols.instruction.opcode row 0 = 47)
+      (h_imm_c : air.cols.opcode_selector.imm_c row 0 = 1)
+    :
+      ∃ imm' : BitVec 12, U64w.toBV (op_c_value air row) = BitVec.signExtend 64 imm'
+    := by
+      obtain ⟨ instr, pc_value, data, props, -, -, h_eq, h_eq_entry, - ⟩ :=
+        program_bus_operand_properties air row h_is_real h_wf
+      have h_decoded := ProgramBusEntry.operand_properties_inversion h_eq h_eq_entry
+      rw [deserialise_program_bus_entry] at h_decoded
+      rcases h_opcode with h_op | h_op | h_op | h_op | h_op | h_op | h_op | h_op | h_op | h_op |
+        h_op <;>
+      · simp [ProgramBusEntry.decoded_from, h_op] at h_decoded
+        obtain ⟨ imm', r, r', h_eq_instr ⟩ := h_decoded
+        subst h_eq_instr
+        simp [transpile_op, -Vector.eq_mk] at h_eq
+        obtain ⟨ h_eq_data, - ⟩ := h_eq
+        subst h_eq_data
+        rw [deserialise_program_bus_entry] at h_eq_entry
+        simp [ProgramBusEntry.deserialise] at h_eq_entry
+        exact ⟨ imm', op_c_value_eq_signExtend_of_imm_operand air row imm' (by norm_num)
+          (by norm_num) h_imm_c h_constraints (by simp [h_eq_entry]) (by simp [h_eq_entry])
+          (by simp [h_eq_entry]) ⟩
+
     /-- On a real row, the Program table's promise gives an instruction and a 4-aligned address
         below `code_address_bound` whose decoding, at multiplicity 1, is the row's Program message,
         and the instruction is the one the row's opcode names (`ProgramBusEntry.decoded_from`). The
