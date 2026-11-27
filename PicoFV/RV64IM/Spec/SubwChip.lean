@@ -39,7 +39,9 @@ range-check `operand_1` / `operand_2`).
 
 namespace SubwChip.Spec
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
+
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   open SubwChip.ConstraintsAndBuses
   open SubwChip.Interactions
   open SubwChip.Interpretations

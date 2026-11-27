@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.Operations
+import PicoFV.RV64IM.RVSail.BusesV3
 import PicoFV.RV64IM.Extraction.MulChip
 import PicoFV.RV64IM.Airs.MulChip
 import PicoFV.RV64IM.Constraints.MulGadget
@@ -64,8 +64,9 @@ set_option maxHeartbeats 1_000_000_000
 
 namespace MulChip
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
 
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   /-- The chip's per-row `BusRow`, factored as
       `MulGadget.AbsBuses ++ <chip ALU entry>`. -/
   def AbsBuses
@@ -311,8 +312,9 @@ end MulChip.ConstraintsAndBuses
 
 namespace MulChip.Interactions
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
 
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   /-- The typed `BusRow` per `MulChip` row. Defined directly as
       `MulChip.AbsBuses` applied to the chip's accessors. -/
   def bus_row (air : Valid_MulChip FKB ExtF) (row : ℕ) : BusRow :=
@@ -359,7 +361,7 @@ namespace MulChip.Interactions
   set_option maxRecDepth 4_000_000 in
   @[simp]
   lemma bus_row_equiv (air : Valid_MulChip FKB ExtF) (row : ℕ) :
-    RV64IM_Interactions.deserialise_bus_row
+    RV64IM_Interactions.V3.deserialise_bus_row
       (MulChip.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
   := by
     dsimp [
@@ -377,7 +379,9 @@ end MulChip.Interactions
 
 namespace MulChip.Interpretations
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
+
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   open MulChip.ConstraintsAndBuses
   open MulChip.Interactions
 

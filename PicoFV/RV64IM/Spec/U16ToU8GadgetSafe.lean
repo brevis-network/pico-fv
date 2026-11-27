@@ -35,8 +35,9 @@ the four `U8Pair` byte-bus entries.
 
 namespace U16ToU8GadgetSafe.Spec
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
 
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   set_option maxHeartbeats 1_000_000_000
 
   /-- Pure / parametric gadget spec. Per limb, exposes:

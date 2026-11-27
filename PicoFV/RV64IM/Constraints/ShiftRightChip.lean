@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.Operations
+import PicoFV.RV64IM.RVSail.BusesV3
 import PicoFV.RV64IM.Extraction.ShiftRightChip
 import PicoFV.RV64IM.Airs.ShiftRightChip
 import PicoFV.RV64IM.Constraints.U16MSBGadget
@@ -1046,8 +1046,9 @@ end ShiftRightChip.ConstraintsAndBuses
 
 namespace ShiftRightChip.Interactions
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
 
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   /-- The typed `BusRow` per `ShiftRightChip` row: 12 byte-bus entries +
       1 ALU entry. -/
   def bus_row (air : Valid_ShiftRightChip FKB ExtF) (row : ℕ) : BusRow :=
@@ -1099,7 +1100,7 @@ namespace ShiftRightChip.Interactions
   set_option maxRecDepth 4_000_000 in
   @[simp]
   lemma bus_row_equiv (air : Valid_ShiftRightChip FKB ExtF) (row : ℕ) :
-    RV64IM_Interactions.deserialise_bus_row
+    RV64IM_Interactions.V3.deserialise_bus_row
       (ShiftRightChip.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
   := by
     dsimp [
@@ -1114,7 +1115,9 @@ end ShiftRightChip.Interactions
 
 namespace ShiftRightChip.Interpretations
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
+
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   open ShiftRightChip.ConstraintsAndBuses
 
   -- =====================================================================

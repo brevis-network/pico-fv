@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.Operations
+import PicoFV.RV64IM.RVSail.BusesV3
 import PicoFV.RV64IM.Extraction.DivRemChip
 import PicoFV.RV64IM.Airs.DivRemChip
 import PicoFV.RV64IM.Spec.MulGadget
@@ -91,8 +91,9 @@ Plus: division-by-zero (`is_c_0` ⇒ quotient = `u64::MAX`, remainder =
 
 namespace DivRemChip.ConstraintsAndBuses
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
 
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   variable [Field F] [Field ExtF]
 
   /-- The conjunction of algebraic facts `DivRemChip` asserts per row.
@@ -1839,8 +1840,9 @@ end DivRemChip.ConstraintsAndBuses
 
 namespace DivRemChip.Interactions
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
 
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   /-- The typed `BusRow` per `DivRemChip` row. Just an alias for
       `ConstraintsAndBuses.AbsBuses`, which already takes the air
       directly (unlike `MulChip` which has a parametric `AbsBuses`
@@ -1863,7 +1865,7 @@ namespace DivRemChip.Interactions
       same `BusRow` by `dsimp` alone. -/
   @[simp]
   lemma bus_row_equiv (air : Valid_DivRemChip FKB ExtF) (row : ℕ) :
-    RV64IM_Interactions.deserialise_bus_row
+    RV64IM_Interactions.V3.deserialise_bus_row
       (DivRemChip.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
   := by
     dsimp [
@@ -1889,7 +1891,9 @@ end DivRemChip.Interactions
 
 namespace DivRemChip.Interpretations
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
+
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   open DivRemChip.ConstraintsAndBuses
   open DivRemChip.Interactions
 

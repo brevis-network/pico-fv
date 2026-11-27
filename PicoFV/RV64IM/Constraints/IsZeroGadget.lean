@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.Operations
+import PicoFV.RV64IM.RVSail.BusesV3
 import PicoFV.RV64IM.Extraction.IsZeroGadget
 import PicoFV.RV64IM.Airs.IsZeroGadget
 
@@ -51,8 +51,9 @@ to identify against beyond the bare `IsZeroGadgetAir`.
 
 namespace IsZeroGadget
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
 
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   /-- The conjunction of algebraic facts the Pico `IsZeroGadget`
       asserts on a row, expressed parametrically in the 2 column
       values it owns plus the parent-supplied `input` and `is_real`.

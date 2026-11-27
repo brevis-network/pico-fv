@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.Operations
+import PicoFV.RV64IM.RVSail.BusesV3
 import PicoFV.RV64IM.Extraction.AddwChip
 import PicoFV.RV64IM.Airs.AddwChip
 import PicoFV.RV64IM.Constraints.AddwGadget
@@ -55,8 +55,9 @@ The bus interactions are:
 
 namespace AddwChip
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
 
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   /-- The bus entries the chip contributes per row, packaged as a typed
       `BusRow`. Built compositionally from `AddwGadget.AbsBuses` (the
       three `ByteBus` entries on `value_0`, `value_1`, and the MSB
@@ -316,8 +317,9 @@ end AddwChip.ConstraintsAndBuses
 
 namespace AddwChip.Interactions
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
 
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   /-- The typed `BusRow` per `AddwChip` row. Defined directly as
       `AddwChip.AbsBuses` applied to the chip's accessors, making
       `bus_row_abs` definitionally true. -/
@@ -334,7 +336,7 @@ namespace AddwChip.Interactions
 
   @[simp]
   lemma bus_row_equiv (air : Valid_AddwChip FKB ExtF) (row : ℕ) :
-    RV64IM_Interactions.deserialise_bus_row
+    RV64IM_Interactions.V3.deserialise_bus_row
       (AddwChip.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
   := by
     dsimp [
@@ -352,7 +354,9 @@ end AddwChip.Interactions
 
 namespace AddwChip.Interpretations
 
-  open RV64IM_Interactions
+  open RV64IM_Interactions.V3
+
+  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
   open AddwChip.ConstraintsAndBuses
   open AddwChip.Interactions
 

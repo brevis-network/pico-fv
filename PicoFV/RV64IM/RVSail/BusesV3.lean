@@ -13,8 +13,10 @@ set_option maxHeartbeats 1_000_000_000
     messages other tables answer, and what it must guarantee about the ones it sends, for the
     message formats that changed from 2.x. It also holds the v3.2.0 code-range contract between
     the rows that write guest memory (store rows of the two memory chips, and precompile rows)
-    and the Program table, which the CPU chip never sends. It sits beside `Buses.lean`, whose
-    2.x contracts stay unchanged because the ALU chips' proofs still use them.
+    and the Program table, which the CPU chip never sends. Every chip's row is this file's
+    `BusRow`, the ALU chips' included; from `Buses.lean` it reuses only the register-access, ALU
+    and byte entry contracts. The rest of `Buses.lean` (its row, Program and Memory contracts) is
+    reached by no checked result and is retired with it.
 
     | message | tag (`LookupType`) | fields | contract |
     |---------|-----|----|----------|
@@ -963,6 +965,75 @@ namespace RV64IM_Interactions.V3
          row.Byte.map (BusEntry.wf_assert FKB) ++
          row.State.map (BusEntry.wf_assert FKB) ++
          row.Memory.map (BusEntry.wf_assert FKB))
+
+    /-- Concatenate two `BusRow`s pointwise on each of the six lists. A chip that embeds a gadget
+        builds its row as the gadget's row followed by its own messages. -/
+    def BusRow.append (r1 r2 : BusRow) : BusRow :=
+      { Program   := r1.Program   ++ r2.Program
+        ALU       := r1.ALU       ++ r2.ALU
+        Byte      := r1.Byte      ++ r2.Byte
+        State     := r1.State     ++ r2.State
+        Memory    := r1.Memory    ++ r2.Memory
+        CodeRange := r1.CodeRange ++ r2.CodeRange }
+
+    instance : Append BusRow := ⟨BusRow.append⟩
+
+    lemma BusRow.append_eq (r1 r2 : BusRow) :
+      r1 ++ r2 =
+        { Program   := r1.Program   ++ r2.Program
+          ALU       := r1.ALU       ++ r2.ALU
+          Byte      := r1.Byte      ++ r2.Byte
+          State     := r1.State     ++ r2.State
+          Memory    := r1.Memory    ++ r2.Memory
+          CodeRange := r1.CodeRange ++ r2.CodeRange } := rfl
+
+    @[simp] lemma BusRow.append_Program (r1 r2 : BusRow) :
+      (r1 ++ r2).Program = r1.Program ++ r2.Program := rfl
+    @[simp] lemma BusRow.append_ALU (r1 r2 : BusRow) :
+      (r1 ++ r2).ALU = r1.ALU ++ r2.ALU := rfl
+    @[simp] lemma BusRow.append_Byte (r1 r2 : BusRow) :
+      (r1 ++ r2).Byte = r1.Byte ++ r2.Byte := rfl
+    @[simp] lemma BusRow.append_State (r1 r2 : BusRow) :
+      (r1 ++ r2).State = r1.State ++ r2.State := rfl
+    @[simp] lemma BusRow.append_Memory (r1 r2 : BusRow) :
+      (r1 ++ r2).Memory = r1.Memory ++ r2.Memory := rfl
+    @[simp] lemma BusRow.append_CodeRange (r1 r2 : BusRow) :
+      (r1 ++ r2).CodeRange = r1.CodeRange ++ r2.CodeRange := rfl
+
+    /-! Each of the four checks distributes over `++`, so a chip that embeds a gadget can split
+        its bus duties into the gadget's and its own. -/
+
+    @[simp]
+    lemma bus_row_ext_asm_append (b1 b2 : BusRow) :
+      bus_row_ext_asm (b1 ++ b2) ↔ bus_row_ext_asm b1 ∧ bus_row_ext_asm b2
+    := by
+      simp only [bus_row_ext_asm, BusRow.append_eq, List.map_append,
+                 List.forall_append]
+      tauto
+
+    @[simp]
+    lemma bus_row_ext_asrt_append (b1 b2 : BusRow) :
+      bus_row_ext_asrt (b1 ++ b2) ↔ bus_row_ext_asrt b1 ∧ bus_row_ext_asrt b2
+    := by
+      simp only [bus_row_ext_asrt, BusRow.append_eq, List.map_append,
+                 List.forall_append]
+      tauto
+
+    @[simp]
+    lemma bus_row_wf_asm_append (b1 b2 : BusRow) :
+      bus_row_wf_asm (b1 ++ b2) ↔ bus_row_wf_asm b1 ∧ bus_row_wf_asm b2
+    := by
+      simp only [bus_row_wf_asm, BusRow.append_eq, List.map_append,
+                 List.forall_append]
+      tauto
+
+    @[simp]
+    lemma bus_row_wf_asrt_append (b1 b2 : BusRow) :
+      bus_row_wf_asrt (b1 ++ b2) ↔ bus_row_wf_asrt b1 ∧ bus_row_wf_asrt b2
+    := by
+      simp only [bus_row_wf_asrt, BusRow.append_eq, List.map_append,
+                 List.forall_append]
+      tauto
 
     /-! The five checks above leave out `CodeRange`; these are their counterparts for it. A row
         that sends code-range messages, as a store row of a memory chip does, takes both. They
