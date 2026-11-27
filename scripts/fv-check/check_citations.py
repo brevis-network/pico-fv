@@ -11,8 +11,8 @@ by its last components, against the files of Pico at the commit `extractor/Cargo
 the `pico-vm` dependency of `extractor/Cargo.toml`. A Markdown link whose text is a citation
 (`[alu/lt/constraints.rs:81-82](…#L81-L82)`) counts once, and its text must cite what its link
 does; a link whose text carries more than the citation, or that has no `#L` anchor, is read as
-two citations and not compared. The files read are `PicoFV/` (not `Extraction/`) and `docs/`, or
-the FILEs given. A finding is one of:
+two citations and not compared. The files read are `PicoFV/` (not `Extraction/`), `docs/` and
+`SOUNDNESS.md`, or the FILEs given. A finding is one of:
 
   NO FILE        the path matches no file
   AMBIGUOUS      the path matches several files: give more of it
@@ -109,7 +109,7 @@ def files(root, given):
     if given:
         return [pathlib.Path(f).resolve() for f in given]
     out = [f for f in sorted((root / 'PicoFV').rglob('*.lean')) if 'Extraction' not in f.relative_to(root).parts]
-    return out + sorted((root / 'docs').rglob('*.md'))
+    return out + sorted((root / 'docs').rglob('*.md')) + [root / 'SOUNDNESS.md']
 
 
 def ranges_of(m):

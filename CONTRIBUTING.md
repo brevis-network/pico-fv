@@ -99,12 +99,12 @@ with a readable statement. A comment that explains a surprise in our own code ma
 or restructure.
 
 A citation names a path long enough to match one file (`alu/divrem/constraints.rs:190-194`, not
-`constraints.rs:190`). A file that cites Pico says once which tag its citations were read at, in
-the line `Citations read at Pico v3.2.0.` `scripts/fv-check/check_citations.py` checks both over
-`PicoFV/` and `docs/`: every citation names one file at the pinned commit and lines inside it, and
-every citing file names the pinned tag. After a pin move it lists, as `STALE TAG`, the files whose
-citations must be re-read. `--show` prints the cited lines next to each citation, for checking that
-they say what the comment claims. CI runs it as a warning.
+`constraints.rs:190`). A file that cites Pico says once which tag its citations were read at, in the
+line `Citations read at Pico v3.2.0.` `scripts/fv-check/check_citations.py` checks both over
+`PicoFV/`, `docs/` and `SOUNDNESS.md`: every citation names one file at the pinned commit and lines
+inside it, and every citing file names the pinned tag. After a pin move it lists, as `STALE TAG`,
+the files whose citations must be re-read. `--show` prints the cited lines next to each citation,
+for checking that they say what the comment claims. CI runs it as a warning.
 
 ## Checks
 

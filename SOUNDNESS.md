@@ -10,6 +10,7 @@ specification, and the way Pico's chips are composed. Each of those links is lis
 
 The blocks marked *generated* are written by `scripts/fv-check/soundness_facts.py` from the
 repository; CI fails when one is out of date. The rest of the text is reviewed by hand.
+Citations read at Pico v3.2.0.
 
 ## What is proved
 
@@ -588,13 +589,13 @@ from the Program table (`gadgets/code_range.rs:1-11` at v3.2.0), and the
 (`CodeRangeBus.Spec`). The Program chip has no proof here (A5), so that promise is trusted.
 It is also weaker than what Pico intends: it does not say the four pieces are this program's
 code range, which the Program table's preprocessed columns hold
-(`riscv_program/columns.rs:36-40`, `traces.rs:132-136`) and `program_commit` fixes, so no theorem
+(`riscv_program/columns.rs:36-40`, `riscv_program/traces.rs:132-136`) and `program_commit` fixes, so no theorem
 here yet says that a store misses the program's code.
 
 How the table answers it does not fit the framework's conditions either. Trace generation puts
 the chunk's whole count of code-range lookups, one per store and one per precompile event
 (`code_range.rs:71-73`), on Program row 0 (`riscv_program/columns.rs:48-51`,
-`traces.rs:178-180`). With `N` lookups in a chunk the table answers once, at multiplicity `-N`.
+`riscv_program/traces.rs:178-180`). With `N` lookups in a chunk the table answers once, at multiplicity `-N`.
 A contract's promise binds a receiver only at multiplicity `-1` (`wf_assert_cond` in
 `Fundamentals/Interaction.lean`), so for `N ≠ 1` a Program-chip theorem stated with
 `bus_row_all_wf_asrt` would ask nothing of that answer, while each sender assumes the promise at
