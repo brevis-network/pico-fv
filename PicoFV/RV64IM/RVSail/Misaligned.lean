@@ -86,7 +86,7 @@ theorem split_misaligned_8_2 (v : BitVec 64) (h : v.toNat % 8 = 4) (s : PreSail.
     and each loop's condition returns `finished`. The lemmas take the monad instance as an argument,
     with what they need of it as hypotheses, because `simp` has unfolded the instance by the time
     the loop is in the goal: its `bind` and `pure` are still `ExceptT`'s, which `rfl` shows, but the
-    instance as a whole is no longer syntactically `ExceptT.instMonad`. -/
+    instance as a whole is not syntactically `ExceptT.instMonad`. -/
 
 /-- A loop whose passes are known ends in the last of them. The loop's condition reads a flag
     `fin` off the loop variables. If pass `i` of the body takes loop variables `xs i` and state

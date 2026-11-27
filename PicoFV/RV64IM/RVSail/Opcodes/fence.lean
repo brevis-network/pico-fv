@@ -4,6 +4,8 @@ import PicoFV.RV64IM.RVSail.Execution
 
 /-! # `FENCE`, `FENCE_TSO` and `PAUSE` execute as the no-op
 
+    Citations read at Pico v3.2.0.
+
     Pico transpiles every fence word (`fence`, `fence.tso` and `pause`) to the canonical no-op
     `ADDI x0, x0, 0` (`process_fence`, `vm/src/compiler/riscv/disassembler/rrs.rs:509-517`,
     returning `Instruction::nop`, `rrs.rs:95-100`), so the Program table holds the no-op's row
