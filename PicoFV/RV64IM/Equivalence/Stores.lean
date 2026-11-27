@@ -11,7 +11,7 @@ namespace Equivalence
   open Plonky3
 
   open RV64IM
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open CpuChip.ConstraintsAndBuses
   open CpuChip.Interpretations
 
@@ -28,7 +28,7 @@ namespace Equivalence
     -- reads `rs1` into `op_b`, and carries the 12-bit offset in `op_c`
     -- (`imm_c = 1`). It sends one Memory message (Pico v3.2.0,
     -- `riscv_cpu/constraints.rs:117-133`), whose promise
-    -- (`memory_message_spec`, the contract of `RVSail/BusesV3.lean`) puts the
+    -- (`memory_message_spec`, the contract of `RVSail/Buses.lean`) puts the
     -- address `op_b + op_c` below `2 ^ 32`, inside the memory region
     -- `RISC_V_assumptions` gives Sail. The promise says nothing about
     -- alignment: at an address that is not a multiple of the width Sail
@@ -121,22 +121,22 @@ namespace Equivalence
       · simp [ProgramBusEntry.decoded_from, h_op] at h_decoded
         obtain ⟨ imm', rs2', rs1', h_eq_instr ⟩ := h_decoded
         subst h_eq_instr
-        simp [Transpiler.V3.transpile_op, -Vector.eq_mk] at h_eq
+        simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
         obtain ⟨ h_eq_data, - ⟩ := h_eq
         subst h_eq_data
         rw [deserialise_program_bus_entry] at h_eq_entry
         simp [ProgramBusEntry.deserialise] at h_eq_entry
         have eq_c0 : air.cols.instruction.op_c_0 row 0 =
-            (Transpiler.V3.imm_operand imm' true)[0] := by simp [h_eq_entry]
+            (Transpiler.imm_operand imm' true)[0] := by simp [h_eq_entry]
         have eq_c1 : air.cols.instruction.op_c_1 row 0 =
-            (Transpiler.V3.imm_operand imm' true)[1] := by simp [h_eq_entry]
+            (Transpiler.imm_operand imm' true)[1] := by simp [h_eq_entry]
         have eq_cs : air.cols.instruction.op_c_sign row 0 =
-            (Transpiler.V3.imm_operand imm' true)[2] := by simp [h_eq_entry]
+            (Transpiler.imm_operand imm' true)[2] := by simp [h_eq_entry]
         refine ⟨ imm', ?_ ⟩
         have h_imm_c_eqs := imm_c_eq_1_constraints air row h_imm_c h_constraints
         simp only [op_c_value, h_imm_c_eqs.1, h_imm_c_eqs.2.1, h_imm_c_eqs.2.2.1,
                    h_imm_c_eqs.2.2.2, eq_c0, eq_c1, eq_cs]
-        exact Transpiler.V3.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
+        exact Transpiler.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
 
     /-- The byte a `SB` row stores: the low 8 bits of the register value are those of the
         first limb, which is what the chip's Memory message carries. -/
@@ -229,7 +229,7 @@ namespace Equivalence
         (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
       -- The row's messages, as operations on the Sail state.
       have h_bus := h_bus_hypotheses
-      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+      rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
           deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
           deserialise_raw_bus_row_Memory] at h_bus
       simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -254,7 +254,7 @@ namespace Equivalence
             (r1_val := U64w.toBV (op_b_value air row))
             (r2_val := U64w.toBV (op_a_value air row))
             (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-      · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+      · rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
               deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
               deserialise_raw_bus_row_Memory]
         simp +decide [OpcodeSpec.RV64.spec_SB,
@@ -359,7 +359,7 @@ namespace Equivalence
         (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
       -- The row's messages, as operations on the Sail state.
       have h_bus := h_bus_hypotheses
-      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+      rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
           deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
           deserialise_raw_bus_row_Memory] at h_bus
       simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -384,7 +384,7 @@ namespace Equivalence
             (r1_val := U64w.toBV (op_b_value air row))
             (r2_val := U64w.toBV (op_a_value air row))
             (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-      · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+      · rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
               deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
               deserialise_raw_bus_row_Memory]
         simp +decide [OpcodeSpec.RV64.spec_SH,
@@ -489,7 +489,7 @@ namespace Equivalence
         (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
       -- The row's messages, as operations on the Sail state.
       have h_bus := h_bus_hypotheses
-      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+      rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
           deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
           deserialise_raw_bus_row_Memory] at h_bus
       simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -514,7 +514,7 @@ namespace Equivalence
             (r1_val := U64w.toBV (op_b_value air row))
             (r2_val := U64w.toBV (op_a_value air row))
             (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-      · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+      · rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
               deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
               deserialise_raw_bus_row_Memory]
         simp +decide [OpcodeSpec.RV64.spec_SW,
@@ -619,7 +619,7 @@ namespace Equivalence
         (by rw [h_beq, h_bne, h_blt, h_bge, h_bltu, h_bgeu, h_store]; norm_num)
       -- The row's messages, as operations on the Sail state.
       have h_bus := h_bus_hypotheses
-      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+      rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
           deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
           deserialise_raw_bus_row_Memory] at h_bus
       simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -644,7 +644,7 @@ namespace Equivalence
             (r1_val := U64w.toBV (op_b_value air row))
             (r2_val := U64w.toBV (op_a_value air row))
             (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-      · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+      · rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
               deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
               deserialise_raw_bus_row_Memory]
         simp +decide [OpcodeSpec.RV64.spec_SD,
@@ -688,7 +688,7 @@ namespace Equivalence
 
     -- ========================================================================
     -- The checked store theorems, in decoded form: each takes the store and an
-    -- address whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1)
+    -- address whose decoding (`Transpiler.transpile_op`, at multiplicity 1)
     -- is the row's Program message, and is proved from its column form.
     --
     -- The proofs pass hypotheses as `@h`. On the store and load sections,
@@ -705,7 +705,7 @@ namespace Equivalence
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
       (h_constraints : CpuChip.Extraction.allHold air row)
       {imm : BitVec 12} {rs2 rs1 : regidx} {wd : word_width} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.STORE (imm, rs2, rs1, wd)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.STORE (imm, rs2, rs1, wd)) 1 addr =
         some (program_bus_entry air row, props))
     :
       air.cols.is_real row 0 = 1 ∧
@@ -735,7 +735,7 @@ namespace Equivalence
       rcases h_opc with ⟨ h, rfl ⟩ | ⟨ h, rfl ⟩ | ⟨ h, rfl ⟩ | ⟨ h, rfl ⟩ <;> simp [h]
 
     /-- Equivalence for SB (opcode 15, `instruction.STORE` of width 1): for every `SB`
-        instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        instruction and address `addr` whose decoding (`Transpiler.transpile_op`, at
         multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
         row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
         pc pieces. -/
@@ -748,7 +748,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.STORE (imm, rs2, rs1, 1)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.STORE (imm, rs2, rs1, 1)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -764,7 +764,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for SH (opcode 16, `instruction.STORE` of width 2): for every `SH`
-        instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        instruction and address `addr` whose decoding (`Transpiler.transpile_op`, at
         multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
         row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
         pc pieces. -/
@@ -777,7 +777,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.STORE (imm, rs2, rs1, 2)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.STORE (imm, rs2, rs1, 2)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -793,7 +793,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for SW (opcode 17, `instruction.STORE` of width 4): for every `SW`
-        instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        instruction and address `addr` whose decoding (`Transpiler.transpile_op`, at
         multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
         row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
         pc pieces. -/
@@ -806,7 +806,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.STORE (imm, rs2, rs1, 4)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.STORE (imm, rs2, rs1, 4)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -822,7 +822,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for SD (opcode 47, `instruction.STORE` of width 8): for every `SD`
-        instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        instruction and address `addr` whose decoding (`Transpiler.transpile_op`, at
         multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
         row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
         pc pieces. -/
@@ -835,7 +835,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.STORE (imm, rs2, rs1, 8)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.STORE (imm, rs2, rs1, 8)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -852,7 +852,7 @@ namespace Equivalence
 
     /-- The store theorems' decoding hypothesis holds on every real row of a store opcode: there
         the Program table's promise (in `bus_row_wf_asm`) gives a store of the opcode's width and
-        a 4-aligned address below `Transpiler.V3.code_address_bound` whose decoding is the row's
+        a 4-aligned address below `Transpiler.code_address_bound` whose decoding is the row's
         Program message. -/
     theorem store_decode_satisfiable
       [Field ExtF]
@@ -864,8 +864,8 @@ namespace Equivalence
               (wd = 8 ∧ opc = 47))
     :
       ∃ (imm : BitVec 12) (rs2 rs1 : regidx) (addr : ℕ) (props : Prop),
-        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
-        Transpiler.V3.transpile_op (.STORE (imm, rs2, rs1, wd)) 1 addr =
+        addr % 4 = 0 ∧ addr < Transpiler.code_address_bound ∧
+        Transpiler.transpile_op (.STORE (imm, rs2, rs1, wd)) 1 addr =
           some (program_bus_entry air row, props)
     := by
       obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=

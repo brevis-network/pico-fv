@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 import PicoFV.RV64IM.Extraction.MemoryUnalignedChip
 import PicoFV.RV64IM.Airs.MemoryUnalignedChip
 
@@ -897,7 +897,7 @@ end MemoryUnalignedChip.ConstraintsAndBuses
 
 namespace MemoryUnalignedChip
 
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
 
   /-- The high byte `(x - lo) / 256` of a 16-bit piece `x` whose low byte is `lo`
       (`gadgets/u16_to_u8.rs:71-72`), meant at `FKB`, where `2122383361` is `256`'s inverse.
@@ -1037,17 +1037,17 @@ namespace MemoryUnalignedChip.Interactions
 
   /-- The chip's messages on one row, sorted by contract. -/
   def bus_row (air : Valid_MemoryUnalignedChip FKB ExtF) (row : ℕ) :
-      RV64IM_Interactions.V3.BusRow :=
+      RV64IM_Interactions.BusRow :=
     MemoryUnalignedChip.AbsBuses air row
 
   /-- Sorting the row's extracted messages gives `bus_row`. -/
   @[simp]
   lemma bus_row_equiv (air : Valid_MemoryUnalignedChip FKB ExtF) (row : ℕ) :
-    RV64IM_Interactions.V3.deserialise_bus_row
+    RV64IM_Interactions.deserialise_bus_row
       (MemoryUnalignedChip.ConstraintsAndBuses.raw_bus_row air row) = bus_row air row
   := by
     simp [
-      RV64IM_Interactions.V3.deserialise_bus_row,
+      RV64IM_Interactions.deserialise_bus_row,
       constraint_and_interaction_simplification,
       bus_row,
       MemoryUnalignedChip.AbsBuses,

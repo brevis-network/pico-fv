@@ -41,7 +41,7 @@ namespace Equivalence
   open Plonky3
 
   open RV64IM
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open CpuChip.ConstraintsAndBuses
   open CpuChip.Interpretations
 
@@ -91,7 +91,7 @@ namespace Equivalence
         The v3.1.1 pc has two pieces instead of three, so `next_pc` packs two. -/
     def CPU_bus_operations {ExtF : Type} [Field ExtF]
         (air : Valid_CpuChip FKB ExtF) (row : ℕ) :=
-      RV64IM_Interactions.V3.bus_operations (deserialise_bus_row (raw_bus_row air row)) ++
+      RV64IM_Interactions.bus_operations (deserialise_bus_row (raw_bus_row air row)) ++
       [ .WritePC (U64w.toBV (next_pc air row)) ]
 
     /-- The facts about a CPU-chip row that every ALU-class instruction theorem has, for either
@@ -407,7 +407,7 @@ namespace Equivalence
       subst h_opcode
       have h_no_mem := mem_width_of_opcode_eq_none_of_class_selectors h_class
       obtain ⟨ h_reg_rd, h_reg_rs1, h_reg_rs2 ⟩ := register_indices_lt air row h_is_real h_wf
-      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+      rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
           deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
           deserialise_raw_bus_row_Memory]
       simp [MemoryBusEntry.deserialise, h_no_mem, h_is_real, h_imm_b, h_imm_c,
@@ -444,7 +444,7 @@ namespace Equivalence
           .WritePC (U64w.toBV (next_pc air row)) ]
     := by
       obtain ⟨ h_reg_rd, h_reg_rs1, - ⟩ := register_indices_lt air row h_is_real h_wf
-      rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+      rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
           deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
           deserialise_raw_bus_row_Memory]
       simp [MemoryBusEntry.deserialise, h_width, h_is_real, h_imm_b, h_imm_c,
@@ -640,7 +640,7 @@ namespace Equivalence
     /-- On a row of `ADDI`, `XORI`, `ORI`, `ANDI`, `SLTI`, `SLTIU` (opcodes 0, 2, 3, 4, 8, 9 with
         `imm_b = 0`, `imm_c = 1`) or `ADDIW` (40 with `imm_c = 1`), the `op_c` value is the
         sign extension of its own low 12 bits: the decoder writes the instruction's 12-bit
-        immediate there, sign-extended (`Transpiler.V3.imm_operand`, constraints 4 to 7). The
+        immediate there, sign-extended (`Transpiler.imm_operand`, constraints 4 to 7). The
         column forms of the `ITYPE` and `ADDIW` theorems (`equivalence_ADDI_row` and the rest)
         read `imm` from the row's `op_c_0`; they rewrite the low 12 bits on the right with
         `op_c_value_setWidth_eq_op_c_0` and use the result to recover the 64-bit value Sail adds
@@ -664,15 +664,15 @@ namespace Equivalence
       have h_decoded := ProgramBusEntry.operand_properties_inversion h_eq h_eq_entry
       rw [deserialise_program_bus_entry] at h_decoded
       have h_imm : ∃ imm' : BitVec 12,
-          air.cols.instruction.op_c_0 row 0 = (Transpiler.V3.imm_operand imm' true)[0] ∧
-          air.cols.instruction.op_c_1 row 0 = (Transpiler.V3.imm_operand imm' true)[1] ∧
-          air.cols.instruction.op_c_sign row 0 = (Transpiler.V3.imm_operand imm' true)[2] := by
+          air.cols.instruction.op_c_0 row 0 = (Transpiler.imm_operand imm' true)[0] ∧
+          air.cols.instruction.op_c_1 row 0 = (Transpiler.imm_operand imm' true)[1] ∧
+          air.cols.instruction.op_c_sign row 0 = (Transpiler.imm_operand imm' true)[2] := by
         subst h_opcode
         rcases h_op with h | h | h | h | h | h | h <;>
         ( simp [ProgramBusEntry.decoded_from, h, h_imm_b, h_imm_c] at h_decoded
           obtain ⟨ imm', rs1', rd', h_eq_instr ⟩ := h_decoded
           subst h_eq_instr
-          simp [Transpiler.V3.transpile_op, -Vector.eq_mk] at h_eq
+          simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
           obtain ⟨ h_eq_data, - ⟩ := h_eq
           subst h_eq_data
           rw [deserialise_program_bus_entry] at h_eq_entry
@@ -683,7 +683,7 @@ namespace Equivalence
       have h_op_c_bv : U64w.toBV (op_c_value air row) = BitVec.signExtend 64 imm' := by
         simp only [op_c_value, h_imm_c_eqs.1, h_imm_c_eqs.2.1, h_imm_c_eqs.2.2.1,
                    h_imm_c_eqs.2.2.2, eq_c0, eq_c1, eq_cs]
-        exact Transpiler.V3.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
+        exact Transpiler.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
       rw [h_op_c_bv, setWidth_signExtend_self imm' (by norm_num)]
 
     /-- On a row whose `op_c` is an immediate (`imm_c = 1`), the low `n ≤ 16` bits of the `op_c`
@@ -759,11 +759,11 @@ namespace Equivalence
 
         A checked instruction theorem in decoded form takes the instruction, written in its
         statement, and the hypothesis `h_decode` that the decoder turns it into the row's Program
-        message: `Transpiler.V3.transpile_op instr 1 addr = some (program_bus_entry air row, props)`.
+        message: `Transpiler.transpile_op instr 1 addr = some (program_bus_entry air row, props)`.
         Each class file reads the row's columns off `h_decode` in a private lemma (`store_decoded`,
         `itype_decoded` and the rest), by one of two routes: a decoder lemma for the class writes
         the message out (`transpile_op_store_row`, `transpile_op_load_row`), or
-        `Transpiler.V3.transpile_op` is unfolded at the clause: in the lemma, or, in
+        `Transpiler.transpile_op` is unfolded at the clause: in the lemma, or, in
         `MulFamily.lean` and `DivFamily.lean`, by `rfl` in each theorem, which hands the lemma the
         clause. Either way `decoded_field` reads a column off the message by field name.
 
@@ -771,10 +771,10 @@ namespace Equivalence
         `itype_decode_satisfiable` and the rest): from `is_real = 1`, the row's Program promise, the
         opcode and, where classes share an opcode, the immediate flags that tell them apart
         (`imm_c`; `imm_b` for `ADDI` and U-type), `h_decode` holds for some instruction fields and
-        an address that is 4-aligned and below `Transpiler.V3.code_address_bound`. Each starts from
+        an address that is 4-aligned and below `Transpiler.code_address_bound`. Each starts from
         `program_bus_decoded`. -/
 
-    open Transpiler Transpiler.V3
+    open Transpiler
 
     /-- A field of the row's Program message, read by name: when the message is `data`, the field
         `f` of the message is `f` of `data`. The message's fields are the row's columns
@@ -797,7 +797,7 @@ namespace Equivalence
 
     /-- On a row whose `op_c` is an immediate (`imm_c = 1`) and whose `op_c` columns hold the
         decoder's encoding of a signed immediate `imm` of at most 32 bits
-        (`Transpiler.V3.imm_operand imm true`), the `op_c` value is `imm` sign-extended to 64 bits
+        (`Transpiler.imm_operand imm true`), the `op_c` value is `imm` sign-extended to 64 bits
         (constraints 4 to 7, through `imm_c_eq_1_constraints`). -/
     lemma op_c_value_eq_signExtend_of_imm_operand
       [Field ExtF]

@@ -50,7 +50,7 @@ namespace CpuChip.Spec
 
   open CpuChip.ConstraintsAndBuses
   open CpuChip.Interpretations
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
 
   -- ============================================================================
   -- Opcode sets, read through `.val`

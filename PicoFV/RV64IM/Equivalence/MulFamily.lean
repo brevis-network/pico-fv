@@ -9,7 +9,7 @@ namespace Equivalence
   open Plonky3
 
   open RV64IM
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open CpuChip.ConstraintsAndBuses
   open CpuChip.Interpretations
 
@@ -172,7 +172,7 @@ namespace Equivalence
 
     -- ========================================================================
     -- The checked multiply theorems, in decoded form: each takes the
-    -- instruction and an address whose decoding (`Transpiler.V3.transpile_op`,
+    -- instruction and an address whose decoding (`Transpiler.transpile_op`,
     -- at multiplicity 1) is the row's Program message, and is proved from its
     -- column form.
     --
@@ -190,12 +190,12 @@ namespace Equivalence
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
       {instr : instruction} {rs2 rs1 rd : regidx} {opc : FKB} {addr : ℕ} {props props' : Prop}
-      (h_decode : Transpiler.V3.transpile_op instr 1 addr = some (program_bus_entry air row, props))
-      (h_clause : Transpiler.V3.transpile_op instr 1 addr =
-        some ((1, #v[Transpiler.V3.pc_lo addr, Transpiler.V3.pc_hi addr, opc, opc,
+      (h_decode : Transpiler.transpile_op instr 1 addr = some (program_bus_entry air row, props))
+      (h_clause : Transpiler.transpile_op instr 1 addr =
+        some ((1, #v[Transpiler.pc_lo addr, Transpiler.pc_hi addr, opc, opc,
           Transpiler.reg_to_KB rd, Transpiler.reg_to_KB rs1, 0, 0, Transpiler.reg_to_KB rs2, 0, 0,
           if rd == regidx.Regidx 0 then 1 else 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-          Transpiler.V3.pc_carry addr]), props'))
+          Transpiler.pc_carry addr]), props'))
     :
       air.cols.is_real row 0 = 1 ∧ air.cols.instruction.opcode row 0 = opc ∧
       regidx.Regidx (air.cols.instruction.op_a row 0).val = rd ∧
@@ -216,7 +216,7 @@ namespace Equivalence
 
     /-- Equivalence for MUL (opcode 30, `instruction.MUL` with `result_part := .Low`), the low 64
         bits of the product: for every `MUL` instruction and address `addr` whose decoding
-        (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
+        (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
         on that instruction equals the row's effect. The decoder accepts any signedness for opcode
         30, and the low half does not depend on it, so the theorem holds for every `srs1` and
         `srs2`. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc
@@ -230,7 +230,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {rs2 rs1 rd : regidx} {srs1 srs2 : Signedness} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.MUL (rs2, rs1, rd,
+      (h_decode : Transpiler.transpile_op (.MUL (rs2, rs1, rd,
           { result_part := .Low, signed_rs1 := srs1, signed_rs2 := srs2 })) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
@@ -251,7 +251,7 @@ namespace Equivalence
     /-- Equivalence for MULH (opcode 31, `instruction.MUL` with `result_part := .High`,
         `signed_rs1 := .Signed`, `signed_rs2 := .Signed`), the high 64 bits of the signed product:
         for every `MULH` instruction and address `addr` whose decoding
-        (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
+        (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
         on that instruction equals the row's effect. The decoding fixes `addr` only modulo `2 ^ 32`,
         through the row's two 16-bit pc pieces. -/
     theorem equivalence_MULH
@@ -263,7 +263,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {rs2 rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.MUL (rs2, rs1, rd,
+      (h_decode : Transpiler.transpile_op (.MUL (rs2, rs1, rd,
           { result_part := .High, signed_rs1 := .Signed, signed_rs2 := .Signed })) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
@@ -284,7 +284,7 @@ namespace Equivalence
     /-- Equivalence for MULHU (opcode 32, `instruction.MUL` with `result_part := .High`,
         `signed_rs1 := .Unsigned`, `signed_rs2 := .Unsigned`), the high 64 bits of the unsigned
         product: for every `MULHU` instruction and address `addr` whose decoding
-        (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
+        (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
         on that instruction equals the row's effect. The decoding fixes `addr` only modulo `2 ^ 32`,
         through the row's two 16-bit pc pieces. -/
     theorem equivalence_MULHU
@@ -296,7 +296,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {rs2 rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.MUL (rs2, rs1, rd,
+      (h_decode : Transpiler.transpile_op (.MUL (rs2, rs1, rd,
           { result_part := .High, signed_rs1 := .Unsigned, signed_rs2 := .Unsigned })) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
@@ -317,7 +317,7 @@ namespace Equivalence
     /-- Equivalence for MULHSU (opcode 33, `instruction.MUL` with `result_part := .High`,
         `signed_rs1 := .Signed`, `signed_rs2 := .Unsigned`), the high 64 bits of the
         signed-by-unsigned product: for every `MULHSU` instruction and address `addr` whose decoding
-        (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
+        (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
         on that instruction equals the row's effect. The decoding fixes `addr` only modulo `2 ^ 32`,
         through the row's two 16-bit pc pieces. -/
     theorem equivalence_MULHSU
@@ -329,7 +329,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {rs2 rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.MUL (rs2, rs1, rd,
+      (h_decode : Transpiler.transpile_op (.MUL (rs2, rs1, rd,
           { result_part := .High, signed_rs1 := .Signed, signed_rs2 := .Unsigned })) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
@@ -349,7 +349,7 @@ namespace Equivalence
 
     /-- Equivalence for MULW (opcode 48, `instruction.MULW`), the 32-bit multiply (the low 32 bits
         of the product of the operands' low 32 bits, sign-extended): for every `MULW` instruction and
-        address `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        address `addr` whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's
         Program message, Sail's step on that instruction equals the row's effect. The decoding fixes
         `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
     theorem equivalence_MULW
@@ -361,7 +361,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {rs2 rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.MULW (rs2, rs1, rd)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.MULW (rs2, rs1, rd)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -377,7 +377,7 @@ namespace Equivalence
     /-- The `MUL`, `MULH`, `MULHU` and `MULHSU` theorems' decoding hypothesis holds on every real
         row of opcode 30 to 33: there the Program table's promise (in `bus_row_wf_asm`) gives a
         `MUL` of the opcode's `mul_op` and a 4-aligned address below
-        `Transpiler.V3.code_address_bound` whose decoding is the row's Program message. For opcode
+        `Transpiler.code_address_bound` whose decoding is the row's Program message. For opcode
         30 that holds for every `mul_op` with `result_part := .Low`, whatever its signedness. -/
     theorem mul_decode_satisfiable
       [Field ExtF]
@@ -394,8 +394,8 @@ namespace Equivalence
                 opc = 33))
     :
       ∃ (rs2 rs1 rd : regidx) (addr : ℕ) (props : Prop),
-        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
-        Transpiler.V3.transpile_op (.MUL (rs2, rs1, rd, op)) 1 addr =
+        addr % 4 = 0 ∧ addr < Transpiler.code_address_bound ∧
+        Transpiler.transpile_op (.MUL (rs2, rs1, rd, op)) 1 addr =
           some (program_bus_entry air row, props)
     := by
       obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=
@@ -414,7 +414,7 @@ namespace Equivalence
 
     /-- The `MULW` theorem's decoding hypothesis holds on every real row of opcode 48: there the
         Program table's promise (in `bus_row_wf_asm`) gives a `MULW` and a 4-aligned address below
-        `Transpiler.V3.code_address_bound` whose decoding is the row's Program message. -/
+        `Transpiler.code_address_bound` whose decoding is the row's Program message. -/
     theorem mulw_decode_satisfiable
       [Field ExtF]
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
@@ -423,8 +423,8 @@ namespace Equivalence
       (h_opcode : air.cols.instruction.opcode row 0 = 48)
     :
       ∃ (rs2 rs1 rd : regidx) (addr : ℕ) (props : Prop),
-        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
-        Transpiler.V3.transpile_op (.MULW (rs2, rs1, rd)) 1 addr =
+        addr % 4 = 0 ∧ addr < Transpiler.code_address_bound ∧
+        Transpiler.transpile_op (.MULW (rs2, rs1, rd)) 1 addr =
           some (program_bus_entry air row, props)
     := by
       obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=

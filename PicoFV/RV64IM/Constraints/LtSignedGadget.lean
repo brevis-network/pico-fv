@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 import PicoFV.RV64IM.Extraction.LtSignedGadget
 import PicoFV.RV64IM.Airs.LtSignedGadget
 import PicoFV.RV64IM.Constraints.LtWordU16Gadget
@@ -52,9 +52,7 @@ The 3 byte-bus entries decompose as:
 
 namespace LtSignedGadget
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   /-- Algebraic constraints emitted by Pico's `LtSignedGadget`,
       parametric in the 20 column values it touches. -/
   def AbsConstraints

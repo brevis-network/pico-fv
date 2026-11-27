@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 import PicoFV.RV64IM.Extraction.IsZeroWordGadget
 import PicoFV.RV64IM.Airs.IsZeroWordGadget
 import PicoFV.RV64IM.Constraints.IsZeroGadget
@@ -61,9 +61,7 @@ and (empty) `AbsBuses` predicates.
 
 namespace IsZeroWordGadget
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   /-- The conjunction of algebraic facts the Pico `IsZeroWordGadget`
       asserts on a row, expressed parametrically in the 11 owned column
       values plus the parent-supplied 4 input limbs and `is_real`. -/

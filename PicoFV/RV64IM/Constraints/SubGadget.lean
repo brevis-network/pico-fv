@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 import PicoFV.RV64IM.Extraction.SubGadget
 import PicoFV.RV64IM.Airs.SubGadget
 
@@ -32,9 +32,7 @@ predicates — consumed by chips that embed the gadget (e.g. `SubChip`).
 
 namespace SubGadget
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   /-- The conjunction of algebraic facts the Pico `SubGadget` asserts on
       a row, expressed parametrically in the 13 column values. -/
   def AbsConstraints

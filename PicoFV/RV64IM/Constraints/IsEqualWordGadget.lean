@@ -1,4 +1,4 @@
-import PicoFV.RV64IM.RVSail.BusesV3
+import PicoFV.RV64IM.RVSail.Buses
 import PicoFV.RV64IM.Extraction.IsEqualWordGadget
 import PicoFV.RV64IM.Airs.IsEqualWordGadget
 import PicoFV.RV64IM.Constraints.IsZeroWordGadget
@@ -42,9 +42,7 @@ Bus interactions: *none*.
 
 namespace IsEqualWordGadget
 
-  open RV64IM_Interactions.V3
-
-  open RV64IM_Interactions (ALUBus.Spec ALUBus.operandRange ALUBus.operandsInternal ALUBus.validOpcode ALUBus.externals ByteBus.Spec ALUBusEntry.deserialise ByteBusEntry.deserialise)
+  open RV64IM_Interactions
   /-- Algebraic facts the Pico `IsEqualWordGadget` asserts on a row.
       The first conjunct is `IsEqualWordGadget::eval`'s own
       `assert_bool(is_real)` (un-gated); the rest is the inner

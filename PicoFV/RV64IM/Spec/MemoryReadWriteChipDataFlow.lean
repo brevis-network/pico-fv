@@ -14,7 +14,7 @@ The data flow of a row of `MemoryReadWriteChip` (`MemoryReadWriteChip::eval`,
 A real row sends the memory argument the read of the double word at the aligned address
 (`looking`, multiplicity 1) and receives its write back (`looked`, multiplicity -1)
 (`machine/builder/riscv_memory.rs:194-208` at v3.2.0), and receives the memory dispatch from the
-CPU chip (`riscv_memory/read_write/constraints.rs:63-84` at v3.2.0). `V3.bus_operations` reads
+CPU chip (`riscv_memory/read_write/constraints.rs:63-84` at v3.2.0). `bus_operations` reads
 the pair as a double-word `ReadMem` and `WriteMem` at the aligned address, and the dispatch as an
 access of its opcode's width at `b + c`: a `WriteMem` of `a` for a store, a `ReadMem` of `a` for
 a load, or a `ReadMemAny` for a load into `x0`.
@@ -37,7 +37,7 @@ hypothesis of `DataFlow`. `bus_operations` does not read the messages' `chunk`, 
 
 namespace MemoryReadWriteChip.Spec
 
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open MemoryReadWriteChip.ConstraintsAndBuses
   open MemoryReadWriteChip.Interactions
 
@@ -52,20 +52,20 @@ namespace MemoryReadWriteChip.Spec
   :
     Prop
   :=
-    let dispatch_bus : RV64IM_Interactions.V3.BusRow := {
+    let dispatch_bus : RV64IM_Interactions.BusRow := {
       Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory
     }
-    let access_bus : RV64IM_Interactions.V3.BusRow := {
+    let access_bus : RV64IM_Interactions.BusRow := {
       Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := []
     }
     (RV64IM.operation_list_effect
-        (RV64IM_Interactions.V3.bus_operations access_bus) state).hypotheses →
+        (RV64IM_Interactions.bus_operations access_bus) state).hypotheses →
       (RV64IM.operation_list_effect
-          (RV64IM_Interactions.V3.bus_operations dispatch_bus) state).hypotheses ∧
+          (RV64IM_Interactions.bus_operations dispatch_bus) state).hypotheses ∧
       (RV64IM.operation_list_effect
-          (RV64IM_Interactions.V3.bus_operations dispatch_bus) state).state =
+          (RV64IM_Interactions.bus_operations dispatch_bus) state).state =
         (RV64IM.operation_list_effect
-          (RV64IM_Interactions.V3.bus_operations access_bus) state).state
+          (RV64IM_Interactions.bus_operations access_bus) state).state
 
   private abbrev SailState := PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 
@@ -378,7 +378,7 @@ namespace MemoryReadWriteChip.Spec
     (h_mem : is_memory air row = 1)
   :
     let v := air.cols.values
-    RV64IM_Interactions.V3.bus_operations
+    RV64IM_Interactions.bus_operations
         { Program := [], ALU := [], Byte := [], State := (bus_row air row).State, Memory := [] } =
       [ .ReadMem (dispatch_addr air row - dispatch_addr air row % 8) .Double
           (U64w.toBV #v[v.memory_access.prev_value_0 row 0, v.memory_access.prev_value_1 row 0,
@@ -395,7 +395,7 @@ namespace MemoryReadWriteChip.Spec
     have h_ge : ¬ ((air.cols.values.addr_word_0 row 0 - (air.cols.values.offset_bit_0 row 0 +
         2 * air.cols.values.offset_bit_1 row 0 + 4 * air.cols.values.offset_bit_2 row 0)).val +
         65536 * (air.cols.values.addr_word_1 row 0).val < 32) := by omega
-    simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses, h_mem,
+    simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses, h_mem,
       h_ge]
 
   /-- The offset bits are the address's low three bits (`aligned_address`). -/
@@ -484,12 +484,12 @@ namespace MemoryReadWriteChip.Spec
     dsimp only
     rw [access_ops air row h_ext_asm h_wf_asm h_constraints h_mem, hv0, hv1, hv2, hv3]
     rcases c35 with h0 | h0
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Byte
               (BitVec.ofNat 8 (air.cols.values.instruction.op_a_value_0 row 0).val) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       refine load_byte_flow state _ _ (dispatch_addr air row % 8) _ _ _ (by omega)
@@ -524,11 +524,11 @@ namespace MemoryReadWriteChip.Spec
           e3, e4, e5, e6, e7] <;>
         apply BitVec.eq_of_toNat_eq <;> simp only [BitVec.toNat_ofNat, Nat.reducePow] <;>
         clear * - h_a0 hs hk h_sp h_lo h_hi <;> omega
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Byte ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Byte (by omega)
@@ -564,12 +564,12 @@ namespace MemoryReadWriteChip.Spec
     dsimp only
     rw [access_ops air row h_ext_asm h_wf_asm h_constraints h_mem, hv0, hv1, hv2, hv3]
     rcases c35 with h0 | h0
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Byte
               (BitVec.ofNat 8 (air.cols.values.instruction.op_a_value_0 row 0).val) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       refine load_byte_flow state _ _ (dispatch_addr air row % 8) _ _ _ (by omega)
@@ -595,11 +595,11 @@ namespace MemoryReadWriteChip.Spec
           e3, e4, e5, e6, e7] <;>
         apply BitVec.eq_of_toNat_eq <;> simp only [BitVec.toNat_ofNat, Nat.reducePow] <;>
         clear * - h_a0 hs hk h_sp h_lo h_hi <;> omega
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Byte ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Byte (by omega)
@@ -637,12 +637,12 @@ namespace MemoryReadWriteChip.Spec
     dsimp only
     rw [access_ops air row h_ext_asm h_wf_asm h_constraints h_mem, hv0, hv1, hv2, hv3]
     rcases c35 with h0 | h0
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Half
               (BitVec.ofNat 16 (air.cols.values.instruction.op_a_value_0 row 0).val) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       simp [h0] at c26
@@ -662,11 +662,11 @@ namespace MemoryReadWriteChip.Spec
           e4, e5, e6, e7, b0, b1] <;>
         apply BitVec.eq_of_toNat_eq <;> simp only [BitVec.toNat_ofNat, Nat.reducePow] <;>
         clear * - h_a0 hk <;> omega
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Half ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Half (by omega)
@@ -704,12 +704,12 @@ namespace MemoryReadWriteChip.Spec
     dsimp only
     rw [access_ops air row h_ext_asm h_wf_asm h_constraints h_mem, hv0, hv1, hv2, hv3]
     rcases c35 with h0 | h0
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Half
               (BitVec.ofNat 16 (air.cols.values.instruction.op_a_value_0 row 0).val) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       simp [h0] at c26
@@ -729,11 +729,11 @@ namespace MemoryReadWriteChip.Spec
           e4, e5, e6, e7, b0, b1] <;>
         apply BitVec.eq_of_toNat_eq <;> simp only [BitVec.toNat_ofNat, Nat.reducePow] <;>
         clear * - h_a0 hk <;> omega
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Half ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Half (by omega)
@@ -773,13 +773,13 @@ namespace MemoryReadWriteChip.Spec
     dsimp only
     rw [access_ops air row h_ext_asm h_wf_asm h_constraints h_mem, hv0, hv1, hv2, hv3]
     rcases c35 with h0 | h0
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Word
               (BitVec.ofNat 16 (air.cols.values.instruction.op_a_value_1 row 0).val ++
                 BitVec.ofNat 16 (air.cols.values.instruction.op_a_value_0 row 0).val) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       simp [h0] at c26 c27
@@ -803,11 +803,11 @@ namespace MemoryReadWriteChip.Spec
           e7, b0, b1, b2, b3] <;>
         apply BitVec.eq_of_toNat_eq <;> simp only [BitVec.toNat_ofNat, Nat.reducePow] <;>
         clear * - h_a0 h_a1 hk hl <;> omega
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Word ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Word (by omega)
@@ -847,13 +847,13 @@ namespace MemoryReadWriteChip.Spec
     dsimp only
     rw [access_ops air row h_ext_asm h_wf_asm h_constraints h_mem, hv0, hv1, hv2, hv3]
     rcases c35 with h0 | h0
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Word
               (BitVec.ofNat 16 (air.cols.values.instruction.op_a_value_1 row 0).val ++
                 BitVec.ofNat 16 (air.cols.values.instruction.op_a_value_0 row 0).val) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       simp [h0] at c26 c27
@@ -877,11 +877,11 @@ namespace MemoryReadWriteChip.Spec
           e7, b0, b1, b2, b3] <;>
         apply BitVec.eq_of_toNat_eq <;> simp only [BitVec.toNat_ofNat, Nat.reducePow] <;>
         clear * - h_a0 h_a1 hk hl <;> omega
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Word ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Word (by omega)
@@ -920,23 +920,23 @@ namespace MemoryReadWriteChip.Spec
     rw [access_ops air row h_ext_asm h_wf_asm h_constraints h_mem, hv0, hv1, hv2, hv3]
     rcases c35 with h0 | h0
     · simp [h0] at c26 c27 c28 c29
-      have h_disp : RV64IM_Interactions.V3.bus_operations
+      have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMem (dispatch_addr air row) .Double
               (U64w.toBV #v[air.cols.values.memory_access.prev_value_0 row 0,
                 air.cols.values.memory_access.prev_value_1 row 0,
                 air.cols.values.memory_access.prev_value_2 row 0,
                 air.cols.values.memory_access.prev_value_3 row 0]) ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0, c26, c27, c28, c29]
       rw [h_disp]
       exact load_double_flow state _ _ _ _ _ (by omega) rfl rfl
-    · have h_disp : RV64IM_Interactions.V3.bus_operations
+    · have h_disp : RV64IM_Interactions.bus_operations
           { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
           [ .ReadMemAny (dispatch_addr air row) .Double ] := by
-        simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-          RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+        simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+          RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
           f7, f8, f9, f10, h0]
       rw [h_disp]
       exact load_any_flow state _ _ (dispatch_addr air row % 8) _ _ .Double (by omega)
@@ -975,12 +975,12 @@ namespace MemoryReadWriteChip.Spec
     unfold DataFlow
     dsimp only
     rw [access_ops air row h_ext_asm h_wf_asm h_constraints h_mem]
-    have h_disp : RV64IM_Interactions.V3.bus_operations
+    have h_disp : RV64IM_Interactions.bus_operations
         { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
         [ .WriteMem (dispatch_addr air row) .Byte
             (BitVec.ofNat 8 (air.cols.values.instruction.op_a_value_0 row 0).val) ] := by
-      simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-        RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+      simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+        RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
         f7, f8, f9, f10]
     rw [h_disp]
     refine store_byte_flow state _ _ (dispatch_addr air row % 8) _ _ _ (by omega)
@@ -1058,12 +1058,12 @@ namespace MemoryReadWriteChip.Spec
     unfold DataFlow
     dsimp only
     rw [access_ops air row h_ext_asm h_wf_asm h_constraints h_mem]
-    have h_disp : RV64IM_Interactions.V3.bus_operations
+    have h_disp : RV64IM_Interactions.bus_operations
         { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
         [ .WriteMem (dispatch_addr air row) .Half
             (BitVec.ofNat 16 (air.cols.values.instruction.op_a_value_0 row 0).val) ] := by
-      simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-        RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+      simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+        RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
         f7, f8, f9, f10]
     rw [h_disp]
     refine store_half_flow state _ _ (dispatch_addr air row % 8) _ _ _ (by omega) h_bound ?_
@@ -1129,13 +1129,13 @@ namespace MemoryReadWriteChip.Spec
     unfold DataFlow
     dsimp only
     rw [access_ops air row h_ext_asm h_wf_asm h_constraints h_mem]
-    have h_disp : RV64IM_Interactions.V3.bus_operations
+    have h_disp : RV64IM_Interactions.bus_operations
         { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
         [ .WriteMem (dispatch_addr air row) .Word
             (BitVec.ofNat 16 (air.cols.values.instruction.op_a_value_1 row 0).val ++
               BitVec.ofNat 16 (air.cols.values.instruction.op_a_value_0 row 0).val) ] := by
-      simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-        RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+      simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+        RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
         f7, f8, f9, f10]
     rw [h_disp]
     refine store_word_flow state _ _ (dispatch_addr air row % 8) _ _ _ (by omega) h_bound ?_
@@ -1197,15 +1197,15 @@ namespace MemoryReadWriteChip.Spec
     unfold DataFlow
     dsimp only
     rw [access_ops air row h_ext_asm h_wf_asm h_constraints h_mem, c37, c38, c39, c40]
-    have h_disp : RV64IM_Interactions.V3.bus_operations
+    have h_disp : RV64IM_Interactions.bus_operations
         { Program := [], ALU := [], Byte := [], State := [], Memory := (bus_row air row).Memory } =
         [ .WriteMem (dispatch_addr air row) .Double
             (U64w.toBV #v[air.cols.values.instruction.op_a_value_0 row 0,
               air.cols.values.instruction.op_a_value_1 row 0,
               air.cols.values.instruction.op_a_value_2 row 0,
               air.cols.values.instruction.op_a_value_3 row 0]) ] := by
-      simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-        RV64IM_Interactions.V3.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
+      simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+        RV64IM_Interactions.mem_width_of_opcode, dispatch_addr, f0, f1, f2, f3, f4, f5, f6,
         f7, f8, f9, f10]
     rw [h_disp]
     exact store_double_flow state _ _ _ _ _ (by omega) rfl
@@ -1231,8 +1231,8 @@ namespace MemoryReadWriteChip.Spec
       simp only [flags, List.cons.injEq, and_true] at h <;>
       obtain ⟨ f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10 ⟩ := h
     · unfold DataFlow
-      simp [RV64IM_Interactions.V3.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
-        RV64IM_Interactions.V3.mem_width_of_opcode, RV64IM.operation_list_effect, f0, f1, f2, f3,
+      simp [RV64IM_Interactions.bus_operations, bus_row, MemoryReadWriteChip.AbsBuses,
+        RV64IM_Interactions.mem_width_of_opcode, RV64IM.operation_list_effect, f0, f1, f2, f3,
         f4, f5, f6, f7, f8, f9, f10]
     · exact dataFlow_LB air row state h_ext_asm h_wf_asm h_constraints f0
     · exact dataFlow_LBU air row state h_ext_asm h_wf_asm h_constraints f1

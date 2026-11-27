@@ -13,8 +13,8 @@ the Program table: either it ends at or below the range's start, or it starts at
 end.
 
 What is proved is about the range as read from the row's own columns. The Program table's
-promise (`V3.CodeRangeBus.Spec`) gives only that its four pieces are below 2^16, not that they
-are this program's code range: no Lean statement names that range yet (`RVSail/BusesV3.lean`,
+promise (`CodeRangeBus.Spec`) gives only that its four pieces are below 2^16, not that they
+are this program's code range: no Lean statement names that range yet (`RVSail/Buses.lean`,
 `CodeRangeBus.Spec`). So these theorems do not yet say that a store misses the program's code;
 they say it misses whatever range the Program table answers.
 
@@ -23,7 +23,7 @@ they say it misses whatever range the Program table answers.
 documentation (`code_range.rs`, the doc comments of `CodeRangeCols::eval` and `populate`) leaves
 to its caller: the row is a store (`is_store = 1`), `addr` is two 16-bit pieces and `width` is
 below 2^16. The rest comes from the gadget's constraints and two bus promises: the Program
-table answers the code-range lookup with four 16-bit pieces (`V3.CodeRangeBus.Spec`), and the
+table answers the code-range lookup with four 16-bit pieces (`CodeRangeBus.Spec`), and the
 byte table's `U16Range` check bounds each piece of the distance (`ByteBus.Spec`, opcode 8). Both
 are assumed through `bus_row_all_wf_asm`, the check over all of the row's messages.
 
@@ -38,7 +38,7 @@ the gadget only looks up, with multiplicity `is_store`, which its caller keeps b
 
 namespace CodeRangeGadget.Spec
 
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open CodeRangeGadget.Interactions
   open CodeRangeGadget.Interpretations
 

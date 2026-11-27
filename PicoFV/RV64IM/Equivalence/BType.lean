@@ -7,7 +7,7 @@ namespace Equivalence
   open Plonky3
 
   open RV64IM
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open CpuChip.ConstraintsAndBuses
   open CpuChip.Interpretations
 
@@ -97,9 +97,9 @@ namespace Equivalence
       (h_imm_c : air.cols.opcode_selector.imm_c row 0 = 1)
     :
       ∃ imm' : BitVec 13,
-        air.cols.instruction.op_c_0 row 0 = (Transpiler.V3.imm_operand imm' true)[0] ∧
-        air.cols.instruction.op_c_1 row 0 = (Transpiler.V3.imm_operand imm' true)[1] ∧
-        air.cols.instruction.op_c_sign row 0 = (Transpiler.V3.imm_operand imm' true)[2] ∧
+        air.cols.instruction.op_c_0 row 0 = (Transpiler.imm_operand imm' true)[0] ∧
+        air.cols.instruction.op_c_1 row 0 = (Transpiler.imm_operand imm' true)[1] ∧
+        air.cols.instruction.op_c_sign row 0 = (Transpiler.imm_operand imm' true)[2] ∧
         U64w.toBV (op_c_value air row) = BitVec.signExtend 64 imm'
     := by
       have h_prog := program_bus_operand_properties air row h_is_real h_wf
@@ -110,22 +110,22 @@ namespace Equivalence
       · simp [ProgramBusEntry.decoded_from, Transpiler.opcode_of_bop, h_opcode] at h_decoded
         obtain ⟨ imm', rs2', rs1', h_eq_instr ⟩ := h_decoded
         subst h_eq_instr
-        simp [Transpiler.V3.transpile_op, Transpiler.opcode_of_bop, -Vector.eq_mk] at h_eq
+        simp [Transpiler.transpile_op, Transpiler.opcode_of_bop, -Vector.eq_mk] at h_eq
         obtain ⟨ h_eq_data, - ⟩ := h_eq
         subst h_eq_data
         rw [deserialise_program_bus_entry] at h_eq_entry
         simp [ProgramBusEntry.deserialise] at h_eq_entry
         have eq_c0 : air.cols.instruction.op_c_0 row 0 =
-            (Transpiler.V3.imm_operand imm' true)[0] := by simp [h_eq_entry]
+            (Transpiler.imm_operand imm' true)[0] := by simp [h_eq_entry]
         have eq_c1 : air.cols.instruction.op_c_1 row 0 =
-            (Transpiler.V3.imm_operand imm' true)[1] := by simp [h_eq_entry]
+            (Transpiler.imm_operand imm' true)[1] := by simp [h_eq_entry]
         have eq_cs : air.cols.instruction.op_c_sign row 0 =
-            (Transpiler.V3.imm_operand imm' true)[2] := by simp [h_eq_entry]
+            (Transpiler.imm_operand imm' true)[2] := by simp [h_eq_entry]
         refine ⟨ imm', eq_c0, eq_c1, eq_cs, ?_ ⟩
         have h_imm_c_eqs := imm_c_eq_1_constraints air row h_imm_c h_constraints
         simp only [op_c_value, h_imm_c_eqs.1, h_imm_c_eqs.2.1, h_imm_c_eqs.2.2.1,
                    h_imm_c_eqs.2.2.2, eq_c0, eq_c1, eq_cs]
-        exact Transpiler.V3.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
+        exact Transpiler.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
 
     /-- A branch row's next pc, as Sail's increment: `pc + offset` when the branch is taken
         and `pc + 4` when it is not. `taken` is the row's own predicate, decided by the
@@ -148,9 +148,9 @@ namespace Equivalence
           air.cols.opcode_selector.is_blt row 0 + air.cols.opcode_selector.is_bge row 0 +
           air.cols.opcode_selector.is_bltu row 0 + air.cols.opcode_selector.is_bgeu row 0 = 1)
       {imm' : BitVec 13}
-      (eq_c0 : air.cols.instruction.op_c_0 row 0 = (Transpiler.V3.imm_operand imm' true)[0])
-      (eq_c1 : air.cols.instruction.op_c_1 row 0 = (Transpiler.V3.imm_operand imm' true)[1])
-      (eq_cs : air.cols.instruction.op_c_sign row 0 = (Transpiler.V3.imm_operand imm' true)[2])
+      (eq_c0 : air.cols.instruction.op_c_0 row 0 = (Transpiler.imm_operand imm' true)[0])
+      (eq_c1 : air.cols.instruction.op_c_1 row 0 = (Transpiler.imm_operand imm' true)[1])
+      (eq_cs : air.cols.instruction.op_c_sign row 0 = (Transpiler.imm_operand imm' true)[2])
       (h_op_c : U64w.toBV (op_c_value air row) = BitVec.signExtend 64 imm')
       (taken : Bool)
       (h_taken : branch_taken air row = if taken then 1 else 0)
@@ -661,7 +661,7 @@ namespace Equivalence
 
     -- ========================================================================
     -- The checked branch theorems, in decoded form: each takes the branch and
-    -- an address whose decoding (`Transpiler.V3.transpile_op`, at
+    -- an address whose decoding (`Transpiler.transpile_op`, at
     -- multiplicity 1) is the row's Program message, and is proved from its
     -- column form.
     --
@@ -679,7 +679,7 @@ namespace Equivalence
       (air : Valid_CpuChip FKB ExtF) (row : ℕ)
       (h_constraints : CpuChip.Extraction.allHold air row)
       {imm : BitVec 13} {rs2 rs1 : regidx} {bo : bop} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, bo)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.BTYPE (imm, rs2, rs1, bo)) 1 addr =
         some (program_bus_entry air row, props))
     :
       air.cols.is_real row 0 = 1 ∧
@@ -688,7 +688,7 @@ namespace Equivalence
       regidx.Regidx (air.cols.instruction.op_b_0 row 0).val = rs2 ∧
       (U64w.toBV (op_c_value air row)).setWidth 13 = imm
     := by
-      simp only [Transpiler.V3.transpile_op, Option.some.injEq, Prod.mk.injEq] at h_decode
+      simp only [Transpiler.transpile_op, Option.some.injEq, Prod.mk.injEq] at h_decode
       have h_data := h_decode.1.symm
       have h_op_a : air.cols.instruction.op_a row 0 = Transpiler.reg_to_KB rs1 :=
         decoded_field h_data ProgramBusEntry.op_a
@@ -704,7 +704,7 @@ namespace Equivalence
         by rw [h_op_c]; exact setWidth_signExtend_self imm (by norm_num) ⟩
 
     /-- Equivalence for BEQ (opcode 18, `bop.BEQ`): for every `BEQ` instruction and address
-        `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        `addr` whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's
         Program message, Sail's step on that instruction equals the row's effect. The decoding
         fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
     theorem equivalence_BEQ
@@ -716,7 +716,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 13} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, .BEQ)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.BTYPE (imm, rs2, rs1, .BEQ)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -731,7 +731,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for BNE (opcode 19, `bop.BNE`): for every `BNE` instruction and address
-        `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        `addr` whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's
         Program message, Sail's step on that instruction equals the row's effect. The decoding
         fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
     theorem equivalence_BNE
@@ -743,7 +743,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 13} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, .BNE)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.BTYPE (imm, rs2, rs1, .BNE)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -758,7 +758,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for BLT (opcode 20, `bop.BLT`): for every `BLT` instruction and address
-        `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        `addr` whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's
         Program message, Sail's step on that instruction equals the row's effect. The decoding
         fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
     theorem equivalence_BLT
@@ -770,7 +770,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 13} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, .BLT)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.BTYPE (imm, rs2, rs1, .BLT)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -785,7 +785,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for BGE (opcode 21, `bop.BGE`): for every `BGE` instruction and address
-        `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        `addr` whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's
         Program message, Sail's step on that instruction equals the row's effect. The decoding
         fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
     theorem equivalence_BGE
@@ -797,7 +797,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 13} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, .BGE)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.BTYPE (imm, rs2, rs1, .BGE)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -812,7 +812,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for BLTU (opcode 22, `bop.BLTU`): for every `BLTU` instruction and address
-        `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        `addr` whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's
         Program message, Sail's step on that instruction equals the row's effect. The decoding
         fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
     theorem equivalence_BLTU
@@ -824,7 +824,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 13} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, .BLTU)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.BTYPE (imm, rs2, rs1, .BLTU)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -839,7 +839,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for BGEU (opcode 23, `bop.BGEU`): for every `BGEU` instruction and address
-        `addr` whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1) is the row's
+        `addr` whose decoding (`Transpiler.transpile_op`, at multiplicity 1) is the row's
         Program message, Sail's step on that instruction equals the row's effect. The decoding
         fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit pc pieces. -/
     theorem equivalence_BGEU
@@ -851,7 +851,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 13} {rs2 rs1 : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, .BGEU)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.BTYPE (imm, rs2, rs1, .BGEU)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -867,7 +867,7 @@ namespace Equivalence
 
     /-- The branch theorems' decoding hypothesis holds on every real row of a branch opcode:
         there the Program table's promise (in `bus_row_wf_asm`) gives a branch of the opcode's
-        comparison and a 4-aligned address below `Transpiler.V3.code_address_bound` whose
+        comparison and a 4-aligned address below `Transpiler.code_address_bound` whose
         decoding is the row's Program message. -/
     theorem btype_decode_satisfiable
       [Field ExtF]
@@ -877,8 +877,8 @@ namespace Equivalence
       (h_opcode : air.cols.instruction.opcode row 0 = Transpiler.opcode_of_bop bo)
     :
       ∃ (imm : BitVec 13) (rs2 rs1 : regidx) (addr : ℕ) (props : Prop),
-        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
-        Transpiler.V3.transpile_op (.BTYPE (imm, rs2, rs1, bo)) 1 addr =
+        addr % 4 = 0 ∧ addr < Transpiler.code_address_bound ∧
+        Transpiler.transpile_op (.BTYPE (imm, rs2, rs1, bo)) 1 addr =
           some (program_bus_entry air row, props)
     := by
       obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=

@@ -14,7 +14,7 @@ namespace Equivalence
   open Plonky3
 
   open RV64IM
-  open RV64IM_Interactions.V3
+  open RV64IM_Interactions
   open CpuChip.ConstraintsAndBuses
   open CpuChip.Interpretations
 
@@ -150,22 +150,22 @@ namespace Equivalence
       · simp [ProgramBusEntry.decoded_from, h_op] at h_decoded
         obtain ⟨ imm', rs1', rd', h_eq_instr ⟩ := h_decoded
         subst h_eq_instr
-        simp [Transpiler.V3.transpile_op, -Vector.eq_mk] at h_eq
+        simp [Transpiler.transpile_op, -Vector.eq_mk] at h_eq
         obtain ⟨ h_eq_data, - ⟩ := h_eq
         subst h_eq_data
         rw [deserialise_program_bus_entry] at h_eq_entry
         simp [ProgramBusEntry.deserialise] at h_eq_entry
         have eq_c0 : air.cols.instruction.op_c_0 row 0 =
-            (Transpiler.V3.imm_operand imm' true)[0] := by simp [h_eq_entry]
+            (Transpiler.imm_operand imm' true)[0] := by simp [h_eq_entry]
         have eq_c1 : air.cols.instruction.op_c_1 row 0 =
-            (Transpiler.V3.imm_operand imm' true)[1] := by simp [h_eq_entry]
+            (Transpiler.imm_operand imm' true)[1] := by simp [h_eq_entry]
         have eq_cs : air.cols.instruction.op_c_sign row 0 =
-            (Transpiler.V3.imm_operand imm' true)[2] := by simp [h_eq_entry]
+            (Transpiler.imm_operand imm' true)[2] := by simp [h_eq_entry]
         refine ⟨ imm', ?_ ⟩
         have h_imm_c_eqs := imm_c_eq_1_constraints air row h_imm_c h_constraints
         simp only [op_c_value, h_imm_c_eqs.1, h_imm_c_eqs.2.1, h_imm_c_eqs.2.2.1,
                    h_imm_c_eqs.2.2.2, eq_c0, eq_c1, eq_cs]
-        exact Transpiler.V3.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
+        exact Transpiler.imm_operand_toBV_sgn imm' (by norm_num) (by norm_num)
 
     /-- `equivalence_LW` in column form: for a row of opcode 12, Sail's step on the `LOAD` of
         width 4 (sign-extended) whose registers and offset are read off the row's columns equals
@@ -236,7 +236,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -254,7 +254,7 @@ namespace Equivalence
               (data0 := 0#8) (data1 := 0#8) (data2 := 0#8) (data3 := 0#8)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
               deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
               deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LW,
@@ -289,7 +289,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -333,7 +333,7 @@ namespace Equivalence
               (data3 := BitVec.extractLsb' 24 8 v32)
               (state := state)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        · rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
                 deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
                 deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LW,
@@ -442,7 +442,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -460,7 +460,7 @@ namespace Equivalence
               (data0 := 0#8)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
               deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
               deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LB,
@@ -492,7 +492,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -531,7 +531,7 @@ namespace Equivalence
               (data0 := v8)
               (state := state)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        · rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
                 deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
                 deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LB,
@@ -636,7 +636,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -654,7 +654,7 @@ namespace Equivalence
               (data0 := 0#8) (data1 := 0#8)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
               deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
               deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LH,
@@ -687,7 +687,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -728,7 +728,7 @@ namespace Equivalence
               (data1 := BitVec.extractLsb' 8 8 v16)
               (state := state)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        · rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
                 deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
                 deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LH,
@@ -835,7 +835,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -853,7 +853,7 @@ namespace Equivalence
               (data0 := 0#8)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
               deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
               deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LBU,
@@ -885,7 +885,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -924,7 +924,7 @@ namespace Equivalence
               (data0 := v8)
               (state := state)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        · rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
                 deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
                 deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LBU,
@@ -1029,7 +1029,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -1047,7 +1047,7 @@ namespace Equivalence
               (data0 := 0#8) (data1 := 0#8)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
               deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
               deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LHU,
@@ -1080,7 +1080,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -1121,7 +1121,7 @@ namespace Equivalence
               (data1 := BitVec.extractLsb' 8 8 v16)
               (state := state)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        · rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
                 deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
                 deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LHU,
@@ -1228,7 +1228,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -1246,7 +1246,7 @@ namespace Equivalence
               (data0 := 0#8) (data1 := 0#8) (data2 := 0#8) (data3 := 0#8)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
               deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
               deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LWU,
@@ -1281,7 +1281,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -1325,7 +1325,7 @@ namespace Equivalence
               (data3 := BitVec.extractLsb' 24 8 v32)
               (state := state)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        · rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
                 deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
                 deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LWU,
@@ -1434,7 +1434,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -1452,7 +1452,7 @@ namespace Equivalence
               (data0 := 0#8) (data1 := 0#8) (data2 := 0#8) (data3 := 0#8) (data4 := 0#8) (data5 := 0#8) (data6 := 0#8) (data7 := 0#8)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
         · rw [h_rd_x0]
-          rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+          rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
               deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
               deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LD,
@@ -1491,7 +1491,7 @@ namespace Equivalence
           rw [op_a_is_x0_eq air row h_is_real (bus_row_reads_asm_of_wf_asm h_wf)]
           simp [Fin.ext_iff, h_rd0]
         have h_bus := h_bus_hypotheses
-        rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
             deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
             deserialise_raw_bus_row_Memory] at h_bus
         simp +decide [MemoryBusEntry.deserialise, mem_width_of_opcode,
@@ -1532,7 +1532,7 @@ namespace Equivalence
               (data7 := BitVec.extractLsb' 56 8 v64)
               (state := state)
               (risc_v_assumptions := risc_v_assumptions) (h_range := h_range)]
-        · rw [CPU_bus_operations, RV64IM_Interactions.V3.bus_operations,
+        · rw [CPU_bus_operations, RV64IM_Interactions.bus_operations,
                 deserialise_raw_bus_row_Program, deserialise_raw_bus_row_State,
                 deserialise_raw_bus_row_Memory]
           simp +decide [OpcodeSpec.RV64.spec_LD,
@@ -1570,7 +1570,7 @@ namespace Equivalence
 
     -- ========================================================================
     -- The checked load theorems, in decoded form: each takes the load and an
-    -- address whose decoding (`Transpiler.V3.transpile_op`, at multiplicity 1)
+    -- address whose decoding (`Transpiler.transpile_op`, at multiplicity 1)
     -- is the row's Program message, and is proved from its column form.
     --
     -- The proofs pass hypotheses as `@h`. On the store and load sections,
@@ -1588,7 +1588,7 @@ namespace Equivalence
       (h_constraints : CpuChip.Extraction.allHold air row)
       {imm : BitVec 12} {rs1 rd : regidx} {u : Bool} {wd : word_width} {addr : ℕ}
       {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, u, wd)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.LOAD (imm, rs1, rd, u, wd)) 1 addr =
         some (program_bus_entry air row, props))
     :
       air.cols.is_real row 0 = 1 ∧
@@ -1619,7 +1619,7 @@ namespace Equivalence
         by rw [h_op_c]; exact setWidth_signExtend_self imm (by norm_num) ⟩
 
     /-- Equivalence for LB (opcode 10, `instruction.LOAD` of width 1, sign-extended): for every
-        `LB` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        `LB` instruction and address `addr` whose decoding (`Transpiler.transpile_op`, at
         multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
         row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
         pc pieces. -/
@@ -1632,7 +1632,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, false, 1)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.LOAD (imm, rs1, rd, false, 1)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -1648,7 +1648,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for LH (opcode 11, `instruction.LOAD` of width 2, sign-extended): for every
-        `LH` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        `LH` instruction and address `addr` whose decoding (`Transpiler.transpile_op`, at
         multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
         row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
         pc pieces. -/
@@ -1661,7 +1661,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, false, 2)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.LOAD (imm, rs1, rd, false, 2)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -1677,7 +1677,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for LW (opcode 12, `instruction.LOAD` of width 4, sign-extended): for every
-        `LW` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        `LW` instruction and address `addr` whose decoding (`Transpiler.transpile_op`, at
         multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
         row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
         pc pieces. -/
@@ -1690,7 +1690,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, false, 4)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.LOAD (imm, rs1, rd, false, 4)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -1706,7 +1706,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for LBU (opcode 13, `instruction.LOAD` of width 1, zero-extended): for every
-        `LBU` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        `LBU` instruction and address `addr` whose decoding (`Transpiler.transpile_op`, at
         multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
         row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
         pc pieces. -/
@@ -1719,7 +1719,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, true, 1)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.LOAD (imm, rs1, rd, true, 1)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -1735,7 +1735,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for LHU (opcode 14, `instruction.LOAD` of width 2, zero-extended): for every
-        `LHU` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        `LHU` instruction and address `addr` whose decoding (`Transpiler.transpile_op`, at
         multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
         row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
         pc pieces. -/
@@ -1748,7 +1748,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, true, 2)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.LOAD (imm, rs1, rd, true, 2)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -1764,7 +1764,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for LWU (opcode 45, `instruction.LOAD` of width 4, zero-extended): for every
-        `LWU` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        `LWU` instruction and address `addr` whose decoding (`Transpiler.transpile_op`, at
         multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
         row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
         pc pieces. -/
@@ -1777,7 +1777,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, true, 4)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.LOAD (imm, rs1, rd, true, 4)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -1793,7 +1793,7 @@ namespace Equivalence
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses @risc_v_assumptions
 
     /-- Equivalence for LD (opcode 46, `instruction.LOAD` of width 8, no extension): for every
-        `LD` instruction and address `addr` whose decoding (`Transpiler.V3.transpile_op`, at
+        `LD` instruction and address `addr` whose decoding (`Transpiler.transpile_op`, at
         multiplicity 1) is the row's Program message, Sail's step on that instruction equals the
         row's effect. The decoding fixes `addr` only modulo `2 ^ 32`, through the row's two 16-bit
         pc pieces. -/
@@ -1806,7 +1806,7 @@ namespace Equivalence
       (h_all_constraints : ∀ row ≤ air.last_row, CpuChip.Extraction.allHold air row)
       (pico_assumptions : pico_CpuChip_control_flow_assumptions air)
       {imm : BitVec 12} {rs1 rd : regidx} {addr : ℕ} {props : Prop}
-      (h_decode : Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, false, 8)) 1 addr =
+      (h_decode : Transpiler.transpile_op (.LOAD (imm, rs1, rd, false, 8)) 1 addr =
         some (program_bus_entry air row, props))
       (h_bus_hypotheses :
         (operation_list_effect (CPU_bus_operations air row) state).hypotheses)
@@ -1823,7 +1823,7 @@ namespace Equivalence
 
     /-- The load theorems' decoding hypothesis holds on every real row of a load opcode: there
         the Program table's promise (in `bus_row_wf_asm`) gives a load of the opcode's signedness
-        and width and a 4-aligned address below `Transpiler.V3.code_address_bound` whose decoding
+        and width and a 4-aligned address below `Transpiler.code_address_bound` whose decoding
         is the row's Program message. -/
     theorem load_decode_satisfiable
       [Field ExtF]
@@ -1837,8 +1837,8 @@ namespace Equivalence
               (u = false ∧ wd = 8 ∧ opc = 46))
     :
       ∃ (imm : BitVec 12) (rs1 rd : regidx) (addr : ℕ) (props : Prop),
-        addr % 4 = 0 ∧ addr < Transpiler.V3.code_address_bound ∧
-        Transpiler.V3.transpile_op (.LOAD (imm, rs1, rd, u, wd)) 1 addr =
+        addr % 4 = 0 ∧ addr < Transpiler.code_address_bound ∧
+        Transpiler.transpile_op (.LOAD (imm, rs1, rd, u, wd)) 1 addr =
           some (program_bus_entry air row, props)
     := by
       obtain ⟨ instr, addr, props, h_al, h_lt, h_dec, h_from ⟩ :=
