@@ -9,11 +9,11 @@ set_option linter.constructorNameAsVariable false
 /-!
 # Shared definitions of the RV64IM instruction theorems (Pico v3.2.0)
 
-The operand values a row reads and writes, the operations its messages stand for, the
-control-flow facts every ALU-class row shares, and the helpers of the decoded form (section
-`Decoded`: `decoded_field`, `regidx_reg_to_KB`, `op_c_value_eq_signExtend_of_imm_operand`,
-`program_bus_decoded`). The one assumption the theorems make about the
-whole trace rather than about a row, `pico_CpuChip_control_flow_assumptions`, is defined in
+The operand values a row reads and writes, the operations its messages stand for, the control-flow
+facts every ALU-class row shares, and the helpers of the decoded form (section `Decoded`:
+`decoded_field`, `regidx_reg_to_KB`, `reg_reg_decoded`, `op_c_value_eq_signExtend_of_imm_operand`,
+`program_bus_decoded`). The one assumption the theorems make about the whole trace rather than about
+a row, `pico_CpuChip_control_flow_assumptions`, is defined in
 `Constraints/CpuChipInterpretations.lean` so that the lemmas there can take it.
 
 The pc-alignment lemmas that the 2.x file also held are not here. A real row's next pc is
@@ -763,9 +763,10 @@ namespace Equivalence
         Each class file reads the row's columns off `h_decode` in a private lemma (`store_decoded`,
         `itype_decoded` and the rest), by one of two routes: a decoder lemma for the class writes
         the message out (`transpile_op_store_row`, `transpile_op_load_row`), or
-        `Transpiler.transpile_op` is unfolded at the clause: in the lemma, or, in
-        `MulFamily.lean` and `DivFamily.lean`, by `rfl` in each theorem, which hands the lemma the
-        clause. Either way `decoded_field` reads a column off the message by field name.
+        `Transpiler.transpile_op` is unfolded at the clause: in the lemma, or by `rfl` in each
+        theorem, which hands the clause to the lemma that classes of one clause shape share
+        (`reg_reg_decoded`). Either way `decoded_field` reads a column off the message by field
+        name.
 
         Each class file also proves a bridge lemma per decoder clause (`store_decode_satisfiable`,
         `itype_decode_satisfiable` and the rest): from `is_real = 1`, the row's Program promise, the
@@ -794,6 +795,40 @@ namespace Equivalence
     lemma regidx_reg_to_KB (r : regidx) : regidx.Regidx (reg_to_KB r).val = r := by
       obtain ⟨ r ⟩ := r
       simp [reg_to_KB, regidx_to_fin]
+
+    /-- What a decoding of a register-register instruction says about the row, given the decoder's
+        row for the instruction's clause (`h_clause`, which `rfl` proves for each opcode of
+        `RTYPE`, `RTYPEW`, the multiplies and the divides): it is real, its opcode is the clause's,
+        its third operand is a register (`imm_c = 0`), and its `op_a`, `op_b` and `op_c` columns
+        name `rd`, `rs1` and `rs2`. -/
+    lemma reg_reg_decoded
+      [Field ExtF]
+      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
+      {instr : instruction} {rs2 rs1 rd : regidx} {opc : FKB} {addr : ℕ} {props props' : Prop}
+      (h_decode : transpile_op instr 1 addr = some (program_bus_entry air row, props))
+      (h_clause : transpile_op instr 1 addr =
+        some ((1, #v[pc_lo addr, pc_hi addr, opc, opc, reg_to_KB rd, reg_to_KB rs1, 0, 0,
+          reg_to_KB rs2, 0, 0, if rd == regidx.Regidx 0 then 1 else 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, pc_carry addr]), props'))
+    :
+      air.cols.is_real row 0 = 1 ∧ air.cols.instruction.opcode row 0 = opc ∧
+      air.cols.opcode_selector.imm_c row 0 = 0 ∧
+      regidx.Regidx (air.cols.instruction.op_a row 0).val = rd ∧
+      regidx.Regidx (air.cols.instruction.op_b_0 row 0).val = rs1 ∧
+      regidx.Regidx (air.cols.instruction.op_c_0 row 0).val = rs2
+    := by
+      rw [h_clause, Option.some.injEq, Prod.mk.injEq] at h_decode
+      have h_data := h_decode.1.symm
+      have h_op_a : air.cols.instruction.op_a row 0 = reg_to_KB rd :=
+        decoded_field h_data ProgramBusEntry.op_a
+      have h_op_b : air.cols.instruction.op_b_0 row 0 = reg_to_KB rs1 :=
+        decoded_field h_data ProgramBusEntry.b_0
+      have h_op_c : air.cols.instruction.op_c_0 row 0 = reg_to_KB rs2 :=
+        decoded_field h_data ProgramBusEntry.c_0
+      exact ⟨ decoded_field h_data ProgramBusEntry.multiplicity,
+        decoded_field h_data ProgramBusEntry.opcode, decoded_field h_data ProgramBusEntry.imm_c,
+        by rw [h_op_a]; exact regidx_reg_to_KB rd, by rw [h_op_b]; exact regidx_reg_to_KB rs1,
+        by rw [h_op_c]; exact regidx_reg_to_KB rs2 ⟩
 
     /-- On a row whose `op_c` is an immediate (`imm_c = 1`) and whose `op_c` columns hold the
         decoder's encoding of a signed immediate `imm` of at most 32 bits

@@ -238,38 +238,6 @@ namespace Equivalence
     -- against its expected type still unfolds `operation_list_effect`.
     -- ========================================================================
 
-    /-- What a decoding of a divide or remainder says about the row, given the decoder's row for the
-        instruction's clause (`h_clause`, which `rfl` proves for each opcode of the class): it is
-        real, its opcode is the clause's, and its `op_a`, `op_b` and `op_c` columns name `rd`, `rs1`
-        and `rs2`. -/
-    private lemma div_decoded
-      [Field ExtF]
-      (air : Valid_CpuChip FKB ExtF) (row : ℕ)
-      {instr : instruction} {rs2 rs1 rd : regidx} {opc : FKB} {addr : ℕ} {props props' : Prop}
-      (h_decode : Transpiler.transpile_op instr 1 addr = some (program_bus_entry air row, props))
-      (h_clause : Transpiler.transpile_op instr 1 addr =
-        some ((1, #v[Transpiler.pc_lo addr, Transpiler.pc_hi addr, opc, opc,
-          Transpiler.reg_to_KB rd, Transpiler.reg_to_KB rs1, 0, 0, Transpiler.reg_to_KB rs2, 0, 0,
-          if rd == regidx.Regidx 0 then 1 else 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-          Transpiler.pc_carry addr]), props'))
-    :
-      air.cols.is_real row 0 = 1 ∧ air.cols.instruction.opcode row 0 = opc ∧
-      regidx.Regidx (air.cols.instruction.op_a row 0).val = rd ∧
-      regidx.Regidx (air.cols.instruction.op_b_0 row 0).val = rs1 ∧
-      regidx.Regidx (air.cols.instruction.op_c_0 row 0).val = rs2
-    := by
-      rw [h_clause, Option.some.injEq, Prod.mk.injEq] at h_decode
-      have h_data := h_decode.1.symm
-      have h_op_a : air.cols.instruction.op_a row 0 = Transpiler.reg_to_KB rd :=
-        decoded_field h_data ProgramBusEntry.op_a
-      have h_op_b : air.cols.instruction.op_b_0 row 0 = Transpiler.reg_to_KB rs1 :=
-        decoded_field h_data ProgramBusEntry.b_0
-      have h_op_c : air.cols.instruction.op_c_0 row 0 = Transpiler.reg_to_KB rs2 :=
-        decoded_field h_data ProgramBusEntry.c_0
-      exact ⟨ decoded_field h_data ProgramBusEntry.multiplicity,
-        decoded_field h_data ProgramBusEntry.opcode, by rw [h_op_a]; exact regidx_reg_to_KB rd,
-        by rw [h_op_b]; exact regidx_reg_to_KB rs1, by rw [h_op_c]; exact regidx_reg_to_KB rs2 ⟩
-
     /-- Equivalence for DIV (opcode 34, `instruction.DIV` with `is_unsigned := false`), the signed
         64-bit quotient: for every `DIV` instruction and address `addr` whose decoding
         (`Transpiler.transpile_op`, at multiplicity 1) is the row's Program message, Sail's step
@@ -292,8 +260,8 @@ namespace Equivalence
       execute_instruction (instruction.DIV (rs2, rs1, rd, false)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
-        div_decoded air row (opc := 34) h_decode rfl
+      obtain ⟨ h_is_real, h_opcode, -, rfl, rfl, rfl ⟩ :=
+        reg_reg_decoded air row (opc := 34) h_decode rfl
       exact equivalence_DIV_row air row @h_row @h_is_real @h_all_wf
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
 
@@ -319,8 +287,8 @@ namespace Equivalence
       execute_instruction (instruction.DIV (rs2, rs1, rd, true)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
-        div_decoded air row (opc := 35) h_decode rfl
+      obtain ⟨ h_is_real, h_opcode, -, rfl, rfl, rfl ⟩ :=
+        reg_reg_decoded air row (opc := 35) h_decode rfl
       exact equivalence_DIVU_row air row @h_row @h_is_real @h_all_wf
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
 
@@ -346,8 +314,8 @@ namespace Equivalence
       execute_instruction (instruction.REM (rs2, rs1, rd, false)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
-        div_decoded air row (opc := 36) h_decode rfl
+      obtain ⟨ h_is_real, h_opcode, -, rfl, rfl, rfl ⟩ :=
+        reg_reg_decoded air row (opc := 36) h_decode rfl
       exact equivalence_REM_row air row @h_row @h_is_real @h_all_wf
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
 
@@ -373,8 +341,8 @@ namespace Equivalence
       execute_instruction (instruction.REM (rs2, rs1, rd, true)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
-        div_decoded air row (opc := 37) h_decode rfl
+      obtain ⟨ h_is_real, h_opcode, -, rfl, rfl, rfl ⟩ :=
+        reg_reg_decoded air row (opc := 37) h_decode rfl
       exact equivalence_REMU_row air row @h_row @h_is_real @h_all_wf
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
 
@@ -400,8 +368,8 @@ namespace Equivalence
       execute_instruction (instruction.DIVW (rs2, rs1, rd, false)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
-        div_decoded air row (opc := 49) h_decode rfl
+      obtain ⟨ h_is_real, h_opcode, -, rfl, rfl, rfl ⟩ :=
+        reg_reg_decoded air row (opc := 49) h_decode rfl
       exact equivalence_DIVW_row air row @h_row @h_is_real @h_all_wf
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
 
@@ -427,8 +395,8 @@ namespace Equivalence
       execute_instruction (instruction.DIVW (rs2, rs1, rd, true)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
-        div_decoded air row (opc := 50) h_decode rfl
+      obtain ⟨ h_is_real, h_opcode, -, rfl, rfl, rfl ⟩ :=
+        reg_reg_decoded air row (opc := 50) h_decode rfl
       exact equivalence_DIVUW_row air row @h_row @h_is_real @h_all_wf
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
 
@@ -454,8 +422,8 @@ namespace Equivalence
       execute_instruction (instruction.REMW (rs2, rs1, rd, false)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
-        div_decoded air row (opc := 51) h_decode rfl
+      obtain ⟨ h_is_real, h_opcode, -, rfl, rfl, rfl ⟩ :=
+        reg_reg_decoded air row (opc := 51) h_decode rfl
       exact equivalence_REMW_row air row @h_row @h_is_real @h_all_wf
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
 
@@ -481,8 +449,8 @@ namespace Equivalence
       execute_instruction (instruction.REMW (rs2, rs1, rd, true)) state =
         (operation_list_effect (CPU_bus_operations air row) state).state
     := by
-      obtain ⟨ h_is_real, h_opcode, rfl, rfl, rfl ⟩ :=
-        div_decoded air row (opc := 52) h_decode rfl
+      obtain ⟨ h_is_real, h_opcode, -, rfl, rfl, rfl ⟩ :=
+        reg_reg_decoded air row (opc := 52) h_decode rfl
       exact equivalence_REMUW_row air row @h_row @h_is_real @h_all_wf
         @h_all_constraints @pico_assumptions @h_opcode @h_bus_hypotheses
 
