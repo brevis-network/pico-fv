@@ -84,6 +84,20 @@ often a new message in the bus contract), say so and have it reviewed as one.
   other change.
 - Name new theorems by the [Mathlib conventions](https://leanprover-community.github.io/contribute/naming.html).
 
+## Comments
+
+A comment is a claim that no check reads. Keep one only when it is:
+
+- a docstring that states what a theorem, definition or bus promise says;
+- a citation of the Pico source a line restates: path under `vm/src`, line range, at the pinned tag;
+- a fact about Lean, the air DSL or a library that the code cannot show (for example, `width` is a keyword);
+- a license header.
+
+Everything else goes elsewhere. How the code differs from an earlier version belongs in the pull
+request and the design note. What a proof step does belongs in the step: a named lemma or a `have`
+with a readable statement. A comment that explains a surprise in our own code marks code to rename
+or restructure.
+
 ## Checks
 
 Run these before opening a pull request, and list them with their result in its description:
