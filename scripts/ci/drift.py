@@ -19,8 +19,9 @@ The pin is not changed: the copy lives in the work directory. It builds into ext
 so only Pico's crates compile again; the next `cargo run` in extractor/ relinks the pinned binary.
 The report is printed, and appended to $GITHUB_STEP_SUMMARY when set.
 
-Exits 1 when a branch could not be compared: it was not found, the copy did not build, or a
-comparison or list came out empty. A run that compared nothing does not pass.
+Exits 1 when a branch could not be compared: Pico could not be cloned, the branch was not found,
+the copy did not build, a comparison or list came out empty, or any other error. A run that
+compared nothing does not pass.
 """
 import argparse
 import os
