@@ -20,8 +20,9 @@ set_option linter.unusedVariables false
 # DivRemChip (64-bit)
 
 Lean formalisation of `DivRemCols` / `DivRemValueCols` from
-`vm/src/chips/chips/alu/divrem/columns.rs` at commit
-`2acc7c1828fb4ec1bed5963511bb370870c5b608` (Pico v3.1.1).
+`vm/src/chips/chips/alu/divrem/columns.rs`.
+
+Citations read at Pico v3.2.0.
 
 ```rust
 pub struct DivRemCols<F: Copy> {

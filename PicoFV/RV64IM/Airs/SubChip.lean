@@ -15,8 +15,9 @@ set_option linter.unusedVariables false
 # SubChip (64-bit)
 
 Lean formalisation of `SubCols` / `SubValueCols` from
-`vm/src/chips/chips/alu/sub/columns.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
+`vm/src/chips/chips/alu/sub/columns.rs`.
+
+Citations read at Pico v3.2.0.
 
 ```rust
 pub struct SubCols<F> {

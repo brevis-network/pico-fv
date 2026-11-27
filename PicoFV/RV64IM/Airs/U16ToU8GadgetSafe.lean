@@ -15,12 +15,13 @@ set_option linter.unusedVariables false
 # U16ToU8Gadget (Safe variant, 64-bit)
 
 Lean formalisation of `U16ToU8Gadget::eval_u16_to_u8_safe` from
-`vm/src/chips/gadgets/u16_to_u8.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
+`vm/src/chips/gadgets/u16_to_u8.rs`.
+
+Citations read at Pico v3.2.0.
 
 ```rust
 impl<F: Field> U16ToU8Gadget<F> {
-    pub fn eval_u16_to_u8_safe<CB>(builder, a, cols, is_real) -> [CB::Expr; WORD_SIZE] {
+    pub fn eval_u16_to_u8_safe<CB>(builder, a, cols, is_real) -> [CB::Expr; WORD_BYTE_SIZE] {
         let ret = Self::eval_u16_to_u8_unsafe(builder, a, cols);
         // … plus 4 byte-bus range checks gated by `is_real` …
         ret
@@ -31,7 +32,7 @@ impl<F: Field> U16ToU8Gadget<F> {
 The **safe** variant calls `eval_u16_to_u8_unsafe` first (so the columns and
 returned expressions are identical to Unsafe) and then adds 4 byte-bus
 lookups — one per limb — that range-check the `(low_byte, high_byte)` pair
-against byte-bus opcode `(4, 7)`. Range-checking is **enforced** here, unlike
+with the byte table's `U8Range` opcode (7). Range-checking is **enforced** here, unlike
 the Unsafe variant where the caller is responsible.
 
 The wrapped extraction Air has 9 columns (same as Unsafe): `a` (4 limbs) +

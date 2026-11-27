@@ -16,8 +16,9 @@ set_option linter.unusedVariables false
 # LtSignedGadget (64-bit)
 
 Lean formalisation of `LtSignedGadget` from
-`vm/src/chips/gadgets/lt_signed.rs` at commit
-`22b0aae6321c1f63c72aafd0b506b5f45b91ffb1`.
+`vm/src/chips/gadgets/lt_signed.rs`.
+
+Citations read at Pico v3.2.0.
 
 ```rust
 pub struct LtSignedGadget<T> {
